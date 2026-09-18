@@ -1,3 +1,10 @@
+
+get_latest_version() {
+    # Fallback directly to avoid GitHub API rate limit / restriction errors
+    latest_version="v1.0.0"
+    echo "Using version: $latest_version"
+}
+
 #!/bin/bash
 
 red='\033[0;31m'

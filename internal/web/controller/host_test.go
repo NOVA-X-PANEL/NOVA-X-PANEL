@@ -13,10 +13,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/op/go-logging"
 
-	"github.com/mhsanaei/3x-ui/v3/internal/database"
-	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
-	xuilogger "github.com/mhsanaei/3x-ui/v3/internal/logger"
-	"github.com/mhsanaei/3x-ui/v3/internal/web/entity"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/database"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/database/model"
+	xuilogger "github.com/nova-x-panel/nova-x-panel/v3/internal/logger"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/web/entity"
 )
 
 func newHostTestDB(t *testing.T) {
@@ -151,7 +151,7 @@ func TestHostController_AuthInherited(t *testing.T) {
 	newHostTestDB(t)
 	engine := gin.New()
 	store := cookie.NewStore([]byte("host-auth-test-secret"))
-	engine.Use(sessions.Sessions("3x-ui", store))
+	engine.Use(sessions.Sessions("nova-x-panel", store))
 
 	a := &APIController{}
 	api := engine.Group("/panel/api")

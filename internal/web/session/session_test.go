@@ -5,7 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/database/model"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"

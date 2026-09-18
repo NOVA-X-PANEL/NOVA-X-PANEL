@@ -25,12 +25,12 @@ The built binary must serve these paths beneath the configured `webBasePath`:
 - `manifest.webmanifest`
 - `pwa-register.js`
 - `service-worker.js`
-- `icons/3x-ui-16.png`
-- `icons/3x-ui-24.png`
-- `icons/3x-ui-32.png`
-- `icons/3x-ui-64.png`
-- `icons/3x-ui-192.png`
-- `icons/3x-ui-512.png`
+- `icons/nova-x-panel-16.png`
+- `icons/nova-x-panel-24.png`
+- `icons/nova-x-panel-32.png`
+- `icons/nova-x-panel-64.png`
+- `icons/nova-x-panel-192.png`
+- `icons/nova-x-panel-512.png`
 
 The login and panel HTML must contain a manifest link and registration script
 whose URLs begin with the same runtime base path. The manifest must contain

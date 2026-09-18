@@ -63,7 +63,7 @@ import { useOutboundColumns } from './useOutboundColumns';
 import OutboundCardList from './OutboundCardList';
 import SubscriptionOutbounds from './SubscriptionOutbounds';
 
-const defaultOutboundSubscriptionUserAgent = '3x-ui-outbound-sub/1.0';
+const defaultOutboundSubscriptionUserAgent = 'nova-x-panel-outbound-sub/1.0';
 
 interface OutboundSub {
   id: number;

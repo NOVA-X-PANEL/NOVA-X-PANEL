@@ -13,7 +13,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/logger"
 )
 
 type failingListener struct{ err error }

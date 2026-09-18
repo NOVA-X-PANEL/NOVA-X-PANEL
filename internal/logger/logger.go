@@ -1,4 +1,4 @@
-// Package logger provides logging functionality for the 3x-ui panel with
+// Package logger provides logging functionality for the nova-x-panel panel with
 // dual-backend logging (console/syslog and file) and buffered log storage for web UI.
 package logger
 
@@ -13,7 +13,7 @@ import (
 
 	"github.com/op/go-logging"
 
-	"github.com/mhsanaei/3x-ui/v3/internal/config"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/config"
 
 	"gopkg.in/natefinch/lumberjack.v2"
 )

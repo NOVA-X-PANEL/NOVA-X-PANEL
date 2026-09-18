@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/logger"
 
 	"github.com/mymmrac/telego"
 	tu "github.com/mymmrac/telego/telegoutil"

@@ -3,10 +3,10 @@ package job
 import (
 	"time"
 
-	"github.com/mhsanaei/3x-ui/v3/internal/logger"
-	"github.com/mhsanaei/3x-ui/v3/internal/tuic"
-	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
-	"github.com/mhsanaei/3x-ui/v3/internal/xray"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/logger"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/tuic"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/web/service"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/xray"
 )
 
 type TuicJob struct {

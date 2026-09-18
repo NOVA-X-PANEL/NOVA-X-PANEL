@@ -3,7 +3,7 @@ package job
 import (
 	"testing"
 
-	"github.com/mhsanaei/3x-ui/v3/internal/web/entity"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/web/entity"
 )
 
 // Save-time validation and scan-time parsing must accept exactly the same set:

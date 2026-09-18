@@ -8,13 +8,13 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/mhsanaei/3x-ui/v3/internal/amneziawg"
-	"github.com/mhsanaei/3x-ui/v3/internal/amneziawgnet"
-	"github.com/mhsanaei/3x-ui/v3/internal/database"
-	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
-	"github.com/mhsanaei/3x-ui/v3/internal/logger"
-	wgutil "github.com/mhsanaei/3x-ui/v3/internal/util/wireguard"
-	"github.com/mhsanaei/3x-ui/v3/internal/xray"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/amneziawg"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/amneziawgnet"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/database"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/database/model"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/logger"
+	wgutil "github.com/nova-x-panel/nova-x-panel/v3/internal/util/wireguard"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/xray"
 )
 
 // DesiredAmneziaWGInstances derives the AmneziaWG interfaces this panel

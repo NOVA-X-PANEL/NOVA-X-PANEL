@@ -7,9 +7,9 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/mhsanaei/3x-ui/v3/internal/crypto/nodetoken"
-	"github.com/mhsanaei/3x-ui/v3/internal/database"
-	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/crypto/nodetoken"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/database"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/database/model"
 )
 
 // enableNodeTokenEncryption installs a test keyring and restores off mode so

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/logger"
 )
 
 // Compiled once at package load: Write runs on every line Xray emits, so

@@ -2,24 +2,24 @@
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./media/3x-ui-dark.png">
-    <img alt="3x-ui" src="./media/3x-ui-light.png">
+    <source media="(prefers-color-scheme: dark)" srcset="./media/nova-x-panel-dark.png">
+    <img alt="nova-x-panel" src="./media/nova-x-panel-light.png">
   </picture>
 </p>
 
 <p align="center">
-  <a href="https://github.com/MHSanaei/3x-ui/releases"><img src="https://img.shields.io/github/v/release/mhsanaei/3x-ui" alt="Release"></a>
-  <a href="https://github.com/MHSanaei/3x-ui/actions"><img src="https://img.shields.io/github/actions/workflow/status/mhsanaei/3x-ui/release.yml.svg" alt="Build"></a>
-  <a href="#"><img src="https://img.shields.io/github/go-mod/go-version/mhsanaei/3x-ui.svg" alt="GO Version"></a>
-  <a href="https://github.com/MHSanaei/3x-ui/releases/latest"><img src="https://img.shields.io/github/downloads/mhsanaei/3x-ui/total.svg" alt="Downloads"></a>
+  <a href="https://github.com/NOVA-X-PANEL/nova-x-panel/releases"><img src="https://img.shields.io/github/v/release/nova-x-panel/nova-x-panel" alt="Release"></a>
+  <a href="https://github.com/NOVA-X-PANEL/nova-x-panel/actions"><img src="https://img.shields.io/github/actions/workflow/status/nova-x-panel/nova-x-panel/release.yml.svg" alt="Build"></a>
+  <a href="#"><img src="https://img.shields.io/github/go-mod/go-version/nova-x-panel/nova-x-panel.svg" alt="GO Version"></a>
+  <a href="https://github.com/NOVA-X-PANEL/nova-x-panel/releases/latest"><img src="https://img.shields.io/github/downloads/nova-x-panel/nova-x-panel/total.svg" alt="Downloads"></a>
   <a href="https://www.gnu.org/licenses/gpl-3.0.en.html"><img src="https://img.shields.io/badge/license-GPL%20V3-blue.svg?longCache=true" alt="License"></a>
-  <a href="https://pkg.go.dev/github.com/mhsanaei/3x-ui/v3"><img src="https://pkg.go.dev/badge/github.com/mhsanaei/3x-ui/v3.svg" alt="Go Reference"></a>
+  <a href="https://pkg.go.dev/github.com/nova-x-panel/nova-x-panel/v3"><img src="https://pkg.go.dev/badge/github.com/nova-x-panel/nova-x-panel/v3.svg" alt="Go Reference"></a>
   <a href="https://docs.sanaei.dev"><img src="https://img.shields.io/badge/docs-docs.sanaei.dev-22d3ee" alt="Documentation"></a>
 </p>
 
-**3X-UI** — продвинутая веб-панель управления с открытым исходным кодом для управления серверами [Xray-core](https://github.com/XTLS/Xray-core). Она предоставляет аккуратный многоязычный интерфейс для развёртывания, настройки и мониторинга широкого спектра протоколов прокси и VPN — от одного VPS до развёртываний с несколькими узлами.
+**NOVA-X-PANEL** — продвинутая веб-панель управления с открытым исходным кодом для управления серверами [Xray-core](https://github.com/XTLS/Xray-core). Она предоставляет аккуратный многоязычный интерфейс для развёртывания, настройки и мониторинга широкого спектра протоколов прокси и VPN — от одного VPS до развёртываний с несколькими узлами.
 
-Созданный как улучшенный форк оригинального проекта X-UI, 3X-UI добавляет более широкую поддержку протоколов, повышенную стабильность, учёт трафика по каждому клиенту и множество функций для удобства использования.
+Созданный как улучшенный форк оригинального проекта X-UI, NOVA-X-PANEL добавляет более широкую поддержку протоколов, повышенную стабильность, учёт трафика по каждому клиенту и множество функций для удобства использования.
 
 > [!IMPORTANT]
 > Этот проект предназначен только для личного использования. Пожалуйста, не используйте его в незаконных целях или в производственной среде.
@@ -39,7 +39,7 @@
 - **Встроенный сервер подписок** — вывод в форматах raw, JSON и Clash, выбираемый автоматически по User-Agent клиента, а также [пользовательские шаблоны страниц](docs/custom-subscription-templates.md).
 - **Telegram- и Discord-боты** для удалённого мониторинга и управления.
 - **RESTful API** с токенами ограниченной области действия и необязательным сроком действия, а также справочником API внутри панели.
-- **Устанавливаемая панель (PWA)** — закрепите 3X-UI на рабочем столе или главном экране телефона.
+- **Устанавливаемая панель (PWA)** — закрепите NOVA-X-PANEL на рабочем столе или главном экране телефона.
 - **Гибкое хранилище** — SQLite (по умолчанию) или PostgreSQL.
 - **13 языков интерфейса** с тёмной и светлой темами.
 - **Интеграция с Fail2ban** для применения лимитов IP по каждому клиенту.
@@ -74,19 +74,19 @@
 ## Быстрый старт
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh)
+bash <(curl -Ls https://raw.githubusercontent.com/nova-x-panel/nova-x-panel/master/install.sh)
 ```
 
 Чтобы установить конкретную версию, добавьте её тег (например, `v3.7.0`):
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh) v3.7.0
+bash <(curl -Ls https://raw.githubusercontent.com/nova-x-panel/nova-x-panel/master/install.sh) v3.7.0
 ```
 
 Чтобы установить скользящую **dev**-сборку (новейший предварительный релиз по каждому коммиту из ветки `main`, а не стабильный релиз), передайте `dev-latest`:
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh) dev-latest
+bash <(curl -Ls https://raw.githubusercontent.com/nova-x-panel/nova-x-panel/master/install.sh) dev-latest
 ```
 
 Во время установки генерируются случайные имя пользователя, пароль и путь доступа. После установки выполните `x-ui`, чтобы открыть меню управления, где можно запускать/останавливать сервис, просматривать или сбрасывать учётные данные для входа, управлять SSL-сертификатами и многое другое.
@@ -113,7 +113,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.
 
 ## Варианты базы данных
 
-3X-UI поддерживает два бэкенда, выбираемых при установке:
+NOVA-X-PANEL поддерживает два бэкенда, выбираемых при установке:
 
 - **SQLite** (по умолчанию) — единый файл по пути `/etc/x-ui/x-ui.db`. Без настройки, идеально для небольших и средних развёртываний.
 - **PostgreSQL** — рекомендуется при большом числе клиентов или конфигурациях с несколькими узлами. Установщик может установить PostgreSQL локально за вас или принять DSN к существующему серверу.
@@ -146,7 +146,7 @@ docker compose --profile postgres up -d
 Образ включает Fail2ban (включён по умолчанию) для применения **лимитов IP** по каждому клиенту. Fail2ban блокирует нарушителей с помощью `iptables`, что требует возможности `NET_ADMIN`. `docker-compose.yml` уже предоставляет её через `cap_add`; если вы вместо этого запускаете контейнер через `docker run`, добавьте возможности самостоятельно, иначе блокировки будут регистрироваться, но никогда не применяться:
 
 ```bash
-docker run -d --cap-add=NET_ADMIN --cap-add=NET_RAW ... ghcr.io/mhsanaei/3x-ui
+docker run -d --cap-add=NET_ADMIN --cap-add=NET_RAW ... ghcr.io/nova-x-panel/nova-x-panel
 ```
 
 ## Переменные окружения
@@ -196,16 +196,16 @@ English · فارسی · العربية · 中文（简体） · 中文（繁體
 
 ## Инструменты сообщества
 
-Инструменты и интеграции, созданные сообществом вокруг 3x-ui.
+Инструменты и интеграции, созданные сообществом вокруг nova-x-panel.
 
-- [terraform-provider-3x-ui](https://github.com/batonogov/terraform-provider-threexui) (Лицензия: **MIT**): _Управление входящими, клиентами, настройками панели и конфигурацией Xray через код с помощью Terraform / OpenTofu._
-- [3X-UI Manager](https://github.com/yukh975/3X-UI-Manager) (Лицензия: **MIT**): _Нативный Android-клиент для 3x-ui — дашборд, входящие, клиенты с QR, узлы и управление несколькими панелями. Доступен в F-Droid._
+- [terraform-provider-nova-x-panel](https://github.com/batonogov/terraform-provider-threexui) (Лицензия: **MIT**): _Управление входящими, клиентами, настройками панели и конфигурацией Xray через код с помощью Terraform / OpenTofu._
+- [NOVA-X-PANEL Manager](https://github.com/yukh975/NOVA-X-PANEL-Manager) (Лицензия: **MIT**): _Нативный Android-клиент для nova-x-panel — дашборд, входящие, клиенты с QR, узлы и управление несколькими панелями. Доступен в F-Droid._
 
 ## Поддержка проекта
 
 **Если этот проект полезен для вас, вы можете поставить ему**:star2:
 
-<a href="https://www.buymeacoffee.com/MHSanaei" target="_blank">
+<a href="https://www.buymeacoffee.com/NOVA-X-PANEL" target="_blank">
 <img src="./media/default-yellow.png" alt="Buy Me A Coffee" style="height: 70px !important;width: 277px !important;" >
 </a>
 
@@ -216,16 +216,16 @@ English · فارسی · العربية · 中文（简体） · 中文（繁體
 
 ## История звёзд
 
-<a href="https://www.star-history.com/?repos=mhsanaei%2F3x-ui&type=date&legend=top-left">
+<a href="https://www.star-history.com/?repos=nova-x-panel%2Fnova-x-panel&type=date&legend=top-left">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=mhsanaei/3x-ui&type=date&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=mhsanaei/3x-ui&type=date&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=mhsanaei/3x-ui&type=date&legend=top-left" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=nova-x-panel/nova-x-panel&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=nova-x-panel/nova-x-panel&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=nova-x-panel/nova-x-panel&type=date&legend=top-left" />
  </picture>
 </a>
 
 <p align="center">
- <a href="https://www.star-history.com/mhsanaei/3x-ui">
-  <picture><source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/badge?repo=MHSanaei/3x-ui&type=rank&theme=dark" /><source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/badge?repo=MHSanaei/3x-ui&type=rank" /><img alt="Star History Rank" src="https://api.star-history.com/badge?repo=MHSanaei/3x-ui&type=rank" /></picture> <picture><source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/badge?repo=MHSanaei/3x-ui&type=trending&theme=dark" /><source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/badge?repo=MHSanaei/3x-ui&type=trending" /><img alt="GitHub Trending Repository of the Day" src="https://api.star-history.com/badge?repo=MHSanaei/3x-ui&type=trending" /></picture>
+ <a href="https://www.star-history.com/nova-x-panel/nova-x-panel">
+  <picture><source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/badge?repo=NOVA-X-PANEL/nova-x-panel&type=rank&theme=dark" /><source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/badge?repo=NOVA-X-PANEL/nova-x-panel&type=rank" /><img alt="Star History Rank" src="https://api.star-history.com/badge?repo=NOVA-X-PANEL/nova-x-panel&type=rank" /></picture> <picture><source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/badge?repo=NOVA-X-PANEL/nova-x-panel&type=trending&theme=dark" /><source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/badge?repo=NOVA-X-PANEL/nova-x-panel&type=trending" /><img alt="GitHub Trending Repository of the Day" src="https://api.star-history.com/badge?repo=NOVA-X-PANEL/nova-x-panel&type=trending" /></picture>
  </a>
 </p>

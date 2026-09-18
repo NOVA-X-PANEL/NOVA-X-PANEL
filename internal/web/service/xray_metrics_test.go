@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mhsanaei/3x-ui/v3/internal/database"
-	"github.com/mhsanaei/3x-ui/v3/internal/eventbus"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/database"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/eventbus"
 )
 
 // probe is one observatory sample: whether the outbound is alive and the

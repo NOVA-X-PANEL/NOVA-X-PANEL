@@ -152,7 +152,7 @@
       "xrayUpdates": "Xray Güncellemeleri",
       "xraySwitchClickDesk": "Dikkatli seçin, eski sürümler mevcut yapılandırmalarla uyumlu olmayabilir.",
       "updatePanel": "Paneli Güncelle",
-      "panelUpdateDesc": "Bu işlem 3X-UI'yi en son sürüme güncelleyecek ve panel servisini yeniden başlatacaktır.",
+      "panelUpdateDesc": "Bu işlem NOVA-X-PANEL'yi en son sürüme güncelleyecek ve panel servisini yeniden başlatacaktır.",
       "currentPanelVersion": "Mevcut panel sürümü",
       "latestPanelVersion": "Panelin en son sürümü",
       "panelUpToDate": "Panel güncel",
@@ -216,7 +216,7 @@
       "xraySwitchVersionDialogDesc": "Bu işlem Xray sürümünü #version# olarak değiştirecektir.",
       "xraySwitchVersionPopover": "Xray başarıyla güncellendi",
       "panelUpdateDialog": "Gerçekten paneli güncellemek istiyor musunuz?",
-      "panelUpdateDialogDesc": "Bu işlem 3X-UI'yi #version# sürümüne güncelleyecek ve panel servisini yeniden başlatacaktır.",
+      "panelUpdateDialogDesc": "Bu işlem NOVA-X-PANEL'yi #version# sürümüne güncelleyecek ve panel servisini yeniden başlatacaktır.",
       "panelUpdateStartedPopover": "Panel güncellemesi başlatıldı",
       "panelUpdateFailedTitle": "Panel güncellemesi başarısız oldu",
       "panelUpdateFailedDesc": "Güncelleme başarıyla tamamlanamadı. Sunucu günlüklerini kontrol edin veya komut satırından 'x-ui update' çalıştırın.",
@@ -1223,7 +1223,7 @@
       "subAnnounce": "Duyuru",
       "subAnnounceDesc": "VPN istemcisinde görüntülenen duyuru metni. İstemci kimlik tokenlarını destekler: {{EMAIL}}, {{ID}}, {{SHORT_ID}}, {{SUB_ID}}, {{TELEGRAM_ID}}.",
       "subThemeDir": "Abonelik Tema Dizini",
-      "subThemeDirDesc": "Abonelik sayfası için özel bir şablon (index.html/sub.html) içeren klasörün mutlak yolu (örn. /etc/3x-ui/sub_templates/my-theme/). Varsayılan sayfayı kullanmak için boş bırakın.",
+      "subThemeDirDesc": "Abonelik sayfası için özel bir şablon (index.html/sub.html) içeren klasörün mutlak yolu (örn. /etc/nova-x-panel/sub_templates/my-theme/). Varsayılan sayfayı kullanmak için boş bırakın.",
       "subThemeDirDocs": "Şablon kılavuzu ↗",
       "subEnableRouting": "Yönlendirmeyi etkinleştir",
       "happLinkEnable": "Şifreli abonelik bağlantıları",
@@ -2310,7 +2310,7 @@
       "report": "🕰 Planlanmış Raporlar: {{ .RunTime }}\r\n",
       "datetime": "⏰ Tarih ve Saat: {{ .DateTime }}\r\n",
       "hostname": "💻 Sunucu: {{ .Hostname }}",
-      "version": "🚀 3X-UI Sürümü: {{ .Version }}\r\n",
+      "version": "🚀 NOVA-X-PANEL Sürümü: {{ .Version }}\r\n",
       "xrayVersion": "📡 Xray Sürümü: {{ .XrayVersion }}\r\n",
       "ipv6": "🌐 IPv6: {{ .IPv6 }}",
       "ipv4": "🌐 IPv4: {{ .IPv4 }}",
@@ -2439,10 +2439,10 @@
   },
   "discord": {
     "test": {
-      "title": "3x-ui Discord Bildirim Testi",
+      "title": "nova-x-panel Discord Bildirim Testi",
       "body": "Bu, Discord bildirimlerinin doğru yapılandırıldığını doğrulayan bir test bildirimidir."
     },
-    "footer": "3x-ui Paneli",
+    "footer": "nova-x-panel Paneli",
     "fields": {
       "panelVersion": "Panel Sürümü",
       "xrayCore": "Xray Çekirdeği",
@@ -2477,13 +2477,13 @@
       "loginFailed": "Giriş Başarısız"
     },
     "report": {
-      "title": "📊 3x-ui Durum Raporu",
+      "title": "📊 nova-x-panel Durum Raporu",
       "summary": "**{{ .Host }}** için periyodik sunucu ve proxy durum raporu",
-      "footer": "3x-ui Zamanlanmış Rapor • Zamanlama: {{ .RunTime }}"
+      "footer": "nova-x-panel Zamanlanmış Rapor • Zamanlama: {{ .RunTime }}"
     },
     "commands": {
-      "helpTitle": "🤖 3x-ui Discord Bot Komutları",
-      "helpDescription": "3x-ui sunucusunu izlemek ve yönetmek için kullanılabilir komutlar:",
+      "helpTitle": "🤖 nova-x-panel Discord Bot Komutları",
+      "helpDescription": "nova-x-panel sunucusunu izlemek ve yönetmek için kullanılabilir komutlar:",
       "helpStatus": "Sistem yükünü, RAM'i, CPU'yu, bağlantıları ve çevrimiçi kullanıcıları gösterir",
       "helpReport": "Tam durum raporu oluşturur (yapılandırıldıysa veritabanı yedeğiyle)",
       "helpBackup": "Veritabanı yedek dosyasını hemen gönderir",
@@ -2491,10 +2491,10 @@
       "helpInbounds": "Yapılandırılmış tüm gelen bağlantıları portları ve istemci istatistikleriyle listeler",
       "helpRestart": "Xray çekirdeğini yeniden başlatır",
       "helpHelp": "Bu komut listesini gösterir",
-      "statusTitle": "⚡ 3x-ui Sunucu Durumu",
+      "statusTitle": "⚡ nova-x-panel Sunucu Durumu",
       "statusDescription": "**{{ .Host }}** için güncel çalışma metrikleri",
       "backupTitle": "🗄️ Veritabanı Yedeği",
-      "backupDescription": "`{{ .Time }}` tarihinde oluşturulan 3x-ui yedek arşivi",
+      "backupDescription": "`{{ .Time }}` tarihinde oluşturulan nova-x-panel yedek arşivi",
       "backupUnavailable": "❌ Yedekleme hizmeti kullanılamıyor",
       "backupFailed": "❌ Veritabanı yedeği okunamadı: {{ .Error }}",
       "usageHint": "⚠️ Kullanım: `!usage <email>` veya `/usage <email>`",

@@ -13,10 +13,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mhsanaei/3x-ui/v3/internal/database"
-	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
-	"github.com/mhsanaei/3x-ui/v3/internal/web/runtime"
-	"github.com/mhsanaei/3x-ui/v3/internal/xray"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/database"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/database/model"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/web/runtime"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/xray"
 )
 
 // resetGate holds every node reset open until released, counting how many nodes

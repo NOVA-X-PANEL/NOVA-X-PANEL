@@ -6,12 +6,12 @@ import (
 
 	"github.com/op/go-logging"
 
-	"github.com/mhsanaei/3x-ui/v3/internal/database"
-	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
-	xuilogger "github.com/mhsanaei/3x-ui/v3/internal/logger"
-	"github.com/mhsanaei/3x-ui/v3/internal/web/runtime"
-	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
-	"github.com/mhsanaei/3x-ui/v3/internal/xray"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/database"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/database/model"
+	xuilogger "github.com/nova-x-panel/nova-x-panel/v3/internal/logger"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/web/runtime"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/web/service"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/xray"
 )
 
 // The sync tick is the only place that sees which nodes it no longer fetches, so it

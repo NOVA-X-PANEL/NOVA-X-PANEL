@@ -11,7 +11,7 @@ import (
 
 	"github.com/op/go-logging"
 
-	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/logger"
 )
 
 func TestMain(m *testing.M) {

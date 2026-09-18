@@ -1,6 +1,6 @@
-# Contributing to 3x-ui-docs
+# Contributing to nova-x-panel-docs
 
-Thanks for helping improve the 3x-ui documentation and product site!
+Thanks for helping improve the nova-x-panel documentation and product site!
 
 ## Prerequisites
 

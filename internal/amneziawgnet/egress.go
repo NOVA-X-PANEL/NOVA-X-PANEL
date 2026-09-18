@@ -14,8 +14,8 @@ import (
 	"gvisor.dev/gvisor/pkg/tcpip"
 	"gvisor.dev/gvisor/pkg/tcpip/adapters/gonet"
 
-	"github.com/mhsanaei/3x-ui/v3/internal/amneziawg"
-	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/amneziawg"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/logger"
 )
 
 // EgressBasePort is the fixed loopback port of the panel's SOCKS5 egress

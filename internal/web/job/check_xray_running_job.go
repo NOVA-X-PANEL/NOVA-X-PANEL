@@ -1,11 +1,11 @@
-// Package job provides background job implementations for the 3x-ui web panel,
+// Package job provides background job implementations for the nova-x-panel web panel,
 // including traffic monitoring, system checks, and periodic maintenance tasks.
 package job
 
 import (
-	"github.com/mhsanaei/3x-ui/v3/internal/eventbus"
-	"github.com/mhsanaei/3x-ui/v3/internal/logger"
-	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/eventbus"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/logger"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/web/service"
 )
 
 // EventBus is set from web layer to publish events.

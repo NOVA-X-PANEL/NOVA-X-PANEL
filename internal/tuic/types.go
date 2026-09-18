@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/database/model"
 )
 
 type TuicServerSettings struct {

@@ -17,10 +17,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/mhsanaei/3x-ui/v3/internal/config"
-	"github.com/mhsanaei/3x-ui/v3/internal/logger"
-	"github.com/mhsanaei/3x-ui/v3/internal/web/global"
-	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/config"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/logger"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/web/global"
+	"github.com/nova-x-panel/nova-x-panel/v3/internal/web/service"
 )
 
 // PanelService provides business logic for panel management operations.
@@ -40,7 +40,7 @@ type PanelUpdateInfo struct {
 }
 
 const (
-	panelUpdaterURL      = "https://raw.githubusercontent.com/MHSanaei/3x-ui/main/update.sh"
+	panelUpdaterURL      = "https://raw.githubusercontent.com/NOVA-X-PANEL/nova-x-panel/main/update.sh"
 	maxPanelUpdaterBytes = 2 << 20
 	// devReleaseTag is the fixed-tag rolling pre-release the CI force-moves to the
 	// newest main commit; the dev update channel installs from it.
@@ -125,7 +125,7 @@ func (s *PanelService) RestartPanel(delay time.Duration) error {
 	return nil
 }
 
-// GetUpdateInfo checks GitHub for the latest 3x-ui release. When the dev channel
+// GetUpdateInfo checks GitHub for the latest nova-x-panel release. When the dev channel
 // is enabled on a dev build it compares commits against the rolling dev release;
 // otherwise it compares versions against the latest stable tag.
 func (s *PanelService) GetUpdateInfo() (*PanelUpdateInfo, error) {
@@ -386,7 +386,7 @@ func downloadPanelUpdater() (string, error) {
 		return "", fmt.Errorf("download panel updater: unexpected HTTP %d", resp.StatusCode)
 	}
 
-	file, err := os.CreateTemp("", "3x-ui-update-*.sh")
+	file, err := os.CreateTemp("", "nova-x-panel-update-*.sh")
 	if err != nil {
 		return "", err
 	}
@@ -430,9 +430,9 @@ func fetchLatestPanelVersion() (string, error) {
 // fetchPanelRelease fetches a release from GitHub. An empty tag resolves the
 // latest stable release; a non-empty tag (e.g. dev-latest) resolves that tag.
 func fetchPanelRelease(tag string) (*service.Release, error) {
-	url := "https://api.github.com/repos/MHSanaei/3x-ui/releases/latest"
+	url := "https://api.github.com/repos/NOVA-X-PANEL/nova-x-panel/releases/latest"
 	if tag != "" {
-		url = "https://api.github.com/repos/MHSanaei/3x-ui/releases/tags/" + tag
+		url = "https://api.github.com/repos/NOVA-X-PANEL/nova-x-panel/releases/tags/" + tag
 	}
 	client := (&service.SettingService{}).NewProxiedHTTPClient(10 * time.Second)
 	req, reqErr := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)

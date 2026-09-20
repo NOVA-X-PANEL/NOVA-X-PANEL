@@ -34,83 +34,183 @@ const initialDark = readBool(STORAGE_DARK, true);
 const initialUltra = readBool(STORAGE_ULTRA, false);
 applyDom(initialDark, initialUltra);
 
-// NOVA X PANEL accent. A violet primary gives every page — buttons, tabs,
-// switches, selected rows, focus rings — the same brand colour as the Nova
-// Glass surfaces without touching component-level styles.
-const NOVA_PRIMARY_LIGHT = '#7c3aed';
-const NOVA_PRIMARY_DARK = '#8b5cf6';
+// NOVA X PANEL — "Nova Calm · Umber". A warm, low-saturation palette: flat
+// warm-dark surfaces, hairline borders and one terracotta accent. Chosen over
+// the earlier violet/blue scheme because that one was tiring to look at.
+const UMBER = {
+  dark: {
+    bg: '#1f1c1a',
+    container: '#282423',
+    elevated: '#302b29',
+    sider: '#231f1d',
+    border: 'rgba(255, 255, 255, 0.10)',
+    borderSecondary: 'rgba(255, 255, 255, 0.08)',
+    text: '#ece6de',
+    textSecondary: '#cec3b6',
+    textTertiary: '#a2948a',
+    accent: '#c08a63',
+    accentHover: '#a9764f',
+    onAccent: '#1a1512',
+  },
+  ultra: {
+    bg: '#12100f',
+    container: '#1a1716',
+    elevated: '#211d1b',
+    sider: '#171413',
+    border: 'rgba(255, 255, 255, 0.09)',
+    borderSecondary: 'rgba(255, 255, 255, 0.07)',
+    text: '#e8e2da',
+    textSecondary: '#c8bdb0',
+    textTertiary: '#9c8f85',
+    accent: '#c08a63',
+    accentHover: '#a9764f',
+    onAccent: '#141110',
+  },
+  light: {
+    bg: '#f4f1ee',
+    container: '#ffffff',
+    elevated: '#ffffff',
+    sider: '#ffffff',
+    border: 'rgba(60, 45, 35, 0.14)',
+    borderSecondary: 'rgba(60, 45, 35, 0.10)',
+    text: '#2b2622',
+    textSecondary: '#5a5148',
+    textTertiary: '#7d7268',
+    accent: '#a9764f',
+    accentHover: '#8f5f3c',
+    onAccent: '#ffffff',
+  },
+};
 
 const DARK_TOKENS = {
-  colorBgBase: '#1a1b1f',
-  colorBgLayout: '#1a1b1f',
-  colorBgContainer: '#23252b',
-  colorBgElevated: '#2d2f37',
-  colorPrimary: NOVA_PRIMARY_DARK,
-  colorLink: NOVA_PRIMARY_DARK,
+  colorBgBase: UMBER.dark.bg,
+  colorBgLayout: UMBER.dark.bg,
+  colorBgContainer: UMBER.dark.container,
+  colorBgElevated: UMBER.dark.elevated,
+  colorBgSpotlight: UMBER.dark.elevated,
+  colorPrimary: UMBER.dark.accent,
+  colorLink: UMBER.dark.accent,
+  colorText: UMBER.dark.text,
+  colorTextBase: UMBER.dark.text,
+  colorTextSecondary: UMBER.dark.textSecondary,
+  colorTextTertiary: UMBER.dark.textTertiary,
+  colorTextPlaceholder: UMBER.dark.textTertiary,
+  colorBorder: UMBER.dark.border,
+  colorBorderSecondary: UMBER.dark.borderSecondary,
   borderRadius: 10,
+  boxShadow: 'none',
+  boxShadowSecondary: 'none',
 };
 const ULTRA_DARK_TOKENS = {
-  colorBgBase: '#000',
-  colorBgLayout: '#000',
-  colorBgContainer: '#101013',
-  colorBgElevated: '#1a1a1e',
-  colorPrimary: NOVA_PRIMARY_DARK,
-  colorLink: NOVA_PRIMARY_DARK,
-  borderRadius: 10,
+  ...DARK_TOKENS,
+  colorBgBase: UMBER.ultra.bg,
+  colorBgLayout: UMBER.ultra.bg,
+  colorBgContainer: UMBER.ultra.container,
+  colorBgElevated: UMBER.ultra.elevated,
+  colorBgSpotlight: UMBER.ultra.elevated,
+  colorText: UMBER.ultra.text,
+  colorTextSecondary: UMBER.ultra.textSecondary,
+  colorTextTertiary: UMBER.ultra.textTertiary,
+  colorTextPlaceholder: UMBER.ultra.textTertiary,
+  colorBorder: UMBER.ultra.border,
+  colorBorderSecondary: UMBER.ultra.borderSecondary,
 };
 const DARK_LAYOUT_TOKENS = {
-  bodyBg: '#1a1b1f',
-  headerBg: '#15161a',
-  headerColor: '#ffffff',
-  footerBg: '#1a1b1f',
-  siderBg: '#15161a',
-  triggerBg: '#23252b',
-  triggerColor: '#ffffff',
+  bodyBg: UMBER.dark.bg,
+  headerBg: UMBER.dark.sider,
+  headerColor: UMBER.dark.text,
+  footerBg: UMBER.dark.bg,
+  siderBg: UMBER.dark.sider,
+  triggerBg: UMBER.dark.container,
+  triggerColor: UMBER.dark.text,
 };
 const ULTRA_DARK_LAYOUT_TOKENS = {
-  bodyBg: '#000',
-  headerBg: '#050507',
-  headerColor: '#ffffff',
-  footerBg: '#000',
-  siderBg: '#050507',
-  triggerBg: '#1a1a1e',
-  triggerColor: '#ffffff',
+  bodyBg: UMBER.ultra.bg,
+  headerBg: UMBER.ultra.sider,
+  headerColor: UMBER.ultra.text,
+  footerBg: UMBER.ultra.bg,
+  siderBg: UMBER.ultra.sider,
+  triggerBg: UMBER.ultra.container,
+  triggerColor: UMBER.ultra.text,
 };
 const DARK_MENU_TOKENS = {
-  darkItemBg: '#15161a',
-  darkSubMenuItemBg: '#1a1b1f',
-  darkPopupBg: '#23252b',
+  darkItemBg: 'transparent',
+  darkSubMenuItemBg: 'transparent',
+  darkPopupBg: UMBER.dark.elevated,
+  darkItemColor: UMBER.dark.textSecondary,
+  darkItemSelectedBg: UMBER.dark.accent,
+  darkItemSelectedColor: UMBER.dark.onAccent,
 };
 const ULTRA_DARK_MENU_TOKENS = {
-  darkItemBg: '#050507',
-  darkSubMenuItemBg: '#000',
-  darkPopupBg: '#101013',
+  darkItemBg: 'transparent',
+  darkSubMenuItemBg: 'transparent',
+  darkPopupBg: UMBER.ultra.elevated,
+  darkItemColor: UMBER.ultra.textSecondary,
+  darkItemSelectedBg: UMBER.ultra.accent,
+  darkItemSelectedColor: UMBER.ultra.onAccent,
 };
 const DARK_CARD_TOKENS = {
-  colorBorderSecondary: 'rgba(255, 255, 255, 0.06)',
+  colorBorderSecondary: UMBER.dark.borderSecondary,
 };
 const ULTRA_DARK_CARD_TOKENS = {
-  colorBorderSecondary: 'rgba(255, 255, 255, 0.04)',
+  colorBorderSecondary: UMBER.ultra.borderSecondary,
 };
+const DARK_TABLE_TOKENS = {
+  headerBg: UMBER.dark.elevated,
+  headerColor: UMBER.dark.textSecondary,
+  borderColor: UMBER.dark.borderSecondary,
+  rowHoverBg: 'rgba(192, 138, 99, 0.10)',
+  headerSplitColor: 'transparent',
+};
+const DARK_BUTTON_TOKENS = {
+  primaryShadow: 'none',
+  defaultShadow: 'none',
+  defaultBg: UMBER.dark.elevated,
+  defaultBorderColor: UMBER.dark.border,
+};
+const DARK_FIELD_TOKENS = {
+  activeBorderColor: UMBER.dark.accent,
+  hoverBorderColor: UMBER.dark.accentHover,
+  activeShadow: 'none',
+};
+const DARK_MODAL_TOKENS = {
+  contentBg: UMBER.dark.container,
+  headerBg: 'transparent',
+  titleColor: UMBER.dark.text,
+  boxShadow: 'none',
+};
+const ULTRA_DARK_MODAL_TOKENS = { ...DARK_MODAL_TOKENS, contentBg: UMBER.ultra.container };
 const STATISTIC_TOKENS = {
   contentFontSize: 17,
   titleFontSize: 11,
 };
 const LIGHT_CONTRAST_TOKENS = {
-  colorTextDescription: 'rgba(0, 0, 0, 0.58)',
-  colorTextTertiary: 'rgba(0, 0, 0, 0.58)',
-  colorTextPlaceholder: '#767676',
-  colorError: '#cf1322',
-  colorErrorText: '#cf1322',
-  colorSuccessText: '#237804',
-  colorPrimary: NOVA_PRIMARY_LIGHT,
-  colorLink: NOVA_PRIMARY_LIGHT,
+  colorTextDescription: UMBER.light.textSecondary,
+  colorTextTertiary: UMBER.light.textTertiary,
+  colorTextPlaceholder: UMBER.light.textTertiary,
+  colorBgBase: UMBER.light.bg,
+  colorBgLayout: UMBER.light.bg,
+  colorBgContainer: UMBER.light.container,
+  colorBgElevated: UMBER.light.elevated,
+  colorText: UMBER.light.text,
+  colorTextBase: UMBER.light.text,
+  colorTextSecondary: UMBER.light.textSecondary,
+  colorBorder: UMBER.light.border,
+  colorBorderSecondary: UMBER.light.borderSecondary,
+  colorError: '#b4483a',
+  colorSuccessText: '#3f6b4a',
+  colorPrimary: UMBER.light.accent,
+  colorLink: UMBER.light.accent,
   borderRadius: 10,
+  boxShadow: 'none',
+  boxShadowSecondary: 'none',
 };
 const LIGHT_BUTTON_TOKENS = {
-  colorPrimary: NOVA_PRIMARY_LIGHT,
-  colorPrimaryHover: '#8b5cf6',
-  colorPrimaryActive: '#6d28d9',
+  colorPrimary: UMBER.light.accent,
+  colorPrimaryHover: UMBER.light.accentHover,
+  colorPrimaryActive: UMBER.light.accentHover,
+  primaryShadow: 'none',
+  defaultShadow: 'none',
 };
 
 // hashed:false drops the `:where(.css-<hash>)` wrapper antd puts around every
@@ -134,6 +234,11 @@ export function buildAntdThemeConfig(isDark: boolean, isUltra: boolean): ThemeCo
       algorithm: antdTheme.defaultAlgorithm,
       token: LIGHT_CONTRAST_TOKENS,
       components: {
+        Layout: {
+          bodyBg: UMBER.light.bg,
+          siderBg: UMBER.light.sider,
+          headerBg: UMBER.light.sider,
+        },
         Statistic: STATISTIC_TOKENS,
         Button: LIGHT_BUTTON_TOKENS,
       },
@@ -147,6 +252,13 @@ export function buildAntdThemeConfig(isDark: boolean, isUltra: boolean): ThemeCo
       Layout: isUltra ? ULTRA_DARK_LAYOUT_TOKENS : DARK_LAYOUT_TOKENS,
       Menu: isUltra ? ULTRA_DARK_MENU_TOKENS : DARK_MENU_TOKENS,
       Card: isUltra ? ULTRA_DARK_CARD_TOKENS : DARK_CARD_TOKENS,
+      Modal: isUltra ? ULTRA_DARK_MODAL_TOKENS : DARK_MODAL_TOKENS,
+      Table: DARK_TABLE_TOKENS,
+      Button: DARK_BUTTON_TOKENS,
+      Input: DARK_FIELD_TOKENS,
+      Select: DARK_FIELD_TOKENS,
+      InputNumber: DARK_FIELD_TOKENS,
+      DatePicker: DARK_FIELD_TOKENS,
       Statistic: STATISTIC_TOKENS,
     },
   };

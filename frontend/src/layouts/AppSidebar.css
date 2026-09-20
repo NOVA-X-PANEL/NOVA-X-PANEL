@@ -353,8 +353,8 @@ body.dark .ant-drawer-body .drawer-menu .ant-menu-item-group-list {
   background-color: transparent;
 }
 
-/* Menu items wear the Nova accent: the current section is a gradient pill, and
-   hovering any entry lights its label up with the gradient. */
+/* Menu items wear the palette accent: the current section is a flat filled pill
+   and hovering an entry simply tints its label. No gradients, no glow. */
 
 .sider-nav .ant-menu-item,
 .sider-nav .ant-menu-submenu-title,
@@ -369,11 +369,8 @@ body.dark .ant-drawer-body .drawer-menu .ant-menu-item-group-list {
 .sider-nav .ant-menu-item-selected,
 .sider-utility .ant-menu-item-selected,
 .drawer-menu .ant-menu-item-selected {
-  background: var(
-    --nv-grad,
-    linear-gradient(135deg, #8b5cf6 0%, #4f7cff 60%, #22d3ee 100%)
-  ) !important;
-  box-shadow: 0 4px 16px rgba(79, 124, 255, 0.35);
+  background: var(--nv-accent, #c08a63) !important;
+  box-shadow: none !important;
 }
 
 .sider-nav .ant-menu-item-selected .anticon,
@@ -382,8 +379,8 @@ body.dark .ant-drawer-body .drawer-menu .ant-menu-item-group-list {
 .sider-utility .ant-menu-item-selected .ant-menu-title-content,
 .drawer-menu .ant-menu-item-selected .anticon,
 .drawer-menu .ant-menu-item-selected .ant-menu-title-content {
-  color: #fff !important;
-  -webkit-text-fill-color: currentColor;
+  color: var(--nv-on-accent, #1a1512) !important;
+  -webkit-text-fill-color: currentColor !important;
 }
 
 .sider-nav .ant-menu-item-active:not(.ant-menu-item-selected),
@@ -395,22 +392,18 @@ body.dark .ant-drawer-body .drawer-menu .ant-menu-item-group-list {
 .sider-nav .ant-menu-submenu-title:hover,
 .sider-utility .ant-menu-submenu-title:hover,
 .drawer-menu .ant-menu-submenu-title:hover {
-  background-color: color-mix(in srgb, var(--nv-violet, #8b5cf6) 14%, transparent) !important;
+  background-color: color-mix(in srgb, var(--nv-accent, #c08a63) 12%, transparent) !important;
 }
 
-/* Gradient clipped to the label text so the name itself picks up the colour. */
 .sider-nav .ant-menu-item:not(.ant-menu-item-selected):hover .ant-menu-title-content,
 .sider-utility .ant-menu-item:not(.ant-menu-item-selected):hover .ant-menu-title-content,
 .drawer-menu .ant-menu-item:not(.ant-menu-item-selected):hover .ant-menu-title-content,
 .sider-nav .ant-menu-submenu-title:hover .ant-menu-title-content,
 .sider-utility .ant-menu-submenu-title:hover .ant-menu-title-content,
 .drawer-menu .ant-menu-submenu-title:hover .ant-menu-title-content {
-  background-image: var(--nv-grad, linear-gradient(135deg, #8b5cf6 0%, #4f7cff 60%, #22d3ee 100%));
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
-  font-weight: 600;
+  background-image: none !important;
+  -webkit-text-fill-color: currentColor !important;
+  color: var(--nv-accent, #c08a63) !important;
 }
 
 .sider-nav .ant-menu-item:not(.ant-menu-item-selected):hover .anticon,
@@ -419,8 +412,8 @@ body.dark .ant-drawer-body .drawer-menu .ant-menu-item-group-list {
 .sider-nav .ant-menu-submenu-title:hover .anticon,
 .sider-utility .ant-menu-submenu-title:hover .anticon,
 .drawer-menu .ant-menu-submenu-title:hover .anticon {
-  color: var(--nv-violet, #8b5cf6) !important;
-  filter: drop-shadow(0 0 6px rgba(139, 92, 246, 0.6));
+  color: var(--nv-accent, #c08a63) !important;
+  filter: none !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

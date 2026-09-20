@@ -1,9 +1,13 @@
 import { NumberFormatter } from '@/utils';
 
+// "Nova Calm · Umber" usage colours, so the Overview gauges and charts share
+// the warm palette instead of standing out in blue. Normal usage follows the
+// panel accent, with muted amber and clay for the warning and critical bands.
 export const USAGE_WARN_PERCENT = 80;
 export const USAGE_CRIT_PERCENT = 90;
-export const USAGE_WARN_COLOR = '#faad14';
-export const USAGE_CRIT_COLOR = '#ff4d4f';
+export const USAGE_NORMAL_COLOR = '#c08a63';
+export const USAGE_WARN_COLOR = '#d9a441';
+export const USAGE_CRIT_COLOR = '#d9705e';
 
 export class CurTotal {
   current: number;
@@ -21,7 +25,7 @@ export class CurTotal {
 
   get color(): string {
     const p = this.percent;
-    if (p < USAGE_WARN_PERCENT) return '#1677ff';
+    if (p < USAGE_WARN_PERCENT) return USAGE_NORMAL_COLOR;
     if (p < USAGE_CRIT_PERCENT) return USAGE_WARN_COLOR;
     return USAGE_CRIT_COLOR;
   }

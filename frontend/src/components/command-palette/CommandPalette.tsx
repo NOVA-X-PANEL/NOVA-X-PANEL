@@ -801,7 +801,7 @@ export default function CommandPalette() {
                 {t('close')}
               </span>
             </div>
-            <span>3x-ui Command Palette</span>
+            <span>NOVA X PANEL Command Palette</span>
           </div>
         </div>
       </div>

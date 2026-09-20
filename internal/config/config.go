@@ -221,6 +221,9 @@ func GetEnvFilePaths() []string {
 		return nil
 	}
 	return []string{
+		"/etc/default/nova-x-panel",
+		"/etc/conf.d/nova-x-panel",
+		"/etc/sysconfig/nova-x-panel",
 		"/etc/default/x-ui",
 		"/etc/conf.d/x-ui",
 		"/etc/sysconfig/x-ui",

@@ -1,4 +1,4 @@
-name: Release 3X-UI
+name: Release NOVA X PANEL
 
 on:
   workflow_dispatch:
@@ -119,6 +119,12 @@ jobs:
           cp x-ui.service.arch x-ui/
           cp x-ui.service.rhel x-ui/
           cp x-ui.sh x-ui/
+          cp install.sh x-ui/
+          cp update.sh x-ui/
+          cp nova-panel.sh x-ui/
+          cp nova-x-panel.service.debian x-ui/
+          cp nova-x-panel.service.arch x-ui/
+          cp nova-x-panel.service.rhel x-ui/
           mv x-ui/xui-release x-ui/x-ui
           mkdir x-ui/bin
           cd x-ui/bin

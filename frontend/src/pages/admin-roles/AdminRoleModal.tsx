@@ -1,23 +1,26 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Alert,
-  Checkbox,
+  Button,
   Divider,
   Form,
   Input,
   InputNumber,
   Modal,
-  Radio,
+  Select,
   Space,
+  Switch,
   Tabs,
   Typography,
 } from 'antd';
-import { CrownOutlined, LockOutlined } from '@ant-design/icons';
+import { CrownOutlined, DownOutlined, LockOutlined, RightOutlined } from '@ant-design/icons';
 
 import type { AdminRoleDoc } from '@/api/queries/useAdmins';
+import { useGroupOptions } from '@/api/queries/useAdmins';
+import { useInboundOptions } from '@/api/queries/useInboundOptions';
 import type { PermissionScope } from '@/lib/rbac';
-import { FEATURE_KEYS, LIMIT_KEYS, PERMISSION_GROUPS } from '@/lib/rbac';
+import { FEATURE_KEYS, LIMIT_KEYS, PERMISSION_GROUPS, humanizeKey } from '@/lib/rbac';
 
 /** `true`/`false` for plain actions; 0/1/2 for scoped ones. */
 type PermissionFormValue = boolean | PermissionScope;
@@ -30,9 +33,9 @@ export interface AdminRoleFormValues {
   features: Record<string, boolean | undefined>;
   access: {
     allowAllGroups: boolean;
-    allowedGroups: string;
+    allowedGroups: string[];
     allowAllInbounds: boolean;
-    allowedInboundIds: string;
+    allowedInboundIds: number[];
   };
 }
 
@@ -47,9 +50,9 @@ interface AdminRoleModalProps {
 
 const DEFAULT_ACCESS = {
   allowAllGroups: true,
-  allowedGroups: '',
+  allowedGroups: [] as string[],
   allowAllInbounds: true,
-  allowedInboundIds: '',
+  allowedInboundIds: [] as number[],
 };
 
 /** Normalises the stored permission document into flat form values. */
@@ -77,8 +80,8 @@ function toPermissionMap(raw: unknown): PermissionFormMap {
   return out;
 }
 
-function toList(value: unknown): string[] {
-  return Array.isArray(value) ? (value as unknown[]).map(String) : [];
+function toList(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : [];
 }
 
 export default function AdminRoleModal({
@@ -91,13 +94,39 @@ export default function AdminRoleModal({
 }: AdminRoleModalProps) {
   const { t } = useTranslation();
   const [form] = Form.useForm<AdminRoleFormValues>();
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({ clients: true });
+
+  // Reset the expanded groups when the dialog opens. Adjusting state during
+  // render (rather than in an effect) is React's documented pattern for
+  // "reset state when a prop changes" and avoids a cascading render.
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) setOpenGroups({ clients: true });
+  }
+
+  const { groups } = useGroupOptions(open);
+  const inboundsQuery = useInboundOptions();
+  const inboundOptions = useMemo(
+    () =>
+      (inboundsQuery.data ?? []).map((inbound) => ({
+        value: inbound.id,
+        label: inbound.remark || inbound.tag || `#${inbound.id}`,
+      })),
+    [inboundsQuery.data],
+  );
 
   const lockedIdentity = mode === 'edit' && !!role?.builtIn;
+  const readOnly = mode === 'edit' && !!role?.ownerRole;
 
   useEffect(() => {
     if (!open) return;
     if (mode === 'edit' && role) {
       const access = (role.access ?? {}) as Record<string, unknown>;
+      const allowedGroups = toList(access.allowedGroups).map(String);
+      const allowedInboundIds = toList(access.allowed_inbound_ids ?? access.allowedInboundIds).map(
+        Number,
+      );
       form.setFieldsValue({
         name: role.name,
         permissions: toPermissionMap(role.permissions),
@@ -105,11 +134,9 @@ export default function AdminRoleModal({
         features: (role.features ?? {}) as Record<string, boolean>,
         access: {
           allowAllGroups: access.allowAllGroups !== false,
-          allowedGroups: toList(access.allowedGroups).join(', '),
+          allowedGroups,
           allowAllInbounds: access.allowAllInbounds !== false,
-          allowedInboundIds: toList(access.allowed_inbound_ids ?? access.allowedInboundIds).join(
-            ', ',
-          ),
+          allowedInboundIds: allowedInboundIds.filter((id) => Number.isFinite(id)),
         },
       });
     } else {
@@ -129,117 +156,218 @@ export default function AdminRoleModal({
     await onSubmit(values);
   };
 
-  // Group-level bulk toggles keep the large permission grid manageable.
-  const applyGroup = useCallback(
-    (resource: string, actions: { action: string; scoped?: boolean }[], enable: boolean) => {
-      const current = (form.getFieldValue(['permissions', resource]) ?? {}) as Record<
-        string,
-        PermissionFormValue | undefined
-      >;
-      const next: Record<string, PermissionFormValue | undefined> = { ...current };
-      for (const item of actions) {
-        next[item.action] = enable ? (item.scoped ? 1 : true) : item.scoped ? 0 : false;
-      }
-      const permissions = (form.getFieldValue('permissions') ?? {}) as PermissionFormMap;
-      form.setFieldValue('permissions', { ...permissions, [resource]: next });
+  const permissions = Form.useWatch('permissions', form) as PermissionFormMap | undefined;
+
+  const setPermission = useCallback(
+    (resource: string, action: string, value: PermissionFormValue) => {
+      const next: PermissionFormMap = { ...(permissions ?? {}) };
+      next[resource] = { ...(next[resource] || {}), [action]: value };
+      form.setFieldValue('permissions', next);
     },
-    [form],
+    [form, permissions],
   );
 
-  const permissionPanel = useMemo(
-    () => (
-      <div className="permission-grid">
-        {PERMISSION_GROUPS.map((group) => (
-          <div className="permission-group" key={group.labelKey}>
-            <div className="permission-group__head">
-              <Typography.Text strong>
-                {t(`pages.adminRoles.groups.${group.labelKey}`, group.labelKey)}
-              </Typography.Text>
-              <Space size={4}>
-                <Typography.Link
-                  onClick={() => applyGroup(group.actions[0].resource, group.actions, true)}
-                >
-                  {t('pages.adminRoles.selectAll')}
-                </Typography.Link>
-                <Typography.Text type="secondary">·</Typography.Text>
-                <Typography.Link
-                  onClick={() => applyGroup(group.actions[0].resource, group.actions, false)}
-                >
-                  {t('none')}
-                </Typography.Link>
-              </Space>
-            </div>
+  const setGroupAll = useCallback(
+    (resource: string, actions: { action: string; scoped?: boolean }[], enable: boolean) => {
+      const next: PermissionFormMap = { ...(permissions ?? {}) };
+      const inner: Record<string, PermissionFormValue | undefined> = { ...(next[resource] || {}) };
+      for (const item of actions) {
+        inner[item.action] = enable ? (item.scoped ? 1 : true) : item.scoped ? 0 : false;
+      }
+      next[resource] = inner;
+      form.setFieldValue('permissions', next);
+    },
+    [form, permissions],
+  );
 
-            <div className="permission-rows">
-              {group.actions.map((item) => {
-                const path = ['permissions', item.resource, item.action];
-                return (
-                  <div className="permission-row" key={`${item.resource}.${item.action}`}>
-                    <span className="permission-row__label">
-                      {item.action}
-                      <span className="permission-row__resource">{item.resource}</span>
-                    </span>
-                    {item.scoped ? (
-                      <Form.Item name={path} noStyle>
-                        <Radio.Group size="small" optionType="button" buttonStyle="solid">
-                          <Radio.Button value={0}>{t('none')}</Radio.Button>
-                          <Radio.Button value={1}>{t('pages.adminRoles.scopeOwn')}</Radio.Button>
-                          <Radio.Button value={2}>{t('pages.adminRoles.scopeAll')}</Radio.Button>
-                        </Radio.Group>
-                      </Form.Item>
-                    ) : (
-                      <Form.Item name={path} valuePropName="checked" noStyle>
-                        <Checkbox />
-                      </Form.Item>
-                    )}
-                  </div>
-                );
-              })}
+  const resourceLabel = (resource: string) =>
+    t(`pages.adminRoles.resources.${resource}`, humanizeKey(resource));
+  const actionLabel = (resource: string, action: string) =>
+    t(`pages.adminRoles.actionLabels.${action}`, humanizeKey(action));
+
+  const permissionsPanel = (
+    <div className="permission-panel">
+      <Typography.Paragraph type="secondary" className="section-hint">
+        {t('pages.adminRoles.permissionsHint')}
+      </Typography.Paragraph>
+
+      <div className="permission-groups">
+        {PERMISSION_GROUPS.map((group) => {
+          const resource = group.actions[0].resource;
+          const section = permissions?.[resource] ?? {};
+          const enabled = group.actions.reduce((acc, item) => {
+            const value = section[item.action];
+            if (value === true) return acc + 1;
+            if (typeof value === 'number' && value > 0) return acc + 1;
+            return acc;
+          }, 0);
+          const isOpen = !!openGroups[group.labelKey];
+          const showResourcePrefix = group.actions.some((a) =>
+            group.actions.some(
+              (b) => b !== a && b.action === a.action && b.resource !== a.resource,
+            ),
+          );
+
+          return (
+            <div className="permission-group" key={group.labelKey}>
+              <div className="permission-group__head">
+                <button
+                  type="button"
+                  className="permission-group__toggle"
+                  aria-expanded={isOpen}
+                  onClick={() =>
+                    setOpenGroups((prev) => ({ ...prev, [group.labelKey]: !prev[group.labelKey] }))
+                  }
+                >
+                  {isOpen ? <DownOutlined /> : <RightOutlined />}
+                  <span className="permission-group__label">{resourceLabel(resource)}</span>
+                  <span className="permission-group__count">
+                    {enabled}/{group.actions.length}
+                  </span>
+                </button>
+                <Space size={4}>
+                  <Button
+                    type="text"
+                    size="small"
+                    disabled={readOnly}
+                    onClick={() => setGroupAll(resource, group.actions, true)}
+                  >
+                    {t('pages.adminRoles.selectAll')}
+                  </Button>
+                  <Button
+                    type="text"
+                    size="small"
+                    disabled={readOnly}
+                    onClick={() => setGroupAll(resource, group.actions, false)}
+                  >
+                    {t('pages.adminRoles.clearAll')}
+                  </Button>
+                </Space>
+              </div>
+
+              {isOpen && (
+                <div className="permission-rows">
+                  {group.actions.map((item) => {
+                    const value = section[item.action];
+                    const scopeValue: PermissionScope =
+                      typeof value === 'number' ? value : value === true ? 2 : 0;
+                    const boolValue = value === true;
+                    const key = `${item.resource}.${item.action}`;
+
+                    return (
+                      <div className="permission-row" key={key}>
+                        <div className="permission-row__copy">
+                          <span className="permission-row__label">
+                            {showResourcePrefix
+                              ? `${resourceLabel(item.resource)} · ${actionLabel(item.resource, item.action)}`
+                              : actionLabel(item.resource, item.action)}
+                          </span>
+                          {item.scoped && (
+                            <span className="permission-row__scoped">
+                              {t('pages.adminRoles.scopedBadge')}
+                            </span>
+                          )}
+                        </div>
+
+                        {item.scoped ? (
+                          <Select
+                            size="small"
+                            className="permission-row__scope"
+                            value={scopeValue}
+                            disabled={readOnly}
+                            onChange={(next) => setPermission(item.resource, item.action, next)}
+                            options={[
+                              { value: 0, label: t('pages.adminRoles.scopes.none') },
+                              { value: 1, label: t('pages.adminRoles.scopes.own') },
+                              { value: 2, label: t('pages.adminRoles.scopes.all') },
+                            ]}
+                          />
+                        ) : (
+                          <Switch
+                            size="small"
+                            checked={boolValue}
+                            disabled={readOnly}
+                            aria-label={actionLabel(item.resource, item.action)}
+                            onChange={(next) => setPermission(item.resource, item.action, next)}
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
-    ),
-    [t, applyGroup],
+    </div>
   );
 
   const limitsPanel = (
-    <>
-      <Typography.Paragraph type="secondary" style={{ marginTop: 0, fontSize: 13 }}>
+    <div className="limits-panel">
+      <Typography.Paragraph type="secondary" className="section-hint">
         {t('pages.adminRoles.limitsHint')}
       </Typography.Paragraph>
-      <div className="limits-grid">
-        {LIMIT_KEYS.map((key) => (
+
+      <Form.Item name={['limits', 'max_users']} label={t('pages.adminRoles.limitFields.max_users')}>
+        <InputNumber
+          min={0}
+          style={{ width: '100%' }}
+          placeholder={t('pages.adminRoles.unlimited')}
+          disabled={readOnly}
+        />
+      </Form.Item>
+
+      <div className="field-grid">
+        {LIMIT_KEYS.filter((key) => key !== 'max_users').map((key) => (
           <Form.Item
             key={key}
             name={['limits', key]}
             label={t(`pages.adminRoles.limitFields.${key}`)}
           >
-            <InputNumber min={0} style={{ width: '100%' }} placeholder="—" />
+            <InputNumber
+              min={0}
+              style={{ width: '100%' }}
+              placeholder={t('pages.adminRoles.inherit')}
+              disabled={readOnly}
+            />
           </Form.Item>
         ))}
       </div>
-    </>
+    </div>
   );
 
   const featuresPanel = (
-    <div className="features-list">
+    <div className="feature-rows">
       {FEATURE_KEYS.map((key) => (
-        <Form.Item key={key} name={['features', key]} valuePropName="checked" noStyle>
-          <Checkbox>
-            <span className="feature-label">{t(`pages.adminRoles.featureLabels.${key}`)}</span>
-            <span className="feature-key">{key}</span>
-          </Checkbox>
-        </Form.Item>
+        <div className="feature-row" key={key}>
+          <div className="feature-row__copy">
+            <span className="feature-row__title">
+              {t(`pages.adminRoles.featureLabels.${key}.title`, humanizeKey(key))}
+            </span>
+            <span className="feature-row__desc">
+              {t(`pages.adminRoles.featureLabels.${key}.hint`, '')}
+            </span>
+          </div>
+          <Form.Item name={['features', key]} valuePropName="checked" noStyle>
+            <Switch size="small" disabled={readOnly} />
+          </Form.Item>
+        </div>
       ))}
     </div>
   );
 
   const accessPanel = (
-    <>
-      <Form.Item name={['access', 'allowAllGroups']} valuePropName="checked">
-        <Checkbox>{t('pages.adminRoles.allowAllGroups')}</Checkbox>
-      </Form.Item>
+    <div className="access-panel">
+      <div className="access-row">
+        <div className="access-row__copy">
+          <span className="access-row__title">{t('pages.adminRoles.allowAllGroups')}</span>
+          <span className="access-row__desc">{t('pages.adminRoles.allowedGroupsDescription')}</span>
+        </div>
+        <Form.Item name={['access', 'allowAllGroups']} valuePropName="checked" noStyle>
+          <Switch size="small" disabled={readOnly} />
+        </Form.Item>
+      </div>
       <Form.Item
         noStyle
         shouldUpdate={(a: AdminRoleFormValues, b: AdminRoleFormValues) =>
@@ -251,19 +379,32 @@ export default function AdminRoleModal({
             <Form.Item
               name={['access', 'allowedGroups']}
               label={t('pages.adminRoles.allowedGroups')}
-              extra={t('pages.adminRoles.commaHint')}
             >
-              <Input placeholder="vip, free" />
+              <Select
+                mode="multiple"
+                placeholder={t('pages.adminRoles.chooseGroups')}
+                disabled={readOnly}
+                options={groups.map((name) => ({ value: name, label: name }))}
+                notFoundContent={t('pages.adminRoles.noGroups')}
+              />
             </Form.Item>
           )
         }
       </Form.Item>
 
-      <Divider style={{ margin: '4px 0 16px' }} />
+      <Divider />
 
-      <Form.Item name={['access', 'allowAllInbounds']} valuePropName="checked">
-        <Checkbox>{t('pages.adminRoles.allowAllInbounds')}</Checkbox>
-      </Form.Item>
+      <div className="access-row">
+        <div className="access-row__copy">
+          <span className="access-row__title">{t('pages.adminRoles.allowAllInbounds')}</span>
+          <span className="access-row__desc">
+            {t('pages.adminRoles.allowedInboundsDescription')}
+          </span>
+        </div>
+        <Form.Item name={['access', 'allowAllInbounds']} valuePropName="checked" noStyle>
+          <Switch size="small" disabled={readOnly} />
+        </Form.Item>
+      </div>
       <Form.Item
         noStyle
         shouldUpdate={(a: AdminRoleFormValues, b: AdminRoleFormValues) =>
@@ -275,21 +416,26 @@ export default function AdminRoleModal({
             <Form.Item
               name={['access', 'allowedInboundIds']}
               label={t('pages.adminRoles.allowedInbounds')}
-              extra={t('pages.adminRoles.commaHint')}
             >
-              <Input placeholder="1, 2, 3" />
+              <Select
+                mode="multiple"
+                placeholder={t('pages.adminRoles.chooseInbounds')}
+                disabled={readOnly}
+                options={inboundOptions}
+                notFoundContent={t('pages.adminRoles.noInbounds')}
+              />
             </Form.Item>
           )
         }
       </Form.Item>
-    </>
+    </div>
   );
 
   return (
     <Modal
       open={open}
       title={mode === 'create' ? t('pages.adminRoles.create') : t('pages.adminRoles.edit')}
-      width={720}
+      width={760}
       okText={t('save')}
       cancelText={t('cancel')}
       confirmLoading={saving}
@@ -300,21 +446,19 @@ export default function AdminRoleModal({
       className="admin-role-modal"
     >
       <Form form={form} layout="vertical">
-        {mode === 'edit' && role && (
-          <Alert
-            type={role.ownerRole ? 'warning' : 'info'}
-            showIcon
-            icon={role.ownerRole ? <CrownOutlined /> : <LockOutlined />}
-            style={{ marginBottom: 12 }}
-            message={
-              role.ownerRole
-                ? t('pages.adminRoles.ownerReadOnly')
-                : role.builtIn
-                  ? t('pages.adminRoles.builtInHint')
-                  : role.name
-            }
-          />
-        )}
+        <Alert
+          type={role?.ownerRole ? 'warning' : 'info'}
+          showIcon
+          icon={role?.ownerRole ? <CrownOutlined /> : <LockOutlined />}
+          style={{ marginBottom: 12 }}
+          message={
+            role?.ownerRole
+              ? t('pages.adminRoles.ownerReadOnly')
+              : role?.builtIn
+                ? t('pages.adminRoles.builtInHint')
+                : t('pages.adminRoles.roleFormHint')
+          }
+        />
 
         <Form.Item
           name="name"
@@ -322,7 +466,7 @@ export default function AdminRoleModal({
           rules={[{ required: true, message: t('pages.adminRoles.nameRequired') }]}
           extra={lockedIdentity ? t('pages.adminRoles.nameLockedHint') : undefined}
         >
-          <Input disabled={lockedIdentity || !!role?.ownerRole} />
+          <Input disabled={lockedIdentity || readOnly} />
         </Form.Item>
 
         <Tabs
@@ -332,7 +476,7 @@ export default function AdminRoleModal({
               key: 'permissions',
               forceRender: true,
               label: t('pages.adminRoles.permissions'),
-              children: permissionPanel,
+              children: permissionsPanel,
             },
             {
               key: 'limits',

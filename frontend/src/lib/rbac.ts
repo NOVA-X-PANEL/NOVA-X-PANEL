@@ -22,6 +22,10 @@ export interface AdminAccount {
   ownerRole: boolean;
   status: string;
   isSelf: boolean;
+  dataLimit: number;
+  usedBytes: number;
+  totalUsers: number;
+  limited: boolean;
   createdAt: number;
   updatedAt: number;
 }
@@ -30,6 +34,7 @@ export interface AdminStats {
   totalAdmins: number;
   activeAdmins: number;
   disabledAdmins: number;
+  limitedAdmins: number;
 }
 
 export interface CurrentAdmin {
@@ -205,6 +210,11 @@ export const FEATURE_KEYS = [
   'can_use_reset_strategy',
   'can_use_next_plan',
 ] as const;
+
+/** "read_simple" -> "Read Simple" — Heimdall's fallback for unlabelled keys. */
+export function humanizeKey(key: string): string {
+  return key.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+}
 
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value)

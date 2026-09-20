@@ -1063,11 +1063,13 @@ export const EXAMPLES: Record<string, unknown> = {
   },
   "User": {
     "createdAt": 0,
+    "dataLimit": 0,
     "id": 0,
     "password": "",
     "roleId": 0,
     "status": "",
     "updatedAt": 0,
+    "usedBytes": 0,
     "username": ""
   }
 };

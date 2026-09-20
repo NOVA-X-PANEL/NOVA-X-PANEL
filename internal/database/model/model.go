@@ -47,6 +47,13 @@ type User struct {
 	RoleId int    `json:"roleId" gorm:"column:role_id;index;default:0"`
 	Status string `json:"status" gorm:"column:status;default:active;index"`
 
+	// DataLimit caps the traffic the clients owned by this account may use;
+	// 0 means unlimited. UsedBytes is the aggregate traffic of those clients,
+	// refreshed on every admin-stats read. An account over its limit is
+	// "limited" and can be blocked/disconnected per its role's feature flags.
+	DataLimit int64 `json:"dataLimit" gorm:"column:data_limit;default:0"`
+	UsedBytes int64 `json:"usedBytes" gorm:"column:used_bytes;default:0"`
+
 	// CreatedAt/UpdatedAt are populated for RBAC admin management views.
 	CreatedAt int64 `json:"createdAt" gorm:"autoCreateTime:milli"`
 	UpdatedAt int64 `json:"updatedAt" gorm:"autoUpdateTime:milli"`

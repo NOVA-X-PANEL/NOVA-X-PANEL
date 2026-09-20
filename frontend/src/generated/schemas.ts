@@ -4302,6 +4302,11 @@ export const SCHEMAS: Record<string, unknown> = {
         "format": "int64",
         "type": "integer"
       },
+      "dataLimit": {
+        "description": "DataLimit caps the traffic the clients owned by this account may use;\n0 means unlimited. UsedBytes is the aggregate traffic of those clients,\nrefreshed on every admin-stats read. An account over its limit is\n\"limited\" and can be blocked/disconnected per its role's feature flags.",
+        "format": "int64",
+        "type": "integer"
+      },
       "id": {
         "type": "integer"
       },
@@ -4319,17 +4324,23 @@ export const SCHEMAS: Record<string, unknown> = {
         "format": "int64",
         "type": "integer"
       },
+      "usedBytes": {
+        "format": "int64",
+        "type": "integer"
+      },
       "username": {
         "type": "string"
       }
     },
     "required": [
       "createdAt",
+      "dataLimit",
       "id",
       "password",
       "roleId",
       "status",
       "updatedAt",
+      "usedBytes",
       "username"
     ],
     "type": "object"

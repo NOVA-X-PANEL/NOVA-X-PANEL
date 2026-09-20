@@ -22,6 +22,7 @@ export const keys = {
     list: () => ['admins', 'list'] as const,
     stats: () => ['admins', 'stats'] as const,
     roles: () => ['admins', 'roles'] as const,
+    groups: () => ['admins', 'groups'] as const,
     current: () => ['admins', 'current'] as const,
   },
   settings: {

@@ -983,11 +983,13 @@ export interface TuicServerSettings {
 
 export interface User {
   createdAt: number;
+  dataLimit: number;
   id: number;
   password: string;
   roleId: number;
   status: string;
   updatedAt: number;
+  usedBytes: number;
   username: string;
 }
 

@@ -19,10 +19,11 @@ type AdminService struct{}
 
 // AdminPayload is the create/update body for a panel account.
 type AdminPayload struct {
-	Username string `json:"username" form:"username"`
-	Password string `json:"password" form:"password"`
-	RoleId   int    `json:"roleId" form:"roleId"`
-	Status   string `json:"status" form:"status"`
+	Username  string `json:"username" form:"username"`
+	Password  string `json:"password" form:"password"`
+	RoleId    int    `json:"roleId" form:"roleId"`
+	Status    string `json:"status" form:"status"`
+	DataLimit int64  `json:"dataLimit" form:"dataLimit"`
 }
 
 // AdminView is the API representation of a panel account (password omitted).
@@ -35,6 +36,10 @@ type AdminView struct {
 	OwnerRole bool   `json:"ownerRole"`
 	Status    string `json:"status"`
 	IsSelf    bool   `json:"isSelf"`
+	DataLimit int64  `json:"dataLimit"`
+	UsedBytes int64  `json:"usedBytes"`
+	TotalUsers int64 `json:"totalUsers"`
+	Limited   bool   `json:"limited"`
 	CreatedAt int64  `json:"createdAt"`
 	UpdatedAt int64  `json:"updatedAt"`
 }
@@ -44,6 +49,45 @@ type AdminStats struct {
 	TotalAdmins    int64 `json:"totalAdmins"`
 	ActiveAdmins   int64 `json:"activeAdmins"`
 	DisabledAdmins int64 `json:"disabledAdmins"`
+	LimitedAdmins  int64 `json:"limitedAdmins"`
+}
+
+// adminIsLimited reports whether an account has exhausted its data quota.
+func adminIsLimited(user *model.User) bool {
+	return user != nil && user.DataLimit > 0 && user.UsedBytes >= user.DataLimit
+}
+
+// adminUsageRow is one grouped aggregate over the clients table.
+type adminUsageRow struct {
+	AdminID   int
+	UsedBytes int64
+	Count     int64
+}
+
+// adminUsageByOwner aggregates per-admin traffic and owned-client counts.
+// Clients carry owner_admin_id; their traffic lives in client_traffics, keyed
+// by email.
+func adminUsageByOwner(db *gorm.DB) (map[int]int64, map[int]int64, error) {
+	used := map[int]int64{}
+	counts := map[int]int64{}
+
+	var usage []adminUsageRow
+	if err := db.Table("clients AS c").
+		Select("c.owner_admin_id AS admin_id, COALESCE(SUM(COALESCE(ct.up, 0) + COALESCE(ct.down, 0)), 0) AS used_bytes, COUNT(*) AS count").
+		Joins("LEFT JOIN client_traffics AS ct ON ct.email = c.email").
+		Where("c.owner_admin_id > 0").
+		Group("c.owner_admin_id").
+		Scan(&usage).Error; err != nil {
+		return used, counts, err
+	}
+	for _, row := range usage {
+		if row.AdminID <= 0 {
+			continue
+		}
+		used[row.AdminID] = row.UsedBytes
+		counts[row.AdminID] = row.Count
+	}
+	return used, counts, nil
 }
 
 func validAdminStatus(status string) bool {
@@ -77,15 +121,19 @@ func (s *AdminService) ownerRoleID(tx *gorm.DB) (int, error) {
 	return role.Id, nil
 }
 
-func adminToView(user *model.User, role *model.AdminRole, selfID int) *AdminView {
+func adminToView(user *model.User, role *model.AdminRole, selfID int, usedBytes, totalUsers int64) *AdminView {
 	view := &AdminView{
-		Id:        user.Id,
-		Username:  user.Username,
-		RoleId:    user.RoleId,
-		Status:    user.Status,
-		IsSelf:    user.Id == selfID,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
+		Id:         user.Id,
+		Username:   user.Username,
+		RoleId:     user.RoleId,
+		Status:     user.Status,
+		IsSelf:     user.Id == selfID,
+		DataLimit:  user.DataLimit,
+		UsedBytes:  usedBytes,
+		TotalUsers: totalUsers,
+		Limited:    adminIsLimited(user),
+		CreatedAt:  user.CreatedAt,
+		UpdatedAt:  user.UpdatedAt,
 	}
 	if role != nil {
 		view.RoleName = role.Name
@@ -119,9 +167,14 @@ func (s *AdminService) List() ([]*AdminView, error) {
 		}
 	}
 
+	used, counts, err := adminUsageByOwner(db)
+	if err != nil {
+		return nil, err
+	}
+
 	out := make([]*AdminView, 0, len(users))
 	for i := range users {
-		out = append(out, adminToView(&users[i], roles[users[i].RoleId], 0))
+		out = append(out, adminToView(&users[i], roles[users[i].RoleId], 0, used[users[i].Id], counts[users[i].Id]))
 	}
 	return out, nil
 }
@@ -149,12 +202,22 @@ func (s *AdminService) Get(id int) (*AdminView, error) {
 		return nil, err
 	}
 	role, _ := s.roleByID(db, user.RoleId)
-	return adminToView(&user, role, 0), nil
+	used, counts, err := adminUsageByOwner(db)
+	if err != nil {
+		return nil, err
+	}
+	return adminToView(&user, role, 0, used[user.Id], counts[user.Id]), nil
 }
 
-// Stats summarises panel accounts.
+// Stats summarises panel accounts, refreshing each account's aggregated usage
+// first so the "limited" count reflects live traffic.
 func (s *AdminService) Stats() (*AdminStats, error) {
 	db := database.GetDB()
+
+	if err := s.SyncAdminUsedBytes(); err != nil {
+		return nil, err
+	}
+
 	var stats AdminStats
 	if err := db.Model(&model.User{}).Count(&stats.TotalAdmins).Error; err != nil {
 		return nil, err
@@ -165,7 +228,41 @@ func (s *AdminService) Stats() (*AdminStats, error) {
 	if err := db.Model(&model.User{}).Where("status = ?", model.AdminStatusDisabled).Count(&stats.DisabledAdmins).Error; err != nil {
 		return nil, err
 	}
+	if err := db.Model(&model.User{}).
+		Where("data_limit > 0 AND used_bytes >= data_limit").
+		Count(&stats.LimitedAdmins).Error; err != nil {
+		return nil, err
+	}
 	return &stats, nil
+}
+
+// SyncAdminUsedBytes recomputes every account's aggregated client traffic and
+// writes it back only when it changed.
+func (s *AdminService) SyncAdminUsedBytes() error {
+	db := database.GetDB()
+	used, _, err := adminUsageByOwner(db)
+	if err != nil {
+		return err
+	}
+
+	var users []model.User
+	if err := db.Model(&model.User{}).Select("id", "used_bytes").Find(&users).Error; err != nil {
+		return err
+	}
+	for _, user := range users {
+		next := used[user.Id]
+		if next < 0 {
+			next = 0
+		}
+		if next == user.UsedBytes {
+			continue
+		}
+		if err := db.Model(&model.User{}).Where("id = ?", user.Id).
+			Update("used_bytes", next).Error; err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Create adds a new panel account bound to the given role.
@@ -205,15 +302,16 @@ func (s *AdminService) Create(payload AdminPayload) (*AdminView, error) {
 	}
 
 	user := &model.User{
-		Username: username,
-		Password: hashed,
-		RoleId:   payload.RoleId,
-		Status:   status,
+		Username:  username,
+		Password:  hashed,
+		RoleId:    payload.RoleId,
+		Status:    status,
+		DataLimit: payload.DataLimit,
 	}
 	if err := db.Create(user).Error; err != nil {
 		return nil, err
 	}
-	return adminToView(user, role, 0), nil
+	return adminToView(user, role, 0, 0, 0), nil
 }
 
 // Update edits an account; the owner account cannot be demoted or disabled.
@@ -249,6 +347,10 @@ func (s *AdminService) Update(id int, payload AdminPayload) (*AdminView, error) 
 			return nil, err
 		}
 		updates["password"] = hashed
+	}
+
+	if payload.DataLimit != user.DataLimit {
+		updates["data_limit"] = payload.DataLimit
 	}
 
 	if payload.RoleId > 0 && payload.RoleId != user.RoleId {

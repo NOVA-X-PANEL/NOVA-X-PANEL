@@ -79,6 +79,7 @@ export default function AdminsPage() {
       password: values.password || undefined,
       roleId: values.roleId,
       status: values.status ? 'active' : 'disabled',
+      dataLimit: Math.max(0, Math.round((values.dataLimitGb ?? 0) * 1024 ** 3)),
     };
     try {
       if (formMode === 'edit' && formAdmin) {
@@ -181,9 +182,18 @@ export default function AdminsPage() {
                         </Col>
                         <Col xs={12} sm={12} md={6}>
                           <Statistic
-                            title={t('pages.admins.stats.roles')}
-                            value={String(roles.length)}
-                            prefix={<SafetyCertificateOutlined />}
+                            title={t('pages.admins.limited')}
+                            value={String(stats?.limitedAdmins ?? 0)}
+                            prefix={
+                              <SafetyCertificateOutlined
+                                style={{
+                                  color:
+                                    (stats?.limitedAdmins ?? 0) > 0
+                                      ? 'var(--ant-color-warning)'
+                                      : undefined,
+                                }}
+                              />
+                            }
                           />
                         </Col>
                       </Row>

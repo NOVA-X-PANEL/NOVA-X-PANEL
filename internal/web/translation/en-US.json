@@ -2260,16 +2260,24 @@
       "defaultOutboundDesc": "Traffic that does not match any routing rule uses this outbound (Xray uses the first outbound in the list)."
     },
     "admins": {
-      "title": "Administrators",
-      "subtitle": "Manage panel administrators and assign each one a role.",
+      "title": "Admins",
+      "subtitle": "Manage panel administrators, limits, roles, and access.",
       "listTitle": "Administrators",
-      "create": "Add administrator",
-      "edit": "Edit administrator",
+      "create": "Create admin",
+      "edit": "Modify admin",
       "resetPassword": "Reset password",
-      "enable": "Enable",
-      "disable": "Disable",
-      "ownerTag": "Owner is built in",
-      "ownerHint": "The owner account keeps the owner role and cannot be disabled or deleted.",
+      "enable": "Enable admin",
+      "disable": "Disable admin",
+      "active": "Active",
+      "disabled": "Disabled",
+      "limited": "Limited",
+      "unlimited": "Unlimited",
+      "unlimitedHint": "No data limit is set for this administrator.",
+      "dataLimit": "Data limit",
+      "dataLimitHint": "Traffic allowed for this administrator’s clients. 0 means unlimited.",
+      "ownerTag": "Owner",
+      "ownerHint": "The owner keeps the owner role and cannot be disabled or deleted.",
+      "roleHint": "Roles control what this administrator can see and change.",
       "statusHint": "Disabled administrators cannot sign in.",
       "deleteConfirm": "Delete this administrator?",
       "usernameRequired": "Username is required",
@@ -2277,16 +2285,17 @@
       "passwordKeepHint": "Leave empty to keep the current password.",
       "roleRequired": "Role is required",
       "columns": {
-        "username": "Username",
+        "username": "Administrator",
         "role": "Role",
         "status": "Status",
+        "users": "Clients",
+        "usage": "Usage",
         "actions": "Actions"
       },
       "stats": {
-        "total": "Administrators",
+        "total": "Total",
         "active": "Active",
-        "disabled": "Disabled",
-        "roles": "Roles"
+        "disabled": "Disabled"
       },
       "toasts": {
         "created": "Administrator created",
@@ -2297,45 +2306,58 @@
     },
     "adminRoles": {
       "title": "Admin Roles",
-      "subtitle": "Define roles and their permissions, limits, features and access scope.",
+      "subtitle": "Manage administrator roles and permissions.",
       "listTitle": "Roles",
-      "create": "Add role",
+      "create": "Create role",
       "edit": "Edit role",
       "duplicate": "Duplicate",
-      "owner": "Owner",
-      "builtIn": "Built-in",
+      "owner": "owner",
+      "builtIn": "built-in",
       "custom": "Custom",
       "ownerReadOnly": "The owner role is read-only.",
       "builtInHint": "Built-in role: permissions can be tuned, but its identity is protected.",
+      "roleFormHint": "Choose what this role can access and which limits apply to admins using it.",
       "nameLockedHint": "Built-in roles keep their name.",
-      "deleteConfirm": "Delete this role?",
+      "deleteConfirm": "Are you sure you want to delete this role?",
       "deleteHint": "Owner, built-in and assigned roles cannot be deleted.",
-      "protectedHint": "Owner, built-in and assigned roles are protected",
+      "protectedHint": "Protected",
       "nameRequired": "Role name is required",
       "permissions": "Permissions",
-      "permissionsHint": "Granted actions on this role",
+      "permissionsHint": "Scoped client actions use none, own, or all. Other actions are on/off.",
+      "limits": "Limits",
+      "limitFields": {
+        "max_users": "Max users",
+        "data_limit_min": "Min data limit",
+        "data_limit_max": "Max data limit",
+        "expire_days_min": "Min expiry days",
+        "expire_days_max": "Max expiry days",
+        "download_mbps_min": "Min download limit (Mbps)",
+        "download_mbps_max": "Max download limit (Mbps)",
+        "upload_mbps_min": "Min upload limit (Mbps)",
+        "upload_mbps_max": "Max upload limit (Mbps)"
+      },
+      "features": "Feature flags",
       "access": "Access",
       "selectAll": "Select all",
-      "scopeOwn": "Own",
-      "scopeAll": "All",
-      "allowAllGroups": "Allow all client groups",
-      "allowedGroups": "Allowed client groups",
+      "clearAll": "Clear",
+      "scopedBadge": "Scoped",
+      "unlimited": "Unlimited",
+      "inherit": "Inherit",
+      "limitsHint": "Leave empty to inherit defaults. Set to 0 to disable.",
+      "allowAllGroups": "Allow all groups",
+      "allowedGroupsDescription": "Allow access to every client group.",
+      "allowedGroups": "Allowed groups",
+      "chooseGroups": "Select groups",
+      "noGroups": "No groups available",
       "allowAllInbounds": "Allow all inbounds",
-      "allowedInbounds": "Allowed inbound IDs",
-      "commaHint": "Comma-separated.",
-      "limitsHint": "Bounds applied to clients this role may create. Empty inherits the default; 0 disables.",
-      "groups": {
-        "inbounds": "Inbounds",
-        "clients": "Clients",
-        "groups": "Groups",
-        "nodes": "Nodes",
-        "admins": "Administrators",
-        "roles": "Roles",
-        "outbounds": "Outbounds",
-        "routing": "Routing",
-        "settings": "Settings",
-        "xrayConfigs": "Xray configs",
-        "overview": "Overview"
+      "allowedInboundsDescription": "Restrict which inbounds this role may use. Leave empty to allow all.",
+      "allowedInbounds": "Allowed inbounds",
+      "chooseInbounds": "Select inbounds",
+      "noInbounds": "No inbounds available",
+      "scopes": {
+        "all": "All",
+        "own": "Own",
+        "none": "None"
       },
       "columns": {
         "name": "Name",
@@ -2356,26 +2378,59 @@
         "deleted": "Role deleted",
         "duplicated": "Role duplicated"
       },
-      "limitFields": {
-        "max_users": "Max clients",
-        "data_limit_min": "Min data limit",
-        "data_limit_max": "Max data limit",
-        "expire_days_min": "Min expiry days",
-        "expire_days_max": "Max expiry days",
-        "download_mbps_min": "Min download (Mbps)",
-        "download_mbps_max": "Max download (Mbps)",
-        "upload_mbps_min": "Min upload (Mbps)",
-        "upload_mbps_max": "Max upload (Mbps)"
+      "resources": {
+        "users": "Clients",
+        "inbounds": "Inbounds",
+        "groups": "Groups",
+        "admin_roles": "Admin Roles",
+        "outbounds": "Outbounds",
+        "routing": "Routing",
+        "cores": "Xray Configs",
+        "hosts": "Hosts",
+        "system": "Overview",
+        "admins": "Admins",
+        "nodes": "Nodes",
+        "settings": "Panel Settings"
+      },
+      "actionLabels": {
+        "create": "Create",
+        "read": "View",
+        "read_simple": "View (simple)",
+        "update": "Update",
+        "delete": "Delete",
+        "reset_usage": "Reset usage",
+        "revoke_sub": "Revoke subscription",
+        "set_owner": "Set owner",
+        "activate_next_plan": "Activate next plan",
+        "admin_filter": "Filter by admin",
+        "reconnect": "Reconnect",
+        "update_core": "Update core",
+        "stats": "Statistics",
+        "logs": "Logs",
+        "read_general": "View general"
       },
       "featureLabels": {
-        "blockLimitedAdmins": "Block administrators that exceed their quota",
-        "disconnectUsersWhenLimited": "Disconnect clients when the administrator is limited",
-        "disconnectUsersWhenDisabled": "Disconnect clients when the administrator is disabled",
-        "can_use_reset_strategy": "Allow traffic reset strategy",
-        "can_use_next_plan": "Allow activating the next plan"
-      },
-      "limits": "Limits",
-      "features": "Features"
+        "blockLimitedAdmins": {
+          "title": "Block limited admins",
+          "hint": "Deny panel and API access once this role reaches its data limit."
+        },
+        "disconnectUsersWhenLimited": {
+          "title": "Disconnect clients when limited",
+          "hint": "Remove this admin’s clients from the core while the admin is over quota."
+        },
+        "disconnectUsersWhenDisabled": {
+          "title": "Disconnect clients when disabled",
+          "hint": "Remove this admin’s clients from the core while the admin is disabled."
+        },
+        "can_use_reset_strategy": {
+          "title": "Use reset strategy",
+          "hint": "Allow this role to choose traffic reset strategies for clients."
+        },
+        "can_use_next_plan": {
+          "title": "Use next plan",
+          "hint": "Allow this role to configure and activate next plans for clients."
+        }
+      }
     }
   },
   "tgbot": {

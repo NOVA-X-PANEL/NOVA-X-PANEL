@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Form, Input, Modal, Select, Switch } from 'antd';
+import { Alert, Form, Input, InputNumber, Modal, Select, Switch } from 'antd';
 
 import type { AdminAccount, AdminRoleDoc } from '@/api/queries/useAdmins';
 
@@ -9,6 +9,8 @@ export interface AdminFormValues {
   password?: string;
   roleId: number;
   status: boolean;
+  /** Bytes; 0 = unlimited. */
+  dataLimitGb: number;
 }
 
 interface AdminFormModalProps {
@@ -51,6 +53,7 @@ export default function AdminFormModal({
         password: '',
         roleId: admin.roleId,
         status: admin.status === 'active',
+        dataLimitGb: admin.dataLimit > 0 ? Math.round(admin.dataLimit / 1024 ** 3) : 0,
       });
     } else {
       form.setFieldsValue({
@@ -58,6 +61,7 @@ export default function AdminFormModal({
         password: '',
         roleId: roleOptions.length ? roleOptions[0].value : undefined,
         status: true,
+        dataLimitGb: 0,
       });
     }
   }, [open, mode, admin, roleOptions, form]);
@@ -120,13 +124,16 @@ export default function AdminFormModal({
           <Select options={roleOptions} disabled={lockedRole} />
         </Form.Item>
 
-        <Form.Item
-          name="status"
-          label={t('pages.admins.columns.status')}
-          valuePropName="checked"
-          tooltip={t('pages.admins.statusHint')}
-        >
+        <Form.Item name="status" label={t('pages.admins.columns.status')} valuePropName="checked">
           <Switch disabled={mode === 'edit' && !!admin?.ownerRole} />
+        </Form.Item>
+
+        <Form.Item
+          name="dataLimitGb"
+          label={t('pages.admins.dataLimit')}
+          tooltip={t('pages.admins.dataLimitHint')}
+        >
+          <InputNumber min={0} style={{ width: '100%' }} addonAfter="GB" placeholder="0" />
         </Form.Item>
       </Form>
     </Modal>

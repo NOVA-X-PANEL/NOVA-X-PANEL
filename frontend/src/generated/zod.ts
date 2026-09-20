@@ -1048,11 +1048,13 @@ export type TuicServerSettings = z.infer<typeof TuicServerSettingsSchema>;
 
 export const UserSchema = z.object({
   createdAt: z.number().int(),
+  dataLimit: z.number().int(),
   id: z.number().int(),
   password: z.string(),
   roleId: z.number().int(),
   status: z.string(),
   updatedAt: z.number().int(),
+  usedBytes: z.number().int(),
   username: z.string(),
 });
 export type User = z.infer<typeof UserSchema>;

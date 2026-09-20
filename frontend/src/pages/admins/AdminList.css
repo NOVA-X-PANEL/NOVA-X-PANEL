@@ -32,6 +32,15 @@
   opacity: 0.7;
 }
 
+.admin-list .role-glyph {
+  color: var(--ant-color-warning);
+}
+
+.admin-list .usage-cell {
+  font-size: 12px;
+  opacity: 0.75;
+}
+
 .admin-detail {
   display: grid;
   grid-template-columns: max-content 1fr max-content 1fr;
@@ -50,6 +59,15 @@
 }
 
 @media (max-width: 768px) {
+  .admin-list .role-glyph {
+    color: var(--ant-color-warning);
+  }
+
+  .admin-list .usage-cell {
+    font-size: 12px;
+    opacity: 0.75;
+  }
+
   .admin-detail {
     grid-template-columns: max-content 1fr;
   }

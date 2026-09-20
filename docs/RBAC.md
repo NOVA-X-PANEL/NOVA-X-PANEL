@@ -162,4 +162,32 @@ hover shadows.
 
 ## Status
 
-Backend and front-end both implemented. The version file is `1.0.4`.
+Backend and front-end both implemented. The version file is `1.0.5`.
+
+### Heimdall-parity notes (1.0.5)
+
+The two RBAC pages now mirror the upstream Heimdall panel's information
+architecture:
+
+- **Admins** — four statistic tiles (Total / Active / Disabled / **Limited**);
+  the table shows administrator, role, status, owned client count and a usage
+  bar; the row menu offers edit, reset password, enable/disable and delete.
+  Each account carries an optional **data limit** (`data_limit`, bytes; 0 =
+  unlimited) and an aggregated `used_bytes`, so an account over quota is
+  reported as *limited*.
+- **Admin Roles** — the editor is a four-tab dialog:
+  - **Permissions**: one collapsible block per resource with an
+    `enabled/total` counter and *Select all* / *Clear*; each action is a row
+    with a human-readable label, a *Scoped* marker, and either a
+    `None / Own / All` select (scoped client actions) or a switch.
+  - **Limits**: `max_users` plus the byte/day/throughput bounds, empty =
+    inherit, 0 = disabled.
+  - **Feature flags**: one bordered row per flag with a title, a hint and a
+    switch.
+  - **Access**: allow-all switches for client groups and inbounds, with
+    multi-select pickers when restricted.
+
+Resource and action labels come from `pages.adminRoles.resources.*` and
+`pages.adminRoles.actionLabels.*`, falling back to `humanizeKey()` (the same
+behaviour as Heimdall). Note: `description` is a reserved go-i18n key, so the
+per-flag help text is stored under `hint`.

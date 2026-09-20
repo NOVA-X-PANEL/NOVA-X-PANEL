@@ -5,11 +5,24 @@
   font-size: 13px;
 }
 
-/* ---- role editor: permission grid ---- */
-.admin-role-modal .permission-grid {
+/* ---- shared bits inside the role editor ---- */
+.admin-role-modal .section-hint {
+  margin-top: 0;
+  margin-bottom: 12px;
+  font-size: 12px;
+}
+
+.admin-role-modal .field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 16px;
+}
+
+/* ---- permissions: grouped, collapsible rows ---- */
+.admin-role-modal .permission-groups {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   max-height: 46vh;
   overflow-y: auto;
   padding-inline-end: 4px;
@@ -18,7 +31,6 @@
 .admin-role-modal .permission-group {
   border: 1px solid var(--ant-color-border-secondary);
   border-radius: 10px;
-  background: var(--ant-color-fill-quaternary);
   overflow: hidden;
 }
 
@@ -26,79 +38,125 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--ant-color-border-secondary);
-  background: var(--ant-color-fill-tertiary);
+  gap: 8px;
+  padding: 4px 8px 4px 4px;
+  background: var(--ant-color-fill-quaternary);
+}
+
+.admin-role-modal .permission-group__toggle {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  padding: 4px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: start;
+}
+
+.admin-role-modal .permission-group__toggle:focus-visible {
+  outline: 2px solid var(--ant-color-primary);
+  border-radius: 6px;
+}
+
+.admin-role-modal .permission-group__label {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.admin-role-modal .permission-group__count {
+  font-size: 11px;
+  opacity: 0.6;
 }
 
 .admin-role-modal .permission-rows {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 8px;
 }
 
 .admin-role-modal .permission-row {
   display: flex;
+  min-height: 40px;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 6px 12px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--ant-color-fill-quaternary);
 }
 
-.admin-role-modal .permission-row + .permission-row {
-  border-top: 1px solid var(--ant-color-border-secondary);
+.admin-role-modal .permission-row__copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
 }
 
 .admin-role-modal .permission-row__label {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  font-size: 13px;
-  min-width: 0;
+  font-size: 12px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.admin-role-modal .permission-row__resource {
-  font-size: 11px;
-  opacity: 0.5;
-  font-family: monospace;
+.admin-role-modal .permission-row__scoped {
+  font-size: 10px;
+  opacity: 0.55;
 }
 
-/* ---- limits ---- */
-.admin-role-modal .limits-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0 16px;
+.admin-role-modal .permission-row__scope {
+  width: 104px;
+  flex-shrink: 0;
 }
 
-/* ---- features ---- */
-.admin-role-modal .features-list {
+/* ---- features + access: bordered rows with a switch ---- */
+.admin-role-modal .feature-rows,
+.admin-role-modal .access-panel {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-.admin-role-modal .features-list .ant-checkbox-wrapper {
-  align-items: flex-start;
+.admin-role-modal .feature-row,
+.admin-role-modal .access-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 14px;
+  border: 1px solid var(--ant-color-border-secondary);
+  border-radius: 10px;
 }
 
-.admin-role-modal .feature-label {
-  display: block;
+.admin-role-modal .feature-row__copy,
+.admin-role-modal .access-row__copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.admin-role-modal .feature-row__title,
+.admin-role-modal .access-row__title {
   font-size: 13px;
+  font-weight: 500;
 }
 
-.admin-role-modal .feature-key {
-  display: block;
+.admin-role-modal .feature-row__desc,
+.admin-role-modal .access-row__desc {
   font-size: 11px;
-  opacity: 0.5;
-  font-family: monospace;
+  opacity: 0.6;
 }
 
 @media (max-width: 768px) {
-  .admin-role-modal .limits-grid {
+  .admin-role-modal .field-grid,
+  .admin-role-modal .permission-rows {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .admin-role-modal .permission-row {
-    flex-wrap: wrap;
   }
 }

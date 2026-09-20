@@ -1,16 +1,17 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Badge, Button, Card, Dropdown, Space, Switch, Table, Tag, Tooltip } from 'antd';
+import { Badge, Button, Card, Dropdown, Progress, Space, Table, Tag, Tooltip } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
   CrownOutlined,
   DeleteOutlined,
   EditOutlined,
   KeyOutlined,
+  LockOutlined,
   MoreOutlined,
   PlusOutlined,
+  PoweroffOutlined,
   SafetyCertificateOutlined,
-  StopOutlined,
   ThunderboltOutlined,
   UserSwitchOutlined,
 } from '@ant-design/icons';
@@ -33,6 +34,26 @@ function isProtected(admin: AdminAccount): boolean {
   return admin.isSelf || admin.ownerRole;
 }
 
+function formatBytes(bytes: number): string {
+  if (!bytes || bytes <= 0) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const exp = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  return `${(bytes / 1024 ** exp).toFixed(exp === 0 ? 0 : 1)} ${units[exp]}`;
+}
+
+function AdminStatusBadge({ admin }: { admin: AdminAccount }) {
+  const { t } = useTranslation();
+  if (admin.limited) {
+    return <Badge status="warning" text={t('pages.admins.limited')} />;
+  }
+  return (
+    <Badge
+      status={admin.status === 'active' ? 'success' : 'default'}
+      text={admin.status === 'active' ? t('pages.admins.active') : t('pages.admins.disabled')}
+    />
+  );
+}
+
 export default function AdminList({
   admins,
   loading,
@@ -53,7 +74,10 @@ export default function AdminList({
         key: 'username',
         render: (_: string, record) => (
           <div className="name-cell">
-            <span className="name">{record.username}</span>
+            <span className="name">
+              {record.ownerRole ? <CrownOutlined className="role-glyph" /> : <UserSwitchOutlined />}{' '}
+              {record.username}
+            </span>
             <span className="remark">{record.roleName || '—'}</span>
           </div>
         ),
@@ -62,38 +86,58 @@ export default function AdminList({
         title: t('pages.admins.columns.role'),
         dataIndex: 'roleName',
         key: 'roleName',
-        responsive: ['sm'],
-        render: (_: string, record) =>
-          record.ownerRole ? (
-            <Tag icon={<CrownOutlined />} color="gold" style={{ margin: 0 }}>
-              {record.roleName}
-            </Tag>
-          ) : (
-            <Tag icon={<SafetyCertificateOutlined />} style={{ margin: 0 }}>
-              {record.roleName}
-            </Tag>
-          ),
+        responsive: ['md'],
+        render: (_: string, record) => (
+          <Tag
+            icon={record.ownerRole ? <CrownOutlined /> : <SafetyCertificateOutlined />}
+            color={record.ownerRole ? 'gold' : undefined}
+            style={{ margin: 0 }}
+          >
+            {record.roleName}
+          </Tag>
+        ),
       },
       {
         title: t('pages.admins.columns.status'),
-        dataIndex: 'status',
         key: 'status',
-        width: 120,
-        render: (_: string, record) => (
-          <Space size={8}>
-            <Badge
-              status={record.status === 'active' ? 'success' : 'default'}
-              text={record.status === 'active' ? t('enabled') : t('disabled')}
-            />
-            <Switch
-              size="small"
-              checked={record.status === 'active'}
-              disabled={isProtected(record)}
-              aria-label={t('pages.admins.columns.status')}
-              onChange={(next) => onToggleStatus(record, next)}
-            />
-          </Space>
-        ),
+        width: 130,
+        render: (_: unknown, record) => <AdminStatusBadge admin={record} />,
+      },
+      {
+        title: t('pages.admins.columns.users'),
+        dataIndex: 'totalUsers',
+        key: 'totalUsers',
+        width: 100,
+        responsive: ['sm'],
+        render: (value: number) => <Badge count={value} showZero overflowCount={9999} />,
+      },
+      {
+        title: t('pages.admins.columns.usage'),
+        key: 'usage',
+        width: 170,
+        responsive: ['lg'],
+        render: (_: unknown, record) => {
+          if (!record.dataLimit || record.dataLimit <= 0) {
+            return (
+              <Tooltip title={t('pages.admins.unlimitedHint')}>
+                <span className="usage-cell">
+                  {formatBytes(record.usedBytes)} · {t('pages.admins.unlimited')}
+                </span>
+              </Tooltip>
+            );
+          }
+          const percent = Math.min(100, Math.round((record.usedBytes / record.dataLimit) * 100));
+          return (
+            <Tooltip title={`${formatBytes(record.usedBytes)} / ${formatBytes(record.dataLimit)}`}>
+              <Progress
+                percent={percent}
+                size="small"
+                status={percent >= 100 ? 'exception' : 'normal'}
+                format={(value) => `${value}%`}
+              />
+            </Tooltip>
+          );
+        },
       },
       {
         title: t('pages.admins.columns.actions'),
@@ -109,19 +153,20 @@ export default function AdminList({
                 {
                   key: 'edit',
                   icon: <EditOutlined />,
-                  label: t('edit'),
+                  label: t('pages.admins.edit'),
                   disabled: record.ownerRole,
                   onClick: () => onEdit(record),
                 },
                 {
-                  key: 'reset',
+                  key: 'resetPassword',
                   icon: <KeyOutlined />,
                   label: t('pages.admins.resetPassword'),
                   onClick: () => onResetPassword(record),
                 },
+                { type: 'divider' },
                 {
                   key: 'toggle',
-                  icon: record.status === 'active' ? <StopOutlined /> : <ThunderboltOutlined />,
+                  icon: <PoweroffOutlined />,
                   label:
                     record.status === 'active'
                       ? t('pages.admins.disable')
@@ -129,7 +174,6 @@ export default function AdminList({
                   disabled: isProtected(record),
                   onClick: () => onToggleStatus(record, record.status !== 'active'),
                 },
-                { type: 'divider' },
                 {
                   key: 'delete',
                   icon: <DeleteOutlined />,
@@ -161,11 +205,18 @@ export default function AdminList({
         <Button type="primary" icon={<PlusOutlined />} onClick={onAdd}>
           {t('pages.admins.create')}
         </Button>
-        <Tooltip title={t('pages.admins.ownerHint')}>
-          <Tag icon={<UserSwitchOutlined />} style={{ margin: 0 }}>
-            {t('pages.admins.ownerTag')}
-          </Tag>
-        </Tooltip>
+        <Space size={6}>
+          <Tooltip title={t('pages.admins.ownerHint')}>
+            <Tag icon={<CrownOutlined />} color="gold" style={{ margin: 0 }}>
+              {t('pages.admins.ownerTag')}
+            </Tag>
+          </Tooltip>
+          <Tooltip title={t('pages.admins.roleHint')}>
+            <Tag icon={<LockOutlined />} style={{ margin: 0 }}>
+              {t('pages.adminRoles.title')}
+            </Tag>
+          </Tooltip>
+        </Space>
       </div>
 
       <Table<AdminAccount>
@@ -179,7 +230,7 @@ export default function AdminList({
         locale={{
           emptyText: (
             <div className="empty-state">
-              <UserSwitchOutlined style={{ fontSize: 28, opacity: 0.5 }} />
+              <ThunderboltOutlined style={{ fontSize: 28, opacity: 0.5 }} />
               <div>{t('noData')}</div>
             </div>
           ),
@@ -189,14 +240,24 @@ export default function AdminList({
             <div className="admin-detail">
               <span className="admin-detail__label">{t('pages.admins.columns.role')}</span>
               <span className="admin-detail__value">{record.roleSlug || '—'}</span>
+              <span className="admin-detail__label">{t('pages.admins.columns.usage')}</span>
+              <span className="admin-detail__value">
+                {formatBytes(record.usedBytes)}
+                {record.dataLimit > 0 ? ` / ${formatBytes(record.dataLimit)}` : ''}
+              </span>
+              <span className="admin-detail__label">{t('pages.admins.columns.users')}</span>
+              <span className="admin-detail__value">{record.totalUsers}</span>
               <span className="admin-detail__label">{t('pages.admins.columns.status')}</span>
               <span className="admin-detail__value">
-                {record.status === 'active' ? t('enabled') : t('disabled')}
+                {record.limited
+                  ? t('pages.admins.limited')
+                  : record.status === 'active'
+                    ? t('pages.admins.active')
+                    : t('pages.admins.disabled')}
               </span>
             </div>
           ),
         }}
-        rowClassName={(record) => (isProtected(record) ? 'row-protected' : '')}
       />
     </Card>
   );

@@ -11,6 +11,7 @@ export interface AdminPayload {
   password?: string;
   roleId?: number;
   status?: string;
+  dataLimit?: number;
 }
 
 export interface AdminRolePayload {
@@ -75,6 +76,27 @@ export function useAdminRolesQuery() {
 export function useCurrentAdminQuery() {
   const query = useQuery({ queryKey: keys.admins.current(), queryFn: fetchCurrentAdmin });
   return { current: query.data ?? null, loading: query.isLoading };
+}
+
+async function fetchGroupNames(): Promise<string[]> {
+  const msg = await HttpUtil.get('/panel/api/clients/groups', undefined, { silent: true });
+  if (!msg?.success) return [];
+  const rows = Array.isArray(msg.obj) ? (msg.obj as { name?: string }[]) : [];
+  return rows
+    .map((row) => (row.name ?? '').trim())
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b));
+}
+
+/** Distinct client group names, for the role access picker. */
+export function useGroupOptions(enabled = true) {
+  const query = useQuery({
+    queryKey: keys.admins.groups(),
+    queryFn: fetchGroupNames,
+    enabled,
+    staleTime: 30_000,
+  });
+  return { groups: query.data ?? [], loading: query.isLoading };
 }
 
 export function useAdminMutations() {

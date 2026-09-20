@@ -150,11 +150,24 @@ install_from_release() {
     fi
     mkdir -p "${tmp}/extract"
     tar -xzf "${tmp}/${asset}" -C "${tmp}/extract"
+    # Keep any custom files already present in bin/ (e.g. user-supplied *.dat).
+    if [[ -d "${bin_folder}" ]]; then
+        cp -a "${bin_folder}" "${tmp}/bin_backup"
+    fi
     mkdir -p "${main_folder}"
     if [[ -d "${tmp}/extract/x-ui" ]]; then
         cp -a "${tmp}/extract/x-ui/." "${main_folder}/"
     else
         cp -a "${tmp}/extract/." "${main_folder}/"
+    fi
+    if [[ -d "${tmp}/bin_backup" ]]; then
+        mkdir -p "${bin_folder}"
+        local b
+        for b_path in "${tmp}/bin_backup"/*; do
+            [[ -e "$b_path" ]] || continue
+            b="$(basename "$b_path")"
+            [[ -e "${bin_folder}/${b}" ]] || cp -a "$b_path" "${bin_folder}/${b}"
+        done
     fi
     rm -rf "$tmp"
     return 0
@@ -306,14 +319,22 @@ install_cli() {
 random_string() { head -c 16 /dev/urandom | base64 | tr -dc 'a-zA-Z0-9' | head -c "${1:-12}"; }
 
 set_credentials() {
-    local user pass
+    local user pass port base
     user="${XUI_USERNAME:-$(random_string 8)}"
     pass="${XUI_PASSWORD:-$(random_string 12)}"
+    port="${XUI_PANEL_PORT:-$(shuf -i 2000-65000 -n 1 2>/dev/null || echo 2053)}"
+    base="${XUI_WEB_BASE_PATH:-}"
     "${main_folder}/x-ui" setting -username "$user" -password "$pass" >/dev/null 2>&1
-    export NOVA_USER="$user" NOVA_PASS="$pass"
+    "${main_folder}/x-ui" setting -port "$port" >/dev/null 2>&1
+    if [[ -n "$base" ]]; then
+        "${main_folder}/x-ui" setting -webBasePath "$base" >/dev/null 2>&1
+    fi
+    export NOVA_USER="$user" NOVA_PASS="$pass" NOVA_PORT="$port"
     {
-        echo "user=$user"
-        echo "password=$pass"
+        echo "XUI_USERNAME=$user"
+        echo "XUI_PASSWORD=$pass"
+        echo "XUI_PANEL_PORT=$port"
+        echo "XUI_WEB_BASE_PATH=$base"
     } > "${result_file}"
     chmod 600 "${result_file}"
 }

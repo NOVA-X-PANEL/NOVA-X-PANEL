@@ -1261,7 +1261,12 @@ func runSeeders(isUsersEmpty bool) error {
 				return err
 			}
 		}
-		return seedApiTokens()
+		if err := seedApiTokens(); err != nil {
+			return err
+		}
+		// Fresh install: create the built-in roles and bind the default
+		// account to the owner role.
+		return seedAdminRBAC()
 	}
 
 	var seedersHistory []string

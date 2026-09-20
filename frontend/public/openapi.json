@@ -4410,6 +4410,14 @@
       "description": "Panel configuration and user credentials. All endpoints live under /panel/api/setting and require a logged-in session or Bearer token."
     },
     {
+      "name": "Admins",
+      "description": "Manage panel administrator accounts and their assigned roles (RBAC). Requires a browser session — Bearer API tokens are rejected. Access follows the <code>admins</code> role permissions; the owner account cannot be deleted, disabled, or demoted."
+    },
+    {
+      "name": "Admin Roles",
+      "description": "Manage RBAC roles. Each role carries four JSON documents: permissions, limits, features, and access. Built-in roles (owner, administrator, operator) keep their identity; the owner role is read-only; roles assigned to administrators cannot be deleted."
+    },
+    {
       "name": "API Tokens",
       "description": "Manage scoped Bearer tokens for programmatic auth. Tokens grant admin, monitor, or node-sync access, may expire, and are stored as SHA-256 hashes. The plaintext is returned only once at creation."
     },
@@ -12553,6 +12561,673 @@
         ],
         "summary": "Return the built-in default Xray JSON config template that ships with this panel version.",
         "operationId": "get_panel_api_setting_getDefaultJsonConfig",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admins/current": {
+      "get": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "Return the logged-in administrator together with the decoded role document.",
+        "operationId": "get_panel_api_admins_current",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "id": 1,
+                    "username": "admin",
+                    "status": "active",
+                    "roleId": 1,
+                    "isOwner": true,
+                    "role": {
+                      "id": 1,
+                      "name": "owner",
+                      "slug": "owner",
+                      "is_owner": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admins/list": {
+      "get": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "List every panel administrator with the resolved role name and status.",
+        "operationId": "get_panel_api_admins_list",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    {
+                      "id": 1,
+                      "username": "admin",
+                      "roleId": 1,
+                      "roleName": "owner",
+                      "roleSlug": "owner",
+                      "ownerRole": true,
+                      "status": "active",
+                      "isSelf": true
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admins/stats": {
+      "get": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "Return totals for administrators: total, active, and disabled.",
+        "operationId": "get_panel_api_admins_stats",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "totalAdmins": 2,
+                    "activeAdmins": 2,
+                    "disabledAdmins": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admins/get/{id}": {
+      "get": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "Fetch a single administrator by numeric ID.",
+        "operationId": "get_panel_api_admins_get_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Administrator ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admins/add": {
+      "post": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "Create a new administrator bound to the given role.",
+        "operationId": "post_panel_api_admins_add",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "username": "operator1",
+                "password": "secret",
+                "roleId": 3,
+                "status": "active"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admins/update/{id}": {
+      "post": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "Update an administrator. The owner account cannot change role or be disabled.",
+        "operationId": "post_panel_api_admins_update_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Administrator ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "username": "operator1",
+                "password": "newsecret",
+                "roleId": 3,
+                "status": "active"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admins/del/{id}": {
+      "post": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "Delete an administrator. The owner account and your own account are protected.",
+        "operationId": "post_panel_api_admins_del_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Administrator ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admins/enable/{id}": {
+      "post": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "Enable an administrator account.",
+        "operationId": "post_panel_api_admins_enable_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Administrator ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admins/disable/{id}": {
+      "post": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "Disable an administrator account. The owner account cannot be disabled.",
+        "operationId": "post_panel_api_admins_disable_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Administrator ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admin-roles/list": {
+      "get": {
+        "tags": [
+          "Admin Roles"
+        ],
+        "summary": "List every role with decoded permissions, limits, features, access, and admin count.",
+        "operationId": "get_panel_api_admin_roles_list",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    {
+                      "id": 1,
+                      "name": "owner",
+                      "slug": "owner",
+                      "builtIn": true,
+                      "ownerRole": true,
+                      "adminCount": 1
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admin-roles/get/{id}": {
+      "get": {
+        "tags": [
+          "Admin Roles"
+        ],
+        "summary": "Fetch one role by numeric ID.",
+        "operationId": "get_panel_api_admin_roles_get_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Role ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admin-roles/add": {
+      "post": {
+        "tags": [
+          "Admin Roles"
+        ],
+        "summary": "Create a custom role. The slug is derived from the role name; defaults follow the Operator preset.",
+        "operationId": "post_panel_api_admin_roles_add",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "name": "Reseller",
+                "permissions": {},
+                "limits": {},
+                "features": {},
+                "access": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admin-roles/update/{id}": {
+      "post": {
+        "tags": [
+          "Admin Roles"
+        ],
+        "summary": "Update a non-owner role. Built-in roles keep their protected identity.",
+        "operationId": "post_panel_api_admin_roles_update_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Role ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "name": "Reseller",
+                "permissions": {},
+                "limits": {},
+                "features": {},
+                "access": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admin-roles/duplicate/{id}": {
+      "post": {
+        "tags": [
+          "Admin Roles"
+        ],
+        "summary": "Duplicate an existing role into a new custom role copy.",
+        "operationId": "post_panel_api_admin_roles_duplicate_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Role ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admin-roles/del/{id}": {
+      "post": {
+        "tags": [
+          "Admin Roles"
+        ],
+        "summary": "Delete a custom role. Owner, built-in, and assigned roles are protected.",
+        "operationId": "post_panel_api_admin_roles_del_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Role ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful response",

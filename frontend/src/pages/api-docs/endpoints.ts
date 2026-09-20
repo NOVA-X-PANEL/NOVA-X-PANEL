@@ -1942,34 +1942,34 @@ export const sections: readonly Section[] = [
         method: 'GET',
         path: '/panel/api/admins/current',
         summary: 'Return the logged-in administrator together with the decoded role document.',
-        responseSchema: 'AdminAccount',
+        response:
+          '{\n  "success": true,\n  "obj": {\n    "id": 1,\n    "username": "admin",\n    "status": "active",\n    "roleId": 1,\n    "isOwner": true,\n    "role": { "id": 1, "name": "owner", "slug": "owner", "is_owner": true }\n  }\n}',
       },
       {
         method: 'GET',
         path: '/panel/api/admins/list',
         summary: 'List every panel administrator with the resolved role name and status.',
-        responseSchema: 'AdminAccount',
-        responseSchemaArray: true,
+        response:
+          '{\n  "success": true,\n  "obj": [\n    {\n      "id": 1,\n      "username": "admin",\n      "roleId": 1,\n      "roleName": "owner",\n      "roleSlug": "owner",\n      "ownerRole": true,\n      "status": "active",\n      "isSelf": true\n    }\n  ]\n}',
       },
       {
         method: 'GET',
         path: '/panel/api/admins/stats',
         summary: 'Return totals for administrators: total, active, and disabled.',
-        responseSchema: 'AdminStats',
+        response:
+          '{\n  "success": true,\n  "obj": { "totalAdmins": 2, "activeAdmins": 2, "disabledAdmins": 0 }\n}',
       },
       {
         method: 'GET',
         path: '/panel/api/admins/get/:id',
         summary: 'Fetch a single administrator by numeric ID.',
         params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Administrator ID.' }],
-        responseSchema: 'AdminAccount',
       },
       {
         method: 'POST',
         path: '/panel/api/admins/add',
         summary: 'Create a new administrator bound to the given role.',
         body: '{"username":"operator1","password":"secret","roleId":3,"status":"active"}',
-        responseSchema: 'AdminAccount',
       },
       {
         method: 'POST',
@@ -1978,7 +1978,6 @@ export const sections: readonly Section[] = [
           'Update an administrator. The owner account cannot change role or be disabled.',
         params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Administrator ID.' }],
         body: '{"username":"operator1","password":"newsecret","roleId":3,"status":"active"}',
-        responseSchema: 'AdminAccount',
       },
       {
         method: 'POST',
@@ -1991,14 +1990,12 @@ export const sections: readonly Section[] = [
         path: '/panel/api/admins/enable/:id',
         summary: 'Enable an administrator account.',
         params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Administrator ID.' }],
-        responseSchema: 'AdminAccount',
       },
       {
         method: 'POST',
         path: '/panel/api/admins/disable/:id',
         summary: 'Disable an administrator account. The owner account cannot be disabled.',
         params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Administrator ID.' }],
-        responseSchema: 'AdminAccount',
       },
     ],
   },
@@ -2013,37 +2010,35 @@ export const sections: readonly Section[] = [
         method: 'GET',
         path: '/panel/api/admin-roles/list',
         summary: 'List every role with decoded permissions, limits, features, access, and admin count.',
-        responseSchema: 'AdminRole',
-        responseSchemaArray: true,
+        response:
+          '{\n  "success": true,\n  "obj": [\n    {\n      "id": 1,\n      "name": "owner",\n      "slug": "owner",\n      "builtIn": true,\n      "ownerRole": true,\n      "adminCount": 1\n    }\n  ]\n}',
       },
       {
         method: 'GET',
         path: '/panel/api/admin-roles/get/:id',
         summary: 'Fetch one role by numeric ID.',
         params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Role ID.' }],
-        responseSchema: 'AdminRole',
       },
       {
         method: 'POST',
         path: '/panel/api/admin-roles/add',
         summary: 'Create a custom role. The slug is derived from the role name; defaults follow the Operator preset.',
-        body: '{"name":"Reseller","permissions":{},"limits":{},"features":{},"access":{}}',
-        responseSchema: 'AdminRole',
+        body:
+          '{"name":"Reseller","permissions":{},"limits":{},"features":{},"access":{}}',
       },
       {
         method: 'POST',
         path: '/panel/api/admin-roles/update/:id',
         summary: 'Update a non-owner role. Built-in roles keep their protected identity.',
         params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Role ID.' }],
-        body: '{"name":"Reseller","permissions":{},"limits":{},"features":{},"access":{}}',
-        responseSchema: 'AdminRole',
+        body:
+          '{"name":"Reseller","permissions":{},"limits":{},"features":{},"access":{}}',
       },
       {
         method: 'POST',
         path: '/panel/api/admin-roles/duplicate/:id',
         summary: 'Duplicate an existing role into a new custom role copy.',
         params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Role ID.' }],
-        responseSchema: 'AdminRole',
       },
       {
         method: 'POST',

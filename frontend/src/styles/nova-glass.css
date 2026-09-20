@@ -324,25 +324,6 @@
   color: var(--nv-violet);
 }
 
-.sider-nav .ant-menu-item,
-.sider-nav .ant-menu-submenu-title,
-.sider-utility .ant-menu-item {
-  border-radius: 10px;
-}
-
-.sider-nav .ant-menu-item-selected,
-.sider-utility .ant-menu-item-selected {
-  background: var(--nv-grad) !important;
-  box-shadow: 0 4px 16px rgba(79, 124, 255, 0.35);
-}
-
-.sider-nav .ant-menu-item-selected .anticon,
-.sider-nav .ant-menu-item-selected .ant-menu-title-content,
-.sider-utility .ant-menu-item-selected .anticon,
-.sider-utility .ant-menu-item-selected .ant-menu-title-content {
-  color: #fff !important;
-}
-
 /* — overlays ride the same glass language — */
 
 .ant-modal .ant-modal-content {

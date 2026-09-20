@@ -46,6 +46,10 @@ func (a *IndexController) initRouter(g *gin.RouterGroup) {
 	g.POST("/login", middleware.CSRFMiddleware(), a.login)
 	g.POST("/logout", middleware.CSRFMiddleware(), a.logout)
 	g.POST("/getTwoFactorEnable", middleware.CSRFMiddleware(), a.getTwoFactorEnable)
+	// /getLoginOptions is the login screen's single pre-auth probe: it reports
+	// which secondary login methods are wired up so the UI can show or disable
+	// them without guessing.
+	g.POST("/getLoginOptions", middleware.CSRFMiddleware(), a.getLoginOptions)
 }
 
 // index handles the root route, redirecting logged-in users to the panel or showing the login page.
@@ -163,4 +167,20 @@ func (a *IndexController) csrfToken(c *gin.Context) {
 func (a *IndexController) getTwoFactorEnable(c *gin.Context) {
 	status, err := a.settingService.GetTwoFactorEnable()
 	jsonObj(c, status, err)
+}
+
+// getLoginOptions reports the sign-in methods this panel can offer. Telegram
+// sign-in is not implemented yet, so it is advertised as disabled and the
+// button renders inert rather than pretending to work.
+func (a *IndexController) getLoginOptions(c *gin.Context) {
+	twoFactor, err := a.settingService.GetTwoFactorEnable()
+	if err != nil {
+		jsonObj(c, nil, err)
+		return
+	}
+	jsonObj(c, gin.H{
+		"twoFactorEnable":        twoFactor,
+		"telegramEnabled":        false,
+		"telegramLoginSupported": false,
+	}, nil)
 }

@@ -140,6 +140,30 @@
         "emptyPassword": "Password is required",
         "wrongUsernameOrPassword": "Invalid username or password or two-factor code.",
         "successLogin": "You have successfully logged into your account."
+      },
+      "slogan": "Easy management, borderless connection",
+      "cardSubtitle": "Sign in to your account to continue",
+      "rememberMe": "Remember me",
+      "forgotPassword": "Forgot your password?",
+      "forgotHint": "Ask a panel owner to reset your credentials from the admin area.",
+      "or": "or",
+      "telegramLogin": "Sign in with Telegram",
+      "telegramUnavailable": "Telegram sign-in is not enabled on this panel",
+      "credit": "Designed and developed exclusively",
+      "alwaysOnline": "Always online",
+      "features": {
+        "speed": {
+          "title": "High Speed",
+          "desc": "Fast & Stable"
+        },
+        "secure": {
+          "title": "Secure",
+          "desc": "Your Privacy"
+        },
+        "global": {
+          "title": "Global",
+          "desc": "Worldwide Access"
+        }
       }
     },
     "index": {

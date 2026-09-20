@@ -162,7 +162,7 @@ hover shadows.
 
 ## Status
 
-Backend and front-end both implemented. The version file is `1.1.1`.
+Backend and front-end both implemented. The version file is `1.1.2`.
 
 ## 1.1.1 — a permissioned page must be able to finish loading
 

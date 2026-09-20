@@ -1,109 +1,214 @@
-[English](/README.md) | [فارسی](/README.fa_IR.md) | [العربية](/README.ar_EG.md) | [中文](/README.zh_CN.md) | [Español](/README.es_ES.md) | [Русский](/README.ru_RU.md) | [Türkçe](/README.tr_TR.md)
+<div align="center">
 
-<h1 align="center">NOVA X PANEL</h1>
+**English** · [فارسی](README.fa_IR.md) · [العربية](README.ar_EG.md) · [中文](README.zh_CN.md) · [Español](README.es_ES.md) · [Русский](README.ru_RU.md) · [Türkçe](README.tr_TR.md)
 
-<p align="center">
-  <a href="https://github.com/NOVA-X-PANEL/NOVA-X-PANEL/releases"><img src="https://img.shields.io/github/v/release/NOVA-X-PANEL/NOVA-X-PANEL" alt="Release"></a>
-  <a href="https://github.com/NOVA-X-PANEL/NOVA-X-PANEL/actions"><img src="https://img.shields.io/github/actions/workflow/status/NOVA-X-PANEL/NOVA-X-PANEL/release.yml.svg" alt="Build"></a>
-  <a href="#"><img src="https://img.shields.io/github/go-mod/go-version/NOVA-X-PANEL/NOVA-X-PANEL.svg" alt="GO Version"></a>
-  <a href="https://www.gnu.org/licenses/gpl-3.0.en.html"><img src="https://img.shields.io/badge/license-GPL%20V3-blue.svg?longCache=true" alt="License"></a>
-</p>
+<br/>
 
-**NOVA X PANEL** is an advanced, open-source web control panel for managing [Xray-core](https://github.com/XTLS/Xray-core) servers. It provides a clean, multi-language interface for deploying, configuring, and monitoring a wide range of proxy and VPN protocols — from a single VPS to multi-node deployments.
+<img src="./media/nova-banner.svg" alt="NOVA X PANEL — advanced web control panel for Xray-core" width="100%" />
 
-NOVA X PANEL is an **independent** panel, maintained in its own repository. It is built on top of the open-source [3x-ui](https://github.com/MHSanaei/3x-ui) project (which in turn descends from the original X-UI project), and it keeps the broader protocol support, improved stability, per-client traffic accounting, and quality-of-life features of its upstream while adding its own branding and packaging.
+<br/>
+<br/>
+
+**An advanced, open-source web control panel for [Xray-core](https://github.com/XTLS/Xray-core).**
+Deploy, configure and monitor VLESS, VMess, Trojan, Shadowsocks, WireGuard, AmneziaWG, TUIC v5, Hysteria2 and MTProto — from a single VPS to multi-node fleets.
+
+<br/>
+
+[![Release](https://img.shields.io/github/v/release/NOVA-X-PANEL/NOVA-X-PANEL?style=flat-square&label=release&color=8b5cf6)](https://github.com/NOVA-X-PANEL/NOVA-X-PANEL/releases)
+[![Build](https://img.shields.io/github/actions/workflow/status/NOVA-X-PANEL/NOVA-X-PANEL/release.yml?style=flat-square&label=build)](https://github.com/NOVA-X-PANEL/NOVA-X-PANEL/actions)
+[![Downloads](https://img.shields.io/github/downloads/NOVA-X-PANEL/NOVA-X-PANEL/total?style=flat-square&label=downloads&color=22d3ee)](https://github.com/NOVA-X-PANEL/NOVA-X-PANEL/releases)
+[![Go](https://img.shields.io/github/go-mod/go-version/NOVA-X-PANEL/NOVA-X-PANEL?style=flat-square&label=go&color=4f7cff)](go.mod)
+[![React](https://img.shields.io/badge/React-19-4f7cff?style=flat-square&logo=react&logoColor=white)](frontend)
+[![License](https://img.shields.io/badge/license-GPL--3.0-8b5cf6?style=flat-square)](LICENSE)
+[![PRs](https://img.shields.io/badge/PRs-welcome-22d3ee?style=flat-square)](#-contributing)
+[![Stars](https://img.shields.io/github/stars/NOVA-X-PANEL/NOVA-X-PANEL?style=flat-square&label=stars&color=8b5cf6)](https://github.com/NOVA-X-PANEL/NOVA-X-PANEL/stargazers)
+
+<br/>
+
+[**Quick start**](#en-quick-start) &nbsp;·&nbsp;
+[**Features**](#en-features) &nbsp;·&nbsp;
+[**Screenshots**](#en-screenshots) &nbsp;·&nbsp;
+[**Protocols**](#en-protocols) &nbsp;·&nbsp;
+[**Documentation**](https://docs.sanaei.dev) &nbsp;·&nbsp;
+[**Configuration**](#en-config) &nbsp;·&nbsp;
+[**Contributing**](#-contributing)
+
+</div>
+
+---
 
 > [!IMPORTANT]
-> This project is intended for personal use only. Please do not use it for illegal purposes or in a production environment.
+> This project is intended for **personal use only**. Please do not use it for illegal purposes or in a production environment.
 
-## Features
+## ✨ Why NOVA X PANEL
 
-- **Multi-protocol inbounds** — VLESS, VMess, Trojan, Shadowsocks, WireGuard, AmneziaWG, TUIC v5, Hysteria2, MTProto, HTTP, SOCKS (Mixed), Dokodemo-door / Tunnel, and TUN.
-- **Modern transports & security** — TCP (Raw), mKCP, WebSocket, gRPC, HTTPUpgrade, and XHTTP, secured with TLS, XTLS, and REALITY.
-- **AmneziaWG built in** — DPI-resistant WireGuard runs inside the panel on a userspace network stack, with no kernel module, DKMS, or extra packages to install.
-- **TUIC v5 sidecar** — High-performance QUIC-based proxy with native UDP relay traffic metering, 0-RTT handshakes, and BBR congestion control.
-- **MTProto proxies** — per-client FakeTLS secrets, ad-tags, and quotas, applied live without dropping existing connections.
-- **Fallbacks** — serve multiple protocols on a single port (e.g. VLESS and Trojan on 443) using Xray's fallback support.
-- **Per-client management** — traffic quotas, expiry dates, IP limits with trusted-address exemptions, HWID device limits, scheduled renewal cycles, live online status, and one-click share links, QR codes, and subscriptions.
-- **Traffic statistics** — per inbound, per client, and per outbound, with reset controls.
-- **Multi-node support** — manage and scale across multiple servers from a single panel, including cloning inbounds onto other nodes.
-- **Outbound & routing** — WARP, NordVPN, PIA, custom routing rules, load balancers with balancer-to-balancer fallback, and outbound proxy chaining. Bundled geosite and geoip categories are browsable straight from the rule editor.
-- **Built-in subscription server** — raw, JSON, and Clash output, auto-selected from the client's User-Agent, plus [custom page templates](docs/custom-subscription-templates.md).
-- **Telegram and Discord bots** for remote monitoring and management.
-- **RESTful API** with scoped, optionally expiring tokens and an in-panel API reference.
-- **Installable panel (PWA)** — pin 3X-UI to a desktop or phone home screen.
-- **Flexible storage** — SQLite (default) or PostgreSQL.
-- **13 UI languages** with dark and light themes.
-- **Fail2ban integration** for enforcing per-client IP limits.
+**NOVA X PANEL** is an **independent** panel maintained in its own repository, built on top of the open-source [3x-ui](https://github.com/MHSanaei/3x-ui) project (which itself descends from the original X-UI). It keeps the broad protocol support, the improved stability, the per-client traffic accounting and the quality-of-life features of its upstream, then adds its own **branding, packaging and a bespoke "Nova Glass" interface**.
 
-## Screenshots
+- 🚀 **One panel, every protocol** — thirteen inbound types, modern transports and REALITY/XTLS out of the box.
+- 🧩 **Built for scale** — manage and clone inbounds across many servers from a single panel.
+- 📊 **Accurate accounting** — per-inbound, per-client and per-outbound traffic with live online status.
+- 🎨 **A panel that looks the part** — a custom violet→blue glass theme, 13 UI languages, dark and ultra-dark modes.
+- 🔒 **Security-minded** — scoped API tokens, RBAC admin roles, 2FA, HWID limits and Fail2ban integration.
+- 📦 **Painless to run** — a single installer for 7 Linux architectures plus Windows, SQLite by default, PostgreSQL when you need it.
 
-<details>
-<summary>Click to expand</summary>
+<a name="en-quick-start"></a>
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./media/01-overview-dark.png">
-  <img alt="Overview" src="./media/01-overview-light.png">
-</picture>
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./media/02-add-inbound-dark.png">
-  <img alt="Inbounds" src="./media/02-add-inbound-light.png">
-</picture>
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./media/03-add-client-dark.png">
-  <img alt="Add client" src="./media/03-add-client-light.png">
-</picture>
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./media/05-add-nodes-dark.png">
-  <img alt="Configs" src="./media/05-add-nodes-light.png">
-</picture>
-
-</details>
-
-## Quick Start
+## 🚀 Quick start
 
 ```bash
 bash <(curl -Ls https://raw.githubusercontent.com/NOVA-X-PANEL/NOVA-X-PANEL/main/install.sh)
 ```
 
-To install a specific version, append its tag (e.g. `v1.2.3`):
+Install a specific release (e.g. `v1.2.3`):
 
 ```bash
 bash <(curl -Ls https://raw.githubusercontent.com/NOVA-X-PANEL/NOVA-X-PANEL/main/install.sh) v1.2.3
 ```
 
-To install the rolling **dev** build (latest per-commit pre-release from `main`, not a stable release), pass `dev-latest`:
+Install the rolling **dev** build (latest per-commit pre-release from `main` — not a stable release):
 
 ```bash
 bash <(curl -Ls https://raw.githubusercontent.com/NOVA-X-PANEL/NOVA-X-PANEL/main/install.sh) dev-latest
 ```
 
-During installation a random username, password, and access path are generated. After installation, run `nova` (or `nova-x-panel`) to open the management menu, where you can start/stop the service, view or reset your login credentials, manage SSL certificates, and more.
+During installation a random username, password and access path are generated. Afterwards run **`nova`** (or `nova-x-panel`) to open the management menu, where you can start/stop the service, view or reset your credentials, manage SSL certificates and more.
 
-Every release asset is published with a `.sha256` sum next to it. Both `install.sh` and the updater verify the archive against that sum and abort on a mismatch.
-
-For full documentation — installation, configuration, operations, and the complete API reference — visit **[docs.sanaei.dev](https://docs.sanaei.dev)**.
+Every release asset ships with a `.sha256` sum next to it; both `install.sh` and the updater verify the archive against it and abort on a mismatch.
 
 ### Unattended install
 
-The installer also runs **non-interactively** for cloud-init.
-Set `XUI_NONINTERACTIVE=1` (or pipe with no TTY) and it installs end-to-end with
-zero prompts, generating random credentials and writing them to
-`/etc/nova-x-panel/install-result.env`. See [`deploy/`](deploy/) for:
+The installer also runs **non-interactively** for cloud-init. Set `XUI_NONINTERACTIVE=1` (or pipe with no TTY) and it installs end-to-end with zero prompts, generating random credentials and writing them to `/etc/nova-x-panel/install-result.env`. See [`deploy/`](deploy/) for:
 
 - [Cloud-init user-data](deploy/cloud-init/) — unattended install on any cloud (Hetzner/AWS/DO/Vultr/GCP/Azure/Oracle)
 - [Hetzner Cloud notes](deploy/marketplace/hetzner/) — cloud-init deployment on Hetzner
 
-## Supported Platforms
+<a name="en-screenshots"></a>
+
+## 🖼 Screenshots
+
+<details>
+<summary><b>Click to expand the gallery</b></summary>
+
+<br/>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./media/01-overview-dark.png">
+    <img alt="Overview" src="./media/01-overview-light.png">
+  </picture>
+</p>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./media/02-inbounds-dark.png">
+    <img alt="Inbounds" src="./media/02-inbounds-light.png">
+  </picture>
+</p>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./media/03-client-dark.png">
+    <img alt="Clients" src="./media/03-client-light.png">
+  </picture>
+</p>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./media/05-nodes-dark.png">
+    <img alt="Nodes" src="./media/05-nodes-light.png">
+  </picture>
+</p>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./media/06-settings-dark.png">
+    <img alt="Settings" src="./media/06-settings-light.png">
+  </picture>
+</p>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./media/08-api-docs-dark.png">
+    <img alt="API docs" src="./media/08-api-docs-light.png">
+  </picture>
+</p>
+
+</details>
+
+<a name="en-features"></a>
+
+## 🧰 Features
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
+**Connectivity**
+- **Multi-protocol inbounds** — VLESS, VMess, Trojan, Shadowsocks, WireGuard, AmneziaWG, TUIC v5, Hysteria2, MTProto, HTTP, SOCKS (Mixed), Dokodemo-door / Tunnel and TUN.
+- **Modern transports & security** — TCP (Raw), mKCP, WebSocket, gRPC, HTTPUpgrade and XHTTP; secured with TLS, XTLS and REALITY.
+- **Fallbacks** — serve multiple protocols on one port (e.g. VLESS and Trojan on 443).
+- **AmneziaWG built-in** — DPI-resistant WireGuard on a userspace network stack; no kernel module, DKMS or extra packages.
+- **TUIC v5 sidecar** — high-performance QUIC proxy with native UDP relay metering, 0-RTT handshakes and BBR.
+- **MTProto proxies** — per-client FakeTLS secrets, ad-tags and quotas applied live without dropping connections.
+
+</td>
+<td width="50%" valign="top">
+
+**Operations**
+- **Per-client management** — traffic quotas, expiry dates, IP limits with trusted-address exemptions, HWID device limits, scheduled renewal cycles, live online status, share links, QR codes and subscriptions.
+- **Traffic statistics** — detailed stats per inbound, per client and per outbound, with reset controls.
+- **Multi-node support** — manage and scale many servers from one panel, including cloning inbounds to other nodes.
+- **Outbound & routing** — WARP, NordVPN, PIA, custom routing rules, load balancers with fallback chaining and proxy chaining; bundled geosite/geoip categories browsable from the rule editor.
+- **Built-in subscription server** — raw, JSON and Clash output auto-selected by User-Agent, plus [custom page templates](docs/custom-subscription-templates.md).
+- **Telegram & Discord bots** — remote monitoring and management.
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
+**Security & access**
+- **Admin roles (RBAC)** — granular per-resource permissions and per-admin client scoping.
+- **Scoped API tokens** — optionally expiring, with an in-panel API reference.
+- **Fail2ban integration** — enforces per-client IP limits.
+- **HWID device limits** — cap how many devices a client may use.
+
+</td>
+<td width="50%" valign="top">
+
+**Platform**
+- **Flexible storage** — SQLite (default) or PostgreSQL.
+- **13 UI languages** with dark, light and ultra-dark themes.
+- **Installable (PWA)** — pin the panel to your desktop or phone home screen.
+- **RESTful API** — full OpenAPI reference generated from the Go sources.
+
+</td>
+</tr>
+</table>
+
+<a name="en-protocols"></a>
+
+## 🌐 Supported protocols
+
+| Category | Supported |
+| --- | --- |
+| **Inbounds** | VLESS · VMess · Trojan · Shadowsocks · WireGuard · AmneziaWG · TUIC v5 · Hysteria2 · MTProto · HTTP · SOCKS (Mixed) · Dokodemo-door / Tunnel · TUN |
+| **Transports** | TCP (Raw) · mKCP · WebSocket · gRPC · HTTPUpgrade · XHTTP |
+| **Security** | TLS · XTLS · REALITY · none |
+| **Subscriptions** | Raw · JSON · Clash (auto-selected by User-Agent) |
+| **Clients** | Xray-core · mihomo · sing-box · mtg-multi |
+
+## 💻 Supported platforms
 
 **Operating systems:** Ubuntu, Debian, Armbian, Fedora, CentOS, RHEL, AlmaLinux, Rocky Linux, Oracle Linux, Amazon Linux, Virtuozzo, Arch, Manjaro, Parch, openSUSE (Tumbleweed / Leap), Alpine, and Windows.
 
-**Architectures:** `amd64` · `386` · `arm64` (aarch64) · `armv7` · `armv6` · `armv5` · `s390x`.
+**Architectures:** `amd64` · `386` · `arm64` (aarch64) · `armv7` · `armv6` · `armv5` · `s390x`
 
-## Database Options
+<a name="en-config"></a>
+
+## ⚙ Configuration
+
+### Database
 
 NOVA X PANEL supports two backends, chosen during the install:
 
@@ -112,12 +217,15 @@ NOVA X PANEL supports two backends, chosen during the install:
 
 At runtime the backend is selected via environment variables (the installer writes these to `/etc/default/x-ui` for you):
 
-```
+```env
 XUI_DB_TYPE=postgres
 XUI_DB_DSN=postgres://xui:password@127.0.0.1:5432/xui?sslmode=disable
 ```
 
-### Migrating an existing SQLite install to PostgreSQL
+<details>
+<summary><b>Migrating an existing SQLite install to PostgreSQL</b></summary>
+
+<br/>
 
 ```bash
 x-ui migrate-db --dsn "postgres://xui:password@127.0.0.1:5432/xui?sslmode=disable"
@@ -126,6 +234,8 @@ systemctl restart x-ui
 ```
 
 The source SQLite file is left untouched; remove it manually once you have verified the new backend.
+
+</details>
 
 ### Docker
 
@@ -141,7 +251,7 @@ The image bundles Fail2ban (enabled by default) to enforce per-client **IP limit
 docker run -d --cap-add=NET_ADMIN --cap-add=NET_RAW ... ghcr.io/mhsanaei/3x-ui
 ```
 
-## Environment Variables
+### Environment variables
 
 | Variable | Description | Default |
 | --- | --- | --- |
@@ -167,57 +277,81 @@ docker run -d --cap-add=NET_ADMIN --cap-add=NET_RAW ... ghcr.io/mhsanaei/3x-ui
 
 The complete list is on the [environment variables reference](https://docs.sanaei.dev/docs/reference/env-vars).
 
-## Supported Languages
+### Panel management
 
-The panel UI is available in 13 languages:
+```bash
+nova              # open the interactive management menu
+nova start        # start the panel
+nova stop         # stop the panel
+nova restart      # restart the panel
+nova status       # service status
+nova settings     # show / change panel settings (port, path, credentials)
+nova update       # update to the latest release
+```
+
+### 🛠 Under the hood
+
+| Layer | Stack |
+| --- | --- |
+| Backend | Go 1.27 · Gin · GORM · a managed `Xray-core` child process |
+| Frontend | React 19 · Ant Design 6 · Vite 8 · TypeScript |
+| Storage | SQLite (CGo) or PostgreSQL |
+| Sidecars | `mtg-multi` (MTProto) · `tuic-server` (TUIC v5) |
+
+## 🌍 Supported languages
+
+The panel UI is available in **13 languages**:
 
 English · فارسی · العربية · 中文（简体） · 中文（繁體） · Español · Русский · Українська · Türkçe · Tiếng Việt · 日本語 · Bahasa Indonesia · Português (Brasil)
 
-## Contributing
+## 📚 Documentation & API
 
-Contributions are welcome. Please read the [Contributing Guide](/CONTRIBUTING.md) before opening an issue or pull request.
+Full documentation — installation, configuration, operations and the complete API reference — lives at **[docs.sanaei.dev](https://docs.sanaei.dev)**. The OpenAPI document is also served by the panel itself at `/panel/api/openapi.json`.
 
-## A Special Thanks to
+## 🤝 Contributing
 
-- [alireza0](https://github.com/alireza0/)
+Contributions are welcome. Please read the [Contributing Guide](CONTRIBUTING.md) before opening an issue or a pull request. Security issues should follow [SECURITY.md](SECURITY.md).
 
-## Acknowledgment
+## 🙏 Acknowledgements
 
-- [Iran v2ray rules](https://github.com/chocolate4u/Iran-v2ray-rules) (License: **GPL-3.0**): _Enhanced v2ray/xray and v2ray/xray-clients routing rules with built-in Iranian domains and a focus on security and adblocking._
-- [Russia v2ray rules](https://github.com/runetfreedom/russia-v2ray-rules-dat) (License: **GPL-3.0**): _This repository contains automatically updated V2Ray routing rules based on data on blocked domains and addresses in Russia._
+NOVA X PANEL builds on the work of others:
 
-## Community Tools
+- [3x-ui](https://github.com/MHSanaei/3x-ui) and the original X-UI project — the upstream this panel is derived from.
+- [Xray-core](https://github.com/XTLS/Xray-core) — the proxy engine.
+- [alireza0](https://github.com/alireza0/) — a special thanks.
+- [Iran v2ray rules](https://github.com/chocolate4u/Iran-v2ray-rules) (**GPL-3.0**) — routing rules with built-in Iranian domains, focused on security and ad-blocking.
+- [Russia v2ray rules](https://github.com/runetfreedom/russia-v2ray-rules-dat) (**GPL-3.0**) — automatically updated routing rules for blocked domains and addresses in Russia.
 
-Tools and integrations built by the community around 3x-ui.
+### Community tools
 
-- [terraform-provider-3x-ui](https://github.com/batonogov/terraform-provider-threexui) (License: **MIT**): _Manage inbounds, clients, panel settings, and Xray configuration as code with Terraform / OpenTofu._
-- [3X-UI Manager](https://github.com/yukh975/3X-UI-Manager) (License: **MIT**): _Native Android client for 3x-ui — dashboard, inbounds, clients with QR sharing, nodes and multi-panel management. Available on F-Droid._
+- [terraform-provider-3x-ui](https://github.com/batonogov/terraform-provider-threexui) (**MIT**) — manage inbounds, clients, panel settings and Xray configuration as code with Terraform / OpenTofu.
+- [3X-UI Manager](https://github.com/yukh975/3X-UI-Manager) (**MIT**) — native Android client: dashboard, inbounds, clients with QR sharing, nodes and multi-panel management. Available on F-Droid.
 
-## Support project
+## ⭐ Support the project
 
-**If this project is helpful to you, you may wish to give it a**:star2:
+If NOVA X PANEL is useful to you, please give it a **star** — it helps others find the project.
 
-<a href="https://www.buymeacoffee.com/MHSanaei" target="_blank">
-<img src="./media/default-yellow.png" alt="Buy Me A Coffee" style="height: 70px !important;width: 277px !important;" >
-</a>
+<p align="center">
+  <a href="https://github.com/NOVA-X-PANEL/NOVA-X-PANEL/stargazers">
+    <img src="./media/nova-logo.png" alt="NOVA X PANEL" width="88" />
+  </a>
+</p>
 
-</br>
-<a href="https://nowpayments.io/donation/hsanaei" target="_blank" rel="noreferrer noopener">
-   <img src="./media/donation-button-black.svg" alt="Crypto donation button by NOWPayments">
-</a>
+## 📈 Star history
 
-## Star History
-
-<a href="https://www.star-history.com/?repos=mhsanaei%2F3x-ui&type=date&legend=top-left">
+<a href="https://www.star-history.com/?repos=NOVA-X-PANEL%2FNOVA-X-PANEL&type=date&legend=top-left">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=mhsanaei/3x-ui&type=date&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=mhsanaei/3x-ui&type=date&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=mhsanaei/3x-ui&type=date&legend=top-left" />
+  <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=NOVA-X-PANEL/NOVA-X-PANEL&type=date&theme=dark&legend=top-left" />
+  <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=NOVA-X-PANEL/NOVA-X-PANEL&type=date&legend=top-left" />
+  <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=NOVA-X-PANEL/NOVA-X-PANEL&type=date&legend=top-left" />
  </picture>
 </a>
 
-<p align="center">
- <a href="https://www.star-history.com/mhsanaei/3x-ui">
-  <picture><source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/badge?repo=MHSanaei/3x-ui&type=rank&theme=dark" /><source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/badge?repo=MHSanaei/3x-ui&type=rank" /><img alt="Star History Rank" src="https://api.star-history.com/badge?repo=MHSanaei/3x-ui&type=rank" /></picture> <picture><source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/badge?repo=MHSanaei/3x-ui&type=trending&theme=dark" /><source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/badge?repo=MHSanaei/3x-ui&type=trending" /><img alt="GitHub Trending Repository of the Day" src="https://api.star-history.com/badge?repo=MHSanaei/3x-ui&type=trending" /></picture>
- </a>
-</p>
+## 📄 License
+
+Released under the [GNU General Public License v3.0](LICENSE).
+
+<div align="center">
+<br/>
+<sub>Built with ❤️ for the Xray community — <b>NOVA X PANEL</b></sub>
+</div>

@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="420" viewBox="0 0 1440 420" role="img" aria-label="NOVA X PANEL — advanced web control panel for Xray-core">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a0f1e"/>
+      <stop offset="55%" stop-color="#070b16"/>
+      <stop offset="100%" stop-color="#04060e"/>
+    </linearGradient>
+    <linearGradient id="topline" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#8b5cf6"/>
+      <stop offset="55%" stop-color="#4f7cff"/>
+      <stop offset="100%" stop-color="#22d3ee"/>
+    </linearGradient>
+    <linearGradient id="word" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#e2d9ff"/>
+      <stop offset="38%" stop-color="#8b5cf6"/>
+      <stop offset="72%" stop-color="#4f7cff"/>
+      <stop offset="100%" stop-color="#22d3ee"/>
+    </linearGradient>
+    <linearGradient id="crest" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="55%" stop-color="#2563eb"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="n" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#dbeafe"/>
+      <stop offset="100%" stop-color="#ffffff"/>
+    </linearGradient>
+    <radialGradient id="washA" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.34"/>
+      <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="washB" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#4f7cff" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#4f7cff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="washC" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#22d3ee" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#22d3ee" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="1.6" result="b"/>
+      <feMerge>
+        <feMergeNode in="b"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <pattern id="dots" width="26" height="26" patternUnits="userSpaceOnUse">
+      <circle cx="1.6" cy="1.6" r="1.6" fill="#8b5cf6" fill-opacity="0.22"/>
+    </pattern>
+    <clipPath id="frame">
+      <rect width="1440" height="420" rx="26"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#frame)">
+    <rect width="1440" height="420" fill="url(#bg)"/>
+
+    <ellipse cx="120" cy="-40" rx="620" ry="360" fill="url(#washA)"/>
+    <ellipse cx="1290" cy="60" rx="640" ry="380" fill="url(#washB)"/>
+    <ellipse cx="760" cy="470" rx="700" ry="300" fill="url(#washC)"/>
+
+    <rect x="820" y="70" width="560" height="300" fill="url(#dots)" opacity="0.5" rx="20"/>
+
+    <!-- oversized crest motif, bled off the right edge -->
+    <g transform="translate(1096,46) scale(5.1)" opacity="0.08">
+      <path d="M32 3.2 L57.5 17.8 V46.2 L32 60.8 L6.5 46.2 V17.8 Z" fill="url(#crest)"/>
+      <path d="M21.5 45.5 V18.5 L42.5 45.5 V18.5" fill="none" stroke="#ffffff" stroke-width="6.4"/>
+    </g>
+
+    <!-- brand mark -->
+    <g transform="translate(70,126) scale(2.62)">
+      <path d="M32 3.2 L57.5 17.8 V46.2 L32 60.8 L6.5 46.2 V17.8 Z" fill="url(#crest)" opacity="0.22"/>
+      <path d="M32 3.2 L57.5 17.8 V46.2 L32 60.8 L6.5 46.2 V17.8 Z" fill="none" stroke="url(#crest)" stroke-width="1.8" stroke-linejoin="round"/>
+      <path d="M21.5 45.5 V18.5 L42.5 45.5 V18.5" fill="none" stroke="url(#n)" stroke-width="6.4" stroke-linecap="square" stroke-linejoin="miter" filter="url(#soft)"/>
+      <circle cx="47.5" cy="20.5" r="2.6" fill="#22d3ee" filter="url(#soft)"/>
+    </g>
+
+    <!-- wordmark -->
+    <text x="252" y="186" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="74" font-weight="800" letter-spacing="7" fill="url(#word)">NOVA X PANEL</text>
+
+    <text x="256" y="232" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="25" font-weight="500" fill="#9db0d4">Advanced web control panel for Xray-core — from one VPS to multi-node fleets</text>
+
+    <!-- chips -->
+    <g font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="19" font-weight="600">
+      <rect x="256" y="270" width="214" height="46" rx="23" fill="#ffffff" fill-opacity="0.06" stroke="#8b5cf6" stroke-opacity="0.4"/>
+      <text x="363" y="300" text-anchor="middle" fill="#d6e2fb">REALITY · XTLS</text>
+
+      <rect x="486" y="270" width="262" height="46" rx="23" fill="#ffffff" fill-opacity="0.06" stroke="#4f7cff" stroke-opacity="0.4"/>
+      <text x="617" y="300" text-anchor="middle" fill="#d6e2fb">AmneziaWG · TUIC v5</text>
+
+      <rect x="764" y="270" width="236" height="46" rx="23" fill="#ffffff" fill-opacity="0.06" stroke="#22d3ee" stroke-opacity="0.4"/>
+      <text x="882" y="300" text-anchor="middle" fill="#d6e2fb">MTProto · Hysteria2</text>
+
+      <rect x="1016" y="270" width="196" height="46" rx="23" fill="#ffffff" fill-opacity="0.06" stroke="#8b5cf6" stroke-opacity="0.4"/>
+      <text x="1114" y="300" text-anchor="middle" fill="#d6e2fb">13 languages</text>
+    </g>
+
+    <rect x="0" y="0" width="1440" height="3" fill="url(#topline)"/>
+  </g>
+
+  <rect x="1.25" y="1.25" width="1437.5" height="417.5" rx="25" fill="none" stroke="#8b5cf6" stroke-opacity="0.28" stroke-width="2.5"/>
+</svg>

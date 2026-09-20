@@ -21,19 +21,19 @@ func NewHostController(g *gin.RouterGroup) *HostController {
 }
 
 func (a *HostController) initRouter(g *gin.RouterGroup) {
-	g.GET("/list", a.list)
-	g.GET("/get/:groupId", a.get)
-	g.GET("/byInbound/:inboundId", a.byInbound)
-	g.GET("/tags", a.tags)
+	g.GET("/list", requirePanelPermission("hosts", "view"), a.list)
+	g.GET("/get/:groupId", requirePanelPermission("hosts", "view"), a.get)
+	g.GET("/byInbound/:inboundId", requirePanelPermission("hosts", "view"), a.byInbound)
+	g.GET("/tags", requirePanelPermission("hosts", "view"), a.tags)
 
-	g.POST("/add", a.add)
-	g.POST("/update/:groupId", a.update)
-	g.POST("/del/:groupId", a.del)
-	g.POST("/setEnable/:groupId", a.setEnable)
-	g.POST("/reorder", a.reorder)
-	g.POST("/bulk/add", a.add)
-	g.POST("/bulk/setEnable", a.bulkSetEnable)
-	g.POST("/bulk/del", a.bulkDel)
+	g.POST("/add", requirePanelPermission("hosts", "create"), a.add)
+	g.POST("/update/:groupId", requirePanelPermission("hosts", "update"), a.update)
+	g.POST("/del/:groupId", requirePanelPermission("hosts", "delete"), a.del)
+	g.POST("/setEnable/:groupId", requirePanelPermission("hosts", "update"), a.setEnable)
+	g.POST("/reorder", requirePanelPermission("hosts", "update"), a.reorder)
+	g.POST("/bulk/add", requirePanelPermission("hosts", "create"), a.add)
+	g.POST("/bulk/setEnable", requirePanelPermission("hosts", "update"), a.bulkSetEnable)
+	g.POST("/bulk/del", requirePanelPermission("hosts", "delete"), a.bulkDel)
 }
 
 func (a *HostController) list(c *gin.Context) {

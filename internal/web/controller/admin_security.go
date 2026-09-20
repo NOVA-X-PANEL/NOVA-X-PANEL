@@ -106,6 +106,15 @@ func requireAdminPermission(section string, permission string) gin.HandlerFunc {
 	}
 }
 
+// requirePanelPermission enforces a panel-resource permission for browser
+// sessions, while letting API-token callers through (their authority is already
+// narrowed by enforceTokenScope). This is the middleware applied across the
+// inbounds / clients / groups / hosts / nodes / settings / xray routes, so a
+// non-owner role reaches exactly the resources its role document grants.
+func requirePanelPermission(section string, permission string) gin.HandlerFunc {
+	return requireAdminPermission(section, permission)
+}
+
 type panelPermissionRequirement struct {
 	Section    string
 	Permission string

@@ -3,6 +3,7 @@ import { createBrowserRouter, type RouteObject } from 'react-router';
 import { Spin } from 'antd';
 
 import PanelLayout from '@/layouts/PanelLayout';
+import RouteGuard from '@/pg-ui/components/layout/route-guard';
 
 const IndexPage = lazy(() => import('@/pages/index/IndexPage'));
 const InboundsPage = lazy(() => import('@/pages/inbounds/InboundsPage'));
@@ -40,7 +41,11 @@ function withSuspense(node: React.ReactNode) {
 const routes: RouteObject[] = [
   {
     path: '/',
-    element: <PanelLayout />,
+    element: (
+      <RouteGuard>
+        <PanelLayout />
+      </RouteGuard>
+    ),
     children: [
       { index: true, element: withSuspense(<IndexPage />) },
       { path: 'inbounds', element: withSuspense(<InboundsPage />) },

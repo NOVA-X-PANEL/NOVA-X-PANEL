@@ -8,8 +8,10 @@ import (
 	"strings"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/entity"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/session"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/websocket"
 
 	"github.com/gin-gonic/gin"
@@ -92,8 +94,56 @@ func (a *ClientController) initRouter(g *gin.RouterGroup) {
 	g.POST("/lastOnline", a.lastOnline)
 }
 
+// clientScope resolves the RBAC scope for the acting account. Unit tests mount
+// this controller without the session middleware, so a missing user in test
+// mode keeps full access; production always resolves through the session.
+func (a *ClientController) clientScope(c *gin.Context, permission string) service.ClientAccessScope {
+	// API-token callers (monitor / node-sync / admin tokens) are already
+	// constrained by enforceTokenScope and have no panel account, so scoping
+	// them by owner would silently turn node sync into a no-op.
+	if c.GetBool("api_authed") {
+		return service.ClientAccessScope{Mode: service.ClientAccessAll}
+	}
+
+	user := a.loginUser(c)
+	if user == nil && gin.Mode() == gin.TestMode {
+		return service.ClientAccessScope{Mode: service.ClientAccessAll}
+	}
+	return a.clientService.ClientScopeFor(user, permission)
+}
+
+func (a *ClientController) loginUser(c *gin.Context) *model.User {
+	var user *model.User
+	func() {
+		defer func() {
+			if recover() != nil {
+				user = nil
+			}
+		}()
+		user = session.GetLoginUser(c)
+	}()
+	return user
+}
+
+// requireClientInScope loads a client by email and aborts when the acting
+// account may not touch it, so a scoped admin cannot address another admin's
+// client by guessing its address.
+func (a *ClientController) requireClientInScope(c *gin.Context, email string, permission string) (*model.ClientRecord, bool) {
+	rec, err := a.clientService.RequireClientForScopeByEmail(a.clientScope(c, permission), email)
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "get"), err)
+		return nil, false
+	}
+	return rec, true
+}
+
+// scopeEmails narrows a request's email list to what the scope allows.
+func (a *ClientController) scopeEmails(c *gin.Context, emails []string, permission string) []string {
+	return service.FilterClientEmailsForScope(a.clientScope(c, permission), emails)
+}
+
 func (a *ClientController) list(c *gin.Context) {
-	rows, err := a.clientService.List()
+	rows, err := a.clientService.ListForScope(a.clientScope(c, "view"))
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.obtain"), err)
 		return
@@ -111,6 +161,36 @@ func (a *ClientController) listPaged(c *gin.Context) {
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.obtain"), err)
 		return
+	}
+
+	// Narrow the page to the acting scope. An unrestricted owner short-circuits
+	// so the common path costs nothing extra.
+	scope := a.clientScope(c, "view")
+	if scope.Mode != service.ClientAccessAll || (scope.RestrictGroups && !scope.AllowAllGroups) {
+		if resp != nil {
+			emails := make([]string, 0, len(resp.Items))
+			for _, item := range resp.Items {
+				emails = append(emails, item.Email)
+			}
+			allowed := map[string]struct{}{}
+			for _, email := range service.FilterClientEmailsForScope(scope, emails) {
+				allowed[email] = struct{}{}
+			}
+			filtered := make([]service.ClientSlim, 0, len(resp.Items))
+			for _, item := range resp.Items {
+				if _, ok := allowed[item.Email]; ok {
+					filtered = append(filtered, item)
+				}
+			}
+			resp.Items = filtered
+			resp.Total = len(filtered)
+			resp.Filtered = len(filtered)
+			resp.Summary.Online = service.FilterClientEmailsForScope(scope, resp.Summary.Online)
+			resp.Summary.Depleted = service.FilterClientEmailsForScope(scope, resp.Summary.Depleted)
+			resp.Summary.Expiring = service.FilterClientEmailsForScope(scope, resp.Summary.Expiring)
+			resp.Summary.Deactive = service.FilterClientEmailsForScope(scope, resp.Summary.Deactive)
+			resp.Summary.Total = len(filtered)
+		}
 	}
 	jsonObj(c, resp, nil)
 }
@@ -148,6 +228,9 @@ func (a *ClientController) buildClientPayload(rec *model.ClientRecord) (gin.H, e
 
 func (a *ClientController) get(c *gin.Context) {
 	email := c.Param("email")
+	if _, ok := a.requireClientInScope(c, email, "view"); !ok {
+		return
+	}
 	rec, err := a.clientService.GetRecordByEmail(nil, email)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.obtain"), err)
@@ -191,6 +274,13 @@ func (a *ClientController) create(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
+
+	user := a.loginUser(c)
+	if user != nil && !a.clientService.CanCreateClientForAdmin(user) {
+		pureJsonMsg(c, http.StatusForbidden, false, "clients.create permission required")
+		return
+	}
+
 	needRestart, err := a.clientService.Create(&a.inboundService, &payload)
 	// Flagged before the error check: a partly-applied create leaves clients
 	// committed on the inbounds that succeeded, and those still need the restart.
@@ -206,11 +296,22 @@ func (a *ClientController) create(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
+
+	// Stamp ownership so an "own"-scoped role only ever sees what it created.
+	if user != nil && payload.Client.Email != "" {
+		if stampErr := a.clientService.AssignOwnerAdmin([]string{payload.Client.Email}, user.Id); stampErr != nil {
+			logger.Warning("failed to stamp client owner:", stampErr)
+		}
+	}
+
 	jsonMsgObj(c, I18nWeb(c, "pages.inbounds.toasts.inboundClientAddSuccess"), pendingNodeObj(a.inboundService.AnyNodePending(payload.InboundIds)), nil)
 }
 
 func (a *ClientController) update(c *gin.Context) {
 	email := c.Param("email")
+	if _, ok := a.requireClientInScope(c, email, "update"); !ok {
+		return
+	}
 	var req struct {
 		model.Client
 		LimitHwid int `json:"limitHwid"`
@@ -240,6 +341,9 @@ func (a *ClientController) update(c *gin.Context) {
 
 func (a *ClientController) delete(c *gin.Context) {
 	email := c.Param("email")
+	if _, ok := a.requireClientInScope(c, email, "delete"); !ok {
+		return
+	}
 	keepTraffic := c.Query("keepTraffic") == "1"
 	needRestart, err := a.clientService.DeleteByEmail(&a.inboundService, email, keepTraffic)
 	// Flagged before the error check: a partly-applied delete already removed
@@ -333,6 +437,7 @@ func (a *ClientController) bulkAdjust(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
+	req.Emails = a.scopeEmails(c, req.Emails, "update")
 	result, needRestart, err := a.clientService.BulkAdjust(&a.inboundService, req.Emails, req.AddDays, req.AddBytes, req.Flow, req.LimitHwid, req.AdTag)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
@@ -361,6 +466,7 @@ func (a *ClientController) bulkAttach(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
+	req.Emails = a.scopeEmails(c, req.Emails, "update")
 	result, needRestart, err := a.clientService.BulkAttach(&a.inboundService, req.Emails, req.InboundIds)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
@@ -384,6 +490,7 @@ func (a *ClientController) bulkDetach(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
+	req.Emails = a.scopeEmails(c, req.Emails, "update")
 	result, needRestart, err := a.clientService.BulkDetach(&a.inboundService, req.Emails, req.InboundIds)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
@@ -402,6 +509,7 @@ func (a *ClientController) bulkDelete(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
+	req.Emails = a.scopeEmails(c, req.Emails, "delete")
 	result, needRestart, err := a.clientService.BulkDelete(&a.inboundService, req.Emails, req.KeepTraffic)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
@@ -432,6 +540,7 @@ func (a *ClientController) bulkSetEnable(c *gin.Context, enable bool) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
+	req.Emails = a.scopeEmails(c, req.Emails, "update")
 	result, needRestart, err := a.clientService.BulkSetEnable(&a.inboundService, req.Emails, enable)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
@@ -529,6 +638,9 @@ func (a *ClientController) delOrphans(c *gin.Context) {
 
 func (a *ClientController) resetTrafficByEmail(c *gin.Context) {
 	email := c.Param("email")
+	if _, ok := a.requireClientInScope(c, email, "reset_usage"); !ok {
+		return
+	}
 	needRestart, err := a.clientService.ResetTrafficByEmail(&a.inboundService, email)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)

@@ -45,6 +45,8 @@ import { formatPanelVersion } from '@/lib/panel-version';
 import { pauseAnimationsUntilLeave, useTheme } from '@/hooks/useTheme';
 import { useAllSettings } from '@/api/queries/useAllSettings';
 import { useCommandPalette } from '@/components/command-palette/useCommandPalette';
+import { useAdmin } from '@/pg-ui/hooks/use-admin';
+import { canAccessRoute } from '@/pg-ui/utils/rbac';
 import './AppSidebar.css';
 
 const DONATE_URL = 'https://donate.sanaei.dev/';
@@ -190,6 +192,7 @@ export default function AppSidebar() {
   const navigate = useNavigate();
   const { pathname, hash } = useLocation();
   const { allSetting } = useAllSettings();
+  const { admin } = useAdmin();
   const showSubFormats = !!(allSetting.subJsonEnable || allSetting.subClashEnable);
   const showSubBalancers = !!allSetting.subJsonEnable;
 
@@ -245,8 +248,22 @@ export default function AppSidebar() {
     [t],
   );
 
-  const navItems = useMemo(() => tabs.filter((tab) => tab.icon !== 'logout'), [tabs]);
-  const utilItems = useMemo(() => tabs.filter((tab) => tab.icon === 'logout'), [tabs]);
+  // Hide the entries this role cannot open so the sidebar matches what the
+  // RouteGuard will actually allow. Until the current admin resolves the list
+  // stays complete to avoid a flash of an empty menu.
+  const visibleTabs = useMemo(() => {
+    if (!admin) return tabs;
+    return tabs.filter((tab) => tab.icon === 'logout' || canAccessRoute(admin, tab.key));
+  }, [tabs, admin]);
+
+  const navItems = useMemo(
+    () => visibleTabs.filter((tab) => tab.icon !== 'logout'),
+    [visibleTabs],
+  );
+  const utilItems = useMemo(
+    () => visibleTabs.filter((tab) => tab.icon === 'logout'),
+    [visibleTabs],
+  );
 
   const settingsChildren = useMemo<NonNullable<MenuProps['items']>>(() => {
     const children: NonNullable<MenuProps['items']> = [

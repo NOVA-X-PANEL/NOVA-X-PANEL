@@ -162,7 +162,7 @@ hover shadows.
 
 ## Status
 
-Backend and front-end both implemented. The version file is `1.0.6`.
+Backend and front-end both implemented. The version file is `1.0.9`.
 
 ## Front-end: ported from Heimdall (1.0.6)
 
@@ -226,3 +226,50 @@ Resource and action labels come from `pages.adminRoles.resources.*` and
 `pages.adminRoles.actionLabels.*`, falling back to `humanizeKey()` (the same
 behaviour as Heimdall). Note: `description` is a reserved go-i18n key, so the
 per-flag help text is stored under `hint`.
+
+
+## 1.0.9 — actually enforcing the role
+
+Until 1.0.9 the role was only stored: the permission middleware was wired to the
+admin and role endpoints alone, so any signed-in account reached the whole panel
+regardless of its role. Two things were missing.
+
+### Route enforcement
+
+`requirePanelPermission(resource, action)` now guards the panel routes, mirroring
+Heimdall's mapping:
+
+| resource | guarded routes |
+|---|---|
+| `inbounds` | list / options (`viewSimple`) / get / add / update / delete / resetTraffic / import |
+| `groups` | list / emails / create / rename / delete / bulkAdd / bulkRemove |
+| `hosts` | list / get / byInbound / tags / add / update / delete / setEnable / reorder / bulk |
+| `nodes` | list / get / webCert / add / update / delete / setEnable / test / probe (`reconnect`) / updatePanel (`updateCore`) / history (`viewStatistics`) / mtls |
+| `settings` | all / defaultSettings / factoryDefaults / update / restartPanel / apiTokens-ish / testSmtp / testTgBot / testDiscord |
+| `cores` | xray read + every mutating xray/outbound-subs route |
+
+`POST /panel/api/setting/all` accepts `settings.view` **or** `settings.viewGeneral`
+because the sidebar depends on it.
+
+### Client scoping
+
+A role whose `permissions.users.*` carry `scope: 1` ("own") now sees only its own
+clients:
+
+- `ClientController.clientScope()` resolves the acting account's scope; API-token
+  callers keep full access because `enforceTokenScope` already narrowed them and
+  node sync has no panel account.
+- `list`, `listPaged`, `get`, `update`, `delete`, `resetTraffic/:email` and every
+  bulk endpoint filter through `FilterClientEmailsForScope` /
+  `RequireClientForScopeByEmail`, so a scoped admin cannot reach another admin's
+  client even by guessing its email.
+- `create` refuses callers without `users.create`.
+- created clients are stamped with `owner_admin_id` (`AssignOwnerAdmin`), which is
+  what makes "own" mode resolvable.
+
+### Front-end
+
+- `RouteGuard` (Heimdall's component) wraps the router: a role that cannot read a
+  page is redirected to `firstAllowedRoute`.
+- the sidebar hides entries the role cannot open, so the menu matches what the
+  guard will allow.

@@ -66,21 +66,27 @@ func NewSettingController(g *gin.RouterGroup) *SettingController {
 func (a *SettingController) initRouter(g *gin.RouterGroup) {
 	g = g.Group("/setting")
 
-	g.POST("/all", a.getAllSetting)
-	g.POST("/defaultSettings", a.getDefaultSettings)
-	g.POST("/factoryDefaults", a.getFactoryDefaults)
-	g.POST("/update", a.updateSetting)
-	g.POST("/validateRegex", a.validateRegex)
+	// /all feeds the sidebar's shared settings, so accept either the general
+	// settings permission or full settings read: a role restricted to the
+	// general view still needs the layout to render.
+	g.POST("/all", requireAnyPanelPermission(
+		panelPermissionRequirement{Section: "settings", Permission: "view"},
+		panelPermissionRequirement{Section: "settings", Permission: "viewGeneral"},
+	), a.getAllSetting)
+	g.POST("/defaultSettings", requirePanelPermission("settings", "viewGeneral"), a.getDefaultSettings)
+	g.POST("/factoryDefaults", requirePanelPermission("settings", "viewGeneral"), a.getFactoryDefaults)
+	g.POST("/update", requirePanelPermission("settings", "update"), a.updateSetting)
+	g.POST("/validateRegex", requirePanelPermission("settings", "view"), a.validateRegex)
 	g.POST("/updateUser", a.updateUser)
-	g.POST("/restartPanel", a.restartPanel)
-	g.GET("/getDefaultJsonConfig", a.getDefaultXrayConfig)
+	g.POST("/restartPanel", requirePanelPermission("settings", "update"), a.restartPanel)
+	g.GET("/getDefaultJsonConfig", requirePanelPermission("settings", "viewGeneral"), a.getDefaultXrayConfig)
 	g.GET("/apiTokens", a.listApiTokens)
 	g.POST("/apiTokens/create", a.createApiToken)
 	g.POST("/apiTokens/delete/:id", a.deleteApiToken)
 	g.POST("/apiTokens/setEnabled/:id", a.setApiTokenEnabled)
-	g.POST("/testSmtp", a.testSmtp)
-	g.POST("/testTgBot", a.testTgBot)
-	g.POST("/testDiscord", a.testDiscord)
+	g.POST("/testSmtp", requirePanelPermission("settings", "update"), a.testSmtp)
+	g.POST("/testTgBot", requirePanelPermission("settings", "update"), a.testTgBot)
+	g.POST("/testDiscord", requirePanelPermission("settings", "update"), a.testDiscord)
 }
 
 func (a *SettingController) validateRegex(c *gin.Context) {

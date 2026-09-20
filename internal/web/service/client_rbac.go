@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"errors"
 	"strings"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
@@ -494,4 +495,123 @@ func FilterClientEmailsForScope(scope ClientAccessScope, emails []string) []stri
 		}
 	}
 	return out
+}
+
+// ---- controller-facing helpers ---------------------------------------------
+
+// ClientServiceClientScope exposes the resolved scope for a service receiver so
+// the HTTP layer can apply it without importing the package helpers directly.
+func (s *ClientService) ClientScopeFor(user *model.User, permission string) ClientAccessScope {
+	return ClientAccessScopeForAdmin(user, permission)
+}
+
+// ListForScope returns every client record the scope may see.
+func (s *ClientService) ListForScope(scope ClientAccessScope) ([]ClientWithAttachments, error) {
+	rows, err := s.List()
+	if err != nil {
+		return nil, err
+	}
+	scope = normalizeClientAccessScope(scope)
+	if scope.Mode == ClientAccessAll && (!scope.RestrictGroups || scope.AllowAllGroups) {
+		return rows, nil
+	}
+
+	emails := make([]string, 0, len(rows))
+	for _, row := range rows {
+		if row.Email != "" {
+			emails = append(emails, row.Email)
+		}
+	}
+	allowed := make(map[string]struct{}, len(emails))
+	for _, email := range FilterClientEmailsForScope(scope, emails) {
+		allowed[email] = struct{}{}
+	}
+
+	out := make([]ClientWithAttachments, 0, len(rows))
+	for _, row := range rows {
+		if _, ok := allowed[row.Email]; ok {
+			out = append(out, row)
+		}
+	}
+	return out, nil
+}
+
+// RequireClientForScopeByEmail loads a client and fails when the scope may not
+// touch it, so mutations cannot be aimed at another admin's client.
+func (s *ClientService) RequireClientForScopeByEmail(scope ClientAccessScope, email string) (*model.ClientRecord, error) {
+	if strings.TrimSpace(email) == "" {
+		return nil, errors.New("email is required")
+	}
+	db := database.GetDB()
+	if db == nil {
+		return nil, errors.New("database is not initialized")
+	}
+
+	var rec model.ClientRecord
+	if err := applyClientAccessScope(db.Model(&model.ClientRecord{}), scope).
+		Where("email = ?", email).First(&rec).Error; err != nil {
+		return nil, errors.New("client not found or not permitted")
+	}
+	return &rec, nil
+}
+
+// CanCreateClientForAdmin reports whether the role may create clients.
+func (s *ClientService) CanCreateClientForAdmin(user *model.User) bool {
+	role, err := adminRoleForUser(user)
+	if err != nil {
+		return false
+	}
+	if role.OwnerRole {
+		return true
+	}
+	return permissionValueAllowedInRole(role, "users", "create")
+}
+
+// permissionValueAllowedInRole reads resource.action out of a role document.
+func permissionValueAllowedInRole(role *model.AdminRole, section string, action string) bool {
+	value := rolePermissionValue(role, section, action)
+	if value == nil {
+		return false
+	}
+	return clientAccessModeFromAny(value) != ClientAccessNone
+}
+
+func clientAccessModeFromAny(v any) ClientAccessMode {
+	switch t := v.(type) {
+	case bool:
+		if t {
+			return ClientAccessAll
+		}
+		return ClientAccessNone
+	case string:
+		if strings.EqualFold(strings.TrimSpace(t), "true") {
+			return ClientAccessAll
+		}
+	}
+	return ClientAccessModeFromPermission(v)
+}
+
+// AssignOwnerAdmin stamps every client created by a panel account with that
+// account's id, which is what makes "own"-scoped roles work. The owner role
+// keeps owner 0 so those clients stay visible to every owner.
+func (s *ClientService) AssignOwnerAdmin(emails []string, adminID int) error {
+	if adminID <= 0 || len(emails) == 0 {
+		return nil
+	}
+	db := database.GetDB()
+	if db == nil {
+		return errors.New("database is not initialized")
+	}
+	clean := make([]string, 0, len(emails))
+	for _, email := range emails {
+		if e := strings.TrimSpace(email); e != "" {
+			clean = append(clean, e)
+		}
+	}
+	if len(clean) == 0 {
+		return nil
+	}
+	return db.Model(&model.ClientRecord{}).
+		Where("email IN ? AND (owner_admin_id IS NULL OR owner_admin_id = 0)", clean).
+		Update("owner_admin_id", adminID).Error
 }

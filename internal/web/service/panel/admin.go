@@ -29,20 +29,20 @@ type AdminPayload struct {
 
 // AdminView is the API representation of a panel account (password omitted).
 type AdminView struct {
-	Id        int    `json:"id"`
-	Username  string `json:"username"`
-	RoleId    int    `json:"roleId"`
-	RoleName  string `json:"roleName"`
-	RoleSlug  string `json:"roleSlug"`
-	OwnerRole bool   `json:"ownerRole"`
-	Status    string `json:"status"`
-	IsSelf    bool   `json:"isSelf"`
-	DataLimit int64  `json:"dataLimit"`
-	UsedBytes int64  `json:"usedBytes"`
-	TotalUsers int64 `json:"totalUsers"`
-	Limited   bool   `json:"limited"`
-	CreatedAt int64  `json:"createdAt"`
-	UpdatedAt int64  `json:"updatedAt"`
+	Id         int    `json:"id"`
+	Username   string `json:"username"`
+	RoleId     int    `json:"roleId"`
+	RoleName   string `json:"roleName"`
+	RoleSlug   string `json:"roleSlug"`
+	OwnerRole  bool   `json:"ownerRole"`
+	Status     string `json:"status"`
+	IsSelf     bool   `json:"isSelf"`
+	DataLimit  int64  `json:"dataLimit"`
+	UsedBytes  int64  `json:"usedBytes"`
+	TotalUsers int64  `json:"totalUsers"`
+	Limited    bool   `json:"limited"`
+	CreatedAt  int64  `json:"createdAt"`
+	UpdatedAt  int64  `json:"updatedAt"`
 }
 
 // AdminStats summarises panel accounts for the admins page.

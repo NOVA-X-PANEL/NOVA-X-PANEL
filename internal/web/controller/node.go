@@ -27,24 +27,24 @@ func NewNodeController(g *gin.RouterGroup) *NodeController {
 }
 
 func (a *NodeController) initRouter(g *gin.RouterGroup) {
-	g.GET("/list", a.list)
-	g.GET("/get/:id", a.get)
-	g.GET("/webCert/:id", a.webCert)
+	g.GET("/list", requirePanelPermission("nodes", "view"), a.list)
+	g.GET("/get/:id", requirePanelPermission("nodes", "view"), a.get)
+	g.GET("/webCert/:id", requirePanelPermission("nodes", "view"), a.webCert)
 
-	g.POST("/add", a.add)
-	g.POST("/update/:id", a.update)
-	g.POST("/del/:id", a.del)
-	g.POST("/setEnable/:id", a.setEnable)
+	g.POST("/add", requirePanelPermission("nodes", "create"), a.add)
+	g.POST("/update/:id", requirePanelPermission("nodes", "update"), a.update)
+	g.POST("/del/:id", requirePanelPermission("nodes", "delete"), a.del)
+	g.POST("/setEnable/:id", requirePanelPermission("nodes", "update"), a.setEnable)
 
-	g.POST("/test", a.test)
-	g.POST("/certFingerprint", a.certFingerprint)
-	g.POST("/inbounds", a.inbounds)
-	g.POST("/probe/:id", a.probe)
-	g.POST("/updatePanel", a.updatePanel)
-	g.GET("/history/:id/:metric/:bucket", a.history)
-	g.POST("/mtls/ca", a.mtlsCa)
-	g.POST("/mtls/trustCA", a.setMtlsTrustCA)
-	g.POST("/mtls/reloadClient", a.reloadMtlsClient)
+	g.POST("/test", requirePanelPermission("nodes", "reconnect"), a.test)
+	g.POST("/certFingerprint", requirePanelPermission("nodes", "reconnect"), a.certFingerprint)
+	g.POST("/inbounds", requirePanelPermission("nodes", "viewSimple"), a.inbounds)
+	g.POST("/probe/:id", requirePanelPermission("nodes", "reconnect"), a.probe)
+	g.POST("/updatePanel", requirePanelPermission("nodes", "updateCore"), a.updatePanel)
+	g.GET("/history/:id/:metric/:bucket", requirePanelPermission("nodes", "viewStatistics"), a.history)
+	g.POST("/mtls/ca", requirePanelPermission("nodes", "view"), a.mtlsCa)
+	g.POST("/mtls/trustCA", requirePanelPermission("nodes", "update"), a.setMtlsTrustCA)
+	g.POST("/mtls/reloadClient", requirePanelPermission("nodes", "update"), a.reloadMtlsClient)
 }
 
 // reloadMtlsClient validates the credential currently stored by the master and

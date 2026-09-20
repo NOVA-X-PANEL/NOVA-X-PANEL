@@ -51,16 +51,16 @@ func (a *AdminController) current(c *gin.Context) {
 		return
 	}
 	jsonObj(c, gin.H{
-		"id":           user.Id,
-		"username":     user.Username,
-		"status":       user.Status,
-		"roleId":       user.RoleId,
-		"role_id":      user.RoleId,
-		"permissions":  role.PermissionsJSON,
-		"limits":       role.LimitsJSON,
-		"features":     role.FeaturesJSON,
-		"access":       role.AccessJSON,
-		"isOwner":      role.OwnerRole,
+		"id":          user.Id,
+		"username":    user.Username,
+		"status":      user.Status,
+		"roleId":      user.RoleId,
+		"role_id":     user.RoleId,
+		"permissions": role.PermissionsJSON,
+		"limits":      role.LimitsJSON,
+		"features":    role.FeaturesJSON,
+		"access":      role.AccessJSON,
+		"isOwner":     role.OwnerRole,
 		"role": gin.H{
 			"id":          role.Id,
 			"name":        role.Name,

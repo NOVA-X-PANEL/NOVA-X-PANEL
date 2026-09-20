@@ -70,25 +70,25 @@ func (a *InboundController) inboundServiceFor(c *gin.Context) *service.InboundSe
 
 // initRouter initializes the routes for inbound-related operations.
 func (a *InboundController) initRouter(g *gin.RouterGroup) {
-	g.GET("/list", a.getInbounds)
-	g.GET("/list/slim", a.getInboundsSlim)
-	g.GET("/options", a.getInboundOptions)
-	g.GET("/allLinks", a.getAllInboundLinks)
-	g.GET("/get/:id", a.getInbound)
-	g.GET("/:id/fallbacks", a.getFallbacks)
+	g.GET("/list", requirePanelPermission("inbounds", "view"), a.getInbounds)
+	g.GET("/list/slim", requirePanelPermission("inbounds", "view"), a.getInboundsSlim)
+	g.GET("/options", requirePanelPermission("inbounds", "viewSimple"), a.getInboundOptions)
+	g.GET("/allLinks", requirePanelPermission("inbounds", "view"), a.getAllInboundLinks)
+	g.GET("/get/:id", requirePanelPermission("inbounds", "view"), a.getInbound)
+	g.GET("/:id/fallbacks", requirePanelPermission("inbounds", "view"), a.getFallbacks)
 
-	g.POST("/add", a.addInbound)
-	g.POST("/del/:id", a.delInbound)
-	g.POST("/bulkDel", a.bulkDelInbounds)
-	g.POST("/update/:id", a.updateInbound)
-	g.POST("/setEnable/:id", a.setInboundEnable)
-	g.POST("/:id/subSortIndex", a.setInboundSubSortIndex)
-	g.POST("/:id/resetTraffic", a.resetInboundTraffic)
-	g.POST("/:id/delAllClients", a.delAllInboundClients)
-	g.POST("/resetAllTraffics", a.resetAllTraffics)
-	g.POST("/import", a.importInbound)
-	g.POST("/:id/fallbacks", a.setFallbacks)
-	g.POST("/pushClientTraffics", a.pushClientTraffics)
+	g.POST("/add", requirePanelPermission("inbounds", "create"), a.addInbound)
+	g.POST("/del/:id", requirePanelPermission("inbounds", "delete"), a.delInbound)
+	g.POST("/bulkDel", requirePanelPermission("inbounds", "delete"), a.bulkDelInbounds)
+	g.POST("/update/:id", requirePanelPermission("inbounds", "update"), a.updateInbound)
+	g.POST("/setEnable/:id", requirePanelPermission("inbounds", "update"), a.setInboundEnable)
+	g.POST("/:id/subSortIndex", requirePanelPermission("inbounds", "update"), a.setInboundSubSortIndex)
+	g.POST("/:id/resetTraffic", requirePanelPermission("inbounds", "resetUsage"), a.resetInboundTraffic)
+	g.POST("/:id/delAllClients", requirePanelPermission("inbounds", "delete"), a.delAllInboundClients)
+	g.POST("/resetAllTraffics", requirePanelPermission("inbounds", "resetUsage"), a.resetAllTraffics)
+	g.POST("/import", requirePanelPermission("inbounds", "create"), a.importInbound)
+	g.POST("/:id/fallbacks", requirePanelPermission("inbounds", "update"), a.setFallbacks)
+	g.POST("/pushClientTraffics", requirePanelPermission("inbounds", "update"), a.pushClientTraffics)
 }
 
 // getInbounds retrieves the list of inbounds for the logged-in user.

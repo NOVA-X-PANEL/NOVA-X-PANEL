@@ -211,3 +211,117 @@
 .tag-name .inbound-host-remarks {
   font-weight: 400;
 }
+
+/* ------------------------------------------------------------------ */
+/* Nova X Panel — per-protocol chips + usage bar (Inbounds redesign)   */
+/* ------------------------------------------------------------------ */
+
+/* هر پروتکل رنگ اختصاصی دارد تا لیست با یک نگاه اسکن شود. */
+.inbound-proto {
+  border-radius: 999px !important;
+  padding-inline: 11px !important;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  border-width: 1px !important;
+  border-style: solid !important;
+}
+
+.inbound-proto--violet {
+  color: #c4b5fd;
+  background: rgba(139, 92, 246, 0.16);
+  border-color: rgba(139, 92, 246, 0.42);
+}
+
+.inbound-proto--blue {
+  color: #a9c4ff;
+  background: rgba(79, 124, 255, 0.16);
+  border-color: rgba(79, 124, 255, 0.42);
+}
+
+.inbound-proto--cyan {
+  color: #9ae9f7;
+  background: rgba(34, 211, 238, 0.15);
+  border-color: rgba(34, 211, 238, 0.4);
+}
+
+.inbound-proto--lime {
+  color: #d4f37e;
+  background: rgba(163, 230, 53, 0.15);
+  border-color: rgba(163, 230, 53, 0.4);
+}
+
+.inbound-proto--emerald {
+  color: #86efc0;
+  background: rgba(16, 185, 129, 0.16);
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+.inbound-proto--amber {
+  color: #f8cf8a;
+  background: rgba(245, 158, 11, 0.16);
+  border-color: rgba(245, 158, 11, 0.42);
+}
+
+.inbound-proto--pink {
+  color: #f7a9d6;
+  background: rgba(236, 72, 153, 0.16);
+  border-color: rgba(236, 72, 153, 0.42);
+}
+
+.inbound-proto--teal {
+  color: #8fe3dc;
+  background: rgba(20, 184, 166, 0.16);
+  border-color: rgba(20, 184, 166, 0.42);
+}
+
+.inbound-proto--sky {
+  color: #a5d8ff;
+  background: rgba(56, 189, 248, 0.16);
+  border-color: rgba(56, 189, 248, 0.42);
+}
+
+.inbound-proto--slate {
+  color: #cbd5e1;
+  background: rgba(148, 163, 184, 0.14);
+  border-color: rgba(148, 163, 184, 0.36);
+}
+
+/* نوار پیشرفت مصرف: زیر مقدار ترافیک، با رنگ هشدار در آستانه‌ها. */
+.inbound-usage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.inbound-usage-bar {
+  display: block;
+  width: 100%;
+  max-width: 120px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  overflow: hidden;
+}
+
+.inbound-usage-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #8b5cf6, #4f7cff);
+  transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.inbound-usage-bar.is-warn .inbound-usage-bar-fill {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+.inbound-usage-bar.is-crit .inbound-usage-bar-fill {
+  background: linear-gradient(90deg, #f43f5e, #fb7185);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inbound-usage-bar-fill {
+    transition: none;
+  }
+}

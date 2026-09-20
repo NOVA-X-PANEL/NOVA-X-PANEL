@@ -27,6 +27,25 @@ import {
 } from './helpers';
 import type { ClientCountEntry, DBInboundRecord, InboundSpeedEntry, RowAction } from './types';
 
+/** Per-protocol chip colour, so a list scans by protocol at a glance. */
+const PROTOCOL_CHIP: Record<string, string> = {
+  vless: 'violet',
+  vmess: 'blue',
+  trojan: 'cyan',
+  shadowsocks: 'lime',
+  wireguard: 'emerald',
+  amneziawg: 'amber',
+  hysteria: 'pink',
+  tuic: 'teal',
+  mtproto: 'sky',
+  http: 'slate',
+  socks: 'slate',
+  'dokodemo-door': 'slate',
+};
+
+const protocolChipClass = (protocol: string) =>
+  `inbound-proto inbound-proto--${PROTOCOL_CHIP[String(protocol).toLowerCase()] ?? 'violet'}`;
+
 interface UseInboundColumnsParams {
   hasAnyRemark: boolean;
   hasAnySubSortIndex: boolean;
@@ -213,7 +232,7 @@ export function useInboundColumns({
         sorter: (a, b) => compareText(a.protocol, b.protocol),
         render: (_, record) => {
           const tags: ReactElement[] = [
-            <Tag key="p" color="purple">
+            <Tag key="p" className={protocolChipClass(record.protocol)}>
               {record.protocol}
             </Tag>,
           ];
@@ -392,31 +411,49 @@ export function useInboundColumns({
         align: 'center',
         width: 140,
         sorter: (a, b) => a.up + a.down - (b.up + b.down),
-        render: (_, record) => (
-          <Popover
-            content={
-              <table cellPadding={2}>
-                <tbody>
-                  <tr>
-                    <td>↑ {SizeFormatter.sizeFormat(record.up)}</td>
-                    <td>↓ {SizeFormatter.sizeFormat(record.down)}</td>
-                  </tr>
-                  {record.total > 0 && record.up + record.down < record.total && (
+        render: (_, record) => {
+          const used = record.up + record.down;
+          const percent =
+            record.total > 0 ? Math.min(100, Math.round((used / record.total) * 100)) : null;
+          return (
+            <Popover
+              content={
+                <table cellPadding={2}>
+                  <tbody>
                     <tr>
-                      <td>{t('remained')}</td>
-                      <td>{SizeFormatter.sizeFormat(record.total - record.up - record.down)}</td>
+                      <td>↑ {SizeFormatter.sizeFormat(record.up)}</td>
+                      <td>↓ {SizeFormatter.sizeFormat(record.down)}</td>
                     </tr>
-                  )}
-                </tbody>
-              </table>
-            }
-          >
-            <Tag color={ColorUtils.usageColor(record.up + record.down, trafficDiff, record.total)}>
-              {SizeFormatter.sizeFormat(record.up + record.down)} /{' '}
-              {record.total > 0 ? SizeFormatter.sizeFormat(record.total) : <InfinityIcon />}
-            </Tag>
-          </Popover>
-        ),
+                    {record.total > 0 && used < record.total && (
+                      <tr>
+                        <td>{t('remained')}</td>
+                        <td>{SizeFormatter.sizeFormat(record.total - used)}</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              }
+            >
+              <div className="inbound-usage">
+                <Tag color={ColorUtils.usageColor(used, trafficDiff, record.total)}>
+                  {SizeFormatter.sizeFormat(used)} /{' '}
+                  {record.total > 0 ? SizeFormatter.sizeFormat(record.total) : <InfinityIcon />}
+                </Tag>
+                {percent !== null && (
+                  <span
+                    className={`inbound-usage-bar${percent >= 90 ? ' is-crit' : percent >= 75 ? ' is-warn' : ''}`}
+                    role="progressbar"
+                    aria-valuenow={percent}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                  >
+                    <span className="inbound-usage-bar-fill" style={{ width: `${percent}%` }} />
+                  </span>
+                )}
+              </div>
+            </Popover>
+          );
+        },
       },
       {
         title: t('pages.inbounds.speed'),

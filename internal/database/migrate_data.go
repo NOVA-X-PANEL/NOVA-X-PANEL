@@ -38,6 +38,9 @@ import (
 func migrationModels() []any {
 	return []any{
 		&model.User{},
+		// AdminRole must be migrated before User: users carry role_id, so the
+		// roles have to exist in the destination DB first.
+		&model.AdminRole{},
 		&model.Setting{},
 		&model.HistoryOfSeeders{},
 		&model.Node{},

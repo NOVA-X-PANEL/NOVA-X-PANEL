@@ -13017,6 +13017,170 @@
         }
       }
     },
+    "/panel/api/admins/resetUsage/{id}": {
+      "post": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "Reset the traffic of every client owned by this administrator and clear its usage counter.",
+        "operationId": "post_panel_api_admins_resetUsage_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Administrator ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admins/users/disableActive/{id}": {
+      "post": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "Disable every enabled client owned by this administrator.",
+        "operationId": "post_panel_api_admins_users_disableActive_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Administrator ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admins/users/activateDisabled/{id}": {
+      "post": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "Enable every disabled client owned by this administrator.",
+        "operationId": "post_panel_api_admins_users_activateDisabled_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Administrator ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admins/users/removeAll/{id}": {
+      "post": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "Delete every client owned by this administrator.",
+        "operationId": "post_panel_api_admins_users_removeAll_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Administrator ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/panel/api/admin-roles/list": {
       "get": {
         "tags": [

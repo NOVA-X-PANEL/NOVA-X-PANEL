@@ -19,7 +19,7 @@ import {
 import { HttpUtil, LanguageManager } from '@/utils';
 import { setMessageInstance } from '@/utils/messageBus';
 import { pauseAnimationsUntilLeave, useTheme } from '@/hooks/useTheme';
-import { LoginFormSchema, type LoginFormValues } from '@/schemas/login';
+import { LoginFormSchema } from '@/schemas/login';
 import NovaLogo from './NovaLogo';
 import NovaLandscape from './NovaLandscape';
 import './LoginPage.css';
@@ -43,8 +43,6 @@ const COPY = {
   credit: 'طراحی و توسعه اختصاصی',
   alwaysOnline: 'همیشه آنلاین',
 } as const;
-
-type LoginForm = LoginFormValues;
 
 /** Telegram mark, inline so the button needs no icon-font import. */
 function TelegramIcon({ className }: { className?: string }) {

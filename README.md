@@ -59,10 +59,10 @@ Deploy, configure and monitor VLESS, VMess, Trojan, Shadowsocks, WireGuard, Amne
 bash <(curl -Ls https://raw.githubusercontent.com/NOVA-X-PANEL/NOVA-X-PANEL/main/install.sh)
 ```
 
-Install a specific release (e.g. `v1.6.0`):
+Install a specific release (e.g. `v1.7.0`):
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/NOVA-X-PANEL/NOVA-X-PANEL/main/install.sh) v1.6.0
+bash <(curl -Ls https://raw.githubusercontent.com/NOVA-X-PANEL/NOVA-X-PANEL/main/install.sh) v1.7.0
 ```
 
 Install the rolling **dev** build (latest per-commit pre-release from `main` — not a stable release):

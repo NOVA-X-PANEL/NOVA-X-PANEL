@@ -4,7 +4,7 @@ import { Card } from 'antd';
 
 import { Sparkline } from '@/components/viz';
 import type { Status } from '@/models/status';
-import { NOVA_CYAN, NOVA_VIOLET } from './novaTheme';
+import { NOVA_BLUE, NOVA_PINK } from './novaTheme';
 
 interface ConnectionsCardProps {
   status: Status;
@@ -22,8 +22,8 @@ export default function ConnectionsCard({
   isMobile,
 }: ConnectionsCardProps) {
   const { t } = useTranslation();
-  const accent = NOVA_VIOLET;
-  const udpColor = NOVA_CYAN;
+  const accent = NOVA_BLUE;
+  const udpColor = NOVA_PINK;
 
   const referenceLines = useMemo(
     () => [

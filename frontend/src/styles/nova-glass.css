@@ -1,22 +1,26 @@
-/* NOVA X PANEL — "Nova Calm · Umber" theme layer.
+/* NOVA X PANEL — "Nova Aurora" theme layer.
    Loaded after page-shell/page-cards so every panel page shares one palette.
-   Umber is a warm, low-saturation dark theme: flat surfaces, hairline borders
-   and a single terracotta accent. Deliberately no neon, no gradients and no
-   glow — the previous violet/blue scheme was too loud to look at for long.
-   Light and ultra-dark reuse the same shapes. */
+   A deep night sky with a layered aurora wash, aurora-tinted card surfaces, a
+   gradient accent (blue → violet → pink) and a soft glow on interaction.
+   Effects are deliberately soft — no hard neon — so the panel stays easy to
+   look at during long sessions. Light reuses the same shapes. */
 
 :root {
-  /* Warm palette. --nv-grad is kept as a name other files reference; it is a
-     flat accent now, not a multi-colour gradient. */
-  --nv-accent: #c08a63;
-  --nv-accent-2: #a9764f;
-  --nv-on-accent: #1a1512;
-  --nv-grad: linear-gradient(135deg, var(--nv-accent) 0%, var(--nv-accent) 100%);
-  --nv-halo: rgba(192, 138, 99, 0.45);
-  --nv-radius: 14px;
+  --nv-c1: #6ea8ff;
+  --nv-c2: #a78bfa;
+  --nv-c3: #f0a6d0;
+  --nv-grad: linear-gradient(135deg, var(--nv-c1) 0%, var(--nv-c2) 55%, var(--nv-c3) 100%);
+  --nv-grad-soft: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--nv-c1) 22%, transparent),
+    color-mix(in srgb, var(--nv-c2) 18%, transparent)
+  );
+  --nv-on-accent: #0a0e1c;
+  --nv-halo: color-mix(in srgb, var(--nv-c1) 45%, transparent);
+  --nv-radius: 18px;
 }
 
-/* — surfaces: flat, warm, no wash — */
+/* — surfaces: deep night sky + layered aurora wash — */
 
 :is(
   .index-page,
@@ -32,9 +36,9 @@
   .admin-roles-page
 ) {
   --nv-card: #ffffff;
-  --nv-border: rgba(60, 45, 35, 0.12);
-  --nv-shadow: 0 1px 2px rgba(60, 45, 35, 0.06);
-  --bg-page: #f4f1ee;
+  --nv-border: rgba(60, 60, 90, 0.14);
+  --nv-shadow: 0 1px 2px rgba(30, 30, 60, 0.08);
+  --bg-page: #f5f6fb;
   --bg-card: #ffffff;
   background: var(--bg-page);
 }
@@ -52,11 +56,17 @@
   .admins-page,
   .admin-roles-page
 ).is-dark {
-  --nv-card: #282423;
-  --nv-border: rgba(255, 255, 255, 0.1);
-  --nv-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --bg-page: #1f1c1a;
-  --bg-card: #282423;
+  --nv-card: #141926;
+  --nv-border: rgba(255, 255, 255, 0.11);
+  --nv-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 16px 40px rgba(0, 0, 0, 0.4);
+  --bg-page: #0b0e1a;
+  --bg-card: #141926;
+  /* the aurora itself, fixed behind the content */
+  background-image:
+    radial-gradient(1100px 560px at 78% -10%, rgba(167, 139, 250, 0.34), transparent 62%),
+    radial-gradient(900px 520px at 8% -6%, rgba(110, 168, 255, 0.3), transparent 64%),
+    radial-gradient(800px 700px at 55% 118%, rgba(240, 166, 208, 0.18), transparent 62%);
+  background-attachment: fixed;
 }
 
 :is(
@@ -72,14 +82,18 @@
     .admins-page,
     .admin-roles-page
   ).is-dark.is-ultra {
-  --nv-card: #1a1716;
+  --nv-card: #0e1220;
   --nv-border: rgba(255, 255, 255, 0.09);
-  --nv-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-  --bg-page: #12100f;
-  --bg-card: #1a1716;
+  --nv-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 18px 44px rgba(0, 0, 0, 0.6);
+  --bg-page: #06080f;
+  --bg-card: #0e1220;
+  background-image:
+    radial-gradient(1100px 560px at 78% -10%, rgba(167, 139, 250, 0.26), transparent 62%),
+    radial-gradient(900px 520px at 8% -6%, rgba(110, 168, 255, 0.24), transparent 64%),
+    radial-gradient(800px 700px at 55% 118%, rgba(240, 166, 208, 0.14), transparent 62%);
 }
 
-/* — cards: flat panes, no gradient hairline, no lift, no glow — */
+/* — cards: aurora-tinted surface, coloured top line, soft corner bloom — */
 
 :is(
     .index-page,
@@ -96,15 +110,19 @@
   )
   .ant-card {
   position: relative;
+  overflow: hidden;
   border-radius: var(--nv-radius);
   border: 1px solid var(--nv-border);
-  background: var(--nv-card);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--nv-c1) 8%, transparent), transparent 58%),
+    var(--nv-card);
   box-shadow: var(--nv-shadow);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
+    transform 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
 }
 
 :is(
@@ -121,7 +139,39 @@
     .admin-roles-page
   )
   .ant-card::before {
-  display: none;
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  border-radius: 0;
+  background: var(--nv-grad);
+  opacity: 0.75;
+  pointer-events: none;
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-card::after {
+  content: '';
+  position: absolute;
+  inset: -40% 60% 60% -10%;
+  pointer-events: none;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--nv-c2) 16%, transparent),
+    transparent
+  );
 }
 
 :is(
@@ -153,9 +203,12 @@
   )
   .ant-card.ant-card-hoverable:hover {
   cursor: default;
-  transform: none;
-  border-color: var(--nv-halo);
-  box-shadow: var(--nv-shadow);
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--nv-c1) 45%, var(--nv-border));
+  box-shadow:
+    0 20px 46px rgba(0, 0, 0, 0.45),
+    0 0 0 1px color-mix(in srgb, var(--nv-c1) 22%, transparent),
+    0 0 34px color-mix(in srgb, var(--nv-c1) 22%, transparent);
 }
 
 :is(
@@ -176,7 +229,7 @@
   background: transparent;
 }
 
-/* — primary actions: one flat accent, no gradient or glow — */
+/* — primary actions: gradient accent with a soft colour shadow — */
 
 :is(
     .index-page,
@@ -192,10 +245,11 @@
     .admin-roles-page
   )
   .ant-btn-primary:not(:disabled) {
-  background: var(--nv-accent);
-  border-color: var(--nv-accent);
+  border: 0;
+  background: var(--nv-grad);
   color: var(--nv-on-accent);
-  box-shadow: none;
+  font-weight: 700;
+  box-shadow: 0 10px 26px color-mix(in srgb, var(--nv-c2) 38%, transparent);
 }
 
 :is(
@@ -212,14 +266,50 @@
     .admin-roles-page
   )
   .ant-btn-primary:not(:disabled):hover {
-  background: var(--nv-accent-2);
-  border-color: var(--nv-accent-2);
+  background: var(--nv-grad);
   color: var(--nv-on-accent);
-  filter: none;
-  box-shadow: none;
+  filter: brightness(1.07) saturate(1.05);
+  transform: translateY(-1px);
+  box-shadow: 0 14px 32px color-mix(in srgb, var(--nv-c2) 48%, transparent);
 }
 
-/* — tables: quiet rows, warm hover — */
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-btn-default {
+  border-color: var(--nv-border);
+  background: color-mix(in srgb, var(--nv-c1) 8%, var(--nv-card));
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-btn-default:not(:disabled):hover {
+  border-color: var(--nv-c1);
+  color: var(--nv-c1);
+}
+
+/* — tables: tinted header, aurora row hover — */
 
 :is(
     .index-page,
@@ -252,44 +342,252 @@
     .admins-page,
     .admin-roles-page
   )
+  .ant-table-thead
+  > tr
+  > th {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--nv-c1) 12%, transparent),
+    color-mix(in srgb, var(--nv-c1) 4%, transparent)
+  );
+  border-bottom: 1px solid var(--nv-border);
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-table-tbody
+  > tr
+  > td {
+  border-bottom: 1px solid var(--nv-border);
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
   .ant-table-tbody
   > tr.ant-table-row:hover
   > td {
-  background: color-mix(in srgb, var(--nv-accent) 10%, transparent);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--nv-c1) 13%, transparent),
+    color-mix(in srgb, var(--nv-c2) 7%, transparent)
+  );
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-table-cell-fix-left,
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-table-cell-fix-right {
+  background: var(--nv-card);
+}
+
+/* — fields: tinted surfaces, aurora focus ring — */
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  :is(.ant-input, .ant-input-affix-wrapper, .ant-input-number, .ant-picker, .ant-select-selector) {
+  border-color: var(--nv-border);
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--nv-c1) 6%, var(--nv-card));
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  :is(.ant-input-affix-wrapper, .ant-input-number, .ant-picker, .ant-select)
+  :is(.ant-input, .ant-input-number-input, .ant-picker-input) {
+  background: transparent;
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  :is(.ant-input, .ant-input-affix-wrapper, .ant-input-number, .ant-picker).ant-input-focused,
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-select-focused
+  .ant-select-selector {
+  border-color: var(--nv-c1);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--nv-c1) 20%, transparent);
 }
 
 /* — sidebar — */
 
 .ant-sidebar > .ant-layout-sider {
-  background: var(--nv-card, var(--ant-color-bg-container));
-  border-inline-end: 1px solid var(--nv-border, var(--ant-color-border));
+  border-inline-end: 1px solid var(--nv-border, var(--ant-color-border-secondary));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--nv-c1) 12%, transparent),
+    transparent 40%
+  );
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   box-shadow: none;
 }
 
-.sider-brand .brand-text {
-  background: none;
-  -webkit-background-clip: initial;
-  background-clip: initial;
-  -webkit-text-fill-color: currentColor;
-  color: var(--ant-color-text);
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  ).is-dark
+  .ant-sidebar
+  > .ant-layout-sider {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--nv-c1) 12%, transparent), transparent 40%),
+    #0f1422;
 }
 
-/* — overlays: plain elevated panels — */
+.sider-brand .brand-text {
+  background: var(--nv-grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: var(--nv-c1);
+}
+
+.sider-nav .ant-menu-item-selected,
+.sider-utility .ant-menu-item-selected {
+  background: var(--nv-grad) !important;
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--nv-c2) 42%, transparent) !important;
+}
+
+.sider-nav .ant-menu-item-selected .anticon,
+.sider-nav .ant-menu-item-selected .ant-menu-title-content,
+.sider-utility .ant-menu-item-selected .anticon,
+.sider-utility .ant-menu-item-selected .ant-menu-title-content {
+  color: var(--nv-on-accent) !important;
+  -webkit-text-fill-color: currentColor !important;
+  font-weight: 700 !important;
+}
+
+.sider-nav .ant-menu-item:not(.ant-menu-item-selected):hover,
+.sider-utility .ant-menu-item:not(.ant-menu-item-selected):hover {
+  background: color-mix(in srgb, var(--nv-c1) 14%, transparent) !important;
+}
+
+.sider-nav .ant-menu-item:not(.ant-menu-item-selected):hover .ant-menu-title-content,
+.sider-utility .ant-menu-item:not(.ant-menu-item-selected):hover .ant-menu-title-content {
+  background-image: var(--nv-grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  font-weight: 600;
+}
+
+/* — overlays — */
 
 .ant-modal .ant-modal-content {
-  border: 1px solid color-mix(in srgb, var(--ant-color-text) 12%, transparent);
-  border-radius: 16px;
-  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.32);
+  border: 1px solid color-mix(in srgb, var(--nv-c1) 24%, var(--nv-border, transparent));
+  border-radius: 18px;
+  box-shadow:
+    0 18px 44px rgba(0, 0, 0, 0.45),
+    0 0 0 1px color-mix(in srgb, var(--nv-c1) 10%, transparent);
 }
 
 .ant-dropdown .ant-dropdown-menu,
 .ant-select-dropdown,
 .ant-picker-dropdown .ant-picker-panel-container {
-  border: 1px solid color-mix(in srgb, var(--ant-color-text) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--nv-c1) 24%, var(--nv-border, transparent));
   border-radius: 12px;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.24);
+  box-shadow:
+    0 18px 44px rgba(0, 0, 0, 0.45),
+    0 0 0 1px color-mix(in srgb, var(--nv-c1) 10%, transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -308,5 +606,22 @@
     )
     .ant-card {
     transition: none;
+  }
+
+  :is(
+      .index-page,
+      .clients-page,
+      .inbounds-page,
+      .xray-page,
+      .settings-page,
+      .nodes-page,
+      .groups-page,
+      .api-docs-page,
+      .hosts-page,
+      .admins-page,
+      .admin-roles-page
+    )
+    .ant-card:hover {
+    transform: none;
   }
 }

@@ -86,8 +86,7 @@ export function useNodesQuery() {
     // A role without nodes access has nothing to wait for: report settled so
     // pages that gate their spinner on this query still render.
     fetched: permitted === false ? true : query.data !== undefined || query.isError,
-    fetchError:
-      permitted === false || !query.error ? '' : (query.error as Error).message,
+    fetchError: permitted === false || !query.error ? '' : (query.error as Error).message,
     permitted: permitted !== false,
     refetch: query.refetch,
   };

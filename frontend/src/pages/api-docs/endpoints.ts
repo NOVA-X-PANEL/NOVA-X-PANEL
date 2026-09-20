@@ -2000,7 +2000,7 @@ export const sections: readonly Section[] = [
         method: 'POST',
         path: '/panel/api/admins/resetUsage/:id',
         summary:
-          "Reset the traffic of every client owned by this administrator and clear its usage counter.",
+          'Reset the traffic of every client owned by this administrator and clear its usage counter.',
         params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Administrator ID.' }],
       },
       {
@@ -2018,7 +2018,7 @@ export const sections: readonly Section[] = [
       {
         method: 'POST',
         path: '/panel/api/admins/users/removeAll/:id',
-        summary: "Delete every client owned by this administrator.",
+        summary: 'Delete every client owned by this administrator.',
         params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Administrator ID.' }],
       },
     ],

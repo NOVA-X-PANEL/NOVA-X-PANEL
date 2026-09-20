@@ -37,8 +37,7 @@ export function useHostsQuery() {
     // A role without hosts access has nothing to wait for, so the query counts
     // as settled instead of leaving the page spinning forever.
     fetched: permitted === false ? true : query.data !== undefined || query.isError,
-    fetchError:
-      permitted === false || !query.error ? '' : (query.error as Error).message,
+    fetchError: permitted === false || !query.error ? '' : (query.error as Error).message,
     permitted: permitted !== false,
     refetch: query.refetch,
   };

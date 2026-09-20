@@ -256,10 +256,7 @@ export default function AppSidebar() {
     return tabs.filter((tab) => tab.icon === 'logout' || canAccessRoute(admin, tab.key));
   }, [tabs, admin]);
 
-  const navItems = useMemo(
-    () => visibleTabs.filter((tab) => tab.icon !== 'logout'),
-    [visibleTabs],
-  );
+  const navItems = useMemo(() => visibleTabs.filter((tab) => tab.icon !== 'logout'), [visibleTabs]);
   const utilItems = useMemo(
     () => visibleTabs.filter((tab) => tab.icon === 'logout'),
     [visibleTabs],

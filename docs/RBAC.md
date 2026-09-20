@@ -106,7 +106,33 @@ internal/web/controller/admins.go            admin API
 internal/web/controller/admin_roles.go       role API
 ```
 
+## Front-end
+
+Two pages ship with the panel:
+
+| Route | Page | Key actions |
+|---|---|---|
+| `/panel/admins` | Administrators | list, create, edit, enable/disable, delete |
+| `/panel/admin-roles` | Admin Roles | list, create, edit, duplicate, delete |
+
+The role editor exposes four tabs — **Permissions**, **Limits**, **Features**,
+**Access**. Scoped client actions use a `none / own / all` selector; plain
+actions use a checkbox. Access can be narrowed to specific client groups and
+inbound IDs.
+
+Both pages live in the sidebar under *Admins* and *Admin Roles*. They reuse the
+existing query layer (`src/api/queries/useAdmins.ts`) and the shared permission
+helper `src/lib/rbac.ts` (`isOwner`, `hasPermission`).
+
+### Front-end files
+
+```
+frontend/src/pages/admins/AdminsPage.tsx           administrators page
+frontend/src/pages/admin-roles/AdminRolesPage.tsx  roles page + editor
+frontend/src/api/queries/useAdmins.ts              queries + mutations
+frontend/src/lib/rbac.ts                           permission groups + helpers
+```
+
 ## Status
 
-Backend core implemented and building. Front-end pages (`/panel/admins`,
-`/panel/admin-roles`) are the next stage; the API is fully usable today.
+Backend and front-end both implemented. The version file is `1.0.2`.

@@ -1974,8 +1974,7 @@ export const sections: readonly Section[] = [
       {
         method: 'POST',
         path: '/panel/api/admins/update/:id',
-        summary:
-          'Update an administrator. The owner account cannot change role or be disabled.',
+        summary: 'Update an administrator. The owner account cannot change role or be disabled.',
         params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Administrator ID.' }],
         body: '{"username":"operator1","password":"newsecret","roleId":3,"status":"active"}',
       },
@@ -2009,7 +2008,8 @@ export const sections: readonly Section[] = [
       {
         method: 'GET',
         path: '/panel/api/admin-roles/list',
-        summary: 'List every role with decoded permissions, limits, features, access, and admin count.',
+        summary:
+          'List every role with decoded permissions, limits, features, access, and admin count.',
         response:
           '{\n  "success": true,\n  "obj": [\n    {\n      "id": 1,\n      "name": "owner",\n      "slug": "owner",\n      "builtIn": true,\n      "ownerRole": true,\n      "adminCount": 1\n    }\n  ]\n}',
       },
@@ -2022,17 +2022,16 @@ export const sections: readonly Section[] = [
       {
         method: 'POST',
         path: '/panel/api/admin-roles/add',
-        summary: 'Create a custom role. The slug is derived from the role name; defaults follow the Operator preset.',
-        body:
-          '{"name":"Reseller","permissions":{},"limits":{},"features":{},"access":{}}',
+        summary:
+          'Create a custom role. The slug is derived from the role name; defaults follow the Operator preset.',
+        body: '{"name":"Reseller","permissions":{},"limits":{},"features":{},"access":{}}',
       },
       {
         method: 'POST',
         path: '/panel/api/admin-roles/update/:id',
         summary: 'Update a non-owner role. Built-in roles keep their protected identity.',
         params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Role ID.' }],
-        body:
-          '{"name":"Reseller","permissions":{},"limits":{},"features":{},"access":{}}',
+        body: '{"name":"Reseller","permissions":{},"limits":{},"features":{},"access":{}}',
       },
       {
         method: 'POST',

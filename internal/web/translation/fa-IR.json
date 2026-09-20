@@ -125,7 +125,9 @@
     "openMenu": "باز کردن منو",
     "pinSidebar": "ثابت کردن نوار کناری",
     "unpinSidebar": "برداشتن تثبیت نوار کناری",
-    "subFormats": "Sub Formats"
+    "subFormats": "Sub Formats",
+    "admins": "مدیران",
+    "adminRoles": "نقش‌های مدیر"
   },
   "pages": {
     "login": {
@@ -2255,6 +2257,83 @@
         "delete": "حذف میزبان",
         "badTag": "برچسب نامعتبر",
         "badVlessRoute": "یک عدد بین 0 تا 65535 وارد کنید"
+      }
+    },
+    "admins": {
+      "title": "مدیران",
+      "description": "مدیران پنل را مدیریت کنید و به هرکدام نقشی با مجوزهای مستقل اختصاص دهید.",
+      "listTitle": "مدیران",
+      "create": "افزودن مدیر",
+      "edit": "ویرایش مدیر",
+      "you": "شما",
+      "enable": "فعال‌سازی",
+      "disable": "غیرفعال‌سازی",
+      "deleteConfirm": "این مدیر حذف شود؟",
+      "usernameRequired": "نام کاربری الزامی است",
+      "passwordRequired": "رمز عبور الزامی است",
+      "passwordKeepHint": "برای نگه‌داشتن رمز فعلی خالی بگذارید.",
+      "roleRequired": "انتخاب نقش الزامی است",
+      "columns": {
+        "username": "نام کاربری",
+        "role": "نقش",
+        "status": "وضعیت",
+        "actions": "عملیات"
+      },
+      "stats": {
+        "total": "کل",
+        "active": "فعال",
+        "disabled": "غیرفعال"
+      },
+      "toasts": {
+        "created": "مدیر ایجاد شد",
+        "updated": "مدیر ویرایش شد",
+        "deleted": "مدیر حذف شد"
+      }
+    },
+    "adminRoles": {
+      "title": "نقش‌های مدیر",
+      "description": "نقش‌ها و مجوزها، محدودیت‌ها، ویژگی‌ها و دامنه دسترسی آن‌ها را تعریف کنید.",
+      "listTitle": "نقش‌ها",
+      "create": "افزودن نقش",
+      "edit": "ویرایش نقش",
+      "owner": "مالک",
+      "builtIn": "پیش‌فرض",
+      "deleteConfirm": "این نقش حذف شود؟",
+      "nameRequired": "نام نقش الزامی است",
+      "permissions": "مجوزها",
+      "limits": "محدودیت‌ها",
+      "features": "ویژگی‌ها",
+      "access": "دسترسی",
+      "scopeOwn": "خودم",
+      "scopeAll": "همه",
+      "allowAllGroups": "دسترسی به همه گروه‌های کلاینت",
+      "allowedGroups": "گروه‌های مجاز کلاینت",
+      "allowAllInbounds": "دسترسی به همه اینباندها",
+      "allowedInbounds": "شناسه اینباندهای مجاز",
+      "commaHint": "با کاما جدا کنید.",
+      "groups": {
+        "inbounds": "اینباندها",
+        "clients": "کلاینت‌ها",
+        "groups": "گروه‌ها",
+        "nodes": "نودها",
+        "admins": "مدیران",
+        "roles": "نقش‌ها",
+        "outbounds": "اوت‌باندها",
+        "routing": "روتینگ",
+        "settings": "تنظیمات",
+        "xrayConfigs": "تنظیمات Xray",
+        "overview": "نمای کلی"
+      },
+      "columns": {
+        "name": "نام",
+        "slug": "شناسه",
+        "admins": "مدیران",
+        "actions": "عملیات"
+      },
+      "toasts": {
+        "created": "نقش ایجاد شد",
+        "updated": "نقش ویرایش شد",
+        "deleted": "نقش حذف شد"
       }
     }
   },

@@ -125,7 +125,9 @@
     "openMenu": "Open menu",
     "pinSidebar": "Pin sidebar",
     "unpinSidebar": "Unpin sidebar",
-    "subFormats": "Sub Formats"
+    "subFormats": "Sub Formats",
+    "admins": "Admins",
+    "adminRoles": "Admin Roles"
   },
   "pages": {
     "login": {
@@ -2256,6 +2258,83 @@
       },
       "defaultOutbound": "Default Outbound",
       "defaultOutboundDesc": "Traffic that does not match any routing rule uses this outbound (Xray uses the first outbound in the list)."
+    },
+    "admins": {
+      "title": "Administrators",
+      "description": "Manage panel administrators and assign each one a role with its own permissions.",
+      "listTitle": "Administrators",
+      "create": "Add administrator",
+      "edit": "Edit administrator",
+      "you": "You",
+      "enable": "Enable",
+      "disable": "Disable",
+      "deleteConfirm": "Delete this administrator?",
+      "usernameRequired": "Username is required",
+      "passwordRequired": "Password is required",
+      "passwordKeepHint": "Leave empty to keep the current password.",
+      "roleRequired": "Role is required",
+      "columns": {
+        "username": "Username",
+        "role": "Role",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "stats": {
+        "total": "Total",
+        "active": "Active",
+        "disabled": "Disabled"
+      },
+      "toasts": {
+        "created": "Administrator created",
+        "updated": "Administrator updated",
+        "deleted": "Administrator deleted"
+      }
+    },
+    "adminRoles": {
+      "title": "Admin Roles",
+      "description": "Define roles and their permissions, limits, features and access scope.",
+      "listTitle": "Roles",
+      "create": "Add role",
+      "edit": "Edit role",
+      "owner": "Owner",
+      "builtIn": "Built-in",
+      "deleteConfirm": "Delete this role?",
+      "nameRequired": "Role name is required",
+      "permissions": "Permissions",
+      "limits": "Limits",
+      "features": "Features",
+      "access": "Access",
+      "scopeOwn": "Own",
+      "scopeAll": "All",
+      "allowAllGroups": "Allow all client groups",
+      "allowedGroups": "Allowed client groups",
+      "allowAllInbounds": "Allow all inbounds",
+      "allowedInbounds": "Allowed inbound IDs",
+      "commaHint": "Comma-separated.",
+      "groups": {
+        "inbounds": "Inbounds",
+        "clients": "Clients",
+        "groups": "Groups",
+        "nodes": "Nodes",
+        "admins": "Administrators",
+        "roles": "Roles",
+        "outbounds": "Outbounds",
+        "routing": "Routing",
+        "settings": "Settings",
+        "xrayConfigs": "Xray configs",
+        "overview": "Overview"
+      },
+      "columns": {
+        "name": "Name",
+        "slug": "Slug",
+        "admins": "Admins",
+        "actions": "Actions"
+      },
+      "toasts": {
+        "created": "Role created",
+        "updated": "Role updated",
+        "deleted": "Role deleted"
+      }
     }
   },
   "tgbot": {

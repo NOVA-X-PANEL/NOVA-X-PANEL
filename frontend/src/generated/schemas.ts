@@ -1696,6 +1696,11 @@ export const SCHEMAS: Record<string, unknown> = {
       "limitIp": {
         "type": "integer"
       },
+      "ownerAdminId": {
+        "description": "OwnerAdminId binds this client to the panel admin (model.User) that\ncreated it. 0 means the client is owned by the owner role / unassigned\n(NOVA X PANEL RBAC: non-owner admins only see clients they own).",
+        "format": "int64",
+        "type": "integer"
+      },
       "password": {
         "type": "string"
       },
@@ -1765,6 +1770,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "keepAlive",
       "limitHwid",
       "limitIp",
+      "ownerAdminId",
       "password",
       "preSharedKey",
       "privateKey",
@@ -4291,19 +4297,39 @@ export const SCHEMAS: Record<string, unknown> = {
   "User": {
     "description": "User represents a user account in the 3x-ui panel.",
     "properties": {
+      "createdAt": {
+        "description": "CreatedAt/UpdatedAt are populated for RBAC admin management views.",
+        "format": "int64",
+        "type": "integer"
+      },
       "id": {
         "type": "integer"
       },
       "password": {
         "type": "string"
       },
+      "roleId": {
+        "description": "RBAC (NOVA X PANEL): each panel account is bound to one AdminRole.",
+        "type": "integer"
+      },
+      "status": {
+        "type": "string"
+      },
+      "updatedAt": {
+        "format": "int64",
+        "type": "integer"
+      },
       "username": {
         "type": "string"
       }
     },
     "required": [
+      "createdAt",
       "id",
       "password",
+      "roleId",
+      "status",
+      "updatedAt",
       "username"
     ],
     "type": "object"

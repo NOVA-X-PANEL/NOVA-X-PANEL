@@ -450,6 +450,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "keepAlive": 0,
     "limitHwid": 0,
     "limitIp": 0,
+    "ownerAdminId": 0,
     "password": "",
     "preSharedKey": "",
     "privateKey": "",
@@ -1061,8 +1062,12 @@ export const EXAMPLES: Record<string, unknown> = {
     "zero_rtt_handshake": false
   },
   "User": {
+    "createdAt": 0,
     "id": 0,
     "password": "",
+    "roleId": 0,
+    "status": "",
+    "updatedAt": 0,
     "username": ""
   }
 };

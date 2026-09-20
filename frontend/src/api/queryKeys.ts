@@ -17,6 +17,13 @@ export const keys = {
     root: () => ['sub-balancers'] as const,
     list: () => ['sub-balancers', 'list'] as const,
   },
+  admins: {
+    root: () => ['admins'] as const,
+    list: () => ['admins', 'list'] as const,
+    stats: () => ['admins', 'stats'] as const,
+    roles: () => ['admins', 'roles'] as const,
+    current: () => ['admins', 'current'] as const,
+  },
   settings: {
     root: () => ['settings'] as const,
     all: () => ['settings', 'all'] as const,

@@ -1,9 +1,10 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Card, theme } from 'antd';
+import { Card } from 'antd';
 
 import { Sparkline } from '@/components/viz';
 import type { Status } from '@/models/status';
+import { NOVA_CYAN, NOVA_VIOLET } from './novaTheme';
 
 interface ConnectionsCardProps {
   status: Status;
@@ -21,9 +22,8 @@ export default function ConnectionsCard({
   isMobile,
 }: ConnectionsCardProps) {
   const { t } = useTranslation();
-  const { token } = theme.useToken();
-  const accent = token.colorPrimary;
-  const udpColor = token.colorTextTertiary;
+  const accent = NOVA_VIOLET;
+  const udpColor = NOVA_CYAN;
 
   const referenceLines = useMemo(
     () => [

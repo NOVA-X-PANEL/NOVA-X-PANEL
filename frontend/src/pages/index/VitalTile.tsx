@@ -2,8 +2,10 @@ import { useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { Card, theme } from 'antd';
 
-import { Sparkline } from '@/components/viz';
+import { RadialGauge, Sparkline } from '@/components/viz';
+import { USAGE_WARN_PERCENT } from '@/models/status';
 import { mean, peak } from './useOverviewHistory';
+import { NOVA_BLUE, NOVA_VIOLET } from './novaTheme';
 
 interface VitalTileProps {
   icon: ReactNode;
@@ -36,6 +38,12 @@ export default function VitalTile({
     [data, meanColor],
   );
 
+  // The Nova violet→blue reads as "nominal"; once a resource runs warm the ring
+  // takes the panel's own warning/critical colour so the signal stays honest.
+  const stressed = percent >= USAGE_WARN_PERCENT;
+  const from = stressed ? statusColor : NOVA_VIOLET;
+  const to = stressed ? statusColor : NOVA_BLUE;
+
   return (
     <Card hoverable className="ov-tile" styles={{ body: { padding: 0 } }}>
       <div className="ov-tile-head">
@@ -43,9 +51,20 @@ export default function VitalTile({
         <span className="ov-kicker">{label}</span>
       </div>
 
-      <div className="ov-tile-value">
-        <span className="ov-tile-number">{percent.toFixed(1)}</span>
-        <span className="ov-tile-unit">%</span>
+      <div className="ov-tile-gauge">
+        <RadialGauge
+          value={percent}
+          size={isMobile ? 132 : 152}
+          thickness={isMobile ? 9 : 11}
+          from={from}
+          to={to}
+          ariaLabel={`${label} ${percent.toFixed(1)}%`}
+        >
+          <span className="ov-gauge-value">
+            <span className="ov-gauge-number">{percent.toFixed(1)}</span>
+            <span className="ov-gauge-unit">%</span>
+          </span>
+        </RadialGauge>
       </div>
 
       <div className="ov-tile-detail">{detail}</div>
@@ -58,7 +77,7 @@ export default function VitalTile({
       <div className="ov-tile-chart">
         <Sparkline
           data={data}
-          height={isMobile ? 48 : 62}
+          height={isMobile ? 44 : 54}
           strokeWidth={1.5}
           fillOpacity={0.3}
           showGrid={false}

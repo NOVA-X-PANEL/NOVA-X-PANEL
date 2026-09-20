@@ -1,12 +1,13 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Card, theme } from 'antd';
+import { Card } from 'antd';
 import { ArrowDownOutlined, ArrowUpOutlined } from '@ant-design/icons';
 
 import { SizeFormatter } from '@/utils';
 import { Sparkline } from '@/components/viz';
 import type { Status } from '@/models/status';
 import { mean, peak } from './useOverviewHistory';
+import { NOVA_CYAN, NOVA_VIOLET } from './novaTheme';
 
 interface ThroughputCardProps {
   status: Status;
@@ -24,9 +25,8 @@ export default function ThroughputCard({
   isMobile,
 }: ThroughputCardProps) {
   const { t } = useTranslation();
-  const { token } = theme.useToken();
-  const accent = token.colorPrimary;
-  const downColor = token.colorTextTertiary;
+  const accent = NOVA_VIOLET;
+  const downColor = NOVA_CYAN;
 
   const referenceLines = useMemo(
     () => [

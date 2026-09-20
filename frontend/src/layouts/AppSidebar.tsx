@@ -47,6 +47,7 @@ import { useAllSettings } from '@/api/queries/useAllSettings';
 import { useCommandPalette } from '@/components/command-palette/useCommandPalette';
 import { useAdmin } from '@/pg-ui/hooks/use-admin';
 import { canAccessRoute } from '@/pg-ui/utils/rbac';
+import NovaLogo from '@/pages/login/NovaLogo';
 import './AppSidebar.css';
 
 const DONATE_URL = 'https://donate.sanaei.dev/';
@@ -400,7 +401,8 @@ export default function AppSidebar() {
       >
         <div className="sider-brand">
           <div className="brand-block">
-            <span className="brand-text">{railCollapsed ? 'NOVA' : 'NOVA X PANEL'}</span>
+            <NovaLogo size={railCollapsed ? 28 : 22} idSuffix="sider" className="brand-mark" />
+            {!railCollapsed && <span className="brand-text">NOVA X PANEL</span>}
           </div>
           {!railCollapsed && (
             <div className="brand-actions">

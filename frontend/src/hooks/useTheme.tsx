@@ -36,61 +36,126 @@ applyDom(initialDark, initialUltra);
 
 // NOVA X PANEL accent. A violet primary gives every page — buttons, tabs,
 // switches, selected rows, focus rings — the same brand colour as the Nova
-// Glass surfaces without touching component-level styles.
+// Dark surfaces without touching component-level styles.
 const NOVA_PRIMARY_LIGHT = '#7c3aed';
 const NOVA_PRIMARY_DARK = '#8b5cf6';
+const NOVA_CANVAS = '#06060b';
+const NOVA_CANVAS_ULTRA = '#000000';
+const NOVA_CONTAINER = '#0e0e16';
+const NOVA_CONTAINER_ULTRA = '#0a0a0f';
+const NOVA_ELEVATED = '#14141c';
+const NOVA_ELEVATED_ULTRA = '#101016';
+const NOVA_SIDER = '#0b0b12';
+const NOVA_SIDER_ULTRA = '#050508';
+const NOVA_HAIRLINE = 'rgba(255, 255, 255, 0.08)';
+const NOVA_HAIRLINE_ULTRA = 'rgba(255, 255, 255, 0.07)';
 
 const DARK_TOKENS = {
-  colorBgBase: '#1a1b1f',
-  colorBgLayout: '#1a1b1f',
-  colorBgContainer: '#23252b',
-  colorBgElevated: '#2d2f37',
+  colorBgBase: NOVA_CANVAS,
+  colorBgLayout: NOVA_CANVAS,
+  colorBgContainer: NOVA_CONTAINER,
+  colorBgElevated: NOVA_ELEVATED,
+  colorBgSpotlight: NOVA_ELEVATED,
   colorPrimary: NOVA_PRIMARY_DARK,
   colorLink: NOVA_PRIMARY_DARK,
+  colorText: '#eef1f8',
+  colorTextSecondary: '#a6b1c7',
+  colorTextTertiary: '#6d7890',
+  colorBorder: NOVA_HAIRLINE,
+  colorBorderSecondary: NOVA_HAIRLINE,
+  controlOutline: 'rgba(139, 92, 246, 0.22)',
   borderRadius: 10,
+  borderRadiusLG: 16,
+  borderRadiusSM: 8,
 };
 const ULTRA_DARK_TOKENS = {
-  colorBgBase: '#000',
-  colorBgLayout: '#000',
-  colorBgContainer: '#101013',
-  colorBgElevated: '#1a1a1e',
+  colorBgBase: NOVA_CANVAS_ULTRA,
+  colorBgLayout: NOVA_CANVAS_ULTRA,
+  colorBgContainer: NOVA_CONTAINER_ULTRA,
+  colorBgElevated: NOVA_ELEVATED_ULTRA,
+  colorBgSpotlight: NOVA_ELEVATED_ULTRA,
   colorPrimary: NOVA_PRIMARY_DARK,
   colorLink: NOVA_PRIMARY_DARK,
+  colorText: '#eef1f8',
+  colorTextSecondary: '#a6b1c7',
+  colorTextTertiary: '#6d7890',
+  colorBorder: NOVA_HAIRLINE_ULTRA,
+  colorBorderSecondary: NOVA_HAIRLINE_ULTRA,
+  controlOutline: 'rgba(139, 92, 246, 0.22)',
   borderRadius: 10,
+  borderRadiusLG: 16,
+  borderRadiusSM: 8,
 };
 const DARK_LAYOUT_TOKENS = {
-  bodyBg: '#1a1b1f',
-  headerBg: '#15161a',
+  bodyBg: NOVA_CANVAS,
+  headerBg: NOVA_SIDER,
   headerColor: '#ffffff',
-  footerBg: '#1a1b1f',
-  siderBg: '#15161a',
-  triggerBg: '#23252b',
+  footerBg: NOVA_CANVAS,
+  siderBg: NOVA_SIDER,
+  triggerBg: NOVA_CONTAINER,
   triggerColor: '#ffffff',
 };
 const ULTRA_DARK_LAYOUT_TOKENS = {
-  bodyBg: '#000',
-  headerBg: '#050507',
+  bodyBg: NOVA_CANVAS_ULTRA,
+  headerBg: NOVA_SIDER_ULTRA,
   headerColor: '#ffffff',
-  footerBg: '#000',
-  siderBg: '#050507',
-  triggerBg: '#1a1a1e',
+  footerBg: NOVA_CANVAS_ULTRA,
+  siderBg: NOVA_SIDER_ULTRA,
+  triggerBg: NOVA_CONTAINER_ULTRA,
   triggerColor: '#ffffff',
 };
 const DARK_MENU_TOKENS = {
-  darkItemBg: '#15161a',
-  darkSubMenuItemBg: '#1a1b1f',
-  darkPopupBg: '#23252b',
+  darkItemBg: 'transparent',
+  darkSubMenuItemBg: 'transparent',
+  darkPopupBg: NOVA_ELEVATED,
+  darkItemSelectedBg: 'transparent',
+  darkItemHoverBg: 'transparent',
+  darkItemColor: '#a6b1c7',
+  darkItemSelectedColor: '#ffffff',
 };
 const ULTRA_DARK_MENU_TOKENS = {
-  darkItemBg: '#050507',
-  darkSubMenuItemBg: '#000',
-  darkPopupBg: '#101013',
+  darkItemBg: 'transparent',
+  darkSubMenuItemBg: 'transparent',
+  darkPopupBg: NOVA_ELEVATED_ULTRA,
+  darkItemSelectedBg: 'transparent',
+  darkItemHoverBg: 'transparent',
+  darkItemColor: '#a6b1c7',
+  darkItemSelectedColor: '#ffffff',
 };
 const DARK_CARD_TOKENS = {
-  colorBorderSecondary: 'rgba(255, 255, 255, 0.06)',
+  colorBorderSecondary: NOVA_HAIRLINE,
+  borderRadiusLG: 16,
 };
 const ULTRA_DARK_CARD_TOKENS = {
-  colorBorderSecondary: 'rgba(255, 255, 255, 0.04)',
+  colorBorderSecondary: NOVA_HAIRLINE_ULTRA,
+  borderRadiusLG: 16,
+};
+const DARK_MODAL_TOKENS = {
+  contentBg: NOVA_CONTAINER,
+  headerBg: 'transparent',
+  titleColor: '#eef1f8',
+};
+const ULTRA_DARK_MODAL_TOKENS = {
+  contentBg: NOVA_CONTAINER_ULTRA,
+  headerBg: 'transparent',
+  titleColor: '#eef1f8',
+};
+const DARK_TABLE_TOKENS = {
+  headerBg: 'rgba(255, 255, 255, 0.025)',
+  headerColor: '#6d7890',
+  rowHoverBg: 'rgba(139, 92, 246, 0.12)',
+  borderColor: NOVA_HAIRLINE,
+  headerSplitColor: 'transparent',
+};
+const DARK_BUTTON_TOKENS = {
+  primaryShadow: 'none',
+  defaultBg: 'rgba(255, 255, 255, 0.05)',
+  defaultBorderColor: NOVA_HAIRLINE,
+};
+const DARK_INPUT_TOKENS = {
+  activeBorderColor: NOVA_PRIMARY_DARK,
+  hoverBorderColor: 'rgba(139, 92, 246, 0.45)',
+  activeShadow: '0 0 0 3px rgba(139, 92, 246, 0.22)',
 };
 const STATISTIC_TOKENS = {
   contentFontSize: 17,
@@ -106,6 +171,8 @@ const LIGHT_CONTRAST_TOKENS = {
   colorPrimary: NOVA_PRIMARY_LIGHT,
   colorLink: NOVA_PRIMARY_LIGHT,
   borderRadius: 10,
+  borderRadiusLG: 16,
+  borderRadiusSM: 8,
 };
 const LIGHT_BUTTON_TOKENS = {
   colorPrimary: NOVA_PRIMARY_LIGHT,
@@ -147,6 +214,13 @@ export function buildAntdThemeConfig(isDark: boolean, isUltra: boolean): ThemeCo
       Layout: isUltra ? ULTRA_DARK_LAYOUT_TOKENS : DARK_LAYOUT_TOKENS,
       Menu: isUltra ? ULTRA_DARK_MENU_TOKENS : DARK_MENU_TOKENS,
       Card: isUltra ? ULTRA_DARK_CARD_TOKENS : DARK_CARD_TOKENS,
+      Modal: isUltra ? ULTRA_DARK_MODAL_TOKENS : DARK_MODAL_TOKENS,
+      Table: DARK_TABLE_TOKENS,
+      Button: DARK_BUTTON_TOKENS,
+      Input: DARK_INPUT_TOKENS,
+      Select: DARK_INPUT_TOKENS,
+      InputNumber: DARK_INPUT_TOKENS,
+      DatePicker: DARK_INPUT_TOKENS,
       Statistic: STATISTIC_TOKENS,
     },
   };

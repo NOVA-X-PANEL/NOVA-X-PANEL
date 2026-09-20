@@ -46,8 +46,23 @@
 .brand-block {
   display: inline-flex;
   align-items: center;
+  gap: 10px;
   min-width: 0;
   line-height: 1.1;
+}
+
+.brand-mark {
+  flex: none;
+  filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.5));
+}
+
+.ant-layout-sider-collapsed .brand-block {
+  justify-content: center;
+}
+
+.ant-layout-sider-collapsed .sider-brand {
+  justify-content: center;
+  padding: 0;
 }
 
 .brand-actions {

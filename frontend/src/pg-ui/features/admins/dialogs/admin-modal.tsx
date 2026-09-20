@@ -249,7 +249,7 @@ export default function AdminModal({ isDialogOpen, onOpenChange, editingAdminId,
 
   return (
     <Dialog open={isDialogOpen} onOpenChange={handleClose}>
-      <DialogContent className="h-auto max-w-[640px]" onOpenAutoFocus={e => e.preventDefault()}>
+      <DialogContent className="pg-dialog h-auto max-w-[640px]" onOpenAutoFocus={e => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {editingAdmin ? <Pencil className="h-5 w-5" /> : <UserCog className="h-5 w-5" />}

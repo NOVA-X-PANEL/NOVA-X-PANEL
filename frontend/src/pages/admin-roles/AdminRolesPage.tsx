@@ -3,6 +3,7 @@ import { ConfigProvider, Layout, Spin } from 'antd';
 
 import AppSidebar from '@/layouts/AppSidebar';
 import { useTheme } from '@/hooks/useTheme';
+import '@/styles/pg-admin-mobile.css';
 
 // See pages/admins/AdminsPage.tsx — same shell wrapper for the roles screen.
 
@@ -15,7 +16,7 @@ export default function AdminRolesPageWrapper() {
     <ConfigProvider theme={antdThemeConfig}>
       <Layout style={{ minHeight: '100vh' }}>
         <AppSidebar />
-        <Layout className="bg-background text-foreground" style={{ minWidth: 0 }}>
+        <Layout className="pg-admin-page bg-background text-foreground" style={{ minWidth: 0 }}>
           <Suspense
             fallback={
               <div

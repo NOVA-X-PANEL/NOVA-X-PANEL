@@ -1,0 +1,81 @@
+/* NOVA X PANEL — phone layer for the ported pg-ui admin screens.
+ *
+ * The vendored pg-ui tree is kept byte-compatible with its upstream and is
+ * desktop-first, so the small-screen fixes live here instead of in those files.
+ * The role dialog is the reason this file exists: it is a centred card taller
+ * than a phone viewport with no scroll of its own, so on a phone both its title
+ * and its action buttons end up off-screen with no way to reach them.
+ *
+ * `.pg-admin-page` is the shell our wrappers add (pages/admins, pages/admin-roles);
+ * `.pg-dialog` marks the two ported dialogs.
+ */
+
+@media (max-width: 768px) {
+  /* The floating sidebar toggle is fixed at the top-left; the ported PageHeader
+     has no lead-in for it, so it lands on top of the page title. */
+  .pg-admin-page {
+    padding-top: 58px;
+  }
+
+  /* While one of these dialogs is open its overlay sits below that toggle
+     (z-index 50 vs 1100), which leaves a stray menu button floating on top of
+     the dialog — take it out of the way. */
+  body:has(.pg-dialog[data-state='open']) .drawer-handle {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Turn the centred card into an inset sheet that fits the viewport, and let
+     the sheet itself scroll, so every field and both actions stay reachable. */
+  .pg-dialog {
+    top: max(0.5rem, env(safe-area-inset-top));
+    right: max(0.5rem, env(safe-area-inset-right));
+    bottom: max(0.5rem, env(safe-area-inset-bottom));
+    left: max(0.5rem, env(safe-area-inset-left));
+    width: auto;
+    max-width: none;
+    max-height: none;
+    transform: none;
+    gap: 0.75rem;
+    padding: 1rem;
+    border-radius: 0.9rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* One scroll surface, not two: the nested scroller in the vendored form
+     fights the touch gesture, and its negative-margin gutter would clip rows at
+     the edge once the sheet is full-width. */
+  .pg-dialog form > .overflow-y-auto {
+    max-height: none;
+    margin-inline: 0;
+    padding-inline: 0;
+    overflow: visible;
+  }
+
+  /* Hold the cancel/confirm pair on screen while the form scrolls behind it. */
+  .pg-dialog form > :last-child {
+    position: sticky;
+    bottom: -1rem;
+    z-index: 2;
+    margin-top: 0.5rem;
+    margin-bottom: -1rem;
+    padding: 0.75rem 0 1rem;
+    border-top: 1px solid hsl(var(--border));
+    background: hsl(var(--background));
+  }
+
+  /* Thumb-sized actions that split the width evenly. */
+  .pg-dialog form > :last-child > button {
+    flex: 1 1 0;
+    min-height: 2.5rem;
+  }
+
+  /* A permission group header carries its label plus select-all/clear controls;
+     let the controls drop to their own line instead of crushing the label. */
+  .pg-dialog form .flex:has(> button + .flex > button) {
+    flex-wrap: wrap;
+  }
+}

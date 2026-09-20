@@ -3,6 +3,7 @@ import { ConfigProvider, Layout, Spin } from 'antd';
 
 import AppSidebar from '@/layouts/AppSidebar';
 import { useTheme } from '@/hooks/useTheme';
+import '@/styles/pg-admin-mobile.css';
 
 // The ported pg-ui screens render only their own content — Heimdall's app shell
 // supplies the sidebar and theming. NOVA X PANEL's other pages each render that
@@ -19,7 +20,7 @@ export default function AdminsPageWrapper() {
     <ConfigProvider theme={antdThemeConfig}>
       <Layout style={{ minHeight: '100vh' }}>
         <AppSidebar />
-        <Layout className="bg-background text-foreground" style={{ minWidth: 0 }}>
+        <Layout className="pg-admin-page bg-background text-foreground" style={{ minWidth: 0 }}>
           <Suspense
             fallback={
               <div

@@ -119,7 +119,7 @@ export default function AdminRoleModal({ isDialogOpen, onOpenChange, form, editi
 
   return (
     <Dialog open={isDialogOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="h-auto w-full max-w-2xl" onOpenAutoFocus={e => e.preventDefault()}>
+      <DialogContent className="pg-dialog h-auto w-full max-w-2xl" onOpenAutoFocus={e => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {readOnly ? <Eye className="h-5 w-5" /> : editingRole ? <Pencil className="h-5 w-5" /> : <Shield className="h-5 w-5" />}

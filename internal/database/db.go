@@ -65,6 +65,7 @@ const (
 func allModels() []any {
 	return []any{
 		&model.User{},
+		&model.AdminRole{},
 		&model.Inbound{},
 		&model.OutboundTraffics{},
 		&model.Setting{},
@@ -1430,7 +1431,72 @@ func runSeeders(isUsersEmpty bool) error {
 
 	// Idempotent, not seeder-gated: bad values can re-enter via a restored
 	// backup, so re-check on every start.
-	return normalizeSettingPaths()
+	if err := normalizeSettingPaths(); err != nil {
+		return err
+	}
+
+	// RBAC: ensure the built-in roles exist and every account is bound to one.
+	// Idempotent and not seeder-gated so a restored backup self-heals.
+	return seedAdminRBAC()
+}
+
+// seedAdminRBAC creates the built-in admin roles and binds any account that is
+// still unassigned (role_id = 0) to one of them. The first account becomes the
+// owner so an existing single-admin install keeps full access; every other
+// account becomes an administrator.
+func seedAdminRBAC() error {
+	return db.Transaction(func(tx *gorm.DB) error {
+		roleIDs := make(map[string]int)
+
+		for _, role := range model.DefaultAdminRoles() {
+			var existing model.AdminRole
+			err := tx.Where("slug = ?", role.Slug).First(&existing).Error
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				if err := tx.Create(&role).Error; err != nil {
+					return err
+				}
+				existing = role
+			} else if err != nil {
+				return err
+			}
+			roleIDs[existing.Slug] = existing.Id
+		}
+
+		ownerRoleID := roleIDs[model.AdminRoleSlugOwner]
+		adminRoleID := roleIDs[model.AdminRoleSlugAdministrator]
+		if ownerRoleID == 0 || adminRoleID == 0 {
+			return errors.New("rbac seed failed: missing default role ids")
+		}
+
+		var users []model.User
+		if err := tx.Order("id ASC").Find(&users).Error; err != nil {
+			return err
+		}
+
+		for i, user := range users {
+			updates := map[string]any{}
+
+			if strings.TrimSpace(user.Status) == "" {
+				updates["status"] = model.AdminStatusActive
+			}
+			if user.RoleId == 0 {
+				if i == 0 {
+					updates["role_id"] = ownerRoleID
+				} else {
+					updates["role_id"] = adminRoleID
+				}
+			}
+
+			if len(updates) == 0 {
+				continue
+			}
+			if err := tx.Model(&model.User{}).Where("id = ?", user.Id).Updates(updates).Error; err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
 }
 
 // seedNodeInboundsAdopted keeps the pre-existing reconcile behavior for nodes

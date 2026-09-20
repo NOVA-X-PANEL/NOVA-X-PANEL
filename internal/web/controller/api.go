@@ -208,6 +208,12 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 	// Subscription balancers — client-side balancers for the JSON sub output
 	NewSubBalancerController(api)
 
+	// RBAC (NOVA X PANEL) — panel account + admin role management.
+	admins := api.Group("/admins")
+	NewAdminController(admins)
+	adminRoles := api.Group("/admin-roles")
+	NewAdminRoleController(adminRoles)
+
 	// Extra routes
 	api.POST("/backuptotgbot", a.BackuptoTgbot)
 }

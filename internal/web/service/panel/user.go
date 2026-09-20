@@ -103,6 +103,11 @@ func (s *UserService) CheckUser(username string, password string, twoFactorCode 
 		}
 	}
 
+	// RBAC: a disabled panel account must not be able to log in.
+	if user.Status == model.AdminStatusDisabled {
+		return nil, errors.New("account is disabled")
+	}
+
 	return user, nil
 }
 

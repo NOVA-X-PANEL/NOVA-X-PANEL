@@ -1933,6 +1933,128 @@ export const sections: readonly Section[] = [
   },
 
   {
+    id: 'admins',
+    title: 'Admins',
+    description:
+      'Manage panel administrator accounts and their assigned roles (RBAC). Requires a browser session — Bearer API tokens are rejected. Access follows the <code>admins</code> role permissions; the owner account cannot be deleted, disabled, or demoted.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/admins/current',
+        summary: 'Return the logged-in administrator together with the decoded role document.',
+        responseSchema: 'AdminAccount',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/admins/list',
+        summary: 'List every panel administrator with the resolved role name and status.',
+        responseSchema: 'AdminAccount',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/admins/stats',
+        summary: 'Return totals for administrators: total, active, and disabled.',
+        responseSchema: 'AdminStats',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/admins/get/:id',
+        summary: 'Fetch a single administrator by numeric ID.',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Administrator ID.' }],
+        responseSchema: 'AdminAccount',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/admins/add',
+        summary: 'Create a new administrator bound to the given role.',
+        body: '{"username":"operator1","password":"secret","roleId":3,"status":"active"}',
+        responseSchema: 'AdminAccount',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/admins/update/:id',
+        summary:
+          'Update an administrator. The owner account cannot change role or be disabled.',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Administrator ID.' }],
+        body: '{"username":"operator1","password":"newsecret","roleId":3,"status":"active"}',
+        responseSchema: 'AdminAccount',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/admins/del/:id',
+        summary: 'Delete an administrator. The owner account and your own account are protected.',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Administrator ID.' }],
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/admins/enable/:id',
+        summary: 'Enable an administrator account.',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Administrator ID.' }],
+        responseSchema: 'AdminAccount',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/admins/disable/:id',
+        summary: 'Disable an administrator account. The owner account cannot be disabled.',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Administrator ID.' }],
+        responseSchema: 'AdminAccount',
+      },
+    ],
+  },
+
+  {
+    id: 'admin-roles',
+    title: 'Admin Roles',
+    description:
+      'Manage RBAC roles. Each role carries four JSON documents: permissions, limits, features, and access. Built-in roles (owner, administrator, operator) keep their identity; the owner role is read-only; roles assigned to administrators cannot be deleted.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/admin-roles/list',
+        summary: 'List every role with decoded permissions, limits, features, access, and admin count.',
+        responseSchema: 'AdminRole',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/admin-roles/get/:id',
+        summary: 'Fetch one role by numeric ID.',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Role ID.' }],
+        responseSchema: 'AdminRole',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/admin-roles/add',
+        summary: 'Create a custom role. The slug is derived from the role name; defaults follow the Operator preset.',
+        body: '{"name":"Reseller","permissions":{},"limits":{},"features":{},"access":{}}',
+        responseSchema: 'AdminRole',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/admin-roles/update/:id',
+        summary: 'Update a non-owner role. Built-in roles keep their protected identity.',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Role ID.' }],
+        body: '{"name":"Reseller","permissions":{},"limits":{},"features":{},"access":{}}',
+        responseSchema: 'AdminRole',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/admin-roles/duplicate/:id',
+        summary: 'Duplicate an existing role into a new custom role copy.',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Role ID.' }],
+        responseSchema: 'AdminRole',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/admin-roles/del/:id',
+        summary: 'Delete a custom role. Owner, built-in, and assigned roles are protected.',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Role ID.' }],
+      },
+    ],
+  },
+
+  {
     id: 'api-tokens',
     title: 'API Tokens',
     description:

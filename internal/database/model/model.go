@@ -42,6 +42,14 @@ type User struct {
 	Username   string `json:"username"`
 	Password   string `json:"password"`
 	LoginEpoch int64  `json:"-" gorm:"default:0"`
+
+	// RBAC (NOVA X PANEL): each panel account is bound to one AdminRole.
+	RoleId int    `json:"roleId" gorm:"column:role_id;index;default:0"`
+	Status string `json:"status" gorm:"column:status;default:active;index"`
+
+	// CreatedAt/UpdatedAt are populated for RBAC admin management views.
+	CreatedAt int64 `json:"createdAt" gorm:"autoCreateTime:milli"`
+	UpdatedAt int64 `json:"updatedAt" gorm:"autoUpdateTime:milli"`
 }
 
 // Inbound represents an Xray inbound configuration with traffic statistics and settings.
@@ -947,6 +955,10 @@ type ClientRecord struct {
 	TrafficResetDay int    `json:"trafficResetDay" gorm:"column:traffic_reset_day;default:1"`
 	CreatedAt       int64  `json:"createdAt" gorm:"autoCreateTime:milli"`
 	UpdatedAt       int64  `json:"updatedAt" gorm:"autoUpdateTime:milli"`
+	// OwnerAdminId binds this client to the panel admin (model.User) that
+	// created it. 0 means the client is owned by the owner role / unassigned
+	// (NOVA X PANEL RBAC: non-owner admins only see clients they own).
+	OwnerAdminId int64 `json:"ownerAdminId" gorm:"column:owner_admin_id;default:0;index:idx_clients_owner_admin"`
 	// Owned solely by the node-snapshot sweep, which soft-orphans instead of
 	// deleting; orphans from any other cause stay at zero and are never reaped.
 	SyncOrphanedAt int64 `json:"-" gorm:"column:sync_orphaned_at;default:0"`

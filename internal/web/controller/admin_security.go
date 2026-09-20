@@ -106,6 +106,24 @@ func requireAdminPermission(section string, permission string) gin.HandlerFunc {
 	}
 }
 
+// requirePanelAccount allows any active panel account through, with no resource
+// permission attached. It is for the handful of structural reads that the panel
+// shell and every page need to render at all (the browser-safe settings view and
+// the default templates); without them a role granted only, say, clients would
+// see a page that can never finish loading.
+func requirePanelAccount() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if c.GetBool("api_authed") {
+			c.Next()
+			return
+		}
+		if _, _, ok := loginActiveAdminRole(c); !ok {
+			return
+		}
+		c.Next()
+	}
+}
+
 // requirePanelPermission enforces a panel-resource permission for browser
 // sessions, while letting API-token callers through (their authority is already
 // narrowed by enforceTokenScope). This is the middleware applied across the

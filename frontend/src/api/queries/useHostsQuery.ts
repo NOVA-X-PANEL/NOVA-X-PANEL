@@ -1,4 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
+
+import { useAdmin } from '@/pg-ui/hooks/use-admin';
+import { canReadResourcePage } from '@/pg-ui/utils/rbac';
 import { useMemo } from 'react';
 
 import { HttpUtil } from '@/utils';
@@ -16,9 +19,14 @@ async function fetchHosts(): Promise<HostRecord[]> {
 }
 
 export function useHostsQuery() {
+  const { admin } = useAdmin();
+  // null while the current account is still loading; true/false once known.
+  const permitted = admin ? canReadResourcePage(admin, 'hosts') : null;
+
   const query = useQuery({
     queryKey: keys.hosts.list(),
     queryFn: fetchHosts,
+    enabled: permitted === true,
   });
 
   const hosts = useMemo(() => query.data ?? [], [query.data]);
@@ -26,8 +34,12 @@ export function useHostsQuery() {
   return {
     hosts,
     loading: query.isFetching,
-    fetched: query.data !== undefined || query.isError,
-    fetchError: query.error ? (query.error as Error).message : '',
+    // A role without hosts access has nothing to wait for, so the query counts
+    // as settled instead of leaving the page spinning forever.
+    fetched: permitted === false ? true : query.data !== undefined || query.isError,
+    fetchError:
+      permitted === false || !query.error ? '' : (query.error as Error).message,
+    permitted: permitted !== false,
     refetch: query.refetch,
   };
 }

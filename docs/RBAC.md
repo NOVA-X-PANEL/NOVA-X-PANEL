@@ -162,7 +162,28 @@ hover shadows.
 
 ## Status
 
-Backend and front-end both implemented. The version file is `1.0.9`.
+Backend and front-end both implemented. The version file is `1.1.1`.
+
+## 1.1.1 — a permissioned page must be able to finish loading
+
+Granting only `inbounds.view` showed the Inbounds page but it never finished
+loading (a spinner that survived a refresh). Two independent causes:
+
+1. **Structural reads were gated.** `setting/all` (the browser-safe settings view
+   the shell and every page read) and `setting/defaultSettings` /
+   `factoryDefaults` / `getDefaultJsonConfig` (the default templates) sat behind
+   `settings.view*`. A role without settings access got a 403 for data the page
+   cannot render without. They now use `requirePanelAccount()`: any active panel
+   account may read them, no resource permission attached.
+2. **Supplementary queries blocked the page.** `InboundsPage` gates its spinner on
+   `inbounds.fetched && hosts.fetched`, and `hosts/list` needs `hosts.view`. A
+   403 left `hostsError` set, so the page rendered the error state forever.
+
+`useHostsQuery` and `useNodesQuery` are now permission-aware: they read the
+current account, skip the request entirely when the role cannot read that
+resource, and report `fetched: true` with no error, so a page that merely *shows*
+hosts/nodes alongside its own content still renders. `permitted` is exposed for
+callers that want to hide the related UI.
 
 ## Front-end: ported from Heimdall (1.0.6)
 

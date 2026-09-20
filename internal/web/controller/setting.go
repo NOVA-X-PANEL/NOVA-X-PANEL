@@ -66,20 +66,17 @@ func NewSettingController(g *gin.RouterGroup) *SettingController {
 func (a *SettingController) initRouter(g *gin.RouterGroup) {
 	g = g.Group("/setting")
 
-	// /all feeds the sidebar's shared settings, so accept either the general
-	// settings permission or full settings read: a role restricted to the
-	// general view still needs the layout to render.
-	g.POST("/all", requireAnyPanelPermission(
-		panelPermissionRequirement{Section: "settings", Permission: "view"},
-		panelPermissionRequirement{Section: "settings", Permission: "viewGeneral"},
-	), a.getAllSetting)
-	g.POST("/defaultSettings", requirePanelPermission("settings", "viewGeneral"), a.getDefaultSettings)
-	g.POST("/factoryDefaults", requirePanelPermission("settings", "viewGeneral"), a.getFactoryDefaults)
+	// /all is the browser-safe settings view the shell and every page read to
+	// render (subscription paths, feature toggles). It is structural, so any
+	// signed-in account may read it.
+	g.POST("/all", requirePanelAccount(), a.getAllSetting)
+	g.POST("/defaultSettings", requirePanelAccount(), a.getDefaultSettings)
+	g.POST("/factoryDefaults", requirePanelAccount(), a.getFactoryDefaults)
 	g.POST("/update", requirePanelPermission("settings", "update"), a.updateSetting)
 	g.POST("/validateRegex", requirePanelPermission("settings", "view"), a.validateRegex)
 	g.POST("/updateUser", a.updateUser)
 	g.POST("/restartPanel", requirePanelPermission("settings", "update"), a.restartPanel)
-	g.GET("/getDefaultJsonConfig", requirePanelPermission("settings", "viewGeneral"), a.getDefaultXrayConfig)
+	g.GET("/getDefaultJsonConfig", requirePanelAccount(), a.getDefaultXrayConfig)
 	g.GET("/apiTokens", a.listApiTokens)
 	g.POST("/apiTokens/create", a.createApiToken)
 	g.POST("/apiTokens/delete/:id", a.deleteApiToken)

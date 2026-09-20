@@ -6,6 +6,8 @@ import { parseMsg } from '@/utils/zodValidate';
 import { NodeListSchema } from '@/schemas/node';
 import type { NodeRecord } from '@/schemas/node';
 import { keys } from '@/api/queryKeys';
+import { useAdmin } from '@/pg-ui/hooks/use-admin';
+import { canReadResourcePage } from '@/pg-ui/utils/rbac';
 
 export type { NodeRecord };
 
@@ -28,9 +30,14 @@ async function fetchNodes(): Promise<NodeRecord[]> {
 }
 
 export function useNodesQuery() {
+  const { admin } = useAdmin();
+  // null while the current account is still loading; true/false once known.
+  const permitted = admin ? canReadResourcePage(admin, 'nodes') : null;
+
   const query = useQuery({
     queryKey: keys.nodes.list(),
     queryFn: fetchNodes,
+    enabled: permitted === true,
   });
 
   const nodes = useMemo(() => query.data ?? [], [query.data]);
@@ -76,8 +83,12 @@ export function useNodesQuery() {
     nodes,
     totals,
     loading: query.isFetching,
-    fetched: query.data !== undefined || query.isError,
-    fetchError: query.error ? (query.error as Error).message : '',
+    // A role without nodes access has nothing to wait for: report settled so
+    // pages that gate their spinner on this query still render.
+    fetched: permitted === false ? true : query.data !== undefined || query.isError,
+    fetchError:
+      permitted === false || !query.error ? '' : (query.error as Error).message,
+    permitted: permitted !== false,
     refetch: query.refetch,
   };
 }

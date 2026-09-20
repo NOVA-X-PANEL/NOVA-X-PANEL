@@ -374,6 +374,14 @@ main() {
         [[ -n "$tag" ]] && info "Latest release: $tag"
     fi
 
+    # A panel already running out of ${main_folder} holds its own binary open;
+    # replacing it in place fails with ETXTBSY ("Text file busy"). Stop it first
+    # and let the restart below bring the new build up. Skipped on a fresh box.
+    if systemctl is-active --quiet "${service_name}" 2>/dev/null; then
+        info "Stopping the running ${PANEL_NAME} service before updating files..."
+        systemctl stop "${service_name}" || true
+    fi
+
     if ! install_from_release "$tag" "$a"; then
         warn "Release install unavailable — falling back to source build."
         build_from_source

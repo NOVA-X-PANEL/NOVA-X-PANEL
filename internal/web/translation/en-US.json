@@ -2261,7 +2261,7 @@
     },
     "admins": {
       "title": "Administrators",
-      "description": "Manage panel administrators and assign each one a role with its own permissions.",
+      "subtitle": "Manage panel administrators and assign each one a role with its own permissions.",
       "listTitle": "Administrators",
       "create": "Add administrator",
       "edit": "Edit administrator",
@@ -2292,7 +2292,7 @@
     },
     "adminRoles": {
       "title": "Admin Roles",
-      "description": "Define roles and their permissions, limits, features and access scope.",
+      "subtitle": "Define roles and their permissions, limits, features and access scope.",
       "listTitle": "Roles",
       "create": "Add role",
       "edit": "Edit role",

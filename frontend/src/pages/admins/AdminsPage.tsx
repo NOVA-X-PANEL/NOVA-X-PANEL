@@ -193,7 +193,7 @@ export default function AdminsPage() {
             <Spin spinning={loading} delay={200} description={t('loading')} size="large">
               <Typography.Title level={4}>{t('pages.admins.title')}</Typography.Title>
               <Typography.Paragraph type="secondary">
-                {t('pages.admins.description')}
+                {t('pages.admins.subtitle')}
               </Typography.Paragraph>
 
               <Row gutter={16} style={{ marginBottom: 16 }}>

@@ -291,7 +291,7 @@ export default function AdminRolesPage() {
             <Spin spinning={loading} delay={200} description={t('loading')} size="large">
               <Typography.Title level={4}>{t('pages.adminRoles.title')}</Typography.Title>
               <Typography.Paragraph type="secondary">
-                {t('pages.adminRoles.description')}
+                {t('pages.adminRoles.subtitle')}
               </Typography.Paragraph>
 
               <Card

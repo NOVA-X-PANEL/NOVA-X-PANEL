@@ -34,17 +34,29 @@ const initialDark = readBool(STORAGE_DARK, true);
 const initialUltra = readBool(STORAGE_ULTRA, false);
 applyDom(initialDark, initialUltra);
 
+// NOVA X PANEL accent. A violet primary gives every page — buttons, tabs,
+// switches, selected rows, focus rings — the same brand colour as the Nova
+// Glass surfaces without touching component-level styles.
+const NOVA_PRIMARY_LIGHT = '#7c3aed';
+const NOVA_PRIMARY_DARK = '#8b5cf6';
+
 const DARK_TOKENS = {
   colorBgBase: '#1a1b1f',
   colorBgLayout: '#1a1b1f',
   colorBgContainer: '#23252b',
   colorBgElevated: '#2d2f37',
+  colorPrimary: NOVA_PRIMARY_DARK,
+  colorLink: NOVA_PRIMARY_DARK,
+  borderRadius: 10,
 };
 const ULTRA_DARK_TOKENS = {
   colorBgBase: '#000',
   colorBgLayout: '#000',
   colorBgContainer: '#101013',
   colorBgElevated: '#1a1a1e',
+  colorPrimary: NOVA_PRIMARY_DARK,
+  colorLink: NOVA_PRIMARY_DARK,
+  borderRadius: 10,
 };
 const DARK_LAYOUT_TOKENS = {
   bodyBg: '#1a1b1f',
@@ -91,11 +103,14 @@ const LIGHT_CONTRAST_TOKENS = {
   colorError: '#cf1322',
   colorErrorText: '#cf1322',
   colorSuccessText: '#237804',
+  colorPrimary: NOVA_PRIMARY_LIGHT,
+  colorLink: NOVA_PRIMARY_LIGHT,
+  borderRadius: 10,
 };
 const LIGHT_BUTTON_TOKENS = {
-  colorPrimary: '#0958d9',
-  colorPrimaryHover: '#2468e5',
-  colorPrimaryActive: '#073ea8',
+  colorPrimary: NOVA_PRIMARY_LIGHT,
+  colorPrimaryHover: '#8b5cf6',
+  colorPrimaryActive: '#6d28d9',
 };
 
 // hashed:false drops the `:where(.css-<hash>)` wrapper antd puts around every

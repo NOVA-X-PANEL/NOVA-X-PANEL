@@ -69,10 +69,10 @@ NOVA X PANEL is an **independent** panel, maintained in its own repository. It i
 bash <(curl -Ls https://raw.githubusercontent.com/NOVA-X-PANEL/NOVA-X-PANEL/main/install.sh)
 ```
 
-To install a specific version, append its tag (e.g. `v1.2.1`):
+To install a specific version, append its tag (e.g. `v1.2.2`):
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/NOVA-X-PANEL/NOVA-X-PANEL/main/install.sh) v1.2.1
+bash <(curl -Ls https://raw.githubusercontent.com/NOVA-X-PANEL/NOVA-X-PANEL/main/install.sh) v1.2.2
 ```
 
 To install the rolling **dev** build (latest per-commit pre-release from `main`, not a stable release), pass `dev-latest`:

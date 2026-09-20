@@ -1,0 +1,396 @@
+/* NOVA X PANEL — "Nova Glass" global theme layer.
+   Loaded after page-shell/page-cards so every panel page inherits the same
+   violet→blue glass surfaces, ambient wash and the blue hover halo the Overview
+   established. All rules target the shared page shells, so the login screen and
+   the vendored pg-ui tree are left alone. */
+
+:root {
+  --nv-violet: #8b5cf6;
+  --nv-blue: #4f7cff;
+  --nv-cyan: #22d3ee;
+  --nv-grad: linear-gradient(135deg, var(--nv-violet) 0%, var(--nv-blue) 60%, var(--nv-cyan) 100%);
+  --nv-halo: rgba(79, 124, 255, 0.5);
+  --nv-radius: 14px;
+}
+
+/* — ambient page wash — */
+
+:is(
+  .index-page,
+  .clients-page,
+  .inbounds-page,
+  .xray-page,
+  .settings-page,
+  .nodes-page,
+  .groups-page,
+  .api-docs-page,
+  .hosts-page,
+  .admins-page,
+  .admin-roles-page
+) {
+  --nv-card: rgba(255, 255, 255, 0.74);
+  --nv-border: rgba(15, 23, 42, 0.08);
+  --nv-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 10px 26px rgba(15, 23, 42, 0.06);
+  --bg-page:
+    radial-gradient(900px 500px at 8% -10%, rgba(139, 92, 246, 0.16), transparent 60%),
+    radial-gradient(900px 520px at 105% 0%, rgba(79, 124, 255, 0.16), transparent 60%),
+    radial-gradient(700px 620px at 50% 125%, rgba(34, 211, 238, 0.11), transparent 60%), #eceef4;
+  background-attachment: fixed;
+}
+
+:is(
+  .index-page,
+  .clients-page,
+  .inbounds-page,
+  .xray-page,
+  .settings-page,
+  .nodes-page,
+  .groups-page,
+  .api-docs-page,
+  .hosts-page,
+  .admins-page,
+  .admin-roles-page
+).is-dark {
+  --nv-card: linear-gradient(180deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.022));
+  --nv-border: rgba(255, 255, 255, 0.09);
+  --nv-shadow: 0 14px 34px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --bg-page:
+    radial-gradient(900px 500px at 8% -10%, rgba(139, 92, 246, 0.24), transparent 62%),
+    radial-gradient(900px 520px at 105% 0%, rgba(79, 124, 255, 0.2), transparent 62%),
+    radial-gradient(760px 620px at 50% 128%, rgba(34, 211, 238, 0.12), transparent 60%), #16171c;
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  ).is-dark.is-ultra {
+  --nv-card: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.014));
+  --nv-border: rgba(255, 255, 255, 0.075);
+  --nv-shadow: 0 16px 38px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.045);
+  --bg-page:
+    radial-gradient(900px 500px at 8% -10%, rgba(139, 92, 246, 0.2), transparent 62%),
+    radial-gradient(900px 520px at 105% 0%, rgba(79, 124, 255, 0.17), transparent 62%),
+    radial-gradient(760px 620px at 50% 128%, rgba(34, 211, 238, 0.1), transparent 60%), #040406;
+}
+
+/* — glass cards with a blue hover halo — */
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-card {
+  position: relative;
+  border-radius: var(--nv-radius);
+  border: 1px solid var(--nv-border);
+  background: var(--nv-card);
+  box-shadow: var(--nv-shadow);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.25s ease,
+    border-color 0.22s ease;
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  border-radius: var(--nv-radius) var(--nv-radius) 0 0;
+  background: var(--nv-grad);
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-card:hover,
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-card.ant-card-hoverable:hover {
+  cursor: default;
+  transform: translateY(-2px);
+  border-color: var(--nv-halo);
+  box-shadow:
+    0 0 0 1px var(--nv-halo),
+    0 0 26px rgba(79, 124, 255, 0.32),
+    0 16px 36px rgba(0, 0, 0, 0.32);
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  ).is-dark
+  .ant-card:hover {
+  box-shadow:
+    0 0 0 1px var(--nv-halo),
+    0 0 30px rgba(79, 124, 255, 0.42),
+    0 18px 40px rgba(0, 0, 0, 0.55);
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-card
+  .ant-card-actions {
+  background: transparent;
+}
+
+/* — primary actions carry the Nova gradient — */
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-btn-primary:not(:disabled) {
+  background: var(--nv-grad);
+  border-color: transparent;
+  box-shadow: 0 4px 14px rgba(79, 124, 255, 0.3);
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-btn-primary:not(:disabled):hover {
+  background: var(--nv-grad);
+  filter: brightness(1.08);
+  box-shadow: 0 6px 20px rgba(79, 124, 255, 0.45);
+}
+
+/* — tables: glass container, Nova row hover — */
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-table-wrapper
+  .ant-table {
+  background: transparent;
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-table-tbody
+  > tr.ant-table-row:hover
+  > td {
+  background: color-mix(in srgb, var(--nv-violet) 12%, transparent);
+}
+
+/* — sidebar — */
+
+.ant-sidebar > .ant-layout-sider {
+  background: var(--nv-card, var(--ant-color-bg-container));
+  border-inline-end: 1px solid var(--nv-border, var(--ant-color-border));
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  ).is-dark
+  .ant-sidebar
+  > .ant-layout-sider {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+}
+
+.sider-brand .brand-text {
+  background: var(--nv-grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: var(--nv-violet);
+}
+
+.sider-nav .ant-menu-item,
+.sider-nav .ant-menu-submenu-title,
+.sider-utility .ant-menu-item {
+  border-radius: 10px;
+}
+
+.sider-nav .ant-menu-item-selected,
+.sider-utility .ant-menu-item-selected {
+  background: var(--nv-grad) !important;
+  box-shadow: 0 4px 16px rgba(79, 124, 255, 0.35);
+}
+
+.sider-nav .ant-menu-item-selected .anticon,
+.sider-nav .ant-menu-item-selected .ant-menu-title-content,
+.sider-utility .ant-menu-item-selected .anticon,
+.sider-utility .ant-menu-item-selected .ant-menu-title-content {
+  color: #fff !important;
+}
+
+/* — overlays ride the same glass language — */
+
+.ant-modal .ant-modal-content {
+  border: 1px solid color-mix(in srgb, var(--ant-color-primary) 22%, transparent);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+.ant-dropdown .ant-dropdown-menu,
+.ant-select-dropdown,
+.ant-picker-dropdown .ant-picker-panel-container {
+  border: 1px solid color-mix(in srgb, var(--ant-color-primary) 20%, transparent);
+  border-radius: 12px;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.28);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(
+      .index-page,
+      .clients-page,
+      .inbounds-page,
+      .xray-page,
+      .settings-page,
+      .nodes-page,
+      .groups-page,
+      .api-docs-page,
+      .hosts-page,
+      .admins-page,
+      .admin-roles-page
+    )
+    .ant-card {
+    transition: none;
+  }
+
+  :is(
+      .index-page,
+      .clients-page,
+      .inbounds-page,
+      .xray-page,
+      .settings-page,
+      .nodes-page,
+      .groups-page,
+      .api-docs-page,
+      .hosts-page,
+      .admins-page,
+      .admin-roles-page
+    )
+    .ant-card:hover {
+    transform: none;
+  }
+}

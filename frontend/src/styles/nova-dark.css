@@ -1,11 +1,11 @@
-/* NOVA X PANEL — Nova Aurora: the panel's design system.
+/* NOVA X PANEL — Nova Dark design system.
  *
- * A deep violet canvas under a slow-drifting aurora, glass cards with a real
- * gradient border, generous spacing and a violet→blue→cyan accent. This layer is
- * loaded last and re-skins every Ant Design primitive the panel uses, so the
- * whole product follows a change made here.
+ * The flagship look: a deep, violet-tinted canvas with glass surfaces, a
+ * violet→blue→cyan accent and a soft blue halo on hover. This layer re-skins
+ * every Ant Design primitive the panel uses, so it is loaded last and works
+ * through tokens — change a value here and the whole panel follows.
  *
- * Dark is the signature; light reuses the same shapes on light surfaces.
+ * Dark is the signature; light gets the same shapes with light surfaces.
  */
 
 /* ---------------------------------------------------------------- tokens -- */
@@ -14,176 +14,95 @@ body {
   --nd-violet: #8b5cf6;
   --nd-blue: #4f7cff;
   --nd-cyan: #22d3ee;
-  --nd-grad: linear-gradient(135deg, var(--nd-violet) 0%, var(--nd-blue) 58%, var(--nd-cyan) 100%);
-  --nd-halo: rgba(124, 92, 255, 0.55);
+  --nd-grad: linear-gradient(135deg, var(--nd-violet) 0%, var(--nd-blue) 60%, var(--nd-cyan) 100%);
+  --nd-halo: rgba(79, 124, 255, 0.5);
 
-  --nd-radius-xs: 10px;
-  --nd-radius-sm: 12px;
-  --nd-radius: 16px;
-  --nd-radius-lg: 20px;
-  --nd-radius-xl: 24px;
+  --nd-radius-sm: 8px;
+  --nd-radius: 12px;
+  --nd-radius-lg: 16px;
 
   --nd-ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --nd-gap: 16px;
 }
 
 body.dark {
-  --nd-canvas: #05050c;
+  --nd-canvas: #06060b;
+  --nd-surface: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.018));
+  --nd-surface-solid: #0e0e16;
+  --nd-surface-2: linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.035));
+  --nd-border: rgba(255, 255, 255, 0.08);
+  --nd-border-strong: rgba(139, 92, 246, 0.45);
+  --nd-field: rgba(255, 255, 255, 0.045);
+  --nd-field-hover: rgba(255, 255, 255, 0.07);
 
-  /* glass: visible translucency so cards read as panes, not slabs */
-  --nd-glass: linear-gradient(
-    158deg,
-    rgba(255, 255, 255, 0.085) 0%,
-    rgba(255, 255, 255, 0.022) 55%,
-    rgba(255, 255, 255, 0.042) 100%
-  );
-  --nd-glass-hover: linear-gradient(
-    158deg,
-    rgba(255, 255, 255, 0.125) 0%,
-    rgba(255, 255, 255, 0.04) 55%,
-    rgba(255, 255, 255, 0.065) 100%
-  );
-  --nd-glass-solid: #12121d;
-  --nd-glass-2: rgba(255, 255, 255, 0.07);
+  --nd-text: #eef1f8;
+  --nd-text-2: #a6b1c7;
+  --nd-text-3: #6d7890;
 
-  /* a gradient hairline that is actually visible */
-  --nd-edge: linear-gradient(
-    135deg,
-    rgba(139, 92, 246, 0.7) 0%,
-    rgba(79, 124, 255, 0.35) 45%,
-    rgba(34, 211, 238, 0.4) 100%
-  );
-  --nd-edge-hover: linear-gradient(
-    135deg,
-    rgba(139, 92, 246, 1) 0%,
-    rgba(79, 124, 255, 0.75) 45%,
-    rgba(34, 211, 238, 0.85) 100%
-  );
-  --nd-border: rgba(255, 255, 255, 0.14);
-  --nd-divider: rgba(255, 255, 255, 0.19);
-
-  --nd-field: rgba(255, 255, 255, 0.06);
-  --nd-field-hover: rgba(255, 255, 255, 0.1);
-
-  --nd-text: #f2f5fb;
-  --nd-text-2: #d2d9e8;
-  --nd-text-3: #b6bfd2;
-
-  --nd-shadow-1: 0 2px 4px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  --nd-shadow-2: 0 20px 44px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  --nd-shadow-3: 0 30px 80px rgba(0, 0, 0, 0.7);
-  --nd-glow: 0 0 0 1px var(--nd-halo), 0 14px 40px rgba(124, 92, 255, 0.36);
+  --nd-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --nd-shadow-2: 0 16px 40px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --nd-shadow-3: 0 24px 70px rgba(0, 0, 0, 0.65);
 }
 
 html[data-theme='ultra-dark'] body.dark {
   --nd-canvas: #000;
-  --nd-divider: rgba(255, 255, 255, 0.12);
-  --nd-glass: linear-gradient(
-    158deg,
-    rgba(255, 255, 255, 0.07) 0%,
-    rgba(255, 255, 255, 0.02) 55%,
-    rgba(255, 255, 255, 0.035) 100%
-  );
-  --nd-glass-hover: linear-gradient(
-    158deg,
-    rgba(255, 255, 255, 0.11) 0%,
-    rgba(255, 255, 255, 0.04) 55%,
-    rgba(255, 255, 255, 0.06) 100%
-  );
-  --nd-glass-solid: #0b0b13;
-  --nd-glass-2: rgba(255, 255, 255, 0.05);
-  --nd-border: rgba(255, 255, 255, 0.11);
+  --nd-surface: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012));
+  --nd-surface-solid: #0a0a0f;
+  --nd-surface-2: linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.025));
+  --nd-border: rgba(255, 255, 255, 0.07);
+  --nd-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  --nd-shadow-2: 0 18px 44px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
+/* light keeps the same geometry with light surfaces */
 body.light {
-  --nd-canvas: #f2f3f9;
-  --nd-glass: linear-gradient(158deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 255, 255, 0.82) 100%);
-  --nd-glass-hover: #ffffff;
-  --nd-glass-solid: #ffffff;
-  --nd-glass-2: #ffffff;
-  --nd-edge: linear-gradient(
-    135deg,
-    rgba(124, 58, 237, 0.45) 0%,
-    rgba(37, 99, 235, 0.25) 50%,
-    rgba(6, 182, 212, 0.35) 100%
-  );
-  --nd-edge-hover: linear-gradient(
-    135deg,
-    rgba(124, 58, 237, 0.9) 0%,
-    rgba(37, 99, 235, 0.6) 50%,
-    rgba(6, 182, 212, 0.7) 100%
-  );
+  --nd-canvas: #f4f5fa;
+  --nd-surface: rgba(255, 255, 255, 0.82);
+  --nd-surface-solid: #ffffff;
+  --nd-surface-2: #ffffff;
   --nd-border: rgba(17, 24, 39, 0.1);
-  --nd-divider: rgba(17, 24, 39, 0.08);
-  --nd-field: rgba(255, 255, 255, 0.85);
+  --nd-border-strong: rgba(109, 40, 217, 0.4);
+  --nd-field: rgba(255, 255, 255, 0.9);
   --nd-field-hover: #ffffff;
-  --nd-text: #111527;
-  --nd-text-2: #4a5468;
-  --nd-text-3: #78829a;
-  --nd-shadow-1: 0 1px 2px rgba(16, 24, 40, 0.06), 0 10px 24px rgba(16, 24, 40, 0.06);
-  --nd-shadow-2: 0 18px 40px rgba(16, 24, 40, 0.12);
-  --nd-shadow-3: 0 30px 70px rgba(16, 24, 40, 0.22);
-  --nd-glow: 0 0 0 1px rgba(124, 58, 237, 0.35), 0 14px 34px rgba(124, 58, 237, 0.22);
+  --nd-text: #12141c;
+  --nd-text-2: #4b5468;
+  --nd-text-3: #7b8496;
+  --nd-shadow-1: 0 1px 2px rgba(16, 24, 40, 0.06), 0 8px 22px rgba(16, 24, 40, 0.05);
+  --nd-shadow-2: 0 18px 44px rgba(16, 24, 40, 0.14);
+  --nd-shadow-3: 0 26px 70px rgba(16, 24, 40, 0.2);
 }
 
-/* ------------------------------------------------------- base & aurora -- */
+/* ------------------------------------------------------- base & canvas -- */
 
 body {
   color: var(--nd-text);
-  background-color: var(--nd-canvas);
+  background: var(--nd-canvas);
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 body.dark {
   color-scheme: dark;
 }
 
-/* A slow, blurred aurora behind everything. Content is lifted above it below. */
-body.dark::before,
-body.light::before {
-  content: '';
-  position: fixed;
-  inset: -25% -15%;
-  z-index: 0;
-  pointer-events: none;
-  filter: blur(38px);
-  animation: ndDrift 34s ease-in-out infinite alternate;
+/* The ambient wash sits behind every panel page; the page roots stay clear so
+   the fixed wash reads through and does not scroll with content. */
+body.dark {
+  background-image:
+    radial-gradient(1100px 620px at 6% -12%, rgba(139, 92, 246, 0.2), transparent 62%),
+    radial-gradient(1000px 560px at 104% -4%, rgba(79, 124, 255, 0.17), transparent 62%),
+    radial-gradient(900px 700px at 50% 118%, rgba(34, 211, 238, 0.1), transparent 60%);
+  background-attachment: fixed;
 }
 
-body.dark::before {
-  background:
-    radial-gradient(660px 660px at 12% 16%, rgba(139, 92, 246, 0.55), transparent 60%),
-    radial-gradient(760px 660px at 88% 10%, rgba(79, 124, 255, 0.45), transparent 60%),
-    radial-gradient(680px 680px at 52% 94%, rgba(34, 211, 238, 0.3), transparent 60%);
+body.light {
+  background-image:
+    radial-gradient(1100px 620px at 6% -12%, rgba(139, 92, 246, 0.14), transparent 62%),
+    radial-gradient(1000px 560px at 104% -4%, rgba(79, 124, 255, 0.12), transparent 62%),
+    radial-gradient(900px 700px at 50% 118%, rgba(34, 211, 238, 0.09), transparent 60%);
+  background-attachment: fixed;
 }
 
-body.light::before {
-  background:
-    radial-gradient(620px 620px at 14% 18%, rgba(139, 92, 246, 0.22), transparent 62%),
-    radial-gradient(720px 620px at 86% 12%, rgba(79, 124, 255, 0.18), transparent 62%),
-    radial-gradient(640px 640px at 52% 92%, rgba(34, 211, 238, 0.14), transparent 62%);
-}
-
-@keyframes ndDrift {
-  from {
-    transform: translate3d(-2%, -1%, 0) scale(1);
-  }
-  to {
-    transform: translate3d(2.5%, 2%, 0) scale(1.1);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  body.dark::before,
-  body.light::before {
-    animation: none;
-  }
-}
-
-/* Every page root is a transparent window onto the aurora. */
 :is(
-  .ant-layout,
-  .content-shell,
   .index-page,
   .clients-page,
   .inbounds-page,
@@ -196,53 +115,14 @@ body.light::before {
   .admins-page,
   .admin-roles-page
 ) {
-  position: relative;
-  z-index: 1;
-  background: transparent !important;
-}
-
-:is(
-    .index-page,
-    .clients-page,
-    .inbounds-page,
-    .xray-page,
-    .settings-page,
-    .nodes-page,
-    .groups-page,
-    .api-docs-page,
-    .hosts-page,
-    .admins-page,
-    .admin-roles-page
-  )
-  .content-area {
-  padding: 26px;
-}
-
-@media (max-width: 768px) {
-  :is(
-      .index-page,
-      .clients-page,
-      .inbounds-page,
-      .xray-page,
-      .settings-page,
-      .nodes-page,
-      .groups-page,
-      .api-docs-page,
-      .hosts-page,
-      .admins-page,
-      .admin-roles-page
-    )
-    .content-area {
-    padding: 14px;
-    padding-top: 64px;
-  }
+  background: transparent;
 }
 
 /* ------------------------------------------------------------ scrollbar -- */
 
 body.dark ::-webkit-scrollbar {
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
 }
 
 body.dark ::-webkit-scrollbar-track {
@@ -252,33 +132,32 @@ body.dark ::-webkit-scrollbar-track {
 body.dark ::-webkit-scrollbar-thumb {
   border: 3px solid transparent;
   border-radius: 999px;
-  background: linear-gradient(180deg, rgba(139, 92, 246, 0.8), rgba(79, 124, 255, 0.7)) content-box;
+  background: rgba(255, 255, 255, 0.16);
+  background-clip: content-box;
 }
 
-/* -------------------------------------------------------------- sidebar -- */
+body.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.55);
+  background-clip: content-box;
+}
+
+/* --------------------------------------------------------------- sidebar -- */
 
 .ant-sidebar > .ant-layout-sider {
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.075),
-    rgba(255, 255, 255, 0.02)
-  ) !important;
-  border-inline-end: 1px solid var(--nd-divider) !important;
-  backdrop-filter: blur(26px) saturate(160%);
-  -webkit-backdrop-filter: blur(26px) saturate(160%);
-  box-shadow: 8px 0 40px rgba(0, 0, 0, 0.35);
+  border-inline-end: 1px solid var(--nd-border);
+  background: var(--nd-surface);
+  backdrop-filter: blur(22px) saturate(150%);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
 }
 
 .sider-brand {
-  height: 62px;
-  border-bottom: 1px solid var(--nd-divider);
-  background: linear-gradient(90deg, rgba(139, 92, 246, 0.16), transparent);
+  border-bottom: 1px solid var(--nd-border);
 }
 
 .sider-brand .brand-text {
-  font-weight: 800;
+  font-weight: 700;
+  letter-spacing: 0.14em;
   font-size: 15px;
-  letter-spacing: 0.16em;
 }
 
 .sider-nav .ant-menu-item,
@@ -286,56 +165,42 @@ body.dark ::-webkit-scrollbar-thumb {
 .sider-utility .ant-menu-item,
 .drawer-menu .ant-menu-item,
 .drawer-menu .ant-menu-submenu-title {
-  height: 42px;
-  line-height: 42px;
-  margin-block: 5px;
+  height: 40px;
+  line-height: 40px;
+  margin-block: 4px;
   border-radius: var(--nd-radius-sm);
-  font-weight: 500;
+  transition:
+    background-color 0.2s var(--nd-ease),
+    color 0.2s var(--nd-ease);
 }
 
 .sider-nav .ant-menu,
 .sider-utility .ant-menu,
 .drawer-menu.ant-menu {
-  background: transparent !important;
-  border-inline-end: 0 !important;
+  background: transparent;
+  border-inline-end: 0;
 }
 
 .sider-nav .ant-menu-sub.ant-menu-inline,
 .drawer-menu .ant-menu-sub.ant-menu-inline {
-  background: rgba(255, 255, 255, 0.03) !important;
-  border-radius: var(--nd-radius-sm);
+  background: transparent !important;
+}
+
+.sider-nav .ant-menu-submenu-arrow {
+  color: var(--nd-text-3);
 }
 
 .sider-footer {
-  border-top: 1px solid var(--nd-divider);
+  border-top: 1px solid var(--nd-border);
 }
 
 .sidebar-command-trigger {
-  border: 1px solid var(--nd-border) !important;
-  border-radius: var(--nd-radius-sm) !important;
-  background: var(--nd-field) !important;
+  border: 1px solid var(--nd-border);
+  border-radius: var(--nd-radius-sm);
+  background: var(--nd-field);
 }
 
-/* Current section: gradient pill + glow. Hover: label lights up. */
-.sider-nav .ant-menu-item-selected,
-.sider-utility .ant-menu-item-selected,
-.drawer-menu .ant-menu-item-selected {
-  background: var(--nd-grad) !important;
-  box-shadow: 0 8px 22px rgba(124, 92, 255, 0.45);
-}
-
-.sider-nav .ant-menu-item-selected .anticon,
-.sider-nav .ant-menu-item-selected .ant-menu-title-content,
-.sider-utility .ant-menu-item-selected .anticon,
-.sider-utility .ant-menu-item-selected .ant-menu-title-content,
-.drawer-menu .ant-menu-item-selected .anticon,
-.drawer-menu .ant-menu-item-selected .ant-menu-title-content {
-  color: #fff !important;
-  -webkit-text-fill-color: currentColor;
-  font-weight: 600;
-}
-
-/* ------------------------------------------------------ cards (the star) -- */
+/* -------------------------------------------------------------- surfaces -- */
 
 :is(
     .index-page,
@@ -351,22 +216,14 @@ body.dark ::-webkit-scrollbar-thumb {
     .admin-roles-page
   )
   .ant-card {
-  position: relative;
-  border: 1px solid transparent !important;
-  border-radius: var(--nd-radius-lg) !important;
-  background:
-    var(--nd-glass) padding-box,
-    var(--nd-edge) border-box !important;
+  border: 1px solid var(--nd-border);
+  border-radius: var(--nd-radius-lg);
+  background: var(--nd-surface);
   box-shadow: var(--nd-shadow-2);
-  backdrop-filter: blur(20px) saturate(150%);
-  -webkit-backdrop-filter: blur(20px) saturate(150%);
-  transition:
-    transform 0.3s var(--nd-ease),
-    box-shadow 0.3s var(--nd-ease),
-    background 0.3s var(--nd-ease);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
 }
 
-/* The old hairline is replaced by the gradient border itself. */
 :is(
     .index-page,
     .clients-page,
@@ -381,29 +238,8 @@ body.dark ::-webkit-scrollbar-thumb {
     .admin-roles-page
   )
   .ant-card::before {
-  display: none;
-}
-
-:is(
-    .index-page,
-    .clients-page,
-    .inbounds-page,
-    .xray-page,
-    .settings-page,
-    .nodes-page,
-    .groups-page,
-    .api-docs-page,
-    .hosts-page,
-    .admins-page,
-    .admin-roles-page
-  )
-  .ant-card:hover {
-  cursor: default;
-  transform: translateY(-3px);
-  background:
-    var(--nd-glass-hover) padding-box,
-    var(--nd-edge-hover) border-box !important;
-  box-shadow: var(--nd-shadow-3), var(--nd-glow);
+  height: 1px;
+  opacity: 0.55;
 }
 
 :is(
@@ -420,9 +256,8 @@ body.dark ::-webkit-scrollbar-thumb {
     .admin-roles-page
   )
   .ant-card-head {
-  min-height: 58px;
-  border-bottom: 1px solid var(--nd-divider) !important;
-  background: transparent !important;
+  min-height: 54px;
+  border-bottom: 1px solid var(--nd-border);
   color: var(--nd-text);
 }
 
@@ -440,37 +275,12 @@ body.dark ::-webkit-scrollbar-thumb {
     .admin-roles-page
   )
   .ant-card-head-title {
-  font-size: 15px;
-  font-weight: 650;
+  font-size: 14px;
+  font-weight: 600;
   letter-spacing: 0.01em;
 }
 
-/* A short gradient tick before every section title. */
-:is(
-    .index-page,
-    .clients-page,
-    .inbounds-page,
-    .xray-page,
-    .settings-page,
-    .nodes-page,
-    .groups-page,
-    .api-docs-page,
-    .hosts-page,
-    .admins-page,
-    .admin-roles-page
-  )
-  .ant-card-head-title::before {
-  content: '';
-  display: inline-block;
-  width: 3px;
-  height: 15px;
-  margin-inline-end: 10px;
-  border-radius: 2px;
-  vertical-align: -2px;
-  background: var(--nd-grad);
-}
-
-/* -------------------------------------------------------------- buttons -- */
+/* --------------------------------------------------------------- buttons -- */
 
 :is(
     .index-page,
@@ -486,9 +296,8 @@ body.dark ::-webkit-scrollbar-thumb {
     .admin-roles-page
   )
   .ant-btn {
-  border-radius: 999px;
-  font-weight: 600;
-  box-shadow: none;
+  border-radius: var(--nd-radius-sm);
+  font-weight: 500;
 }
 
 :is(
@@ -506,10 +315,10 @@ body.dark ::-webkit-scrollbar-thumb {
   )
   .ant-btn-primary:not(:disabled) {
   border: 0;
-  background: var(--nd-grad) !important;
+  background: var(--nd-grad);
   box-shadow:
-    0 10px 24px rgba(124, 92, 255, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+    0 6px 18px rgba(79, 124, 255, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
 }
 
 :is(
@@ -526,11 +335,11 @@ body.dark ::-webkit-scrollbar-thumb {
     .admin-roles-page
   )
   .ant-btn-primary:not(:disabled):hover {
-  filter: brightness(1.1);
-  transform: translateY(-1px);
+  background: var(--nd-grad);
+  filter: brightness(1.09);
   box-shadow:
-    0 14px 34px rgba(124, 92, 255, 0.55),
-    inset 0 1px 0 rgba(255, 255, 255, 0.32);
+    0 10px 26px rgba(79, 124, 255, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 :is(
@@ -547,9 +356,8 @@ body.dark ::-webkit-scrollbar-thumb {
     .admin-roles-page
   )
   .ant-btn-default {
-  border-color: var(--nd-border) !important;
-  background: var(--nd-field) !important;
-  backdrop-filter: blur(10px);
+  border-color: var(--nd-border);
+  background: var(--nd-field);
 }
 
 :is(
@@ -566,13 +374,43 @@ body.dark ::-webkit-scrollbar-thumb {
     .admin-roles-page
   )
   .ant-btn-default:not(:disabled):hover {
-  border-color: rgba(139, 92, 246, 0.7) !important;
-  background: var(--nd-field-hover) !important;
-  color: var(--nd-text) !important;
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.16);
+  border-color: var(--nd-border-strong);
+  background: var(--nd-field-hover);
+  color: var(--nd-text);
 }
 
-/* --------------------------------------------------------------- fields -- */
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-btn-text:not(:disabled):hover,
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-btn-link:not(:disabled):hover {
+  background: rgba(139, 92, 246, 0.14);
+}
+
+/* ----------------------------------------------------------------- fields -- */
 
 :is(
     .index-page,
@@ -588,10 +426,9 @@ body.dark ::-webkit-scrollbar-thumb {
     .admin-roles-page
   )
   :is(.ant-input, .ant-input-affix-wrapper, .ant-input-number, .ant-picker, .ant-select-selector) {
-  border-color: var(--nd-border) !important;
-  border-radius: var(--nd-radius-sm) !important;
-  background: var(--nd-field) !important;
-  backdrop-filter: blur(10px);
+  border-color: var(--nd-border);
+  border-radius: var(--nd-radius-sm);
+  background: var(--nd-field);
 }
 
 :is(
@@ -607,15 +444,56 @@ body.dark ::-webkit-scrollbar-thumb {
     .admins-page,
     .admin-roles-page
   )
-  :is(
-    .ant-input,
-    .ant-input-affix-wrapper,
-    .ant-input-number,
-    .ant-picker,
-    .ant-select-selector
-  ):hover {
-  border-color: rgba(139, 92, 246, 0.6) !important;
-  background: var(--nd-field-hover) !important;
+  :is(.ant-input-affix-wrapper, .ant-input-number, .ant-picker, .ant-select)
+  :is(.ant-input, .ant-input-number-input, .ant-picker-input),
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-select-selector {
+  background: transparent;
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  :is(.ant-input, .ant-input-affix-wrapper, .ant-input-number, .ant-picker):hover,
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-select:not(.ant-select-disabled):hover
+  .ant-select-selector {
+  border-color: var(--nd-border-strong);
+  background: var(--nd-field-hover);
 }
 
 :is(
@@ -647,9 +525,42 @@ body.dark ::-webkit-scrollbar-thumb {
   )
   .ant-select-focused
   .ant-select-selector {
-  border-color: var(--nd-violet) !important;
-  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.22) !important;
+  border-color: var(--nd-violet);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.22);
 }
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-input::placeholder,
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-select-selection-placeholder {
+  color: var(--nd-text-3);
+}
+
+/* ------------------------------------------------------------------ form -- */
 
 :is(
     .index-page,
@@ -666,14 +577,13 @@ body.dark ::-webkit-scrollbar-thumb {
   )
   .ant-form-item-label
   > label {
-  color: var(--nd-text-2) !important;
-  font-size: 11.5px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  color: var(--nd-text-2);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
 }
 
-/* --------------------------------------------------------------- tables -- */
+/* ----------------------------------------------------------------- tables -- */
 
 :is(
     .index-page,
@@ -689,8 +599,7 @@ body.dark ::-webkit-scrollbar-thumb {
     .admin-roles-page
   )
   .ant-table {
-  background: transparent !important;
-  border-radius: var(--nd-radius);
+  background: transparent;
 }
 
 :is(
@@ -709,11 +618,11 @@ body.dark ::-webkit-scrollbar-thumb {
   .ant-table-thead
   > tr
   > th {
-  border-bottom: 1px solid var(--nd-divider) !important;
-  background: rgba(255, 255, 255, 0.06) !important;
-  color: var(--nd-text-2) !important;
+  border-bottom: 1px solid var(--nd-border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--nd-text-3);
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -734,7 +643,27 @@ body.dark ::-webkit-scrollbar-thumb {
   .ant-table-tbody
   > tr
   > td {
-  border-bottom: 1px solid var(--nd-divider) !important;
+  border-bottom: 1px solid var(--nd-border);
+}
+
+body.dark
+  :is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-table-thead
+  > tr
+  > th {
+  background: rgba(255, 255, 255, 0.025);
 }
 
 :is(
@@ -751,9 +680,25 @@ body.dark ::-webkit-scrollbar-thumb {
     .admin-roles-page
   )
   .ant-table-tbody
-  > tr:hover
+  > tr.ant-table-row:hover
+  > td,
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-table-tbody
+  > tr.ant-table-row-selected
   > td {
-  background: linear-gradient(90deg, rgba(139, 92, 246, 0.16), rgba(79, 124, 255, 0.08)) !important;
+  background: color-mix(in srgb, var(--nd-violet) 12%, transparent) !important;
 }
 
 :is(
@@ -784,12 +729,11 @@ body.dark ::-webkit-scrollbar-thumb {
     .admin-roles-page
   )
   .ant-table-cell-fix-right {
-  background: var(--nd-glass-solid) !important;
+  background: var(--nd-surface-solid);
 }
 
-/* ----------------------------------------------------------------- tabs -- */
+/* ------------------------------------------------------------- tabs & nav -- */
 
-/* A pill rail instead of the stock underline. */
 :is(
     .index-page,
     .clients-page,
@@ -820,27 +764,7 @@ body.dark ::-webkit-scrollbar-thumb {
   )
   .ant-tabs-bottom
   > .ant-tabs-nav::before {
-  border-bottom: 0 !important;
-}
-
-:is(
-    .index-page,
-    .clients-page,
-    .inbounds-page,
-    .xray-page,
-    .settings-page,
-    .nodes-page,
-    .groups-page,
-    .api-docs-page,
-    .hosts-page,
-    .admins-page,
-    .admin-roles-page
-  )
-  .ant-tabs-nav-list {
-  gap: 6px;
-  padding: 4px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.05);
+  border-bottom-color: var(--nd-border);
 }
 
 :is(
@@ -857,10 +781,8 @@ body.dark ::-webkit-scrollbar-thumb {
     .admin-roles-page
   )
   .ant-tabs-tab {
-  margin: 0 !important;
-  padding: 6px 16px !important;
-  border-radius: 999px;
   color: var(--nd-text-2);
+  font-weight: 500;
 }
 
 :is(
@@ -876,9 +798,8 @@ body.dark ::-webkit-scrollbar-thumb {
     .admins-page,
     .admin-roles-page
   )
-  .ant-tabs-tab-active {
-  background: var(--nd-grad);
-  box-shadow: 0 6px 18px rgba(124, 92, 255, 0.4);
+  .ant-tabs-tab:hover {
+  color: var(--nd-text);
 }
 
 :is(
@@ -894,9 +815,9 @@ body.dark ::-webkit-scrollbar-thumb {
     .admins-page,
     .admin-roles-page
   )
-  .ant-tabs-tab-active
+  .ant-tabs-tab.ant-tabs-tab-active
   .ant-tabs-tab-btn {
-  color: #fff !important;
+  color: var(--nd-text);
 }
 
 :is(
@@ -913,56 +834,51 @@ body.dark ::-webkit-scrollbar-thumb {
     .admin-roles-page
   )
   .ant-tabs-ink-bar {
-  display: none;
+  height: 2px;
+  background: var(--nd-grad);
+  border-radius: 2px;
 }
 
 /* ------------------------------------------------------------ overlays -- */
 
 body.dark .ant-modal .ant-modal-content,
 body.dark .ant-drawer .ant-drawer-content {
-  border: 1px solid rgba(139, 92, 246, 0.35);
-  border-radius: var(--nd-radius-xl);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.015)),
-    var(--nd-glass-solid);
-  box-shadow:
-    var(--nd-shadow-3),
-    0 0 0 1px rgba(255, 255, 255, 0.04);
-  backdrop-filter: blur(24px) saturate(150%);
+  border: 1px solid var(--nd-border);
+  border-radius: var(--nd-radius-lg);
+  background: var(--nd-surface-solid);
+  box-shadow: var(--nd-shadow-3);
 }
 
 body.dark .ant-modal .ant-modal-header,
 body.dark .ant-drawer .ant-drawer-header {
-  border-bottom: 1px solid var(--nd-divider);
+  border-bottom: 1px solid var(--nd-border);
   background: transparent;
 }
 
 body.dark .ant-modal .ant-modal-title,
 body.dark .ant-drawer .ant-drawer-title {
-  font-size: 17px;
-  font-weight: 650;
+  font-weight: 600;
 }
 
 body.dark .ant-modal .ant-modal-footer {
-  border-top: 1px solid var(--nd-divider);
+  border-top: 1px solid var(--nd-border);
 }
 
 body.dark .ant-modal-mask,
 body.dark .ant-drawer-mask {
-  background: rgba(3, 3, 10, 0.66);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: rgba(3, 3, 8, 0.62);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 body.dark .ant-dropdown .ant-dropdown-menu,
 body.dark .ant-select-dropdown,
 body.dark .ant-picker-dropdown .ant-picker-panel-container,
 body.dark .ant-popover .ant-popover-inner {
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--nd-border);
   border-radius: var(--nd-radius);
-  background: var(--nd-glass-solid);
+  background: var(--nd-surface-solid);
   box-shadow: var(--nd-shadow-2);
-  backdrop-filter: blur(18px);
 }
 
 body.light .ant-dropdown .ant-dropdown-menu,
@@ -974,19 +890,12 @@ body.light .ant-popover .ant-popover-inner {
 }
 
 body.dark .ant-tooltip .ant-tooltip-inner {
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: var(--nd-radius-xs);
-  background: #16161f;
+  border: 1px solid var(--nd-border);
+  border-radius: var(--nd-radius-sm);
+  background: #14141c;
 }
 
-body.dark .ant-message .ant-message-notice-content {
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: var(--nd-radius);
-  background: var(--nd-glass-solid);
-  box-shadow: var(--nd-shadow-2);
-}
-
-/* ------------------------------------------------------- chips & misc -- */
+/* ------------------------------------------------------- tags & feedback -- */
 
 :is(
     .index-page,
@@ -1003,10 +912,8 @@ body.dark .ant-message .ant-message-notice-content {
   )
   .ant-tag {
   border-radius: 999px;
-  padding-inline: 11px;
-  font-weight: 600;
-  border-color: transparent;
-  background: rgba(139, 92, 246, 0.16);
+  padding-inline: 10px;
+  font-weight: 500;
 }
 
 :is(
@@ -1024,7 +931,6 @@ body.dark .ant-message .ant-message-notice-content {
   )
   .ant-alert {
   border-radius: var(--nd-radius);
-  backdrop-filter: blur(10px);
 }
 
 :is(
@@ -1044,7 +950,6 @@ body.dark .ant-message .ant-message-notice-content {
   border: 1px solid var(--nd-border);
   border-radius: var(--nd-radius);
   overflow: hidden;
-  backdrop-filter: blur(10px);
 }
 
 :is(
@@ -1061,126 +966,7 @@ body.dark .ant-message .ant-message-notice-content {
     .admin-roles-page
   )
   .ant-divider {
-  border-color: var(--nd-divider) !important;
-}
-
-:is(
-    .index-page,
-    .clients-page,
-    .inbounds-page,
-    .xray-page,
-    .settings-page,
-    .nodes-page,
-    .groups-page,
-    .api-docs-page,
-    .hosts-page,
-    .admins-page,
-    .admin-roles-page
-  )
-  .ant-statistic-content {
-  font-weight: 700;
-  letter-spacing: -0.01em;
-}
-
-/* ------------------------------------------------------------ overview -- */
-
-/* The dashboard hero gets a real gradient panel so the landing view reads as
-   branded rather than as one more card. */
-.index-page .ov-hero {
-  border: 1px solid transparent;
-  background:
-    linear-gradient(
-        120deg,
-        rgba(24, 16, 48, 0.72),
-        rgba(12, 18, 44, 0.66) 55%,
-        rgba(8, 26, 40, 0.62)
-      )
-      padding-box,
-    var(--nd-edge) border-box;
-  backdrop-filter: blur(22px) saturate(150%);
-  -webkit-backdrop-filter: blur(22px) saturate(150%);
-  box-shadow: var(--nd-shadow-2);
-}
-
-/* On a dark hero panel the gradient wordmark loses contrast; use the mark for
-   colour and keep the wordmark a crisp white. */
-.index-page .ov-hero-title {
-  background: none;
-  -webkit-text-fill-color: currentColor;
-  color: #ffffff;
-  text-shadow: 0 2px 18px rgba(124, 92, 255, 0.55);
-}
-
-.index-page .ov-bar,
-.index-page .ov-health {
-  border: 1px solid var(--nd-border);
-  border-radius: var(--nd-radius);
-  background: var(--nd-glass);
-  backdrop-filter: blur(18px) saturate(150%);
-  -webkit-backdrop-filter: blur(18px) saturate(150%);
-}
-
-.index-page .ov-tile-gauge {
-  padding-block: 18px 8px;
-}
-
-/* ------------------------------------------------------------- pg-ui -- */
-
-/* The ported admin screens carry their own Tailwind tokens; point them at Nova
-   Aurora so they stop reading as a different product. Tailwind declares its
-   themes inside cascade layers, so these unlayered rules win by design. */
-body.dark {
-  --background: 250 45% 4%;
-  --foreground: 222 30% 97%;
-  --card: 250 30% 10% / 0.6;
-  --card-foreground: 222 30% 97%;
-  --muted: 250 22% 14%;
-  --muted-foreground: 221 18% 70%;
-  --accent: 250 26% 15%;
-  --accent-foreground: 222 30% 97%;
-  --border: 250 20% 20%;
-  --input: 250 26% 13%;
-  --primary: 262 85% 70%;
-  --primary-foreground: 0 0% 100%;
-  --ring: 262 85% 70%;
-  --popover: 250 32% 9%;
-  --popover-foreground: 222 30% 97%;
-}
-
-body.dark .pg-admin-page {
-  background-color: transparent;
-}
-
-/* The ported cards should match the AntD ones rather than fighting them. */
-body.dark .pg-admin-page :is(.rounded-lg, .rounded-xl).border {
   border-color: var(--nd-border);
-  backdrop-filter: blur(14px);
-}
-
-/* --------------------------------------------------- readability pass -- */
-
-/* Labels, placeholders, sorters and statistic captions carried too little
-   contrast against the translucent surfaces. Lift them to a readable floor. */
-:is(
-    .index-page,
-    .clients-page,
-    .inbounds-page,
-    .xray-page,
-    .settings-page,
-    .nodes-page,
-    .groups-page,
-    .api-docs-page,
-    .hosts-page,
-    .admins-page,
-    .admin-roles-page
-  )
-  :is(
-    .ant-input::placeholder,
-    .ant-select-selection-placeholder,
-    .ant-picker-input > input::placeholder
-  ) {
-  color: var(--nd-text-3) !important;
-  opacity: 1;
 }
 
 :is(
@@ -1210,142 +996,69 @@ body.dark .pg-admin-page :is(.rounded-lg, .rounded-xl).border {
     .admins-page,
     .admin-roles-page
   )
-  .ant-descriptions-item-label,
-:is(
-    .index-page,
-    .clients-page,
-    .inbounds-page,
-    .xray-page,
-    .settings-page,
-    .nodes-page,
-    .groups-page,
-    .api-docs-page,
-    .hosts-page,
-    .admins-page,
-    .admin-roles-page
-  )
-  .ant-form-item-label
-  > label {
-  color: var(--nd-text-2) !important;
+  .ant-statistic-content {
+  letter-spacing: 0.01em;
 }
 
-:is(
-    .index-page,
-    .clients-page,
-    .inbounds-page,
-    .xray-page,
-    .settings-page,
-    .nodes-page,
-    .groups-page,
-    .api-docs-page,
-    .hosts-page,
-    .admins-page,
-    .admin-roles-page
-  )
-  .ant-table-column-sorter,
-:is(
-    .index-page,
-    .clients-page,
-    .inbounds-page,
-    .xray-page,
-    .settings-page,
-    .nodes-page,
-    .groups-page,
-    .api-docs-page,
-    .hosts-page,
-    .admins-page,
-    .admin-roles-page
-  )
-  .ant-table-column-sorter-up.active,
-:is(
-    .index-page,
-    .clients-page,
-    .inbounds-page,
-    .xray-page,
-    .settings-page,
-    .nodes-page,
-    .groups-page,
-    .api-docs-page,
-    .hosts-page,
-    .admins-page,
-    .admin-roles-page
-  )
-  .ant-table-column-sorter-down.active {
-  color: var(--nd-text-2) !important;
+body.dark .ant-message .ant-message-notice-content {
+  border: 1px solid var(--nd-border);
+  border-radius: var(--nd-radius);
+  background: var(--nd-surface-solid);
+  box-shadow: var(--nd-shadow-2);
 }
 
-:is(
-    .index-page,
-    .clients-page,
-    .inbounds-page,
-    .xray-page,
-    .settings-page,
-    .nodes-page,
-    .groups-page,
-    .api-docs-page,
-    .hosts-page,
-    .admins-page,
-    .admin-roles-page
-  )
-  .ant-empty-description {
-  color: var(--nd-text-2) !important;
+/* ------------------------------------------------------------- pg-ui skin -- */
+
+/* The ported admin screens carry their own Tailwind tokens; point them at the
+   Nova Dark palette so they stop reading as a different product. Tailwind emits
+   its themes inside cascade layers, so these plain rules win regardless of the
+   order the lazy chunks load in. */
+body.dark {
+  --background: 250 40% 5%;
+  --foreground: 226 30% 96%;
+  --card: 250 30% 9% / 0.55;
+  --card-foreground: 226 30% 96%;
+  --muted: 250 20% 12%;
+  --muted-foreground: 222 16% 66%;
+  --accent: 250 24% 14%;
+  --accent-foreground: 226 30% 96%;
+  --border: 250 18% 16%;
+  --input: 250 24% 11%;
+  --primary: 262 83% 68%;
+  --primary-foreground: 0 0% 100%;
+  --ring: 262 83% 68%;
+  --popover: 250 30% 7%;
+  --popover-foreground: 226 30% 96%;
 }
 
-.index-page .ov-kicker,
-.index-page .ov-strip-sub,
-.index-page .ov-tile-foot {
-  color: var(--nd-text-2);
+/* The ported screens paint their own opaque canvas; clear it so the panel's
+   ambient wash reads through and the admin UI matches every other page. */
+body.dark .pg-admin-page {
+  background-color: transparent;
 }
 
-/* The search field is the one control the placeholder rule kept missing; cover
-   the affix wrapper's inner input and the panel's own search variants too. */
+/* The Overview consumes the --nv-* tokens the glass layer defines; point them
+   at the deeper Nova Dark values so the whole panel shares one palette. */
 :is(
-    .index-page,
-    .clients-page,
-    .inbounds-page,
-    .xray-page,
-    .settings-page,
-    .nodes-page,
-    .groups-page,
-    .api-docs-page,
-    .hosts-page,
-    .admins-page,
-    .admin-roles-page
-  )
-  input::placeholder,
-:is(
-    .index-page,
-    .clients-page,
-    .inbounds-page,
-    .xray-page,
-    .settings-page,
-    .nodes-page,
-    .groups-page,
-    .api-docs-page,
-    .hosts-page,
-    .admins-page,
-    .admin-roles-page
-  )
-  textarea::placeholder {
-  color: var(--nd-text-3) !important;
-  opacity: 1 !important;
+  .index-page,
+  .clients-page,
+  .inbounds-page,
+  .xray-page,
+  .settings-page,
+  .nodes-page,
+  .groups-page,
+  .api-docs-page,
+  .hosts-page,
+  .admins-page,
+  .admin-roles-page
+).is-dark {
+  --nv-card: var(--nd-surface);
+  --nv-border: var(--nd-border);
+  --nv-shadow: var(--nd-shadow-2);
 }
 
-:is(
-    .index-page,
-    .clients-page,
-    .inbounds-page,
-    .xray-page,
-    .settings-page,
-    .nodes-page,
-    .groups-page,
-    .api-docs-page,
-    .hosts-page,
-    .admins-page,
-    .admin-roles-page
-  )
-  .ant-table-thead
-  > tr
-  > th {
-  border-bottom: 1px solid var(--nd-border) !important;
+@media (prefers-reduced-motion: reduce) {
+  body * {
+    scroll-behavior: auto;
+  }
 }

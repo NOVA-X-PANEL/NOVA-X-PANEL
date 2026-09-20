@@ -127,12 +127,39 @@ helper `src/lib/rbac.ts` (`isOwner`, `hasPermission`).
 ### Front-end files
 
 ```
-frontend/src/pages/admins/AdminsPage.tsx           administrators page
-frontend/src/pages/admin-roles/AdminRolesPage.tsx  roles page + editor
-frontend/src/api/queries/useAdmins.ts              queries + mutations
-frontend/src/lib/rbac.ts                           permission groups + helpers
+frontend/src/pages/admins/AdminsPage.tsx              page shell, stats, delete confirm
+frontend/src/pages/admins/AdminList.tsx               list card (toolbar + table)
+frontend/src/pages/admins/AdminFormModal.tsx          create/edit + password reset
+frontend/src/pages/admins/AdminList.css
+frontend/src/pages/admins/AdminsPage.css
+frontend/src/pages/admin-roles/AdminRolesPage.tsx     page shell, stats
+frontend/src/pages/admin-roles/AdminRoleList.tsx      list card (toolbar + table)
+frontend/src/pages/admin-roles/AdminRoleModal.tsx     four-tab role editor
+frontend/src/pages/admin-roles/AdminRoleList.css
+frontend/src/pages/admin-roles/AdminRolesPage.css
+frontend/src/api/queries/useAdmins.ts                 queries + mutations
+frontend/src/lib/rbac.ts                              permission groups + helpers
 ```
+
+### Page shell
+
+Both pages use the panel's shared page shell so they match every other page:
+
+- wrapped in `<ConfigProvider theme={antdThemeConfig}>`
+- `Layout className={pageClass}` where `pageClass` is `<name>-page` plus
+  `is-dark` / `is-ultra`
+- `content-shell` → `content-area`, with the standard `summary-card` (four
+  `Statistic` tiles at `xs=12 sm=12 md=6`) followed by the list card
+- `<Spin spinning={!fetched}>` → `<Result status="error">` on failure
+- `Card size="small" hoverable` + a space-between `.toolbar` for the list, and a
+  `Dropdown` row-action menu, matching `NodeList` / `HostList`
+- a `modal.confirm` before destructive actions
+
+`admins-page` and `admin-roles-page` are registered in
+`frontend/src/styles/page-shell.css` and `frontend/src/styles/page-cards.css`,
+which is what gives them the shared background, content padding, card radius and
+hover shadows.
 
 ## Status
 
-Backend and front-end both implemented. The version file is `1.0.2`.
+Backend and front-end both implemented. The version file is `1.0.4`.

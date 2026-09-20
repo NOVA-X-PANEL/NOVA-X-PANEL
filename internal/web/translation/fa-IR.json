@@ -2261,13 +2261,16 @@
     },
     "admins": {
       "title": "مدیران",
-      "subtitle": "مدیران پنل را مدیریت کنید و به هرکدام نقشی با مجوزهای مستقل اختصاص دهید.",
+      "subtitle": "مدیران پنل را مدیریت کنید و به هرکدام یک نقش اختصاص دهید.",
       "listTitle": "مدیران",
       "create": "افزودن مدیر",
       "edit": "ویرایش مدیر",
-      "you": "شما",
+      "resetPassword": "تغییر رمز عبور",
       "enable": "فعال‌سازی",
       "disable": "غیرفعال‌سازی",
+      "ownerTag": "حساب مالک پیش‌فرض است",
+      "ownerHint": "حساب مالک همیشه نقش مالک را دارد و قابل غیرفعال‌سازی یا حذف نیست.",
+      "statusHint": "مدیر غیرفعال نمی‌تواند وارد پنل شود.",
       "deleteConfirm": "این مدیر حذف شود؟",
       "usernameRequired": "نام کاربری الزامی است",
       "passwordRequired": "رمز عبور الزامی است",
@@ -2280,14 +2283,16 @@
         "actions": "عملیات"
       },
       "stats": {
-        "total": "کل",
+        "total": "مدیران",
         "active": "فعال",
-        "disabled": "غیرفعال"
+        "disabled": "غیرفعال",
+        "roles": "نقش‌ها"
       },
       "toasts": {
         "created": "مدیر ایجاد شد",
         "updated": "مدیر ویرایش شد",
-        "deleted": "مدیر حذف شد"
+        "deleted": "مدیر حذف شد",
+        "statusChanged": "وضعیت به‌روزرسانی شد"
       }
     },
     "adminRoles": {
@@ -2296,14 +2301,21 @@
       "listTitle": "نقش‌ها",
       "create": "افزودن نقش",
       "edit": "ویرایش نقش",
+      "duplicate": "کپی",
       "owner": "مالک",
       "builtIn": "پیش‌فرض",
+      "custom": "سفارشی",
+      "ownerReadOnly": "نقش مالک فقط‌خواندنی است.",
+      "builtInHint": "نقش پیش‌فرض: مجوزها قابل تنظیم‌اند اما هویت آن محافظت می‌شود.",
+      "nameLockedHint": "نقش‌های پیش‌فرض نامشان ثابت می‌ماند.",
       "deleteConfirm": "این نقش حذف شود؟",
+      "deleteHint": "نقش مالک، نقش‌های پیش‌فرض و نقش‌های دراختیار قابل حذف نیستند.",
+      "protectedHint": "نقش مالک، پیش‌فرض و دراختیار محافظت‌شده‌اند",
       "nameRequired": "نام نقش الزامی است",
       "permissions": "مجوزها",
-      "limits": "محدودیت‌ها",
-      "features": "ویژگی‌ها",
+      "permissionsHint": "مجوزهای فعال این نقش",
       "access": "دسترسی",
+      "selectAll": "انتخاب همه",
       "scopeOwn": "خودم",
       "scopeAll": "همه",
       "allowAllGroups": "دسترسی به همه گروه‌های کلاینت",
@@ -2311,6 +2323,7 @@
       "allowAllInbounds": "دسترسی به همه اینباندها",
       "allowedInbounds": "شناسه اینباندهای مجاز",
       "commaHint": "با کاما جدا کنید.",
+      "limitsHint": "کران‌هایی که روی کلاینت‌های ساخته‌شده توسط این نقش اعمال می‌شود. خالی = پیش‌فرض، صفر = غیرفعال.",
       "groups": {
         "inbounds": "اینباندها",
         "clients": "کلاینت‌ها",
@@ -2326,15 +2339,43 @@
       },
       "columns": {
         "name": "نام",
-        "slug": "شناسه",
+        "type": "نوع",
         "admins": "مدیران",
+        "permissions": "مجوزها",
         "actions": "عملیات"
+      },
+      "stats": {
+        "total": "نقش‌ها",
+        "builtIn": "پیش‌فرض",
+        "custom": "سفارشی",
+        "assigned": "دراختیار"
       },
       "toasts": {
         "created": "نقش ایجاد شد",
         "updated": "نقش ویرایش شد",
-        "deleted": "نقش حذف شد"
-      }
+        "deleted": "نقش حذف شد",
+        "duplicated": "نقش کپی شد"
+      },
+      "limitFields": {
+        "max_users": "حداکثر کلاینت",
+        "data_limit_min": "حداقل حجم",
+        "data_limit_max": "حداکثر حجم",
+        "expire_days_min": "حداقل روز انقضا",
+        "expire_days_max": "حداکثر روز انقضا",
+        "download_mbps_min": "حداقل دانلود (مگابیت)",
+        "download_mbps_max": "حداکثر دانلود (مگابیت)",
+        "upload_mbps_min": "حداقل آپلود (مگابیت)",
+        "upload_mbps_max": "حداکثر آپلود (مگابیت)"
+      },
+      "featureLabels": {
+        "blockLimitedAdmins": "مسدودسازی مدیرانی که از سهمیه گذشته‌اند",
+        "disconnectUsersWhenLimited": "قطع کلاینت‌ها وقتی مدیر محدود شد",
+        "disconnectUsersWhenDisabled": "قطع کلاینت‌ها وقتی مدیر غیرفعال شد",
+        "can_use_reset_strategy": "اجازه استراتژی ریست ترافیک",
+        "can_use_next_plan": "اجازه فعال‌سازی پلن بعدی"
+      },
+      "limits": "محدودیت‌ها",
+      "features": "ویژگی‌ها"
     }
   },
   "tgbot": {

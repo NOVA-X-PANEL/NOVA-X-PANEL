@@ -1,0 +1,104 @@
+/* Admin-roles page — page-specific rules only. The `admin-roles-page` class is
+   registered in styles/page-shell.css and styles/page-cards.css so the page
+   inherits the panel's shared background, padding and card styling. */
+.admin-roles-page .summary-card .ant-statistic-title {
+  font-size: 13px;
+}
+
+/* ---- role editor: permission grid ---- */
+.admin-role-modal .permission-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 46vh;
+  overflow-y: auto;
+  padding-inline-end: 4px;
+}
+
+.admin-role-modal .permission-group {
+  border: 1px solid var(--ant-color-border-secondary);
+  border-radius: 10px;
+  background: var(--ant-color-fill-quaternary);
+  overflow: hidden;
+}
+
+.admin-role-modal .permission-group__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+  background: var(--ant-color-fill-tertiary);
+}
+
+.admin-role-modal .permission-rows {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-role-modal .permission-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 12px;
+}
+
+.admin-role-modal .permission-row + .permission-row {
+  border-top: 1px solid var(--ant-color-border-secondary);
+}
+
+.admin-role-modal .permission-row__label {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+  min-width: 0;
+}
+
+.admin-role-modal .permission-row__resource {
+  font-size: 11px;
+  opacity: 0.5;
+  font-family: monospace;
+}
+
+/* ---- limits ---- */
+.admin-role-modal .limits-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 16px;
+}
+
+/* ---- features ---- */
+.admin-role-modal .features-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-role-modal .features-list .ant-checkbox-wrapper {
+  align-items: flex-start;
+}
+
+.admin-role-modal .feature-label {
+  display: block;
+  font-size: 13px;
+}
+
+.admin-role-modal .feature-key {
+  display: block;
+  font-size: 11px;
+  opacity: 0.5;
+  font-family: monospace;
+}
+
+@media (max-width: 768px) {
+  .admin-role-modal .limits-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-role-modal .permission-row {
+    flex-wrap: wrap;
+  }
+}

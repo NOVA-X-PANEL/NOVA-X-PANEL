@@ -2261,13 +2261,16 @@
     },
     "admins": {
       "title": "Administrators",
-      "subtitle": "Manage panel administrators and assign each one a role with its own permissions.",
+      "subtitle": "Manage panel administrators and assign each one a role.",
       "listTitle": "Administrators",
       "create": "Add administrator",
       "edit": "Edit administrator",
-      "you": "You",
+      "resetPassword": "Reset password",
       "enable": "Enable",
       "disable": "Disable",
+      "ownerTag": "Owner is built in",
+      "ownerHint": "The owner account keeps the owner role and cannot be disabled or deleted.",
+      "statusHint": "Disabled administrators cannot sign in.",
       "deleteConfirm": "Delete this administrator?",
       "usernameRequired": "Username is required",
       "passwordRequired": "Password is required",
@@ -2280,14 +2283,16 @@
         "actions": "Actions"
       },
       "stats": {
-        "total": "Total",
+        "total": "Administrators",
         "active": "Active",
-        "disabled": "Disabled"
+        "disabled": "Disabled",
+        "roles": "Roles"
       },
       "toasts": {
         "created": "Administrator created",
         "updated": "Administrator updated",
-        "deleted": "Administrator deleted"
+        "deleted": "Administrator deleted",
+        "statusChanged": "Status updated"
       }
     },
     "adminRoles": {
@@ -2296,14 +2301,21 @@
       "listTitle": "Roles",
       "create": "Add role",
       "edit": "Edit role",
+      "duplicate": "Duplicate",
       "owner": "Owner",
       "builtIn": "Built-in",
+      "custom": "Custom",
+      "ownerReadOnly": "The owner role is read-only.",
+      "builtInHint": "Built-in role: permissions can be tuned, but its identity is protected.",
+      "nameLockedHint": "Built-in roles keep their name.",
       "deleteConfirm": "Delete this role?",
+      "deleteHint": "Owner, built-in and assigned roles cannot be deleted.",
+      "protectedHint": "Owner, built-in and assigned roles are protected",
       "nameRequired": "Role name is required",
       "permissions": "Permissions",
-      "limits": "Limits",
-      "features": "Features",
+      "permissionsHint": "Granted actions on this role",
       "access": "Access",
+      "selectAll": "Select all",
       "scopeOwn": "Own",
       "scopeAll": "All",
       "allowAllGroups": "Allow all client groups",
@@ -2311,6 +2323,7 @@
       "allowAllInbounds": "Allow all inbounds",
       "allowedInbounds": "Allowed inbound IDs",
       "commaHint": "Comma-separated.",
+      "limitsHint": "Bounds applied to clients this role may create. Empty inherits the default; 0 disables.",
       "groups": {
         "inbounds": "Inbounds",
         "clients": "Clients",
@@ -2326,15 +2339,43 @@
       },
       "columns": {
         "name": "Name",
-        "slug": "Slug",
+        "type": "Type",
         "admins": "Admins",
+        "permissions": "Permissions",
         "actions": "Actions"
+      },
+      "stats": {
+        "total": "Roles",
+        "builtIn": "Built-in",
+        "custom": "Custom",
+        "assigned": "Assigned"
       },
       "toasts": {
         "created": "Role created",
         "updated": "Role updated",
-        "deleted": "Role deleted"
-      }
+        "deleted": "Role deleted",
+        "duplicated": "Role duplicated"
+      },
+      "limitFields": {
+        "max_users": "Max clients",
+        "data_limit_min": "Min data limit",
+        "data_limit_max": "Max data limit",
+        "expire_days_min": "Min expiry days",
+        "expire_days_max": "Max expiry days",
+        "download_mbps_min": "Min download (Mbps)",
+        "download_mbps_max": "Max download (Mbps)",
+        "upload_mbps_min": "Min upload (Mbps)",
+        "upload_mbps_max": "Max upload (Mbps)"
+      },
+      "featureLabels": {
+        "blockLimitedAdmins": "Block administrators that exceed their quota",
+        "disconnectUsersWhenLimited": "Disconnect clients when the administrator is limited",
+        "disconnectUsersWhenDisabled": "Disconnect clients when the administrator is disabled",
+        "can_use_reset_strategy": "Allow traffic reset strategy",
+        "can_use_next_plan": "Allow activating the next plan"
+      },
+      "limits": "Limits",
+      "features": "Features"
     }
   },
   "tgbot": {

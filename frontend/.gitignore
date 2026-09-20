@@ -4,3 +4,7 @@ node_modules/
 *.tsbuildinfo
 coverage/
 storybook-static/
+
+# crash dumps
+core
+core.*

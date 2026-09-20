@@ -6,6 +6,7 @@ import (
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	core "github.com/mhsanaei/3x-ui/v3/internal/web/service"
 
 	"gorm.io/gorm"
 )
@@ -440,4 +441,123 @@ func (s *AdminService) EnsureOwnerRole() error {
 		Order("id ASC").
 		Limit(1).
 		Update("role_id", ownerID).Error
+}
+
+// ---- per-admin client operations -------------------------------------------
+
+// clientEmailsByAdminID lists the emails of the clients an admin owns, with an
+// optional enable filter. The admin must exist.
+func (s *AdminService) clientEmailsByAdminID(tx *gorm.DB, id int, enabled *bool) ([]string, error) {
+	if id <= 0 {
+		return nil, errors.New("invalid admin id")
+	}
+	var existing model.User
+	if err := tx.Where("id = ?", id).First(&existing).Error; err != nil {
+		return nil, err
+	}
+
+	query := tx.Model(&model.ClientRecord{}).Where("owner_admin_id = ?", id)
+	if enabled != nil {
+		query = query.Where("enable = ?", *enabled)
+	}
+
+	var emails []string
+	if err := query.Pluck("email", &emails).Error; err != nil {
+		return nil, err
+	}
+	return emails, nil
+}
+
+// ResetUsage zeroes the traffic of every client the admin owns and clears the
+// admin's aggregate usage counter.
+func (s *AdminService) ResetUsage(id int) error {
+	db := database.GetDB()
+	emails, err := s.clientEmailsByAdminID(db, id, nil)
+	if err != nil {
+		return err
+	}
+
+	if len(emails) > 0 {
+		affected, resetErr := (&core.ClientService{}).BulkResetTraffic(&core.InboundService{}, emails)
+		if resetErr != nil {
+			return resetErr
+		}
+		if affected > 0 {
+			(&core.XrayService{}).SetToNeedRestart()
+		}
+	}
+
+	res := db.Model(&model.User{}).Where("id = ?", id).Update("used_bytes", 0)
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return errors.New("admin not found")
+	}
+	return nil
+}
+
+// DisableAllActiveUsers disables every enabled client the admin owns.
+func (s *AdminService) DisableAllActiveUsers(id int) (int64, error) {
+	db := database.GetDB()
+	enabled := true
+	emails, err := s.clientEmailsByAdminID(db, id, &enabled)
+	if err != nil {
+		return 0, err
+	}
+	if len(emails) == 0 {
+		return 0, nil
+	}
+
+	result, needRestart, err := (&core.ClientService{}).BulkSetEnable(&core.InboundService{}, emails, false)
+	if needRestart {
+		(&core.XrayService{}).SetToNeedRestart()
+	}
+	if err != nil {
+		return int64(result.Changed), err
+	}
+	return int64(result.Changed), nil
+}
+
+// ActivateAllDisabledUsers enables every disabled client the admin owns.
+func (s *AdminService) ActivateAllDisabledUsers(id int) (int64, error) {
+	db := database.GetDB()
+	disabled := false
+	emails, err := s.clientEmailsByAdminID(db, id, &disabled)
+	if err != nil {
+		return 0, err
+	}
+	if len(emails) == 0 {
+		return 0, nil
+	}
+
+	result, needRestart, err := (&core.ClientService{}).BulkSetEnable(&core.InboundService{}, emails, true)
+	if needRestart {
+		(&core.XrayService{}).SetToNeedRestart()
+	}
+	if err != nil {
+		return int64(result.Changed), err
+	}
+	return int64(result.Changed), nil
+}
+
+// RemoveAllUsers deletes every client the admin owns.
+func (s *AdminService) RemoveAllUsers(id int) (int, error) {
+	db := database.GetDB()
+	emails, err := s.clientEmailsByAdminID(db, id, nil)
+	if err != nil {
+		return 0, err
+	}
+	if len(emails) == 0 {
+		return 0, nil
+	}
+
+	result, needRestart, err := (&core.ClientService{}).BulkDelete(&core.InboundService{}, emails, false)
+	if needRestart {
+		(&core.XrayService{}).SetToNeedRestart()
+	}
+	if err != nil {
+		return result.Deleted, err
+	}
+	return result.Deleted, nil
 }

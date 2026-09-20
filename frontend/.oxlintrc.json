@@ -1,7 +1,8 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "ignorePatterns": [
-    "node_modules/**"
+    "node_modules/**",
+    "src/pg-ui/**"
   ],
   "plugins": [
     "typescript",

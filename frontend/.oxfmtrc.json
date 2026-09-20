@@ -7,8 +7,9 @@
   "tabWidth": 2,
   "ignorePatterns": [
     "node_modules",
-    "src/generated",
     "public",
+    "src/generated",
+    "src/pg-ui",
     "tools/oxlint/__fixtures__"
   ]
 }

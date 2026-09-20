@@ -11,6 +11,7 @@ import { readyI18n } from '@/i18n/react';
 import { ThemeProvider } from '@/hooks/useTheme';
 import { QueryProvider } from '@/api/QueryProvider';
 import { router } from '@/routes';
+import { Toaster } from '@/pg-ui/components/ui/sonner';
 
 setupHttp();
 
@@ -26,6 +27,7 @@ readyI18n().then(() => {
       <ThemeProvider>
         <QueryProvider>
           <RouterProvider router={router} />
+          <Toaster richColors closeButton />
         </QueryProvider>
       </ThemeProvider>,
     );

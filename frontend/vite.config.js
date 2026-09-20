@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 import fs from 'node:fs';
 import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
@@ -203,7 +204,7 @@ const SWAGGER_ONLY_DEPS = [
 ];
 
 export default defineConfig({
-  plugins: [react(), injectBasePathPlugin(), rocketLoaderOptOutPlugin()],
+  plugins: [react(), tailwindcss(), injectBasePathPlugin(), rocketLoaderOptOutPlugin()],
   resolve: {
     alias: {
       '@': path.resolve(import.meta.dirname, 'src'),

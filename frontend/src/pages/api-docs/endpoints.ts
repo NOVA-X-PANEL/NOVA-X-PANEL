@@ -1996,6 +1996,31 @@ export const sections: readonly Section[] = [
         summary: 'Disable an administrator account. The owner account cannot be disabled.',
         params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Administrator ID.' }],
       },
+      {
+        method: 'POST',
+        path: '/panel/api/admins/resetUsage/:id',
+        summary:
+          "Reset the traffic of every client owned by this administrator and clear its usage counter.",
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Administrator ID.' }],
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/admins/users/disableActive/:id',
+        summary: 'Disable every enabled client owned by this administrator.',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Administrator ID.' }],
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/admins/users/activateDisabled/:id',
+        summary: 'Enable every disabled client owned by this administrator.',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Administrator ID.' }],
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/admins/users/removeAll/:id',
+        summary: "Delete every client owned by this administrator.",
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Administrator ID.' }],
+      },
     ],
   },
 

@@ -38,6 +38,10 @@ func (a *AdminController) initRouter(g *gin.RouterGroup) {
 	g.POST("/del/:id", requireAdminPermission("admins", "delete"), a.del)
 	g.POST("/enable/:id", requireAdminPermission("admins", "update"), a.enable)
 	g.POST("/disable/:id", requireAdminPermission("admins", "update"), a.disable)
+	g.POST("/resetUsage/:id", requireAdminPermission("admins", "reset_usage"), a.resetUsage)
+	g.POST("/users/disableActive/:id", requireAdminPermission("users", "update"), a.disableActiveUsers)
+	g.POST("/users/activateDisabled/:id", requireAdminPermission("users", "update"), a.activateDisabledUsers)
+	g.POST("/users/removeAll/:id", requireAdminPermission("users", "delete"), a.removeAllUsers)
 }
 
 // current returns the logged-in account with its role document.
@@ -140,6 +144,49 @@ func (a *AdminController) enable(c *gin.Context) {
 
 func (a *AdminController) disable(c *gin.Context) {
 	a.setStatus(c, "disabled")
+}
+
+// resetUsage zeroes the traffic of every client owned by the admin.
+func (a *AdminController) resetUsage(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "get"), err)
+		return
+	}
+	jsonMsg(c, "reset admin usage", a.adminService.ResetUsage(id))
+}
+
+// disableActiveUsers disables every enabled client owned by the admin.
+func (a *AdminController) disableActiveUsers(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "get"), err)
+		return
+	}
+	count, err := a.adminService.DisableAllActiveUsers(id)
+	jsonMsgObj(c, "disable admin active users", gin.H{"changed": count}, err)
+}
+
+// activateDisabledUsers enables every disabled client owned by the admin.
+func (a *AdminController) activateDisabledUsers(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "get"), err)
+		return
+	}
+	count, err := a.adminService.ActivateAllDisabledUsers(id)
+	jsonMsgObj(c, "activate admin disabled users", gin.H{"changed": count}, err)
+}
+
+// removeAllUsers deletes every client owned by the admin.
+func (a *AdminController) removeAllUsers(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "get"), err)
+		return
+	}
+	count, err := a.adminService.RemoveAllUsers(id)
+	jsonMsgObj(c, "remove admin users", gin.H{"deleted": count}, err)
 }
 
 func (a *AdminController) setStatus(c *gin.Context, status string) {

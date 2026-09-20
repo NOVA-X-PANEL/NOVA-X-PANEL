@@ -162,7 +162,42 @@ hover shadows.
 
 ## Status
 
-Backend and front-end both implemented. The version file is `1.0.5`.
+Backend and front-end both implemented. The version file is `1.0.6`.
+
+## Front-end: ported from Heimdall (1.0.6)
+
+The admin and role screens are no longer hand-built with antd. They are the
+**actual Heimdall pg-ui** components, ported verbatim, so the layout and
+interaction are identical to upstream:
+
+```
+frontend/src/pg-ui/**            vendored Heimdall UI (shadcn/ui + Tailwind v4)
+frontend/src/app/providers/theme-provider.tsx   theme shim over this panel's theme
+frontend/src/pages/admins/AdminsPage.tsx        shell wrapper -> pg-ui page
+frontend/src/pages/admin-roles/AdminRolesPage.tsx
+```
+
+How the port works:
+
+- **Tailwind v4** via `@tailwindcss/vite`, configured from
+  `src/pg-ui/tailwind.config.js` and `src/pg-ui/styles/pasarguard.css`.
+  Preflight is deliberately **not** imported: this panel is a mixed codebase and
+  Tailwind's global resets would silently restyle every antd page once an admin
+  screen was opened. Only `theme` + `utilities` are layered in.
+- **shadcn/ui + Radix** primitives ship inside `pg-ui/components/ui`.
+- **Theme**: pg-ui reads `@/app/providers/theme-provider`, which is a thin shim
+  over this panel's own theme context, so `.dark` on `<body>` keeps driving both
+  antd and Tailwind.
+- **App shell**: Heimdall's `PanelLayout` supplies the sidebar; this panel's
+  pages render their own, so the two wrappers above do it for these screens and
+  hand pg-ui an unpadded full-width column (its `PageHeader` owns the padding).
+- **Vendored code is exempt** from oxlint/oxfmt (`ignorePatterns`) and carries
+  `// @ts-nocheck`, because upstream does not build against this repo's stricter
+  `noUnusedLocals` / `verbatimModuleSyntax` settings.
+- **API compatibility**: pg-ui's `service/api.ts` already normalises both
+  camelCase and snake_case, and it calls the same `HttpUtil` + route names this
+  panel exposes, so no adapter was needed beyond four new endpoints:
+  `admins/resetUsage/:id`, `admins/users/{disableActive,activateDisabled,removeAll}/:id`.
 
 ### Heimdall-parity notes (1.0.5)
 

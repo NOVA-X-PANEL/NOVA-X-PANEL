@@ -41,8 +41,8 @@ export default function VitalTile({
   // The Nova violet→blue reads as "nominal"; once a resource runs warm the ring
   // takes the panel's own warning/critical colour so the signal stays honest.
   const stressed = percent >= USAGE_WARN_PERCENT;
-  const from = stressed ? statusColor : NOVA_BLUE;
-  const to = stressed ? statusColor : NOVA_VIOLET;
+  const from = stressed ? statusColor : NOVA_VIOLET;
+  const to = stressed ? statusColor : NOVA_BLUE;
 
   return (
     <Card hoverable className="ov-tile" styles={{ body: { padding: 0 } }}>

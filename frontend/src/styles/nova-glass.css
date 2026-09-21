@@ -1,118 +1,30 @@
-/* NOVA X PANEL — "Nova Aurora" theme layer.
+/* NOVA X PANEL — "Neon Console" theme layer.
    Loaded after page-shell/page-cards so every panel page shares one palette.
-   A deep night sky with a layered aurora wash, aurora-tinted card surfaces, a
-   gradient accent (blue → violet → pink) and a soft glow on interaction.
-   Effects are deliberately soft — no hard neon — so the panel stays easy to
-   look at during long sessions. Light reuses the same shapes. */
+   A deep navy canvas with neon-glow cards, luminous blue borders and electric
+   blue / cyan / violet / magenta accents, matching the Neon Console design.
+   Light reuses the same shapes on light surfaces. */
 
 :root {
-  --nv-c1: #6ea8ff;
-  --nv-c2: #a78bfa;
-  --nv-c3: #f0a6d0;
-  --nv-grad: linear-gradient(135deg, var(--nv-c1) 0%, var(--nv-c2) 55%, var(--nv-c3) 100%);
-  --nv-grad-soft: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--nv-c1) 22%, transparent),
-    color-mix(in srgb, var(--nv-c2) 18%, transparent)
+  --nc-blue: #2563ff;
+  --nc-cyan: #00bfff;
+  --nc-teal: #13d6b0;
+  --nc-violet: #7140ff;
+  --nc-pink: #f13b96;
+  --nc-amber: #ffd15c;
+
+  --nc-grad: linear-gradient(100deg, var(--nc-blue) 0%, var(--nc-violet) 100%);
+  --nc-grad-soft: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--nc-blue) 26%, transparent),
+    color-mix(in srgb, var(--nc-violet) 22%, transparent)
   );
-  --nv-on-accent: #0a0e1c;
-  --nv-halo: color-mix(in srgb, var(--nv-c1) 45%, transparent);
-  --nv-radius: 18px;
+  --nc-glow: 0 0 22px rgba(36, 85, 255, 0.45);
+  --nc-halo: rgba(37, 99, 255, 0.55);
+  --nc-on-accent: #ffffff;
+  --nc-radius: 12px;
 }
 
-/* The top bar carries the aurora wash so the header reads as part of the sky. */
-:is(
-  .index-page,
-  .clients-page,
-  .inbounds-page,
-  .xray-page,
-  .settings-page,
-  .nodes-page,
-  .groups-page,
-  .api-docs-page,
-  .hosts-page,
-  .admins-page,
-  .admin-roles-page
-).is-dark {
-  --nv-topbar-bg:
-    linear-gradient(180deg, color-mix(in srgb, var(--nv-c1) 10%, transparent), transparent),
-    rgba(15, 20, 34, 0.9);
-}
-
-/* — top bar — */
-
-.nx-topbar .ant-menu-horizontal > .ant-menu-item,
-.nx-topbar .ant-menu-horizontal > .ant-menu-submenu {
-  border-radius: 11px;
-  margin-inline: 2px;
-  padding-inline: 12px;
-  transition: background-color 0.18s ease;
-}
-
-.nx-topbar .ant-menu-horizontal > .ant-menu-item::after,
-.nx-topbar .ant-menu-horizontal > .ant-menu-submenu::after {
-  display: none !important;
-  border-bottom: none !important;
-}
-
-.nx-topbar .ant-menu-horizontal > .ant-menu-item-selected,
-.nx-topbar .ant-menu-horizontal > .ant-menu-submenu-selected {
-  background: var(--nv-grad) !important;
-  box-shadow: 0 8px 20px color-mix(in srgb, var(--nv-c2) 34%, transparent);
-}
-
-.nx-topbar .ant-menu-horizontal > .ant-menu-item-selected .ant-menu-title-content,
-.nx-topbar .ant-menu-horizontal > .ant-menu-item-selected .anticon,
-.nx-topbar .ant-menu-horizontal > .ant-menu-submenu-selected .ant-menu-title-content,
-.nx-topbar .ant-menu-horizontal > .ant-menu-submenu-selected .anticon {
-  color: var(--nv-on-accent) !important;
-  font-weight: 700;
-}
-
-.nx-topbar .ant-menu-horizontal > .ant-menu-item:not(.ant-menu-item-selected):hover,
-.nx-topbar .ant-menu-horizontal > .ant-menu-submenu:not(.ant-menu-submenu-selected):hover {
-  background: color-mix(in srgb, var(--nv-c1) 14%, transparent) !important;
-  color: var(--ant-color-text) !important;
-}
-
-.nx-topbar
-  .ant-menu-horizontal
-  > .ant-menu-item:not(.ant-menu-item-selected):hover
-  .ant-menu-title-content,
-.nx-topbar
-  .ant-menu-horizontal
-  > .ant-menu-submenu:not(.ant-menu-submenu-selected):hover
-  .ant-menu-title-content {
-  background-image: var(--nv-grad);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
-}
-
-.nx-topbar .ant-menu-horizontal > .ant-menu-item:not(.ant-menu-item-selected):hover .anticon,
-.nx-topbar .ant-menu-horizontal > .ant-menu-submenu:not(.ant-menu-submenu-selected):hover .anticon {
-  color: var(--nv-c1) !important;
-}
-
-.nx-topbar .nx-icon-btn {
-  border-color: var(--nv-border, var(--ant-color-border-secondary));
-  background: color-mix(in srgb, var(--nv-c1) 6%, transparent);
-}
-
-.nx-topbar .nx-icon-btn:hover {
-  border-color: var(--nv-c1);
-  color: var(--nv-c1);
-}
-
-.nx-brand-text {
-  background: var(--nv-grad);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-/* — surfaces: deep night sky + layered aurora wash — */
+/* — surfaces: deep navy canvas with faint colour wash — */
 
 :is(
   .index-page,
@@ -127,10 +39,15 @@
   .admins-page,
   .admin-roles-page
 ) {
-  --nv-card: #ffffff;
-  --nv-border: rgba(60, 60, 90, 0.14);
-  --nv-shadow: 0 1px 2px rgba(30, 30, 60, 0.08);
-  --bg-page: #f5f6fb;
+  --nc-card: #ffffff;
+  --nc-card-2: #f7f9ff;
+  --nc-border: rgba(37, 99, 255, 0.22);
+  --nc-divider: rgba(60, 100, 180, 0.16);
+  --nc-field: #eef3ff;
+  --nc-text: #0f1830;
+  --nc-text-2: #48587a;
+  --nc-shadow: 0 12px 30px rgba(20, 40, 90, 0.12);
+  --bg-page: #f4f7ff;
   --bg-card: #ffffff;
   background: var(--bg-page);
 }
@@ -148,16 +65,20 @@
   .admins-page,
   .admin-roles-page
 ).is-dark {
-  --nv-card: #141926;
-  --nv-border: rgba(255, 255, 255, 0.11);
-  --nv-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 16px 40px rgba(0, 0, 0, 0.4);
-  --bg-page: #0b0e1a;
-  --bg-card: #141926;
-  /* the aurora itself, fixed behind the content */
+  --nc-card: #061633;
+  --nc-card-2: #0a2147;
+  --nc-border: rgba(51, 112, 215, 0.35);
+  --nc-divider: rgba(70, 109, 170, 0.22);
+  --nc-field: #0a2047;
+  --nc-text: #f3f7ff;
+  --nc-text-2: #a6bbdc;
+  --nc-shadow: 0 12px 35px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(100, 160, 255, 0.05);
+  --bg-page: #030b1d;
+  --bg-card: #061633;
   background-image:
-    radial-gradient(1100px 560px at 78% -10%, rgba(167, 139, 250, 0.34), transparent 62%),
-    radial-gradient(900px 520px at 8% -6%, rgba(110, 168, 255, 0.3), transparent 64%),
-    radial-gradient(800px 700px at 55% 118%, rgba(240, 166, 208, 0.18), transparent 62%);
+    radial-gradient(900px 520px at 88% -6%, rgba(37, 99, 255, 0.2), transparent 62%),
+    radial-gradient(760px 520px at 6% 8%, rgba(113, 64, 255, 0.16), transparent 64%),
+    radial-gradient(700px 620px at 55% 110%, rgba(19, 214, 176, 0.1), transparent 62%);
   background-attachment: fixed;
 }
 
@@ -174,18 +95,13 @@
     .admins-page,
     .admin-roles-page
   ).is-dark.is-ultra {
-  --nv-card: #0e1220;
-  --nv-border: rgba(255, 255, 255, 0.09);
-  --nv-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 18px 44px rgba(0, 0, 0, 0.6);
-  --bg-page: #06080f;
-  --bg-card: #0e1220;
-  background-image:
-    radial-gradient(1100px 560px at 78% -10%, rgba(167, 139, 250, 0.26), transparent 62%),
-    radial-gradient(900px 520px at 8% -6%, rgba(110, 168, 255, 0.24), transparent 64%),
-    radial-gradient(800px 700px at 55% 118%, rgba(240, 166, 208, 0.14), transparent 62%);
+  --nc-card: #04102a;
+  --nc-card-2: #071c3d;
+  --nc-border: rgba(51, 112, 215, 0.28);
+  --bg-page: #02081a;
 }
 
-/* — cards: aurora-tinted surface, coloured top line, soft corner bloom — */
+/* — cards — */
 
 :is(
     .index-page,
@@ -202,18 +118,15 @@
   )
   .ant-card {
   position: relative;
-  overflow: hidden;
-  border-radius: var(--nv-radius);
-  border: 1px solid var(--nv-border);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--nv-c1) 8%, transparent), transparent 58%),
-    var(--nv-card);
-  box-shadow: var(--nv-shadow);
+  border-radius: var(--nc-radius);
+  border: 1px solid var(--nc-border);
+  background: linear-gradient(135deg, var(--nc-card-2) 0%, var(--nc-card) 100%);
+  box-shadow: var(--nc-shadow);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   transition:
-    transform 0.25s ease,
-    border-color 0.25s ease,
+    transform 0.2s ease,
+    border-color 0.2s ease,
     box-shadow 0.25s ease;
 }
 
@@ -234,10 +147,8 @@
   content: '';
   position: absolute;
   inset: 0 0 auto 0;
-  height: 2px;
-  border-radius: 0;
-  background: var(--nv-grad);
-  opacity: 0.75;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(37, 99, 255, 0.85), transparent);
   pointer-events: none;
 }
 
@@ -254,53 +165,49 @@
     .admins-page,
     .admin-roles-page
   )
-  .ant-card::after {
-  content: '';
-  position: absolute;
-  inset: -40% 60% 60% -10%;
-  pointer-events: none;
-  background: radial-gradient(
-    closest-side,
-    color-mix(in srgb, var(--nv-c2) 16%, transparent),
-    transparent
-  );
-}
-
-:is(
-    .index-page,
-    .clients-page,
-    .inbounds-page,
-    .xray-page,
-    .settings-page,
-    .nodes-page,
-    .groups-page,
-    .api-docs-page,
-    .hosts-page,
-    .admins-page,
-    .admin-roles-page
-  )
-  .ant-card:hover,
-:is(
-    .index-page,
-    .clients-page,
-    .inbounds-page,
-    .xray-page,
-    .settings-page,
-    .nodes-page,
-    .groups-page,
-    .api-docs-page,
-    .hosts-page,
-    .admins-page,
-    .admin-roles-page
-  )
-  .ant-card.ant-card-hoverable:hover {
+  .ant-card:hover {
   cursor: default;
   transform: translateY(-2px);
-  border-color: color-mix(in srgb, var(--nv-c1) 45%, var(--nv-border));
-  box-shadow:
-    0 20px 46px rgba(0, 0, 0, 0.45),
-    0 0 0 1px color-mix(in srgb, var(--nv-c1) 22%, transparent),
-    0 0 34px color-mix(in srgb, var(--nv-c1) 22%, transparent);
+  border-color: color-mix(in srgb, var(--nc-blue) 70%, transparent);
+  box-shadow: var(--nc-shadow), var(--nc-glow);
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-card-head {
+  min-height: 54px;
+  border-bottom: 1px solid var(--nc-divider);
+  background: transparent;
+  color: var(--nc-text);
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-card-head-title {
+  font-size: 15px;
+  font-weight: 700;
 }
 
 :is(
@@ -321,7 +228,95 @@
   background: transparent;
 }
 
-/* — primary actions: gradient accent with a soft colour shadow — */
+/* — top bar — */
+
+:is(
+  .index-page,
+  .clients-page,
+  .inbounds-page,
+  .xray-page,
+  .settings-page,
+  .nodes-page,
+  .groups-page,
+  .api-docs-page,
+  .hosts-page,
+  .admins-page,
+  .admin-roles-page
+).is-dark {
+  --nv-topbar-bg:
+    linear-gradient(180deg, rgba(37, 99, 255, 0.14), transparent), rgba(4, 12, 32, 0.92);
+}
+
+.nx-topbar .ant-menu-horizontal > .ant-menu-item,
+.nx-topbar .ant-menu-horizontal > .ant-menu-submenu {
+  border-radius: 10px;
+  margin-inline: 2px;
+  padding-inline: 12px;
+}
+
+.nx-topbar .ant-menu-horizontal > .ant-menu-item::after,
+.nx-topbar .ant-menu-horizontal > .ant-menu-submenu::after {
+  display: none !important;
+}
+
+.nx-topbar .ant-menu-horizontal > .ant-menu-item-selected,
+.nx-topbar .ant-menu-horizontal > .ant-menu-submenu-selected {
+  background: var(--nc-grad) !important;
+  border: 1px solid color-mix(in srgb, var(--nc-blue) 80%, transparent);
+  box-shadow: 0 0 18px rgba(36, 85, 255, 0.5);
+}
+
+.nx-topbar .ant-menu-horizontal > .ant-menu-item-selected .ant-menu-title-content,
+.nx-topbar .ant-menu-horizontal > .ant-menu-item-selected .anticon,
+.nx-topbar .ant-menu-horizontal > .ant-menu-submenu-selected .ant-menu-title-content,
+.nx-topbar .ant-menu-horizontal > .ant-menu-submenu-selected .anticon {
+  color: #fff !important;
+}
+
+.nx-topbar .ant-menu-horizontal > .ant-menu-item:not(.ant-menu-item-selected):hover,
+.nx-topbar .ant-menu-horizontal > .ant-menu-submenu:not(.ant-menu-submenu-selected):hover {
+  background: rgba(37, 99, 255, 0.14) !important;
+  border: 1px solid var(--nc-border);
+  color: #fff !important;
+}
+
+.nx-topbar .nx-icon-btn {
+  border-color: var(--nc-border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--nc-blue) 12%, transparent);
+}
+
+.nx-topbar .nx-icon-btn:hover {
+  border-color: var(--nc-blue);
+  color: var(--nc-blue);
+}
+
+.nx-brand-text {
+  background: linear-gradient(140deg, #ffffff 0%, #9ec5ff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* — buttons — */
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-btn {
+  border-radius: 10px;
+  font-weight: 600;
+}
 
 :is(
     .index-page,
@@ -337,11 +332,10 @@
     .admin-roles-page
   )
   .ant-btn-primary:not(:disabled) {
-  border: 0;
-  background: var(--nv-grad);
-  color: var(--nv-on-accent);
-  font-weight: 700;
-  box-shadow: 0 10px 26px color-mix(in srgb, var(--nv-c2) 38%, transparent);
+  border: 1px solid color-mix(in srgb, var(--nc-blue) 85%, transparent);
+  background: var(--nc-grad);
+  color: var(--nc-on-accent);
+  box-shadow: 0 0 18px rgba(36, 85, 255, 0.4);
 }
 
 :is(
@@ -358,11 +352,10 @@
     .admin-roles-page
   )
   .ant-btn-primary:not(:disabled):hover {
-  background: var(--nv-grad);
-  color: var(--nv-on-accent);
-  filter: brightness(1.07) saturate(1.05);
-  transform: translateY(-1px);
-  box-shadow: 0 14px 32px color-mix(in srgb, var(--nv-c2) 48%, transparent);
+  background: var(--nc-grad);
+  color: var(--nc-on-accent);
+  filter: brightness(1.08);
+  box-shadow: 0 0 26px rgba(36, 85, 255, 0.55);
 }
 
 :is(
@@ -379,8 +372,8 @@
     .admin-roles-page
   )
   .ant-btn-default {
-  border-color: var(--nv-border);
-  background: color-mix(in srgb, var(--nv-c1) 8%, var(--nv-card));
+  border-color: var(--nc-border);
+  background: color-mix(in srgb, var(--nc-blue) 10%, var(--nc-field));
 }
 
 :is(
@@ -397,128 +390,11 @@
     .admin-roles-page
   )
   .ant-btn-default:not(:disabled):hover {
-  border-color: var(--nv-c1);
-  color: var(--nv-c1);
+  border-color: var(--nc-blue);
+  color: var(--nc-blue);
 }
 
-/* — tables: tinted header, aurora row hover — */
-
-:is(
-    .index-page,
-    .clients-page,
-    .inbounds-page,
-    .xray-page,
-    .settings-page,
-    .nodes-page,
-    .groups-page,
-    .api-docs-page,
-    .hosts-page,
-    .admins-page,
-    .admin-roles-page
-  )
-  .ant-table-wrapper
-  .ant-table {
-  background: transparent;
-}
-
-:is(
-    .index-page,
-    .clients-page,
-    .inbounds-page,
-    .xray-page,
-    .settings-page,
-    .nodes-page,
-    .groups-page,
-    .api-docs-page,
-    .hosts-page,
-    .admins-page,
-    .admin-roles-page
-  )
-  .ant-table-thead
-  > tr
-  > th {
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--nv-c1) 12%, transparent),
-    color-mix(in srgb, var(--nv-c1) 4%, transparent)
-  );
-  border-bottom: 1px solid var(--nv-border);
-}
-
-:is(
-    .index-page,
-    .clients-page,
-    .inbounds-page,
-    .xray-page,
-    .settings-page,
-    .nodes-page,
-    .groups-page,
-    .api-docs-page,
-    .hosts-page,
-    .admins-page,
-    .admin-roles-page
-  )
-  .ant-table-tbody
-  > tr
-  > td {
-  border-bottom: 1px solid var(--nv-border);
-}
-
-:is(
-    .index-page,
-    .clients-page,
-    .inbounds-page,
-    .xray-page,
-    .settings-page,
-    .nodes-page,
-    .groups-page,
-    .api-docs-page,
-    .hosts-page,
-    .admins-page,
-    .admin-roles-page
-  )
-  .ant-table-tbody
-  > tr.ant-table-row:hover
-  > td {
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--nv-c1) 13%, transparent),
-    color-mix(in srgb, var(--nv-c2) 7%, transparent)
-  );
-}
-
-:is(
-    .index-page,
-    .clients-page,
-    .inbounds-page,
-    .xray-page,
-    .settings-page,
-    .nodes-page,
-    .groups-page,
-    .api-docs-page,
-    .hosts-page,
-    .admins-page,
-    .admin-roles-page
-  )
-  .ant-table-cell-fix-left,
-:is(
-    .index-page,
-    .clients-page,
-    .inbounds-page,
-    .xray-page,
-    .settings-page,
-    .nodes-page,
-    .groups-page,
-    .api-docs-page,
-    .hosts-page,
-    .admins-page,
-    .admin-roles-page
-  )
-  .ant-table-cell-fix-right {
-  background: var(--nv-card);
-}
-
-/* — fields: tinted surfaces, aurora focus ring — */
+/* — fields — */
 
 :is(
     .index-page,
@@ -534,9 +410,9 @@
     .admin-roles-page
   )
   :is(.ant-input, .ant-input-affix-wrapper, .ant-input-number, .ant-picker, .ant-select-selector) {
-  border-color: var(--nv-border);
-  border-radius: 11px;
-  background: color-mix(in srgb, var(--nv-c1) 6%, var(--nv-card));
+  border-color: var(--nc-border);
+  border-radius: 10px;
+  background: var(--nc-field);
 }
 
 :is(
@@ -586,22 +462,28 @@
   )
   .ant-select-focused
   .ant-select-selector {
-  border-color: var(--nv-c1);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--nv-c1) 20%, transparent);
+  border-color: var(--nc-blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 255, 0.22);
 }
 
-/* — sidebar — */
+/* — tables — */
 
-.ant-sidebar > .ant-layout-sider {
-  border-inline-end: 1px solid var(--nv-border, var(--ant-color-border-secondary));
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--nv-c1) 12%, transparent),
-    transparent 40%
-  );
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  box-shadow: none;
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-table-wrapper
+  .ant-table {
+  background: transparent;
 }
 
 :is(
@@ -616,70 +498,379 @@
     .hosts-page,
     .admins-page,
     .admin-roles-page
-  ).is-dark
-  .ant-sidebar
-  > .ant-layout-sider {
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--nv-c1) 12%, transparent), transparent 40%),
-    #0f1422;
+  )
+  .ant-table-thead
+  > tr
+  > th {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--nc-blue) 16%, transparent),
+    transparent
+  );
+  border-bottom: 1px solid var(--nc-border);
+  color: var(--nc-text-2);
+  font-size: 11.5px;
+  font-weight: 700;
 }
 
-.sider-brand .brand-text {
-  background: var(--nv-grad);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: var(--nv-c1);
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-table-tbody
+  > tr
+  > td {
+  border-bottom: 1px solid var(--nc-divider);
 }
 
-.sider-nav .ant-menu-item-selected,
-.sider-utility .ant-menu-item-selected {
-  background: var(--nv-grad) !important;
-  box-shadow: 0 10px 24px color-mix(in srgb, var(--nv-c2) 42%, transparent) !important;
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-table-tbody
+  > tr.ant-table-row:hover
+  > td {
+  background: linear-gradient(90deg, rgba(37, 99, 255, 0.16), rgba(113, 64, 255, 0.08));
 }
 
-.sider-nav .ant-menu-item-selected .anticon,
-.sider-nav .ant-menu-item-selected .ant-menu-title-content,
-.sider-utility .ant-menu-item-selected .anticon,
-.sider-utility .ant-menu-item-selected .ant-menu-title-content {
-  color: var(--nv-on-accent) !important;
-  -webkit-text-fill-color: currentColor !important;
-  font-weight: 700 !important;
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-table-cell-fix-left,
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-table-cell-fix-right {
+  background: var(--nc-card);
 }
 
-.sider-nav .ant-menu-item:not(.ant-menu-item-selected):hover,
-.sider-utility .ant-menu-item:not(.ant-menu-item-selected):hover {
-  background: color-mix(in srgb, var(--nv-c1) 14%, transparent) !important;
+/* — tags & pills lighting up like the neon badges — */
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-tag {
+  border-radius: 999px;
+  border-color: transparent;
+  padding-inline: 10px;
+  font-weight: 700;
+  background: var(--nc-grad-soft);
+  color: var(--nc-text);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--nc-blue) 35%, transparent);
 }
 
-.sider-nav .ant-menu-item:not(.ant-menu-item-selected):hover .ant-menu-title-content,
-.sider-utility .ant-menu-item:not(.ant-menu-item-selected):hover .ant-menu-title-content {
-  background-image: var(--nv-grad);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
-  font-weight: 600;
+/* — tabs — */
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-tabs-top
+  > .ant-tabs-nav::before,
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-tabs-bottom
+  > .ant-tabs-nav::before {
+  border-bottom-color: var(--nc-divider);
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-tabs-ink-bar {
+  height: 2px;
+  background: var(--nc-grad);
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-tabs-tab.ant-tabs-tab-active
+  .ant-tabs-tab-btn {
+  color: var(--nc-blue);
+  font-weight: 700;
 }
 
 /* — overlays — */
 
-.ant-modal .ant-modal-content {
-  border: 1px solid color-mix(in srgb, var(--nv-c1) 24%, var(--nv-border, transparent));
-  border-radius: 18px;
+body.dark .ant-modal .ant-modal-content,
+body.dark .ant-drawer .ant-drawer-content {
+  border: 1px solid var(--nc-border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, #0a2147 0%, #061633 100%);
   box-shadow:
-    0 18px 44px rgba(0, 0, 0, 0.45),
-    0 0 0 1px color-mix(in srgb, var(--nv-c1) 10%, transparent);
+    0 24px 60px rgba(0, 0, 0, 0.55),
+    0 0 24px rgba(36, 85, 255, 0.25);
 }
 
-.ant-dropdown .ant-dropdown-menu,
-.ant-select-dropdown,
-.ant-picker-dropdown .ant-picker-panel-container {
-  border: 1px solid color-mix(in srgb, var(--nv-c1) 24%, var(--nv-border, transparent));
+body.dark .ant-modal .ant-modal-header,
+body.dark .ant-drawer .ant-drawer-header {
+  border-bottom: 1px solid var(--nc-divider);
+  background: transparent;
+}
+
+body.dark .ant-modal .ant-modal-footer {
+  border-top: 1px solid var(--nc-divider);
+}
+
+body.dark .ant-modal-mask,
+body.dark .ant-drawer-mask {
+  background: rgba(2, 6, 20, 0.66);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+body.dark .ant-dropdown .ant-dropdown-menu,
+body.dark .ant-select-dropdown,
+body.dark .ant-picker-dropdown .ant-picker-panel-container,
+body.dark .ant-popover .ant-popover-inner {
+  border: 1px solid var(--nc-border);
   border-radius: 12px;
+  background: #081d3d;
   box-shadow:
-    0 18px 44px rgba(0, 0, 0, 0.45),
-    0 0 0 1px color-mix(in srgb, var(--nv-c1) 10%, transparent);
+    0 20px 46px rgba(0, 0, 0, 0.5),
+    0 0 18px rgba(36, 85, 255, 0.22);
+}
+
+body.light .ant-dropdown .ant-dropdown-menu,
+body.light .ant-select-dropdown,
+body.light .ant-popover .ant-popover-inner {
+  border: 1px solid var(--nc-border);
+  border-radius: 12px;
+  box-shadow: 0 18px 40px rgba(20, 40, 90, 0.14);
+}
+
+body.dark .ant-tooltip .ant-tooltip-inner {
+  border: 1px solid var(--nc-border);
+  border-radius: 9px;
+  background: #081d3d;
+}
+
+body.dark .ant-message .ant-message-notice-content {
+  border: 1px solid var(--nc-border);
+  border-radius: 12px;
+  background: #081d3d;
+}
+
+/* — misc — */
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-alert,
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-collapse {
+  border-color: var(--nc-border);
+  border-radius: var(--nc-radius);
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-divider {
+  border-color: var(--nc-divider);
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-statistic-content {
+  font-weight: 700;
+}
+
+/* — overview accents — */
+
+.index-page .ov-hero {
+  border: 1px solid var(--nc-border);
+  background:
+    radial-gradient(600px 200px at 90% 0%, rgba(113, 64, 255, 0.22), transparent 70%),
+    linear-gradient(135deg, var(--nc-card-2) 0%, var(--nc-card) 100%);
+  box-shadow: var(--nc-shadow);
+}
+
+.index-page .ov-bar,
+.index-page .ov-health {
+  border: 1px solid var(--nc-border);
+  border-radius: var(--nc-radius);
+  background: linear-gradient(135deg, var(--nc-card-2), var(--nc-card));
+}
+
+.index-page .ov-hero-title {
+  background: none;
+  -webkit-text-fill-color: currentColor;
+  color: var(--nc-text);
+}
+
+.index-page .ov-hero-version {
+  border-color: var(--nc-border);
+  background: color-mix(in srgb, var(--nc-blue) 16%, transparent);
+  color: #9ec5ff;
+}
+
+.index-page .ov-tile-icon,
+.index-page .brand-mark,
+.index-page .ov-hero-mark {
+  color: var(--nc-blue);
+  filter: drop-shadow(0 0 8px rgba(37, 99, 255, 0.55));
+}
+
+.index-page .ov-rule {
+  background: linear-gradient(90deg, transparent, rgba(37, 99, 255, 0.6), transparent);
+  opacity: 1;
+}
+
+/* — pg-ui panels follow the same surfaces — */
+
+body.dark {
+  --background: 220 60% 6%;
+  --foreground: 214 60% 97%;
+  --card: 219 78% 11% / 0.85;
+  --card-foreground: 214 60% 97%;
+  --muted: 219 60% 14%;
+  --muted-foreground: 214 35% 70%;
+  --accent: 219 65% 16%;
+  --accent-foreground: 214 60% 97%;
+  --border: 218 55% 30%;
+  --input: 219 62% 12%;
+  --primary: 222 100% 57%;
+  --primary-foreground: 0 0% 100%;
+  --ring: 222 100% 57%;
+  --popover: 219 78% 10%;
+  --popover-foreground: 214 60% 97%;
+}
+
+body.dark .pg-admin-page {
+  background-color: transparent;
 }
 
 @media (prefers-reduced-motion: reduce) {

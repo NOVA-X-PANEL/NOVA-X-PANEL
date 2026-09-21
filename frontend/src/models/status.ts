@@ -5,9 +5,9 @@ import { NumberFormatter } from '@/utils';
 // panel accent, with muted amber and clay for the warning and critical bands.
 export const USAGE_WARN_PERCENT = 80;
 export const USAGE_CRIT_PERCENT = 90;
-export const USAGE_NORMAL_COLOR = '#6ea8ff';
-export const USAGE_WARN_COLOR = '#e0b15e';
-export const USAGE_CRIT_COLOR = '#e5788f';
+export const USAGE_NORMAL_COLOR = '#2563ff';
+export const USAGE_WARN_COLOR = '#ffd15c';
+export const USAGE_CRIT_COLOR = '#f13b96';
 
 export class CurTotal {
   current: number;

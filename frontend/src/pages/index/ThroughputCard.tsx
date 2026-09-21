@@ -7,7 +7,7 @@ import { SizeFormatter } from '@/utils';
 import { Sparkline } from '@/components/viz';
 import type { Status } from '@/models/status';
 import { mean, peak } from './useOverviewHistory';
-import { NOVA_BLUE, NOVA_VIOLET } from './novaTheme';
+import { NOVA_TEAL, NOVA_VIOLET } from './novaTheme';
 
 interface ThroughputCardProps {
   status: Status;
@@ -25,7 +25,8 @@ export default function ThroughputCard({
   isMobile,
 }: ThroughputCardProps) {
   const { t } = useTranslation();
-  const accent = NOVA_BLUE;
+  // download is the violet series, upload the teal one (matches the reference)
+  const accent = NOVA_TEAL;
   const downColor = NOVA_VIOLET;
 
   const referenceLines = useMemo(

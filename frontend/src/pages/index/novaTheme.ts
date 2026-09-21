@@ -1,15 +1,16 @@
 /**
- * NOVA X PANEL overview palette — the Nova Aurora accent (blue → violet →
- * pink). Kept in one place so the gauges, charts and glow all agree with the
- * panel theme (nova-glass.css / useTheme.tsx).
+ * NOVA X PANEL overview palette — the Neon Console accent. Download is violet
+ * and upload is teal, matching the NEON X reference charts. Kept in one place so
+ * the gauges, chart stubs and glow all agree with the theme.
  */
 
-export const NOVA_BLUE = '#6ea8ff';
-export const NOVA_VIOLET = '#a78bfa';
-export const NOVA_PINK = '#f0a6d0';
+export const NOVA_VIOLET = '#7140ff';
+export const NOVA_TEAL = '#13d9b4';
+export const NOVA_BLUE = '#2563ff';
+export const NOVA_CYAN = '#00bfff';
 
-/** The aurora accent as a CSS gradient (used by the hero and accents). */
-export const NOVA_GRADIENT = `linear-gradient(135deg, ${NOVA_BLUE} 0%, ${NOVA_VIOLET} 55%, ${NOVA_PINK} 100%)`;
+/* Back-compat aliases used by the overview charts. */
+export const NOVA_PINK = '#f13b96';
 
-/* Back-compat aliases: the overview charts referenced these names. */
-export const NOVA_CYAN = NOVA_PINK;
+/** The neon accent as a CSS gradient. */
+export const NOVA_GRADIENT = `linear-gradient(100deg, ${NOVA_VIOLET} 0%, ${NOVA_BLUE} 100%)`;

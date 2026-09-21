@@ -56,10 +56,10 @@
 bash <(curl -Ls https://raw.githubusercontent.com/NOVA-X-PANEL/NOVA-X-PANEL/main/install.sh)
 ```
 
-نصب یک نسخه‌ی مشخص (مثلاً `v1.8.2`):
+نصب یک نسخه‌ی مشخص (مثلاً `v1.9.0`):
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/NOVA-X-PANEL/NOVA-X-PANEL/main/install.sh) v1.8.2
+bash <(curl -Ls https://raw.githubusercontent.com/NOVA-X-PANEL/NOVA-X-PANEL/main/install.sh) v1.9.0
 ```
 
 نصب نسخه‌ی غلتانِ **dev** (آخرین پیش‌انتشار به‌ازای هر کامیت از شاخه‌ی `main` — نه یک انتشار پایدار):

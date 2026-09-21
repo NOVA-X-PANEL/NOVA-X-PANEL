@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ComponentType, CSSProperties } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { Drawer, Menu, Tooltip } from 'antd';
+import { Drawer, Layout, Menu, Tooltip } from 'antd';
 import type { MenuProps } from 'antd';
 import {
   ApiOutlined,
@@ -40,13 +40,14 @@ import {
   ToolOutlined,
 } from '@ant-design/icons';
 
-import { HttpUtil } from '@/utils';
+import { HttpUtil, TimeFormatter } from '@/utils';
 import { formatPanelVersion } from '@/lib/panel-version';
 import { pauseAnimationsUntilLeave, useTheme } from '@/hooks/useTheme';
 import { useAllSettings } from '@/api/queries/useAllSettings';
 import { useCommandPalette } from '@/components/command-palette/useCommandPalette';
 import { useAdmin } from '@/pg-ui/hooks/use-admin';
 import { canAccessRoute } from '@/pg-ui/utils/rbac';
+import { useStatusQuery } from '@/api/queries/useStatusQuery';
 import NovaLogo from '@/pages/login/NovaLogo';
 import './AppSidebar.css';
 
@@ -188,6 +189,7 @@ function saveSidebarPinned(pinned: boolean) {
 
 export default function AppSidebar() {
   const { t } = useTranslation();
+  const { status } = useStatusQuery();
   const { isDark, isUltra, toggleTheme, toggleUltra } = useTheme();
   const { open: openCommandPalette } = useCommandPalette();
   const navigate = useNavigate();
@@ -388,80 +390,126 @@ export default function AppSidebar() {
   return (
     <div
       ref={rootRef}
-      className={`ant-sidebar nx-topbar-root${pinned ? ' sidebar-pinned' : ''}`}
+      className={`ant-sidebar${pinned ? ' sidebar-pinned' : ''}`}
       style={railStyle}
       onMouseEnter={() => updateHovered(true)}
       onMouseLeave={() => updateHovered(false)}
     >
-      {/* Nova X — the panel navigates from a top bar (Mission Control),
-          not from a 3x-ui-style vertical sidebar. The mobile drawer stays. */}
-      <header className="nx-topbar">
-        <div className="nx-topbar-brand">
-          <NovaLogo size={26} idSuffix="topbar" className="brand-mark" />
-          <span className="nx-brand-text">NOVA X</span>
-          <span className="nx-brand-version">
-            <VersionBadge version={panelVersion} collapsed />
-          </span>
+      <Layout.Sider
+        theme={currentTheme}
+        width={SIDER_WIDTH}
+        collapsedWidth={RAIL_WIDTH}
+        collapsed={railCollapsed}
+      >
+        <div className="sider-brand">
+          <div className="brand-block">
+            <NovaLogo size={railCollapsed ? 28 : 30} idSuffix="sider" className="brand-mark" />
+            {!railCollapsed && (
+              <span className="brand-block-text">
+                <span className="brand-text">NOVA X</span>
+                <span className="brand-sub">PANEL</span>
+              </span>
+            )}
+          </div>
+          {!railCollapsed && (
+            <div className="brand-actions">
+              <button
+                type="button"
+                className="sidebar-pin"
+                aria-label={t('menu.pinSidebar')}
+                aria-pressed={pinned}
+                title={t(pinned ? 'menu.unpinSidebar' : 'menu.pinSidebar')}
+                onClick={togglePinned}
+              >
+                {pinned ? <PushpinFilled /> : <PushpinOutlined />}
+              </button>
+              <DocsButton ariaLabel={t('menu.docs') || 'Documentation'} />
+              <DonateButton ariaLabel={t('menu.donate') || 'Donate'} />
+              <ThemeCycleButton
+                id="theme-cycle"
+                isDark={isDark}
+                isUltra={isUltra}
+                onCycle={() => cycleTheme('theme-cycle')}
+                ariaLabel={t('menu.theme')}
+              />
+            </div>
+          )}
         </div>
-
-        <Menu
-          theme={currentTheme}
-          mode="horizontal"
-          selectedKeys={[selectedKey]}
-          className="nx-nav"
-          items={toMenuItems(navItems)}
-          onClick={onMenuClick}
-        />
-
-        <div className="nx-topbar-actions">
-          <Tooltip title={t('commandPalette.title') || 'Command Palette (Ctrl + K)'}>
-            <button
-              type="button"
-              className={`sidebar-command-trigger nx-icon-btn${railCollapsed ? ' collapsed' : ''}`}
-              onClick={openCommandPalette}
-              aria-label={t('commandPalette.title') || 'Command Palette (Ctrl + K)'}
-            >
+        <Tooltip
+          title={
+            railCollapsed ? t('commandPalette.title') || 'Command Palette (Ctrl + K)' : undefined
+          }
+          placement="right"
+        >
+          <button
+            type="button"
+            className={`sidebar-command-trigger${railCollapsed ? ' collapsed' : ''}`}
+            onClick={openCommandPalette}
+            aria-label={t('commandPalette.title') || 'Command Palette (Ctrl + K)'}
+          >
+            <span className="sidebar-command-left">
               <SearchOutlined className="sidebar-command-icon" />
               <span className="sidebar-command-text">
                 {t('commandPalette.search') || 'Search...'}
               </span>
-              <span className="sidebar-command-kbd">
-                <span className="kbd-cmd">{SHORTCUT_MODIFIER}</span>
-                <span className="kbd-key">K</span>
-              </span>
-            </button>
-          </Tooltip>
-
-          <button
-            type="button"
-            className="nx-icon-btn"
-            aria-label={t('menu.pinSidebar')}
-            aria-pressed={pinned}
-            title={t(pinned ? 'menu.unpinSidebar' : 'menu.pinSidebar')}
-            onClick={togglePinned}
-          >
-            {pinned ? <PushpinFilled /> : <PushpinOutlined />}
+            </span>
+            <span className="sidebar-command-kbd">
+              <span className="kbd-cmd">{SHORTCUT_MODIFIER}</span>
+              <span className="kbd-key">K</span>
+            </span>
           </button>
-          <DocsButton ariaLabel={t('menu.docs') || 'Documentation'} />
-          <DonateButton ariaLabel={t('menu.donate') || 'Donate'} />
-          <ThemeCycleButton
-            id="theme-cycle"
-            isDark={isDark}
-            isUltra={isUltra}
-            onCycle={() => cycleTheme('theme-cycle')}
-            ariaLabel={t('menu.theme')}
-          />
+        </Tooltip>
+        <Menu
+          theme={currentTheme}
+          mode="inline"
+          selectedKeys={[selectedKey]}
+          openKeys={railCollapsed ? undefined : openKeys}
+          onOpenChange={(keys) => setOpenKeys(keys as string[])}
+          className="sider-nav"
+          items={toMenuItems(navItems)}
+          onClick={onMenuClick}
+        />
+        <Menu
+          theme={currentTheme}
+          mode="inline"
+          selectedKeys={[selectedKey]}
+          className="sider-utility"
+          items={toMenuItems(utilItems)}
+          onClick={onMenuClick}
+        />
+        {!railCollapsed && (
+          <div className="sider-status">
+            <div className="sider-status-row">
+              <span className="sider-status-dot" />
+              <span className="sider-status-title">{t('pages.index.xrayStatusRunning')}</span>
+            </div>
+            <div className="sider-status-sub">
+              {t('pages.index.uptime')} · {TimeFormatter.formatSecond(status.appStats?.uptime ?? 0)}
+            </div>
+          </div>
+        )}
 
-          <Menu
-            theme={currentTheme}
-            mode="horizontal"
-            selectedKeys={[selectedKey]}
-            className="nx-nav nx-utility"
-            items={toMenuItems(utilItems)}
-            onClick={onMenuClick}
-          />
+        {!railCollapsed && (
+          <div className="sider-art" aria-hidden="true">
+            <svg viewBox="0 0 260 110" preserveAspectRatio="none">
+              <path
+                d="M0 110 L44 50 L76 82 L112 34 L150 88 L186 56 L224 92 L260 64 L260 110 Z"
+                fill="rgba(6,22,51,.92)"
+              />
+              <path
+                d="M0 110 L40 70 L78 96 L118 56 L156 100 L196 76 L232 102 L260 82 L260 110 Z"
+                fill="rgba(4,12,32,.95)"
+              />
+            </svg>
+            <div className="sider-art-brand">NOVA X</div>
+            <div className="sider-art-tag">سریع • امن • آزاد</div>
+          </div>
+        )}
+
+        <div className="sider-footer">
+          <VersionBadge version={panelVersion} collapsed={railCollapsed} />
         </div>
-      </header>
+      </Layout.Sider>
 
       <Drawer
         placement="left"

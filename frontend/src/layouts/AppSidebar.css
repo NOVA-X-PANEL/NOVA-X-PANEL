@@ -426,183 +426,141 @@ body.dark .ant-drawer-body .drawer-menu .ant-menu-item-group-list {
 }
 
 /* ============================================================================
-   Nova X — top navigation bar (Mission Control layout).
-   Replaces the vertical sidebar on every page. Ant Design Sider CSS above is
-   left untouched; these rules take over the desktop shell instead.
+   Nova Neon Console — sidebar shell (matches the NEON X reference).
+   The vertical sider returns; it carries the brand, the nav, a live server
+   status card and the neon mountain artwork.
    ========================================================================== */
 
-/* Whichever Layout directly holds the bar stacks it above the content instead
-   of beside it. Matching on :has() covers every page — including the ported
-   admin screens, whose root Layout carries no page class. */
-.ant-layout:has(> .ant-sidebar.nx-topbar-root) {
-  flex-direction: column;
+.sider-brand {
+  height: 72px;
+  padding: 0 16px;
+  gap: 10px;
+  border-bottom: 1px solid var(--nc-divider, var(--ant-color-border-secondary));
 }
 
-/* Ant Design's has-sider rule zeroes the width of the sibling content layout
-   (it assumes a row); in column mode that would collapse the whole page. */
-.ant-layout:has(> .ant-sidebar.nx-topbar-root) > .ant-layout {
-  width: 100% !important;
+.sider-brand .brand-block {
+  gap: 11px;
+}
+
+.brand-block-text {
+  display: inline-flex;
+  flex-direction: column;
+  line-height: 1.05;
   min-width: 0;
 }
 
-.ant-sidebar.nx-topbar-root {
-  position: sticky;
-  top: 0;
-  /* Above page content, below every overlay: dialogs/overlays in the panel sit
-     at z-index 50, so a higher bar would cover the top of a dialog that reaches
-     the top of a short viewport. */
-  z-index: 40;
-  flex: 0 0 auto;
-  width: 100%;
-  max-width: none;
+.sider-brand .brand-text {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  background: none;
+  -webkit-text-fill-color: currentColor;
+  color: var(--ant-color-text);
 }
 
-.nx-topbar {
+.sider-brand .brand-sub {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  color: var(--ant-color-text-tertiary);
+}
+
+/* — nav — */
+
+.sider-nav .ant-menu-item,
+.sider-nav .ant-menu-submenu-title,
+.sider-utility .ant-menu-item {
+  height: 46px;
+  line-height: 46px;
+  margin-block: 4px;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.sider-nav .ant-menu,
+.sider-utility .ant-menu {
+  background: transparent !important;
+  border-inline-end: 0 !important;
+}
+
+/* — live server status card — */
+
+.sider-status {
+  margin: 0 12px 10px;
+  padding: 11px 12px;
+  border: 1px solid var(--nc-border, var(--ant-color-border-secondary));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--nc-blue, #2563ff) 10%, transparent);
+}
+
+.sider-status-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  width: 100%;
-  height: 62px;
-  padding: 0 14px;
-  border-bottom: 1px solid var(--nv-border, var(--ant-color-border-secondary));
-  background: var(
-    --nv-topbar-bg,
-    color-mix(in srgb, var(--ant-color-bg-container, #101423) 88%, transparent)
-  );
-  backdrop-filter: blur(18px) saturate(140%);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
-}
-
-.nx-topbar-brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-  flex: none;
-}
-
-.nx-brand-text {
-  font-size: 14px;
-  font-weight: 800;
-  letter-spacing: 0.16em;
-  color: var(--ant-color-text);
-  white-space: nowrap;
-}
-
-.nx-brand-version {
-  display: none;
-}
-
-.nx-topbar .ant-menu-horizontal {
-  flex: 1 1 auto;
-  min-width: 0;
-  border-bottom: none !important;
-  background: transparent !important;
-  line-height: 60px;
-}
-
-.nx-topbar-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-inline-start: auto;
-  flex: none;
-}
-
-.nx-icon-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 36px;
-  min-width: 36px;
-  padding: 0 8px;
-  border: 1px solid var(--nv-border, var(--ant-color-border-secondary));
-  border-radius: 11px;
-  background: color-mix(in srgb, var(--ant-color-text) 5%, transparent);
-  color: var(--ant-color-text-secondary);
-  cursor: pointer;
-  transition:
-    border-color 0.2s ease,
-    color 0.2s ease;
-}
-
-.nx-icon-btn:hover,
-.nx-icon-btn:focus-visible {
-  border-color: var(--nv-accent, var(--ant-color-primary));
-  color: var(--nv-accent, var(--ant-color-primary));
-  outline: none;
-}
-
-/* Search trigger keeps its label on wide screens, collapses to an icon. */
-.nx-topbar-actions .sidebar-command-trigger {
-  display: inline-flex;
-  align-items: center;
   gap: 8px;
-  width: auto;
-  margin: 0;
-  padding: 0 10px;
-  height: 36px;
 }
 
-.nx-topbar-actions .sidebar-command-trigger .sidebar-command-kbd {
-  margin: 0;
+.sider-status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--nc-teal, #13d6b0);
+  box-shadow: 0 0 10px var(--nc-teal, #13d6b0);
+  flex: none;
 }
 
-.nx-topbar .nx-utility .ant-menu-title-content {
-  display: none;
+.sider-status-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--nc-teal, #13d6b0);
 }
 
-/* — responsive: below lg the bar keeps the brand + the drawer handle only — */
-
-@media (max-width: 1100px) {
-  .nx-topbar .nx-nav.ant-menu-horizontal {
-    overflow: hidden;
-  }
-
-  .nx-topbar-actions .sidebar-command-trigger .sidebar-command-text,
-  .nx-topbar-actions .sidebar-command-trigger .sidebar-command-kbd {
-    display: none;
-  }
+.sider-status-sub {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--ant-color-text-secondary);
 }
 
-@media (max-width: 900px) {
-  .nx-topbar .nx-nav.ant-menu-horizontal {
-    display: none;
-  }
+/* — mountain artwork — */
+
+.sider-art {
+  position: relative;
+  flex: 0 0 auto;
+  height: 112px;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 90% at 50% 100%, rgba(113, 64, 255, 0.45), transparent 60%),
+    radial-gradient(90% 70% at 80% 92%, rgba(0, 191, 255, 0.35), transparent 62%),
+    radial-gradient(80% 60% at 20% 96%, rgba(241, 59, 150, 0.22), transparent 62%);
 }
 
-@media (max-width: 768px) {
-  /* The old rules collapse .ant-sidebar to zero width on phones; the bar must
-     keep its height instead. */
-  .ant-sidebar.nx-topbar-root {
-    flex: 0 0 auto !important;
-    width: 100% !important;
-    max-width: none !important;
-    min-width: 0 !important;
-  }
+.sider-art svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
 
-  .nx-topbar {
-    height: 56px;
-    padding: 0 10px 0 52px;
-  }
+.sider-art-brand {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 20px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  color: rgba(255, 255, 255, 0.9);
+}
 
-  .nx-topbar .ant-menu-horizontal {
-    display: none;
-  }
+.sider-art-tag {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 7px;
+  text-align: center;
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  color: rgba(255, 255, 255, 0.45);
+}
 
-  .nx-topbar-actions {
-    gap: 4px;
-  }
-
-  .nx-topbar-actions .nx-icon-btn:not(.sidebar-command-trigger) {
-    display: none;
-  }
-
-  /* the drawer handle sits inside the bar's reserved lead-in */
-  .drawer-handle {
-    top: 10px;
-    left: 10px;
-    width: 36px;
-    height: 36px;
-    z-index: 70;
-  }
+.sider-footer {
+  border-top: 1px solid var(--nc-divider, var(--ant-color-border-secondary));
 }

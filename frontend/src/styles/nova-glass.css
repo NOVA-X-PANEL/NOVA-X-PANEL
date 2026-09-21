@@ -908,3 +908,359 @@ body.dark .pg-admin-page {
     transform: none;
   }
 }
+
+/* ==========================================================================
+   Neon Console page chrome — hero banner, icon-tile stat cards, analytics rail.
+   Used by the Inbounds screen; the same classes can carry other pages later.
+   ========================================================================== */
+
+.nc-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* — hero banner — */
+
+.nc-hero {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  overflow: hidden;
+  padding: 16px 20px;
+  border: 1px solid var(--nc-border);
+  border-radius: var(--nc-radius);
+  background:
+    radial-gradient(520px 180px at 88% 0%, rgba(113, 64, 255, 0.28), transparent 70%),
+    radial-gradient(420px 160px at 12% 120%, rgba(0, 191, 255, 0.18), transparent 70%),
+    linear-gradient(135deg, var(--nc-card-2) 0%, var(--nc-card) 100%);
+  box-shadow: var(--nc-shadow);
+}
+
+.nc-hero-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  flex: none;
+  border-radius: 12px;
+  font-size: 19px;
+  color: #fff;
+  background: linear-gradient(140deg, var(--nc-violet), var(--nc-blue));
+  box-shadow: 0 0 18px rgba(37, 99, 255, 0.5);
+}
+
+.nc-hero-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--nc-text);
+}
+
+.nc-hero-sub {
+  margin-top: 2px;
+  font-size: 12.5px;
+  color: var(--nc-text-2);
+}
+
+.nc-hero-metric {
+  margin-inline-start: auto;
+  padding-inline-start: 18px;
+  border-inline-start: 1px solid var(--nc-divider);
+  text-align: end;
+}
+
+.nc-hero-metric-label {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--nc-text-2);
+}
+
+.nc-hero-metric-value {
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--nc-text);
+}
+
+/* — icon-tile stat cards — */
+
+.nc-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (min-width: 1100px) {
+  .nc-stats {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+.nc-stat {
+  padding: 14px 16px;
+  border: 1px solid var(--nc-border);
+  border-radius: var(--nc-radius);
+  background: linear-gradient(135deg, var(--nc-card-2) 0%, var(--nc-card) 100%);
+  box-shadow: var(--nc-shadow);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.25s ease,
+    border-color 0.2s ease;
+}
+
+.nc-stat:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--nc-blue) 70%, transparent);
+  box-shadow: var(--nc-shadow), var(--nc-glow);
+}
+
+.nc-stat-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  font-size: 15px;
+  color: #fff;
+}
+
+.nc-tint-blue {
+  background: linear-gradient(145deg, #2563ff, #1b3ed8);
+  box-shadow: 0 0 16px rgba(37, 99, 255, 0.45);
+}
+
+.nc-tint-teal {
+  background: linear-gradient(145deg, #13d7cc, #087a91);
+  box-shadow: 0 0 16px rgba(19, 214, 176, 0.45);
+}
+
+.nc-tint-violet {
+  background: linear-gradient(145deg, #8a3eff, #4a20d8);
+  box-shadow: 0 0 16px rgba(113, 64, 255, 0.45);
+}
+
+.nc-tint-pink {
+  background: linear-gradient(145deg, #f13b96, #b81e6b);
+  box-shadow: 0 0 16px rgba(241, 59, 150, 0.45);
+}
+
+.nc-stat-label {
+  margin-top: 10px;
+  font-size: 11.5px;
+  color: var(--nc-text-2);
+}
+
+.nc-stat-value {
+  margin-top: 2px;
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.15;
+  color: var(--nc-text);
+}
+
+.nc-stat-foot {
+  margin-top: 3px;
+  font-size: 11px;
+  color: var(--nc-text-2);
+}
+
+/* — two-column shell: list + rail — */
+
+.nc-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+@media (min-width: 1400px) {
+  .nc-split {
+    grid-template-columns: minmax(0, 1fr) 320px;
+  }
+}
+
+.nc-main {
+  min-width: 0;
+}
+
+.nc-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.nc-card {
+  border: 1px solid var(--nc-border);
+  border-radius: var(--nc-radius);
+  background: linear-gradient(135deg, var(--nc-card-2) 0%, var(--nc-card) 100%);
+  box-shadow: var(--nc-shadow);
+  padding: 14px 16px;
+}
+
+.nc-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--nc-text);
+}
+
+.nc-card-head .anticon {
+  color: var(--nc-blue);
+}
+
+.nc-rail-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nc-rail-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12px;
+}
+
+.nc-rail-bar-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--nc-text-2);
+}
+
+.nc-rail-bar-value {
+  font-weight: 700;
+  color: var(--nc-text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* — donut + legend — */
+
+.nc-donut-wrap {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.nc-donut {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 104px;
+  height: 104px;
+  flex: none;
+  border-radius: 50%;
+}
+
+.nc-donut-hole {
+  display: grid;
+  place-items: center;
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: var(--nc-card);
+  text-align: center;
+}
+
+.nc-donut-num {
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--nc-text);
+}
+
+.nc-donut-cap {
+  margin-top: 2px;
+  font-size: 9.5px;
+  color: var(--nc-text-2);
+}
+
+.nc-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.nc-legend li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+}
+
+.nc-legend-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.nc-legend-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--nc-text);
+}
+
+.nc-legend-pct {
+  margin-inline-start: auto;
+  color: var(--nc-text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+/* — rail list — */
+
+.nc-rail-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.nc-rail-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+}
+
+.nc-rail-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.nc-rail-dot.is-on {
+  background: var(--nc-teal);
+  box-shadow: 0 0 8px var(--nc-teal);
+}
+
+.nc-rail-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--nc-text);
+}
+
+.nc-rail-port {
+  margin-inline-start: auto;
+  font-family: ui-monospace, monospace;
+  color: var(--nc-text-2);
+}

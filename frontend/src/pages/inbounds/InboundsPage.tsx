@@ -1,28 +1,9 @@
 import { lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Button,
-  Card,
-  Col,
-  ConfigProvider,
-  Layout,
-  Modal,
-  Result,
-  Row,
-  Spin,
-  Statistic,
-  message,
-} from 'antd';
+import { Button, ConfigProvider, Layout, Modal, Result, Spin, message } from 'antd';
 
 import { setMessageInstance } from '@/utils/messageBus';
-import {
-  ArrowUpOutlined,
-  ArrowDownOutlined,
-  PieChartOutlined,
-  BarsOutlined,
-} from '@ant-design/icons';
-
-import { HttpUtil, SizeFormatter, RandomUtil } from '@/utils';
+import { HttpUtil, RandomUtil } from '@/utils';
 import { buildClonePayload } from '@/lib/xray/inbound-clone';
 import { NODE_ELIGIBLE_PROTOCOLS } from '@/lib/xray/node-protocols';
 import {
@@ -47,6 +28,7 @@ const PromptModal = lazy(() => import('@/components/feedback/PromptModal'));
 
 import { useInbounds } from './useInbounds';
 import { InboundList } from './list';
+import { InboundsHero, InboundsRail, InboundsStats } from './InboundsChrome';
 import { LazyMount } from '@/components/utility';
 const InboundFormModal = lazy(() => import('./form/InboundFormModal'));
 const CloneInboundModal = lazy(() => import('./CloneInboundModal'));
@@ -628,6 +610,11 @@ export default function InboundsPage() {
     [modal, importInbound, exportAllLinks, exportAllSubs, refresh, messageApi, t],
   );
 
+  const totalClients = useMemo(
+    () => Object.values(clientCount).reduce((sum, entry) => sum + (entry?.clients || 0), 0),
+    [clientCount],
+  );
+
   const onRowAction = useCallback(
     async ({ key, dbInbound }: { key: RowAction; dbInbound: DBInbound }) => {
       // Actions that touch per-client secrets (uuid, password, flow, ...) need
@@ -754,65 +741,48 @@ export default function InboundsPage() {
                   }
                 />
               ) : (
-                <Row gutter={[isMobile ? 8 : 16, 12]}>
-                  <Col span={24}>
-                    <Card size="small" hoverable className="summary-card">
-                      <Row gutter={[16, 12]}>
-                        <Col xs={12} sm={12} md={8}>
-                          <Statistic
-                            title={t('pages.inbounds.totalDownUp')}
-                            value={0}
-                            formatter={() => (
-                              <span>
-                                <ArrowUpOutlined /> {SizeFormatter.sizeFormat(totals.up)}
-                                {' / '}
-                                <ArrowDownOutlined /> {SizeFormatter.sizeFormat(totals.down)}
-                              </span>
-                            )}
-                          />
-                        </Col>
-                        <Col xs={12} sm={12} md={8}>
-                          <Statistic
-                            title={t('pages.inbounds.totalUsage')}
-                            value={SizeFormatter.sizeFormat(totals.up + totals.down)}
-                            prefix={<PieChartOutlined />}
-                          />
-                        </Col>
-                        <Col xs={24} sm={24} md={8}>
-                          <Statistic
-                            title={t('pages.inbounds.inboundCount')}
-                            value={String(dbInbounds.length)}
-                            prefix={<BarsOutlined />}
-                          />
-                        </Col>
-                      </Row>
-                    </Card>
-                  </Col>
+                <div className="nc-page">
+                  <InboundsHero count={dbInbounds.length} />
 
-                  <Col span={24}>
-                    <InboundList
-                      dbInbounds={dbInbounds}
-                      clientCount={clientCount}
-                      onlineClients={onlineClients}
-                      lastOnlineMap={lastOnlineMap}
-                      inboundSpeed={inboundSpeed}
-                      expireDiff={expireDiff}
-                      trafficDiff={trafficDiff}
-                      pageSize={pageSize}
-                      isMobile={isMobile}
-                      subEnable={subSettings.enable}
-                      nodesById={nodesById}
-                      hasActiveNode={showNodeInfo}
-                      hosts={hosts}
-                      onAddInbound={onAddInbound}
-                      onGeneralAction={onGeneralAction}
-                      onRowAction={({ key, dbInbound }) =>
-                        onRowAction({ key, dbInbound: dbInbound as unknown as DBInbound })
-                      }
-                      onBulkDelete={confirmBulkDelete}
+                  <InboundsStats
+                    dbInbounds={dbInbounds as never}
+                    totals={totals}
+                    clients={totalClients}
+                    online={onlineClients.length}
+                  />
+
+                  <div className="nc-split">
+                    <div className="nc-main">
+                      <InboundList
+                        dbInbounds={dbInbounds}
+                        clientCount={clientCount}
+                        onlineClients={onlineClients}
+                        lastOnlineMap={lastOnlineMap}
+                        inboundSpeed={inboundSpeed}
+                        expireDiff={expireDiff}
+                        trafficDiff={trafficDiff}
+                        pageSize={pageSize}
+                        isMobile={isMobile}
+                        subEnable={subSettings.enable}
+                        nodesById={nodesById}
+                        hasActiveNode={showNodeInfo}
+                        hosts={hosts}
+                        onAddInbound={onAddInbound}
+                        onGeneralAction={onGeneralAction}
+                        onRowAction={({ key, dbInbound }) =>
+                          onRowAction({ key, dbInbound: dbInbound as unknown as DBInbound })
+                        }
+                        onBulkDelete={confirmBulkDelete}
+                      />
+                    </div>
+
+                    <InboundsRail
+                      dbInbounds={dbInbounds as never}
+                      totals={totals}
+                      online={onlineClients.length}
                     />
-                  </Col>
-                </Row>
+                  </div>
+                </div>
               )}
             </Spin>
           </Layout.Content>

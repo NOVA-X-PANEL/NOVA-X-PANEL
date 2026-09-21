@@ -39,7 +39,7 @@ export function InboundsHero({ count }: InboundsHeroProps) {
       </span>
       <div className="nc-hero-text">
         <div className="nc-hero-title">{t('menu.inbounds')}</div>
-        <div className="nc-hero-sub">{t('pages.inbounds.pageSubtitle')}</div>
+        <div className="nc-hero-sub">{t('menu.inbounds')}</div>
       </div>
       <div className="nc-hero-metric">
         <div className="nc-hero-metric-label">{t('pages.inbounds.inboundCount')}</div>
@@ -81,7 +81,7 @@ export function InboundsStats({ dbInbounds, totals, clients, online }: InboundsS
     },
     {
       key: 'inactive',
-      label: t('pages.inbounds.statusDisabled'),
+      label: t('disabled'),
       value: String(inactive),
       icon: <StopOutlined />,
       tint: 'nc-tint-pink',
@@ -93,7 +93,7 @@ export function InboundsStats({ dbInbounds, totals, clients, online }: InboundsS
       value: SizeFormatter.sizeFormat(totals.up + totals.down),
       icon: <PieChartOutlined />,
       tint: 'nc-tint-violet',
-      foot: `${t('pages.inbounds.up')} ${SizeFormatter.sizeFormat(totals.up)} · ${t('pages.inbounds.down')} ${SizeFormatter.sizeFormat(totals.down)}`,
+      foot: `${SizeFormatter.sizeFormat(totals.up)} ↑ · ${SizeFormatter.sizeFormat(totals.down)} ↓`,
     },
     {
       key: 'clients',
@@ -175,13 +175,13 @@ export function InboundsRail({ dbInbounds, totals, online }: InboundsRailProps) 
         <div className="nc-rail-bars">
           <div className="nc-rail-bar">
             <span className="nc-rail-bar-label">
-              <ArrowUpOutlined /> {t('pages.inbounds.up')}
+              <ArrowUpOutlined /> {t('pages.inbounds.totalDownUp')}
             </span>
             <span className="nc-rail-bar-value">{SizeFormatter.sizeFormat(totals.up)}</span>
           </div>
           <div className="nc-rail-bar">
             <span className="nc-rail-bar-label">
-              <ArrowDownOutlined /> {t('pages.inbounds.down')}
+              <ArrowDownOutlined />
             </span>
             <span className="nc-rail-bar-value">{SizeFormatter.sizeFormat(totals.down)}</span>
           </div>

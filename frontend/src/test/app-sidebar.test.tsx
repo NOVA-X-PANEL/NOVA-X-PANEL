@@ -21,42 +21,53 @@ function renderSidebar() {
   );
 }
 
-test('renders the vertical sidebar with the brand and the status card', () => {
+test('renders the vertical sidebar shell with its brand', () => {
   const view = renderSidebar();
 
   // the Neon Console shell is a sider again, not the top bar
   expect(view.container.querySelector('.ant-layout-sider')).not.toBeNull();
   expect(view.container.querySelector('.nx-topbar')).toBeNull();
+  expect(view.container.querySelector('.sider-brand .brand-mark')).not.toBeNull();
+});
+
+test('expands on hover, shows the status card and artwork, and pins', () => {
+  const view = renderSidebar();
+  const sidebar = view.container.querySelector('.ant-layout-sider');
+  const sidebarRoot = view.container.querySelector('.ant-sidebar');
+
+  expect(sidebar?.classList.contains('ant-layout-sider-collapsed')).toBe(true);
+
+  fireEvent.mouseEnter(sidebarRoot!);
+
   expect(view.container.querySelector('.sider-brand .brand-text')?.textContent).toBe('NOVA X');
   expect(view.container.querySelector('.sider-status')).not.toBeNull();
   expect(view.container.querySelector('.sider-art')).not.toBeNull();
-});
 
-test('keeps the pinned choice made from the sidebar and restores it', () => {
-  const first = renderSidebar();
   const pinButton = screen.getByRole('button', { name: 'Pin sidebar' });
-
-  expect(pinButton.getAttribute('aria-pressed')).toBe('false');
-
   fireEvent.click(pinButton);
+  fireEvent.mouseLeave(sidebarRoot!);
 
+  expect(sidebar?.classList.contains('ant-layout-sider-collapsed')).toBe(false);
   expect(localStorage.getItem('sidebar-pinned')).toBe('true');
 
-  first.unmount();
+  view.unmount();
 
-  renderSidebar();
-
-  expect(screen.getByRole('button', { name: 'Pin sidebar' }).getAttribute('aria-pressed')).toBe(
-    'true',
-  );
+  const second = renderSidebar();
+  const restored = second.container.querySelector('.ant-layout-sider');
+  expect(restored?.classList.contains('ant-layout-sider-collapsed')).toBe(false);
 });
 
-test('unpinning from the sidebar clears the stored choice', () => {
-  renderSidebar();
+test('unpinning returns to the compact rail', () => {
+  const view = renderSidebar();
+  const sidebarRoot = view.container.querySelector('.ant-sidebar');
+  const sidebar = view.container.querySelector('.ant-layout-sider');
 
+  fireEvent.mouseEnter(sidebarRoot!);
   fireEvent.click(screen.getByRole('button', { name: 'Pin sidebar' }));
   fireEvent.click(screen.getByRole('button', { name: 'Pin sidebar' }));
+  fireEvent.mouseLeave(sidebarRoot!);
 
+  expect(sidebar?.classList.contains('ant-layout-sider-collapsed')).toBe(true);
   expect(localStorage.getItem('sidebar-pinned')).toBe('false');
 });
 

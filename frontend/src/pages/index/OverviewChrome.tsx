@@ -9,6 +9,7 @@ import {
   DatabaseOutlined,
   HddOutlined,
   RocketOutlined,
+  SmileOutlined,
   SwapOutlined,
   ThunderboltOutlined,
 } from '@ant-design/icons';
@@ -47,8 +48,8 @@ export function OverviewHero({ panelVersion }: OverviewHeroProps) {
 
   return (
     <div className="nc-hero">
-      <span className="nc-hero-emoji" aria-hidden="true">
-        👋
+      <span className="nc-hero-badge" aria-hidden="true">
+        <SmileOutlined />
       </span>
       <div className="nc-hero-text">
         <div className="nc-hero-title">{t('menu.dashboard')}</div>

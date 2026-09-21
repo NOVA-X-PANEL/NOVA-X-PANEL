@@ -20,6 +20,98 @@
   --nv-radius: 18px;
 }
 
+/* The top bar carries the aurora wash so the header reads as part of the sky. */
+:is(
+  .index-page,
+  .clients-page,
+  .inbounds-page,
+  .xray-page,
+  .settings-page,
+  .nodes-page,
+  .groups-page,
+  .api-docs-page,
+  .hosts-page,
+  .admins-page,
+  .admin-roles-page
+).is-dark {
+  --nv-topbar-bg:
+    linear-gradient(180deg, color-mix(in srgb, var(--nv-c1) 10%, transparent), transparent),
+    rgba(15, 20, 34, 0.9);
+}
+
+/* — top bar — */
+
+.nx-topbar .ant-menu-horizontal > .ant-menu-item,
+.nx-topbar .ant-menu-horizontal > .ant-menu-submenu {
+  border-radius: 11px;
+  margin-inline: 2px;
+  padding-inline: 12px;
+  transition: background-color 0.18s ease;
+}
+
+.nx-topbar .ant-menu-horizontal > .ant-menu-item::after,
+.nx-topbar .ant-menu-horizontal > .ant-menu-submenu::after {
+  display: none !important;
+  border-bottom: none !important;
+}
+
+.nx-topbar .ant-menu-horizontal > .ant-menu-item-selected,
+.nx-topbar .ant-menu-horizontal > .ant-menu-submenu-selected {
+  background: var(--nv-grad) !important;
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--nv-c2) 34%, transparent);
+}
+
+.nx-topbar .ant-menu-horizontal > .ant-menu-item-selected .ant-menu-title-content,
+.nx-topbar .ant-menu-horizontal > .ant-menu-item-selected .anticon,
+.nx-topbar .ant-menu-horizontal > .ant-menu-submenu-selected .ant-menu-title-content,
+.nx-topbar .ant-menu-horizontal > .ant-menu-submenu-selected .anticon {
+  color: var(--nv-on-accent) !important;
+  font-weight: 700;
+}
+
+.nx-topbar .ant-menu-horizontal > .ant-menu-item:not(.ant-menu-item-selected):hover,
+.nx-topbar .ant-menu-horizontal > .ant-menu-submenu:not(.ant-menu-submenu-selected):hover {
+  background: color-mix(in srgb, var(--nv-c1) 14%, transparent) !important;
+  color: var(--ant-color-text) !important;
+}
+
+.nx-topbar
+  .ant-menu-horizontal
+  > .ant-menu-item:not(.ant-menu-item-selected):hover
+  .ant-menu-title-content,
+.nx-topbar
+  .ant-menu-horizontal
+  > .ant-menu-submenu:not(.ant-menu-submenu-selected):hover
+  .ant-menu-title-content {
+  background-image: var(--nv-grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.nx-topbar .ant-menu-horizontal > .ant-menu-item:not(.ant-menu-item-selected):hover .anticon,
+.nx-topbar .ant-menu-horizontal > .ant-menu-submenu:not(.ant-menu-submenu-selected):hover .anticon {
+  color: var(--nv-c1) !important;
+}
+
+.nx-topbar .nx-icon-btn {
+  border-color: var(--nv-border, var(--ant-color-border-secondary));
+  background: color-mix(in srgb, var(--nv-c1) 6%, transparent);
+}
+
+.nx-topbar .nx-icon-btn:hover {
+  border-color: var(--nv-c1);
+  color: var(--nv-c1);
+}
+
+.nx-brand-text {
+  background: var(--nv-grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
 /* — surfaces: deep night sky + layered aurora wash — */
 
 :is(

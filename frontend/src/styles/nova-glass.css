@@ -1264,3 +1264,125 @@ body.dark .pg-admin-page {
   font-family: ui-monospace, monospace;
   color: var(--nc-text-2);
 }
+
+/* --------------------------------------------------------------------------
+   Neon Console — Clients page extras: hero metrics row, neon summary stats and
+   the rail's quick actions.
+   -------------------------------------------------------------------------- */
+
+.nc-hero-metrics {
+  display: flex;
+  gap: 22px;
+  margin-inline-start: auto;
+}
+
+.nc-hero-metric {
+  text-align: end;
+}
+
+.nc-hero-metric-label {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--nc-text-2);
+}
+
+.nc-hero-metric-value {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.15;
+  color: var(--nc-text);
+}
+
+.nc-hero-metric-value--on {
+  color: var(--nc-teal);
+}
+
+/* The clients summary keeps its click-to-filter behaviour but wears the neon
+   stat-card skin: one tinted card per metric. */
+.nc-stats > .ant-col {
+  display: flex;
+}
+
+.nc-summary {
+  background:
+    radial-gradient(420px 160px at 88% 0%, rgba(37, 99, 255, 0.16), transparent 70%),
+    linear-gradient(135deg, var(--nc-card-2) 0%, var(--nc-card) 100%) !important;
+}
+
+.nc-summary .summary-stat {
+  transition: transform 0.2s ease;
+}
+
+.nc-summary .summary-stat:hover {
+  transform: translateY(-2px);
+}
+
+.nc-summary .ant-statistic-title {
+  color: var(--nc-text-2);
+  font-size: 11.5px;
+}
+
+.nc-summary .ant-statistic-content {
+  color: var(--nc-text);
+}
+
+/* — rail quick actions — */
+
+.nc-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nc-action {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--nc-border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--nc-blue) 8%, transparent);
+  color: var(--nc-text);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: start;
+  cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.2s ease,
+    transform 0.18s ease;
+}
+
+.nc-action:hover {
+  border-color: var(--nc-blue);
+  box-shadow: 0 0 16px rgba(37, 99, 255, 0.35);
+  transform: translateY(-1px);
+}
+
+.nc-action-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border-radius: 9px;
+  font-size: 13px;
+  color: #fff;
+  background: linear-gradient(145deg, var(--nc-violet), var(--nc-blue));
+  box-shadow: 0 0 12px rgba(37, 99, 255, 0.45);
+}
+
+.nc-action-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nc-action-chevron {
+  margin-inline-start: auto;
+  color: var(--nc-text-2);
+  transform: rotate(90deg);
+  font-size: 11px;
+}

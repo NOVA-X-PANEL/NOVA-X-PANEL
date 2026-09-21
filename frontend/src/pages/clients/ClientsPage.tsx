@@ -68,6 +68,7 @@ import type {
   ExternalLinkInput,
 } from '@/hooks/useClients';
 import ClientTrafficCell from '@/components/clients/ClientTrafficCell';
+import { ClientsHero, ClientsRail } from './ClientsChrome';
 import ClientSpeedTag, { isActiveSpeed } from '@/components/clients/ClientSpeedTag';
 import ClientCardComment from '@/components/clients/ClientCardComment';
 import AppSidebar from '@/layouts/AppSidebar';
@@ -815,6 +816,16 @@ export default function ClientsPage() {
     [promptHandler],
   );
 
+  // Protocol mix for the rail's donut, over the rows the table actually shows.
+  const protocolCounts = useMemo(() => {
+    const map = new Map<string, number>();
+    clients.forEach((row) => {
+      const proto = row.protocol || 'other';
+      map.set(proto, (map.get(proto) ?? 0) + 1);
+    });
+    return [...map.entries()].map(([name, n]) => ({ name, n }));
+  }, [clients]);
+
   function onResetAllTraffics() {
     modal.confirm({
       title: t('pages.clients.resetAllTrafficsTitle'),
@@ -1304,571 +1315,604 @@ export default function ClientsPage() {
                   }
                 />
               ) : (
-                <Row gutter={[isMobile ? 8 : 16, isMobile ? 8 : 12]}>
-                  <Col span={24}>
-                    <Card size="small" hoverable className="summary-card">
-                      <Row gutter={[16, 12]}>
-                        <Col xs={12} sm={8} md={4}>
-                          <SummaryStat
-                            title={t('clients')}
-                            value={summary.total}
-                            prefix={<TeamOutlined />}
-                            onSelect={() => selectBucket(null)}
-                          />
-                        </Col>
-                        <Col xs={12} sm={8} md={4}>
-                          <SummaryStat
-                            title={t('online')}
-                            value={summary.onlineCount}
-                            emails={summary.online}
-                            prefix={<span className="dot dot-blue" />}
-                            selected={isOnlyBucket('online')}
-                            onSelect={() => selectBucket('online')}
-                          />
-                        </Col>
-                        <Col xs={12} sm={8} md={4}>
-                          <SummaryStat
-                            title={t('depleted')}
-                            value={summary.depletedCount}
-                            emails={summary.depleted}
-                            prefix={<span className="dot dot-red" />}
-                            selected={isOnlyBucket('depleted')}
-                            onSelect={() => selectBucket('depleted')}
-                          />
-                        </Col>
-                        <Col xs={12} sm={8} md={4}>
-                          <SummaryStat
-                            title={t('depletingSoon')}
-                            value={summary.expiringCount}
-                            emails={summary.expiring}
-                            prefix={<span className="dot dot-orange" />}
-                            selected={isOnlyBucket('expiring')}
-                            onSelect={() => selectBucket('expiring')}
-                          />
-                        </Col>
-                        <Col xs={12} sm={8} md={4}>
-                          <SummaryStat
-                            title={t('disabled')}
-                            value={summary.deactiveCount}
-                            emails={summary.deactive}
-                            prefix={<span className="dot dot-gray" />}
-                            selected={isOnlyBucket('deactive')}
-                            onSelect={() => selectBucket('deactive')}
-                          />
-                        </Col>
-                        <Col xs={12} sm={8} md={4}>
-                          <SummaryStat
-                            title={t('subscription.active')}
-                            value={summary.active}
-                            prefix={<span className="dot dot-green" />}
-                            selected={isOnlyBucket('active')}
-                            onSelect={() => selectBucket('active')}
-                          />
-                        </Col>
-                      </Row>
-                    </Card>
-                  </Col>
+                <div className="nc-page">
+                  <ClientsHero total={summary.total} online={summary.onlineCount} />
 
-                  <Col span={24}>
-                    <Card
-                      size="small"
-                      hoverable
-                      title={
-                        <div className="card-toolbar">
-                          {selectedRowKeys.length === 0 ? (
-                            <Button
-                              type="primary"
-                              icon={<PlusOutlined />}
-                              onClick={onAdd}
-                              aria-label={t('pages.clients.addClients')}
-                            >
-                              {!isMobile && t('pages.clients.addClients')}
-                            </Button>
-                          ) : (
-                            <Tag
-                              color="blue"
-                              closable
-                              onClose={() => setSelectedRowKeys([])}
-                              style={{ marginInlineEnd: 0, padding: '4px 8px', fontSize: 13 }}
-                            >
-                              {t('pages.clients.selectedCount', { count: selectedRowKeys.length })}
-                            </Tag>
-                          )}
-                          <Dropdown
-                            trigger={['click']}
-                            placement="bottomRight"
-                            menu={{
-                              items:
-                                selectedRowKeys.length > 0
-                                  ? [
-                                      {
-                                        key: 'attach',
-                                        icon: <UsergroupAddOutlined />,
-                                        label: t('pages.clients.attach'),
-                                        onClick: () => setBulkAttachOpen(true),
-                                      },
-                                      {
-                                        key: 'detach',
-                                        icon: <UsergroupDeleteOutlined />,
-                                        label: t('pages.clients.detach'),
-                                        danger: true,
-                                        onClick: () => setBulkDetachOpen(true),
-                                      },
-                                      {
-                                        key: 'addToGroup',
-                                        icon: <TagsOutlined />,
-                                        label: t('pages.clients.addToGroup'),
-                                        onClick: () => setBulkGroupOpen(true),
-                                      },
-                                      {
-                                        key: 'ungroup',
-                                        icon: <UngroupIcon />,
-                                        label: t('pages.clients.ungroup'),
-                                        danger: true,
-                                        onClick: onBulkUngroup,
-                                      },
-                                      { type: 'divider' as const },
-                                      {
-                                        key: 'enable',
-                                        icon: <CheckCircleOutlined />,
-                                        label: t('pages.clients.enable'),
-                                        onClick: () => onBulkSetEnable(true),
-                                      },
-                                      {
-                                        key: 'disable',
-                                        icon: <StopOutlined />,
-                                        label: t('pages.clients.disable'),
-                                        danger: true,
-                                        onClick: () => onBulkSetEnable(false),
-                                      },
-                                      {
-                                        key: 'adjust',
-                                        icon: <ClockCircleOutlined />,
-                                        label: t('pages.clients.adjust'),
-                                        onClick: () => setBulkAdjustOpen(true),
-                                      },
-                                      {
-                                        key: 'subLinks',
-                                        icon: <LinkOutlined />,
-                                        label: t('pages.clients.subLinks'),
-                                        onClick: () => setSubLinksOpen(true),
-                                      },
-                                    ]
-                                  : [
-                                      {
-                                        key: 'bulk',
-                                        icon: <UsergroupAddOutlined />,
-                                        label: t('pages.clients.bulk'),
-                                        onClick: () => setBulkAddOpen(true),
-                                      },
-                                      {
-                                        key: 'export',
-                                        icon: <DownloadOutlined />,
-                                        label: t('pages.clients.exportClients'),
-                                        onClick: onExportClients,
-                                      },
-                                      {
-                                        key: 'import',
-                                        icon: <UploadOutlined />,
-                                        label: t('pages.clients.importClients'),
-                                        onClick: onImportClients,
-                                      },
-                                      {
-                                        key: 'resetAll',
-                                        icon: <RetweetOutlined />,
-                                        label: t('pages.clients.resetAllTraffics'),
-                                        onClick: onResetAllTraffics,
-                                      },
-                                      { type: 'divider' as const },
-                                      {
-                                        key: 'delDepleted',
-                                        icon: <RestOutlined />,
-                                        label: t('pages.clients.delDepleted'),
-                                        danger: true,
-                                        onClick: onDelDepleted,
-                                      },
-                                      {
-                                        key: 'delOrphans',
-                                        icon: <DisconnectOutlined />,
-                                        label: t('pages.clients.delOrphans'),
-                                        danger: true,
-                                        onClick: onDeleteOrphans,
-                                      },
-                                    ],
-                            }}
-                          >
-                            <Button icon={<MoreOutlined />} aria-label={t('more')}>
-                              {!isMobile && t('more')}
-                            </Button>
-                          </Dropdown>
-                          {selectedRowKeys.length > 0 && (
-                            <Button
-                              danger
-                              icon={<DeleteOutlined />}
-                              onClick={onBulkDelete}
-                              style={{ marginInlineStart: 'auto' }}
-                              aria-label={t('delete')}
-                            >
-                              {!isMobile && t('delete')}
-                            </Button>
-                          )}
-                        </div>
-                      }
-                    >
-                      <div className={isMobile ? 'filter-bar mobile' : 'filter-bar'}>
-                        <Input
-                          value={searchKey}
-                          onChange={(e) => setSearchKey(e.target.value)}
-                          placeholder={t('pages.clients.searchPlaceholder')}
-                          allowClear
-                          prefix={<SearchOutlined />}
-                          size={isMobile ? 'small' : 'middle'}
-                          style={{ maxWidth: 320 }}
-                          aria-label={t('search')}
-                        />
-                        <Badge count={activeCount} size="small" offset={[-4, 4]}>
-                          <Button
-                            icon={<FilterOutlined />}
-                            size={isMobile ? 'small' : 'middle'}
-                            onClick={() => setFilterDrawerOpen(true)}
-                            type={activeCount > 0 ? 'primary' : 'default'}
-                            aria-label={t('filter')}
-                          >
-                            {!isMobile && t('filter')}
-                          </Button>
-                        </Badge>
-                        <Select
-                          value={sortValueFor(sortColumn, sortOrder)}
-                          aria-label={t('sort')}
-                          size={isMobile ? 'small' : 'middle'}
-                          suffix={<SortAscendingOutlined />}
-                          style={{ minWidth: isMobile ? 130 : 200 }}
-                          onChange={(value) => {
-                            const opt = SORT_OPTIONS.find((o) => o.value === value);
-                            setSortColumn(opt?.column ?? null);
-                            setSortOrder(opt?.order ?? null);
-                          }}
-                          options={SORT_OPTIONS.map((o) => ({
-                            value: o.value,
-                            label: t(o.labelKey),
-                          }))}
-                        />
-                        {activeCount > 0 && (
-                          <Button
-                            size={isMobile ? 'small' : 'middle'}
-                            onClick={() => setFilters(emptyFilters())}
-                          >
-                            {t('pages.clients.clearAllFilters')}
-                          </Button>
-                        )}
-                        {(activeCount > 0 || debouncedSearch.trim().length > 0) && (
-                          <span className="filter-count">
-                            {t('pages.clients.showingCount', { shown: filtered, total })}
-                          </span>
-                        )}
-                      </div>
+                  <Row gutter={[isMobile ? 8 : 16, isMobile ? 8 : 12]} className="nc-stats">
+                    <Col span={24}>
+                      <Card size="small" hoverable className="summary-card nc-summary">
+                        <Row gutter={[16, 12]}>
+                          <Col xs={12} sm={8} md={4}>
+                            <SummaryStat
+                              title={t('clients')}
+                              value={summary.total}
+                              prefix={<TeamOutlined />}
+                              onSelect={() => selectBucket(null)}
+                            />
+                          </Col>
+                          <Col xs={12} sm={8} md={4}>
+                            <SummaryStat
+                              title={t('online')}
+                              value={summary.onlineCount}
+                              emails={summary.online}
+                              prefix={<span className="dot dot-blue" />}
+                              selected={isOnlyBucket('online')}
+                              onSelect={() => selectBucket('online')}
+                            />
+                          </Col>
+                          <Col xs={12} sm={8} md={4}>
+                            <SummaryStat
+                              title={t('depleted')}
+                              value={summary.depletedCount}
+                              emails={summary.depleted}
+                              prefix={<span className="dot dot-red" />}
+                              selected={isOnlyBucket('depleted')}
+                              onSelect={() => selectBucket('depleted')}
+                            />
+                          </Col>
+                          <Col xs={12} sm={8} md={4}>
+                            <SummaryStat
+                              title={t('depletingSoon')}
+                              value={summary.expiringCount}
+                              emails={summary.expiring}
+                              prefix={<span className="dot dot-orange" />}
+                              selected={isOnlyBucket('expiring')}
+                              onSelect={() => selectBucket('expiring')}
+                            />
+                          </Col>
+                          <Col xs={12} sm={8} md={4}>
+                            <SummaryStat
+                              title={t('disabled')}
+                              value={summary.deactiveCount}
+                              emails={summary.deactive}
+                              prefix={<span className="dot dot-gray" />}
+                              selected={isOnlyBucket('deactive')}
+                              onSelect={() => selectBucket('deactive')}
+                            />
+                          </Col>
+                          <Col xs={12} sm={8} md={4}>
+                            <SummaryStat
+                              title={t('subscription.active')}
+                              value={summary.active}
+                              prefix={<span className="dot dot-green" />}
+                              selected={isOnlyBucket('active')}
+                              onSelect={() => selectBucket('active')}
+                            />
+                          </Col>
+                        </Row>
+                      </Card>
+                    </Col>
 
-                      {activeCount > 0 && (
-                        <div className="filter-chips">
-                          {filters.buckets.map((b) => (
-                            <Tag
-                              key={`b-${b}`}
-                              closable
-                              onClose={() =>
-                                setFilters({
-                                  ...filters,
-                                  buckets: filters.buckets.filter((x) => x !== b),
-                                })
-                              }
-                            >
-                              {bucketChipLabel(b, t)}
-                            </Tag>
-                          ))}
-                          {filters.protocols.map((p) => (
-                            <Tag
-                              key={`p-${p}`}
-                              closable
-                              color="blue"
-                              onClose={() =>
-                                setFilters({
-                                  ...filters,
-                                  protocols: filters.protocols.filter((x) => x !== p),
-                                })
-                              }
-                            >
-                              {p}
-                            </Tag>
-                          ))}
-                          {filters.inboundIds.map((id) => (
-                            <Tag
-                              key={`i-${id}`}
-                              closable
-                              color="cyan"
-                              onClose={() =>
-                                setFilters({
-                                  ...filters,
-                                  inboundIds: filters.inboundIds.filter((x) => x !== id),
-                                })
-                              }
-                            >
-                              {inboundLabel(id)}
-                            </Tag>
-                          ))}
-                          {filters.groups.map((g) => (
-                            <Tag
-                              key={`g-${g}`}
-                              closable
-                              color="geekblue"
-                              onClose={() =>
-                                setFilters({
-                                  ...filters,
-                                  groups: filters.groups.filter((x) => x !== g),
-                                })
-                              }
-                            >
-                              {t('pages.clients.group')}: {g}
-                            </Tag>
-                          ))}
-                          {(filters.expiryFrom || filters.expiryTo) && (
-                            <Tag
-                              closable
-                              color="purple"
-                              onClose={() => clearOneFilter('expiryFrom')}
-                            >
-                              {t('pages.clients.expiryTime')}:{' '}
-                              {filters.expiryFrom
-                                ? IntlUtil.formatDate(filters.expiryFrom, datepicker)
-                                : '…'}
-                              {' → '}
-                              {filters.expiryTo
-                                ? IntlUtil.formatDate(filters.expiryTo, datepicker)
-                                : '…'}
-                            </Tag>
-                          )}
-                          {(filters.usageFromGB || filters.usageToGB) && (
-                            <Tag
-                              closable
-                              color="orange"
-                              onClose={() => clearOneFilter('usageFromGB')}
-                            >
-                              {t('pages.clients.traffic')}: {filters.usageFromGB ?? 0}
-                              {filters.usageToGB ? `–${filters.usageToGB}` : '+'} GB
-                            </Tag>
-                          )}
-                          {filters.autoRenew && (
-                            <Tag closable color="gold" onClose={() => clearOneFilter('autoRenew')}>
-                              {t('pages.clients.renew')}:{' '}
-                              {filters.autoRenew === 'on' ? t('enabled') : t('disabled')}
-                            </Tag>
-                          )}
-                          {filters.hasTgId && (
-                            <Tag closable onClose={() => clearOneFilter('hasTgId')}>
-                              {t('pages.clients.telegramId')}:{' '}
-                              {filters.hasTgId === 'yes'
-                                ? t('pages.clients.has')
-                                : t('pages.clients.hasNot')}
-                            </Tag>
-                          )}
-                          {filters.hasComment && (
-                            <Tag closable onClose={() => clearOneFilter('hasComment')}>
-                              {t('pages.clients.comment')}:{' '}
-                              {filters.hasComment === 'yes'
-                                ? t('pages.clients.has')
-                                : t('pages.clients.hasNot')}
-                            </Tag>
-                          )}
-                        </div>
-                      )}
-
-                      {!isMobile ? (
-                        <Table<ClientRecord>
-                          columns={columns}
-                          dataSource={sortedClients}
-                          loading={transitioning}
-                          rowKey="email"
-                          rowSelection={rowSelection}
-                          pagination={tablePagination}
-                          size="small"
-                          scroll={{ x: 1200 }}
-                          onChange={onTableChange}
-                          locale={{
-                            emptyText: (
-                              <div className="clients-empty">
-                                <TeamOutlined style={{ fontSize: 32, marginBottom: 8 }} />
-                                <div>{t('noData')}</div>
-                              </div>
-                            ),
-                          }}
-                        />
-                      ) : (
-                        <Spin spinning={transitioning}>
-                          <div className="client-cards">
-                            {filteredClients.length > 0 && (
-                              <div className="card-bulk-bar">
-                                <Checkbox
-                                  checked={allSelected}
-                                  indeterminate={someSelected}
-                                  onChange={(e) => selectAll(e.target.checked)}
+                    <Col span={24}>
+                      <div className="nc-split">
+                        <div className="nc-main">
+                          <Card
+                            size="small"
+                            hoverable
+                            title={
+                              <div className="card-toolbar">
+                                {selectedRowKeys.length === 0 ? (
+                                  <Button
+                                    type="primary"
+                                    icon={<PlusOutlined />}
+                                    onClick={onAdd}
+                                    aria-label={t('pages.clients.addClients')}
+                                  >
+                                    {!isMobile && t('pages.clients.addClients')}
+                                  </Button>
+                                ) : (
+                                  <Tag
+                                    color="blue"
+                                    closable
+                                    onClose={() => setSelectedRowKeys([])}
+                                    style={{ marginInlineEnd: 0, padding: '4px 8px', fontSize: 13 }}
+                                  >
+                                    {t('pages.clients.selectedCount', {
+                                      count: selectedRowKeys.length,
+                                    })}
+                                  </Tag>
+                                )}
+                                <Dropdown
+                                  trigger={['click']}
+                                  placement="bottomRight"
+                                  menu={{
+                                    items:
+                                      selectedRowKeys.length > 0
+                                        ? [
+                                            {
+                                              key: 'attach',
+                                              icon: <UsergroupAddOutlined />,
+                                              label: t('pages.clients.attach'),
+                                              onClick: () => setBulkAttachOpen(true),
+                                            },
+                                            {
+                                              key: 'detach',
+                                              icon: <UsergroupDeleteOutlined />,
+                                              label: t('pages.clients.detach'),
+                                              danger: true,
+                                              onClick: () => setBulkDetachOpen(true),
+                                            },
+                                            {
+                                              key: 'addToGroup',
+                                              icon: <TagsOutlined />,
+                                              label: t('pages.clients.addToGroup'),
+                                              onClick: () => setBulkGroupOpen(true),
+                                            },
+                                            {
+                                              key: 'ungroup',
+                                              icon: <UngroupIcon />,
+                                              label: t('pages.clients.ungroup'),
+                                              danger: true,
+                                              onClick: onBulkUngroup,
+                                            },
+                                            { type: 'divider' as const },
+                                            {
+                                              key: 'enable',
+                                              icon: <CheckCircleOutlined />,
+                                              label: t('pages.clients.enable'),
+                                              onClick: () => onBulkSetEnable(true),
+                                            },
+                                            {
+                                              key: 'disable',
+                                              icon: <StopOutlined />,
+                                              label: t('pages.clients.disable'),
+                                              danger: true,
+                                              onClick: () => onBulkSetEnable(false),
+                                            },
+                                            {
+                                              key: 'adjust',
+                                              icon: <ClockCircleOutlined />,
+                                              label: t('pages.clients.adjust'),
+                                              onClick: () => setBulkAdjustOpen(true),
+                                            },
+                                            {
+                                              key: 'subLinks',
+                                              icon: <LinkOutlined />,
+                                              label: t('pages.clients.subLinks'),
+                                              onClick: () => setSubLinksOpen(true),
+                                            },
+                                          ]
+                                        : [
+                                            {
+                                              key: 'bulk',
+                                              icon: <UsergroupAddOutlined />,
+                                              label: t('pages.clients.bulk'),
+                                              onClick: () => setBulkAddOpen(true),
+                                            },
+                                            {
+                                              key: 'export',
+                                              icon: <DownloadOutlined />,
+                                              label: t('pages.clients.exportClients'),
+                                              onClick: onExportClients,
+                                            },
+                                            {
+                                              key: 'import',
+                                              icon: <UploadOutlined />,
+                                              label: t('pages.clients.importClients'),
+                                              onClick: onImportClients,
+                                            },
+                                            {
+                                              key: 'resetAll',
+                                              icon: <RetweetOutlined />,
+                                              label: t('pages.clients.resetAllTraffics'),
+                                              onClick: onResetAllTraffics,
+                                            },
+                                            { type: 'divider' as const },
+                                            {
+                                              key: 'delDepleted',
+                                              icon: <RestOutlined />,
+                                              label: t('pages.clients.delDepleted'),
+                                              danger: true,
+                                              onClick: onDelDepleted,
+                                            },
+                                            {
+                                              key: 'delOrphans',
+                                              icon: <DisconnectOutlined />,
+                                              label: t('pages.clients.delOrphans'),
+                                              danger: true,
+                                              onClick: onDeleteOrphans,
+                                            },
+                                          ],
+                                  }}
                                 >
-                                  {t('pages.clients.selectAll')}
-                                </Checkbox>
+                                  <Button icon={<MoreOutlined />} aria-label={t('more')}>
+                                    {!isMobile && t('more')}
+                                  </Button>
+                                </Dropdown>
                                 {selectedRowKeys.length > 0 && (
-                                  <span className="bulk-count">{selectedRowKeys.length}</span>
+                                  <Button
+                                    danger
+                                    icon={<DeleteOutlined />}
+                                    onClick={onBulkDelete}
+                                    style={{ marginInlineStart: 'auto' }}
+                                    aria-label={t('delete')}
+                                  >
+                                    {!isMobile && t('delete')}
+                                  </Button>
+                                )}
+                              </div>
+                            }
+                          >
+                            <div className={isMobile ? 'filter-bar mobile' : 'filter-bar'}>
+                              <Input
+                                value={searchKey}
+                                onChange={(e) => setSearchKey(e.target.value)}
+                                placeholder={t('pages.clients.searchPlaceholder')}
+                                allowClear
+                                prefix={<SearchOutlined />}
+                                size={isMobile ? 'small' : 'middle'}
+                                style={{ maxWidth: 320 }}
+                                aria-label={t('search')}
+                              />
+                              <Badge count={activeCount} size="small" offset={[-4, 4]}>
+                                <Button
+                                  icon={<FilterOutlined />}
+                                  size={isMobile ? 'small' : 'middle'}
+                                  onClick={() => setFilterDrawerOpen(true)}
+                                  type={activeCount > 0 ? 'primary' : 'default'}
+                                  aria-label={t('filter')}
+                                >
+                                  {!isMobile && t('filter')}
+                                </Button>
+                              </Badge>
+                              <Select
+                                value={sortValueFor(sortColumn, sortOrder)}
+                                aria-label={t('sort')}
+                                size={isMobile ? 'small' : 'middle'}
+                                suffix={<SortAscendingOutlined />}
+                                style={{ minWidth: isMobile ? 130 : 200 }}
+                                onChange={(value) => {
+                                  const opt = SORT_OPTIONS.find((o) => o.value === value);
+                                  setSortColumn(opt?.column ?? null);
+                                  setSortOrder(opt?.order ?? null);
+                                }}
+                                options={SORT_OPTIONS.map((o) => ({
+                                  value: o.value,
+                                  label: t(o.labelKey),
+                                }))}
+                              />
+                              {activeCount > 0 && (
+                                <Button
+                                  size={isMobile ? 'small' : 'middle'}
+                                  onClick={() => setFilters(emptyFilters())}
+                                >
+                                  {t('pages.clients.clearAllFilters')}
+                                </Button>
+                              )}
+                              {(activeCount > 0 || debouncedSearch.trim().length > 0) && (
+                                <span className="filter-count">
+                                  {t('pages.clients.showingCount', { shown: filtered, total })}
+                                </span>
+                              )}
+                            </div>
+
+                            {activeCount > 0 && (
+                              <div className="filter-chips">
+                                {filters.buckets.map((b) => (
+                                  <Tag
+                                    key={`b-${b}`}
+                                    closable
+                                    onClose={() =>
+                                      setFilters({
+                                        ...filters,
+                                        buckets: filters.buckets.filter((x) => x !== b),
+                                      })
+                                    }
+                                  >
+                                    {bucketChipLabel(b, t)}
+                                  </Tag>
+                                ))}
+                                {filters.protocols.map((p) => (
+                                  <Tag
+                                    key={`p-${p}`}
+                                    closable
+                                    color="blue"
+                                    onClose={() =>
+                                      setFilters({
+                                        ...filters,
+                                        protocols: filters.protocols.filter((x) => x !== p),
+                                      })
+                                    }
+                                  >
+                                    {p}
+                                  </Tag>
+                                ))}
+                                {filters.inboundIds.map((id) => (
+                                  <Tag
+                                    key={`i-${id}`}
+                                    closable
+                                    color="cyan"
+                                    onClose={() =>
+                                      setFilters({
+                                        ...filters,
+                                        inboundIds: filters.inboundIds.filter((x) => x !== id),
+                                      })
+                                    }
+                                  >
+                                    {inboundLabel(id)}
+                                  </Tag>
+                                ))}
+                                {filters.groups.map((g) => (
+                                  <Tag
+                                    key={`g-${g}`}
+                                    closable
+                                    color="geekblue"
+                                    onClose={() =>
+                                      setFilters({
+                                        ...filters,
+                                        groups: filters.groups.filter((x) => x !== g),
+                                      })
+                                    }
+                                  >
+                                    {t('pages.clients.group')}: {g}
+                                  </Tag>
+                                ))}
+                                {(filters.expiryFrom || filters.expiryTo) && (
+                                  <Tag
+                                    closable
+                                    color="purple"
+                                    onClose={() => clearOneFilter('expiryFrom')}
+                                  >
+                                    {t('pages.clients.expiryTime')}:{' '}
+                                    {filters.expiryFrom
+                                      ? IntlUtil.formatDate(filters.expiryFrom, datepicker)
+                                      : '…'}
+                                    {' → '}
+                                    {filters.expiryTo
+                                      ? IntlUtil.formatDate(filters.expiryTo, datepicker)
+                                      : '…'}
+                                  </Tag>
+                                )}
+                                {(filters.usageFromGB || filters.usageToGB) && (
+                                  <Tag
+                                    closable
+                                    color="orange"
+                                    onClose={() => clearOneFilter('usageFromGB')}
+                                  >
+                                    {t('pages.clients.traffic')}: {filters.usageFromGB ?? 0}
+                                    {filters.usageToGB ? `–${filters.usageToGB}` : '+'} GB
+                                  </Tag>
+                                )}
+                                {filters.autoRenew && (
+                                  <Tag
+                                    closable
+                                    color="gold"
+                                    onClose={() => clearOneFilter('autoRenew')}
+                                  >
+                                    {t('pages.clients.renew')}:{' '}
+                                    {filters.autoRenew === 'on' ? t('enabled') : t('disabled')}
+                                  </Tag>
+                                )}
+                                {filters.hasTgId && (
+                                  <Tag closable onClose={() => clearOneFilter('hasTgId')}>
+                                    {t('pages.clients.telegramId')}:{' '}
+                                    {filters.hasTgId === 'yes'
+                                      ? t('pages.clients.has')
+                                      : t('pages.clients.hasNot')}
+                                  </Tag>
+                                )}
+                                {filters.hasComment && (
+                                  <Tag closable onClose={() => clearOneFilter('hasComment')}>
+                                    {t('pages.clients.comment')}:{' '}
+                                    {filters.hasComment === 'yes'
+                                      ? t('pages.clients.has')
+                                      : t('pages.clients.hasNot')}
+                                  </Tag>
                                 )}
                               </div>
                             )}
-                            {filteredClients.length === 0 && (
-                              <div className="card-empty">
-                                <TeamOutlined style={{ fontSize: 28, opacity: 0.5 }} />
-                                <div>{t('noData')}</div>
-                              </div>
-                            )}
-                            {filteredClients.length > 0 && (
-                              <div className="card-pagination">
-                                <Pagination
-                                  current={currentPage}
-                                  pageSize={tablePageSize}
-                                  total={filtered}
-                                  showSizeChanger={filtered > 10}
-                                  pageSizeOptions={['10', '25', '50', '100', '200']}
-                                  hideOnSinglePage={filtered <= tablePageSize}
-                                  size="small"
-                                  showTotal={(n) => `${n}`}
-                                  onChange={(p, s) => {
-                                    setCurrentPage(p);
-                                    if (s && s !== tablePageSize) setPageSizeChoice(s);
-                                  }}
-                                />
-                              </div>
-                            )}
-                            {filteredClients.map((row) => {
-                              const bucket = clientBucket(row);
-                              return (
-                                <div
-                                  key={row.email}
-                                  className={`client-card${selectedRowKeys.includes(row.email) ? ' is-selected' : ''}`}
-                                >
-                                  <div className="card-head">
-                                    <Checkbox
-                                      checked={selectedRowKeys.includes(row.email)}
-                                      onChange={(e) => toggleSelect(row.email, e.target.checked)}
-                                    />
-                                    {row.enable && bucket !== 'depleted' && isOnline(row.email) ? (
-                                      <span className="online-dot" style={{ marginInlineEnd: 0 }} />
-                                    ) : (
-                                      <Badge status={bucketBadgeStatus(bucket)} />
-                                    )}
-                                    <span className="tag-name">{row.email}</span>
-                                    {bucket === 'depleted' && (
-                                      <Tag color="red" className="status-tag">
-                                        {t('depleted')}
-                                      </Tag>
-                                    )}
-                                    {bucket === 'expiring' && (
-                                      <Tag color="orange" className="status-tag">
-                                        {t('depletingSoon')}
-                                      </Tag>
-                                    )}
-                                    <div className="card-actions">
-                                      <Tooltip title={t('pages.clients.clientInfo')}>
-                                        <InfoCircleOutlined
-                                          className="row-action-trigger"
-                                          role="button"
-                                          tabIndex={0}
-                                          aria-label={t('pages.clients.clientInfo')}
-                                          onClick={() => onShowInfo(row.email)}
-                                          onKeyDown={activateOnKey(() => onShowInfo(row.email))}
-                                        />
-                                      </Tooltip>
-                                      <Switch
-                                        checked={!!row.enable}
-                                        size="small"
-                                        loading={togglingEmail === row.email}
-                                        onChange={(next) => onToggleEnable(row, next)}
-                                      />
-                                      <Dropdown
-                                        trigger={['click']}
-                                        placement="bottomRight"
-                                        menu={{
-                                          items: [
-                                            {
-                                              key: 'qr',
-                                              label: (
-                                                <>
-                                                  <QrcodeOutlined /> {t('pages.clients.qrCode')}
-                                                </>
-                                              ),
-                                              onClick: () => onShowQr(row.email),
-                                            },
-                                            {
-                                              key: 'reset',
-                                              label: (
-                                                <>
-                                                  <RetweetOutlined />{' '}
-                                                  {t('pages.inbounds.resetTraffic')}
-                                                </>
-                                              ),
-                                              onClick: () => onResetTraffic(row.email),
-                                            },
-                                            {
-                                              key: 'edit',
-                                              label: (
-                                                <>
-                                                  <EditOutlined /> {t('edit')}
-                                                </>
-                                              ),
-                                              onClick: () => onEdit(row.email),
-                                            },
-                                            {
-                                              key: 'delete',
-                                              danger: true,
-                                              label: (
-                                                <>
-                                                  <DeleteOutlined /> {t('delete')}
-                                                </>
-                                              ),
-                                              onClick: () => onDelete(row.email),
-                                            },
-                                          ],
-                                        }}
-                                      >
-                                        <Button
-                                          type="text"
-                                          size="small"
-                                          className="row-action-trigger"
-                                          icon={<MoreOutlined />}
-                                          aria-label={t('more')}
-                                        />
-                                      </Dropdown>
+
+                            {!isMobile ? (
+                              <Table<ClientRecord>
+                                columns={columns}
+                                dataSource={sortedClients}
+                                loading={transitioning}
+                                rowKey="email"
+                                rowSelection={rowSelection}
+                                pagination={tablePagination}
+                                size="small"
+                                scroll={{ x: 1200 }}
+                                onChange={onTableChange}
+                                locale={{
+                                  emptyText: (
+                                    <div className="clients-empty">
+                                      <TeamOutlined style={{ fontSize: 32, marginBottom: 8 }} />
+                                      <div>{t('noData')}</div>
                                     </div>
-                                  </div>
-                                  <ClientCardComment comment={row.comment} />
-                                  <ClientTrafficCell
-                                    compact
-                                    up={row.traffic?.up}
-                                    down={row.traffic?.down}
-                                    total={row.totalGB}
-                                    enabled={row.enable}
-                                    trafficDiff={trafficDiff}
-                                  />
-                                  {(() => {
-                                    const speed = clientSpeed[row.email];
-                                    if (!isActiveSpeed(speed)) return null;
+                                  ),
+                                }}
+                              />
+                            ) : (
+                              <Spin spinning={transitioning}>
+                                <div className="client-cards">
+                                  {filteredClients.length > 0 && (
+                                    <div className="card-bulk-bar">
+                                      <Checkbox
+                                        checked={allSelected}
+                                        indeterminate={someSelected}
+                                        onChange={(e) => selectAll(e.target.checked)}
+                                      >
+                                        {t('pages.clients.selectAll')}
+                                      </Checkbox>
+                                      {selectedRowKeys.length > 0 && (
+                                        <span className="bulk-count">{selectedRowKeys.length}</span>
+                                      )}
+                                    </div>
+                                  )}
+                                  {filteredClients.length === 0 && (
+                                    <div className="card-empty">
+                                      <TeamOutlined style={{ fontSize: 28, opacity: 0.5 }} />
+                                      <div>{t('noData')}</div>
+                                    </div>
+                                  )}
+                                  {filteredClients.length > 0 && (
+                                    <div className="card-pagination">
+                                      <Pagination
+                                        current={currentPage}
+                                        pageSize={tablePageSize}
+                                        total={filtered}
+                                        showSizeChanger={filtered > 10}
+                                        pageSizeOptions={['10', '25', '50', '100', '200']}
+                                        hideOnSinglePage={filtered <= tablePageSize}
+                                        size="small"
+                                        showTotal={(n) => `${n}`}
+                                        onChange={(p, s) => {
+                                          setCurrentPage(p);
+                                          if (s && s !== tablePageSize) setPageSizeChoice(s);
+                                        }}
+                                      />
+                                    </div>
+                                  )}
+                                  {filteredClients.map((row) => {
+                                    const bucket = clientBucket(row);
                                     return (
-                                      <div className="client-card-speed">
-                                        <ClientSpeedTag speed={speed} />
+                                      <div
+                                        key={row.email}
+                                        className={`client-card${selectedRowKeys.includes(row.email) ? ' is-selected' : ''}`}
+                                      >
+                                        <div className="card-head">
+                                          <Checkbox
+                                            checked={selectedRowKeys.includes(row.email)}
+                                            onChange={(e) =>
+                                              toggleSelect(row.email, e.target.checked)
+                                            }
+                                          />
+                                          {row.enable &&
+                                          bucket !== 'depleted' &&
+                                          isOnline(row.email) ? (
+                                            <span
+                                              className="online-dot"
+                                              style={{ marginInlineEnd: 0 }}
+                                            />
+                                          ) : (
+                                            <Badge status={bucketBadgeStatus(bucket)} />
+                                          )}
+                                          <span className="tag-name">{row.email}</span>
+                                          {bucket === 'depleted' && (
+                                            <Tag color="red" className="status-tag">
+                                              {t('depleted')}
+                                            </Tag>
+                                          )}
+                                          {bucket === 'expiring' && (
+                                            <Tag color="orange" className="status-tag">
+                                              {t('depletingSoon')}
+                                            </Tag>
+                                          )}
+                                          <div className="card-actions">
+                                            <Tooltip title={t('pages.clients.clientInfo')}>
+                                              <InfoCircleOutlined
+                                                className="row-action-trigger"
+                                                role="button"
+                                                tabIndex={0}
+                                                aria-label={t('pages.clients.clientInfo')}
+                                                onClick={() => onShowInfo(row.email)}
+                                                onKeyDown={activateOnKey(() =>
+                                                  onShowInfo(row.email),
+                                                )}
+                                              />
+                                            </Tooltip>
+                                            <Switch
+                                              checked={!!row.enable}
+                                              size="small"
+                                              loading={togglingEmail === row.email}
+                                              onChange={(next) => onToggleEnable(row, next)}
+                                            />
+                                            <Dropdown
+                                              trigger={['click']}
+                                              placement="bottomRight"
+                                              menu={{
+                                                items: [
+                                                  {
+                                                    key: 'qr',
+                                                    label: (
+                                                      <>
+                                                        <QrcodeOutlined />{' '}
+                                                        {t('pages.clients.qrCode')}
+                                                      </>
+                                                    ),
+                                                    onClick: () => onShowQr(row.email),
+                                                  },
+                                                  {
+                                                    key: 'reset',
+                                                    label: (
+                                                      <>
+                                                        <RetweetOutlined />{' '}
+                                                        {t('pages.inbounds.resetTraffic')}
+                                                      </>
+                                                    ),
+                                                    onClick: () => onResetTraffic(row.email),
+                                                  },
+                                                  {
+                                                    key: 'edit',
+                                                    label: (
+                                                      <>
+                                                        <EditOutlined /> {t('edit')}
+                                                      </>
+                                                    ),
+                                                    onClick: () => onEdit(row.email),
+                                                  },
+                                                  {
+                                                    key: 'delete',
+                                                    danger: true,
+                                                    label: (
+                                                      <>
+                                                        <DeleteOutlined /> {t('delete')}
+                                                      </>
+                                                    ),
+                                                    onClick: () => onDelete(row.email),
+                                                  },
+                                                ],
+                                              }}
+                                            >
+                                              <Button
+                                                type="text"
+                                                size="small"
+                                                className="row-action-trigger"
+                                                icon={<MoreOutlined />}
+                                                aria-label={t('more')}
+                                              />
+                                            </Dropdown>
+                                          </div>
+                                        </div>
+                                        <ClientCardComment comment={row.comment} />
+                                        <ClientTrafficCell
+                                          compact
+                                          up={row.traffic?.up}
+                                          down={row.traffic?.down}
+                                          total={row.totalGB}
+                                          enabled={row.enable}
+                                          trafficDiff={trafficDiff}
+                                        />
+                                        {(() => {
+                                          const speed = clientSpeed[row.email];
+                                          if (!isActiveSpeed(speed)) return null;
+                                          return (
+                                            <div className="client-card-speed">
+                                              <ClientSpeedTag speed={speed} />
+                                            </div>
+                                          );
+                                        })()}
                                       </div>
                                     );
-                                  })()}
+                                  })}
                                 </div>
-                              );
-                            })}
-                          </div>
-                        </Spin>
-                      )}
-                    </Card>
-                  </Col>
-                </Row>
+                              </Spin>
+                            )}
+                          </Card>
+                        </div>
+
+                        <ClientsRail
+                          protocols={protocolCounts}
+                          total={summary.total}
+                          onAdd={onAdd}
+                          onImport={onImportClients}
+                          onExport={onExportClients}
+                          onResetTraffic={onResetAllTraffics}
+                        />
+                      </div>
+                    </Col>
+                  </Row>
+                </div>
               )}
             </Spin>
           </Layout.Content>

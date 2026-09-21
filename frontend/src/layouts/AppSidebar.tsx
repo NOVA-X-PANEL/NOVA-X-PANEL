@@ -416,29 +416,6 @@ export default function AppSidebar() {
               </span>
             )}
           </div>
-          {!railCollapsed && (
-            <div className="brand-actions">
-              <button
-                type="button"
-                className="sidebar-pin"
-                aria-label={t('menu.pinSidebar')}
-                aria-pressed={pinned}
-                title={t(pinned ? 'menu.unpinSidebar' : 'menu.pinSidebar')}
-                onClick={togglePinned}
-              >
-                {pinned ? <PushpinFilled /> : <PushpinOutlined />}
-              </button>
-              <DocsButton ariaLabel={t('menu.docs') || 'Documentation'} />
-              <DonateButton ariaLabel={t('menu.donate') || 'Donate'} />
-              <ThemeCycleButton
-                id="theme-cycle"
-                isDark={isDark}
-                isUltra={isUltra}
-                onCycle={() => cycleTheme('theme-cycle')}
-                ariaLabel={t('menu.theme')}
-              />
-            </div>
-          )}
         </div>
         <Tooltip
           title={
@@ -474,14 +451,6 @@ export default function AppSidebar() {
           items={toMenuItems(navItems)}
           onClick={onMenuClick}
         />
-        <Menu
-          theme={currentTheme}
-          mode="inline"
-          selectedKeys={[selectedKey]}
-          className="sider-utility"
-          items={toMenuItems(utilItems)}
-          onClick={onMenuClick}
-        />
         {!railCollapsed && (
           <div className="sider-status">
             <div className="sider-status-row">
@@ -494,6 +463,15 @@ export default function AppSidebar() {
           </div>
         )}
 
+        <Menu
+          theme={currentTheme}
+          mode="inline"
+          selectedKeys={[selectedKey]}
+          className="sider-utility"
+          items={toMenuItems(utilItems)}
+          onClick={onMenuClick}
+        />
+
         {!railCollapsed && (
           <div className="sider-art" aria-hidden="true">
             <NeonLandscape variant="panel" />
@@ -504,6 +482,29 @@ export default function AppSidebar() {
 
         <div className="sider-footer">
           <VersionBadge version={panelVersion} collapsed={railCollapsed} />
+          {!railCollapsed && (
+            <div className="sider-tools">
+              <button
+                type="button"
+                className="sidebar-pin"
+                aria-label={t('menu.pinSidebar')}
+                aria-pressed={pinned}
+                title={t(pinned ? 'menu.unpinSidebar' : 'menu.pinSidebar')}
+                onClick={togglePinned}
+              >
+                {pinned ? <PushpinFilled /> : <PushpinOutlined />}
+              </button>
+              <DocsButton ariaLabel={t('menu.docs') || 'Documentation'} />
+              <DonateButton ariaLabel={t('menu.donate') || 'Donate'} />
+              <ThemeCycleButton
+                id="theme-cycle"
+                isDark={isDark}
+                isUltra={isUltra}
+                onCycle={() => cycleTheme('theme-cycle')}
+                ariaLabel={t('menu.theme')}
+              />
+            </div>
+          )}
         </div>
       </Layout.Sider>
 
@@ -525,15 +526,6 @@ export default function AppSidebar() {
             <span className="drawer-brand">NOVA X PANEL</span>
           </div>
           <div className="drawer-header-actions">
-            <DocsButton ariaLabel={t('menu.docs') || 'Documentation'} />
-            <DonateButton ariaLabel={t('menu.donate') || 'Donate'} />
-            <ThemeCycleButton
-              id="theme-cycle-drawer"
-              isDark={isDark}
-              isUltra={isUltra}
-              onCycle={() => cycleTheme('theme-cycle-drawer')}
-              ariaLabel={t('menu.theme')}
-            />
             <button
               className="drawer-close"
               type="button"
@@ -589,6 +581,17 @@ export default function AppSidebar() {
         />
         <div className="drawer-footer">
           <VersionBadge version={panelVersion} />
+          <div className="sider-tools">
+            <DocsButton ariaLabel={t('menu.docs') || 'Documentation'} />
+            <DonateButton ariaLabel={t('menu.donate') || 'Donate'} />
+            <ThemeCycleButton
+              id="theme-cycle-drawer"
+              isDark={isDark}
+              isUltra={isUltra}
+              onCycle={() => cycleTheme('theme-cycle-drawer')}
+              ariaLabel={t('menu.theme')}
+            />
+          </div>
         </div>
       </Drawer>
 

@@ -587,3 +587,100 @@ body.dark .ant-drawer-body .drawer-menu .ant-menu-item-group-list {
   height: 32px;
   font-size: 16px;
 }
+
+/* ============================================================================
+   Sidebar spacing pass.
+   Two problems were reported: the tool icons (pin, docs, donate, theme) sat in
+   the brand row and crowded the wordmark, and the nav list had too little room,
+   so items scrolled out of view. The icons move to the footer and the fixed
+   blocks shrink, which hands the difference to the menu.
+   ========================================================================== */
+
+/* brand row: the wordmark alone, at a fixed height so it cannot be squeezed */
+.sider-brand {
+  flex: 0 0 auto;
+  height: 56px;
+  padding: 0 16px;
+  justify-content: flex-start;
+  gap: 0;
+}
+
+/* Icons: a quiet strip at the bottom. The footer stacks it above the version
+   badge — side by side they were wider than the sidebar, which clipped the last
+   button. */
+.sider-tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-inline-start: auto;
+}
+
+.sider-tools .sidebar-pin,
+.sider-tools .sidebar-docs,
+.sider-tools .sidebar-donate,
+.sider-tools .sidebar-theme-cycle {
+  width: 26px;
+  height: 26px;
+}
+
+.sider-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  padding: 4px 10px 6px;
+}
+
+.sider-footer .sider-version {
+  align-self: flex-start;
+}
+
+/* the status card gets tighter so the menu keeps the difference */
+.sider-status {
+  margin: 0 12px 6px;
+  padding: 8px 11px;
+}
+
+/* Log Out now sits under the status card, so it needs breathing room, not a rule,
+   and none of AntD's own menu padding */
+.sider-utility {
+  border-top: 0;
+  margin-bottom: 2px;
+  padding: 0 !important;
+}
+
+/* Menu rows: uniform height, and none of AntD's own padding or margins, which
+   together were costing the list a full row. */
+.sider-nav .ant-menu-item,
+.sider-nav .ant-menu-submenu .ant-menu-submenu-title,
+.sider-nav .ant-menu-submenu-title,
+.sider-utility .ant-menu-item {
+  height: 41px !important;
+  line-height: 41px !important;
+  margin: 1px 0 !important;
+}
+
+/* artwork is ambience, not content — a shallower strip is enough */
+.sider-art {
+  height: 56px;
+}
+
+/* the search field's own margins, and the menu's trailing padding, both give a
+   little back to the list */
+.ant-sidebar .sidebar-command-trigger {
+  margin: 6px 8px 2px;
+  height: 34px;
+}
+
+.sider-nav {
+  padding: 0 6px 4px;
+}
+
+@media (max-width: 768px) {
+  /* the drawer footer carries the same tools strip */
+  .drawer-footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+}

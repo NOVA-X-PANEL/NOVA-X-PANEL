@@ -1298,11 +1298,10 @@ body.dark .pg-admin-page {
 }
 
 /* The clients summary keeps its click-to-filter behaviour but wears the neon
-   stat-card skin: one tinted card per metric. */
-.nc-stats > .ant-col {
-  display: flex;
-}
-
+   stat-card skin. The summary is a single full-width strip: it shares its Row
+   with the table column, so neither the row nor its columns may be turned into
+   a grid or a flex container — doing so squeezes the table column to the
+   content width of the summary. */
 .nc-summary {
   background:
     radial-gradient(420px 160px at 88% 0%, rgba(37, 99, 255, 0.16), transparent 70%),

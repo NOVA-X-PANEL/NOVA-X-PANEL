@@ -1319,7 +1319,7 @@ export default function ClientsPage() {
                 <div className="nc-page">
                   <ClientsHero total={summary.total} online={summary.onlineCount} />
 
-                  <Row gutter={[isMobile ? 8 : 16, isMobile ? 8 : 12]} className="nc-stats">
+                  <Row gutter={[isMobile ? 8 : 16, isMobile ? 8 : 12]}>
                     <Col span={24}>
                       <Card size="small" hoverable className="summary-card nc-summary">
                         <Row gutter={[16, 12]}>

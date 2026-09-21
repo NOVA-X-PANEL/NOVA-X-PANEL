@@ -59,10 +59,10 @@ Deploy, configure and monitor VLESS, VMess, Trojan, Shadowsocks, WireGuard, Amne
 bash <(curl -Ls https://raw.githubusercontent.com/NOVA-X-PANEL/NOVA-X-PANEL/main/install.sh)
 ```
 
-Install a specific release (e.g. `v1.17.0`):
+Install a specific release (e.g. `v1.18.0`):
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/NOVA-X-PANEL/NOVA-X-PANEL/main/install.sh) v1.17.0
+bash <(curl -Ls https://raw.githubusercontent.com/NOVA-X-PANEL/NOVA-X-PANEL/main/install.sh) v1.18.0
 ```
 
 Install the rolling **dev** build (latest per-commit pre-release from `main` — not a stable release):
@@ -71,13 +71,13 @@ Install the rolling **dev** build (latest per-commit pre-release from `main` —
 bash <(curl -Ls https://raw.githubusercontent.com/NOVA-X-PANEL/NOVA-X-PANEL/main/install.sh) dev-latest
 ```
 
-During installation a random username, password and access path are generated. Afterwards run **`nova`** (or `nova-x-panel`) to open the management menu, where you can start/stop the service, view or reset your credentials, manage SSL certificates and more.
+During installation a random username, password and access path are generated. Afterwards run **`x-ui`** to open the management menu, where you can start/stop the service, view or reset your credentials, manage SSL certificates and more.
 
 Every release asset ships with a `.sha256` sum next to it; both `install.sh` and the updater verify the archive against it and abort on a mismatch.
 
 ### Unattended install
 
-The installer also runs **non-interactively** for cloud-init. Set `XUI_NONINTERACTIVE=1` (or pipe with no TTY) and it installs end-to-end with zero prompts, generating random credentials and writing them to `/etc/nova-x-panel/install-result.env`. See [`deploy/`](deploy/) for:
+The installer also runs **non-interactively** for cloud-init. Set `XUI_NONINTERACTIVE=1` (or pipe with no TTY) and it installs end-to-end with zero prompts, generating random credentials and writing them to `/etc/x-ui/install-result.env`. See [`deploy/`](deploy/) for:
 
 - [Cloud-init user-data](deploy/cloud-init/) — unattended install on any cloud (Hetzner/AWS/DO/Vultr/GCP/Azure/Oracle)
 - [Hetzner Cloud notes](deploy/marketplace/hetzner/) — cloud-init deployment on Hetzner
@@ -212,7 +212,7 @@ The installer also runs **non-interactively** for cloud-init. Set `XUI_NONINTERA
 
 NOVA X PANEL supports two backends, chosen during the install:
 
-- **SQLite** (default) — a single file at `/etc/nova-x-panel/x-ui.db`. Zero setup, ideal for small and medium deployments.
+- **SQLite** (default) — a single file at `/etc/x-ui/x-ui.db`. Zero setup, ideal for small and medium deployments.
 - **PostgreSQL** — recommended for high client counts or multi-node setups. The installer can install PostgreSQL locally for you, or accept a DSN to an existing server.
 
 At runtime the backend is selected via environment variables (the installer writes these to `/etc/default/x-ui` for you):
@@ -281,12 +281,12 @@ The complete list is on the [environment variables reference](https://docs.sanae
 
 ```bash
 nova              # open the interactive management menu
-nova start        # start the panel
-nova stop         # stop the panel
-nova restart      # restart the panel
-nova status       # service status
-nova settings     # show / change panel settings (port, path, credentials)
-nova update       # update to the latest release
+x-ui start        # start the panel
+x-ui stop         # stop the panel
+x-ui restart      # restart the panel
+x-ui status       # service status
+x-ui settings     # show / change panel settings (port, path, credentials)
+x-ui update       # update to the latest release
 ```
 
 ### 🛠 Under the hood

@@ -56,10 +56,10 @@
 bash <(curl -Ls https://raw.githubusercontent.com/NOVA-X-PANEL/NOVA-X-PANEL/main/install.sh)
 ```
 
-نصب یک نسخه‌ی مشخص (مثلاً `v1.17.0`):
+نصب یک نسخه‌ی مشخص (مثلاً `v1.18.0`):
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/NOVA-X-PANEL/NOVA-X-PANEL/main/install.sh) v1.17.0
+bash <(curl -Ls https://raw.githubusercontent.com/NOVA-X-PANEL/NOVA-X-PANEL/main/install.sh) v1.18.0
 ```
 
 نصب نسخه‌ی غلتانِ **dev** (آخرین پیش‌انتشار به‌ازای هر کامیت از شاخه‌ی `main` — نه یک انتشار پایدار):
@@ -68,14 +68,14 @@ bash <(curl -Ls https://raw.githubusercontent.com/NOVA-X-PANEL/NOVA-X-PANEL/main
 bash <(curl -Ls https://raw.githubusercontent.com/NOVA-X-PANEL/NOVA-X-PANEL/main/install.sh) dev-latest
 ```
 
-در حین نصب، یک نام کاربری، رمز عبور و مسیر دسترسی تصادفی تولید می‌شود. پس از نصب، دستور **`nova`** (یا `nova-x-panel`) را اجرا کنید تا منوی مدیریت باز شود؛ در آنجا می‌توانید سرویس را شروع/متوقف کنید، اطلاعات ورود خود را ببینید یا بازنشانی کنید، گواهی‌های SSL را مدیریت کنید و کارهای دیگری انجام دهید.
+در حین نصب، یک نام کاربری، رمز عبور و مسیر دسترسی تصادفی تولید می‌شود. پس از نصب، دستور **`x-ui`** را اجرا کنید تا منوی مدیریت باز شود؛ در آنجا می‌توانید سرویس را شروع/متوقف کنید، اطلاعات ورود خود را ببینید یا بازنشانی کنید، گواهی‌های SSL را مدیریت کنید و کارهای دیگری انجام دهید.
 
 هر فایل انتشار به‌همراه یک جمع کنترلی `.sha256` در کنارش منتشر می‌شود. هم `install.sh` و هم به‌روزرسان، آرشیو را در برابر آن جمع کنترلی بررسی می‌کنند و در صورت عدم تطابق متوقف می‌شوند.
 
 ### نصب بدون نظارت
 
 ‏نصب‌کننده به‌صورت **غیرتعاملی** نیز برای cloud-init اجرا می‌شود.
-‏`XUI_NONINTERACTIVE=1` را تنظیم کنید (یا بدون TTY از طریق pipe اجرا کنید) تا نصب به‌صورت سرتاسری و بدون هیچ پرسشی انجام شود، اطلاعات ورود تصادفی تولید کرده و آن‌ها را در `/etc/nova-x-panel/install-result.env` می‌نویسد. برای موارد زیر به [`deploy/`](deploy/) مراجعه کنید:
+‏`XUI_NONINTERACTIVE=1` را تنظیم کنید (یا بدون TTY از طریق pipe اجرا کنید) تا نصب به‌صورت سرتاسری و بدون هیچ پرسشی انجام شود، اطلاعات ورود تصادفی تولید کرده و آن‌ها را در `/etc/x-ui/install-result.env` می‌نویسد. برای موارد زیر به [`deploy/`](deploy/) مراجعه کنید:
 
 - [user-data مربوط به Cloud-init](deploy/cloud-init/) — نصب بدون نظارت روی هر ابری (Hetzner/AWS/DO/Vultr/GCP/Azure/Oracle)
 - [یادداشت‌های Hetzner Cloud](deploy/marketplace/hetzner/) — استقرار مبتنی بر cloud-init روی Hetzner
@@ -210,7 +210,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/NOVA-X-PANEL/NOVA-X-PANEL/main
 
 ‏NOVA X PANEL از دو بک‌اند پشتیبانی می‌کند که در حین نصب انتخاب می‌شوند:
 
-- **SQLite** (پیش‌فرض) — یک فایل واحد در مسیر `/etc/nova-x-panel/x-ui.db`. بدون نیاز به تنظیمات، ایده‌آل برای استقرارهای کوچک و متوسط.
+- **SQLite** (پیش‌فرض) — یک فایل واحد در مسیر `/etc/x-ui/x-ui.db`. بدون نیاز به تنظیمات، ایده‌آل برای استقرارهای کوچک و متوسط.
 - **PostgreSQL** — برای تعداد کلاینت بالا یا راه‌اندازی‌های چندنودی توصیه می‌شود. نصب‌کننده می‌تواند PostgreSQL را به‌صورت محلی برایتان نصب کند، یا یک DSN به یک سرور موجود را بپذیرد.
 
 در زمان اجرا، بک‌اند از طریق متغیرهای محیطی انتخاب می‌شود (نصب‌کننده این موارد را برای شما در `/etc/default/x-ui` می‌نویسد):
@@ -279,12 +279,12 @@ docker run -d --cap-add=NET_ADMIN --cap-add=NET_RAW ... ghcr.io/mhsanaei/3x-ui
 
 ```bash
 nova              # باز کردن منوی مدیریت تعاملی
-nova start        # شروع پنل
-nova stop         # توقف پنل
-nova restart      # ری‌استارت پنل
-nova status       # وضعیت سرویس
-nova settings     # نمایش / تغییر تنظیمات پنل (پورت، مسیر، اطلاعات ورود)
-nova update       # به‌روزرسانی به آخرین انتشار
+x-ui start        # شروع پنل
+x-ui stop         # توقف پنل
+x-ui restart      # ری‌استارت پنل
+x-ui status       # وضعیت سرویس
+x-ui settings     # نمایش / تغییر تنظیمات پنل (پورت، مسیر، اطلاعات ورود)
+x-ui update       # به‌روزرسانی به آخرین انتشار
 ```
 
 ### 🛠 زیر پوست پنل

@@ -1168,3 +1168,58 @@ body.light .nc-landscape--page {
     opacity: 0.5;
   }
 }
+
+/* --------------------------------------------------------------------------
+   Filterable stat tiles (the Clients summary): the reference's icon-tile card,
+   but each one is a button that filters the table.
+   -------------------------------------------------------------------------- */
+
+.nc-stats-6 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 900px) {
+  .nc-stats-6 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1400px) {
+  .nc-stats-6 {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+.nc-stat-filter {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  cursor: pointer;
+  font-family: var(--font, inherit);
+  text-align: start;
+  color: inherit;
+}
+
+.nc-stat-filter.is-selected {
+  border-color: var(--nc-blue);
+  box-shadow:
+    var(--nc-shadow, 0 12px 30px rgba(0, 0, 0, 0.32)),
+    0 0 22px rgba(23, 107, 255, 0.35);
+}
+
+.nc-stat-filter:focus-visible {
+  outline: 2px solid var(--nc-blue);
+  outline-offset: 2px;
+}
+
+/* two extra tints the summary needs beyond the four already defined */
+.nc-tint-amber {
+  background: linear-gradient(145deg, #f0a020, #b45309);
+  box-shadow: 0 0 18px rgba(240, 160, 32, 0.5);
+}
+
+.nc-tint-slate {
+  background: linear-gradient(145deg, #64748b, #334155);
+  box-shadow: 0 0 18px rgba(100, 116, 139, 0.45);
+}

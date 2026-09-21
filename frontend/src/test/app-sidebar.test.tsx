@@ -21,16 +21,18 @@ function renderSidebar() {
   );
 }
 
-test('renders the top navigation bar instead of a vertical sidebar', () => {
+test('renders the vertical sidebar with the brand and the status card', () => {
   const view = renderSidebar();
 
-  expect(view.container.querySelector('.nx-topbar')).not.toBeNull();
-  expect(view.container.querySelector('.ant-layout-sider')).toBeNull();
-  expect(view.container.querySelector('.nx-brand-text')?.textContent).toBe('NOVA X');
-  expect(view.container.querySelector('.nx-nav')).not.toBeNull();
+  // the Neon Console shell is a sider again, not the top bar
+  expect(view.container.querySelector('.ant-layout-sider')).not.toBeNull();
+  expect(view.container.querySelector('.nx-topbar')).toBeNull();
+  expect(view.container.querySelector('.sider-brand .brand-text')?.textContent).toBe('NOVA X');
+  expect(view.container.querySelector('.sider-status')).not.toBeNull();
+  expect(view.container.querySelector('.sider-art')).not.toBeNull();
 });
 
-test('keeps the pinned choice made from the top bar and restores it', () => {
+test('keeps the pinned choice made from the sidebar and restores it', () => {
   const first = renderSidebar();
   const pinButton = screen.getByRole('button', { name: 'Pin sidebar' });
 
@@ -42,18 +44,17 @@ test('keeps the pinned choice made from the top bar and restores it', () => {
 
   first.unmount();
 
-  const second = renderSidebar();
-  const restoredPin = screen.getByRole('button', { name: 'Pin sidebar' });
+  renderSidebar();
 
-  expect(restoredPin.getAttribute('aria-pressed')).toBe('true');
-  expect(second.container.querySelector('.nx-topbar')).not.toBeNull();
+  expect(screen.getByRole('button', { name: 'Pin sidebar' }).getAttribute('aria-pressed')).toBe(
+    'true',
+  );
 });
 
-test('unpinning from the top bar clears the stored choice', () => {
+test('unpinning from the sidebar clears the stored choice', () => {
   renderSidebar();
-  const pinButton = screen.getByRole('button', { name: 'Pin sidebar' });
 
-  fireEvent.click(pinButton);
+  fireEvent.click(screen.getByRole('button', { name: 'Pin sidebar' }));
   fireEvent.click(screen.getByRole('button', { name: 'Pin sidebar' }));
 
   expect(localStorage.getItem('sidebar-pinned')).toBe('false');

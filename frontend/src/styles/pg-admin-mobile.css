@@ -44,12 +44,18 @@
      bottom AND shifted up by half its height, so its top sat off-screen. Both
      properties have to be cleared. */
   .pg-dialog {
-    top: max(0.5rem, env(safe-area-inset-top));
-    right: max(0.5rem, env(safe-area-inset-right));
-    bottom: max(0.5rem, env(safe-area-inset-bottom));
-    left: max(0.5rem, env(safe-area-inset-left));
-    width: auto;
+    /* Tailwind centres the card with `translate: var(--tw-translate-x)
+       var(--tw-translate-y)`. Resetting `translate` to its initial value is not
+       enough: the build minifier drops the declaration as redundant and the
+       -50% shift comes back. Zeroing the two custom properties the utility
+       reads neutralises it in a way the minifier must keep. */
+    --tw-translate-x: 0;
+    --tw-translate-y: 0;
+    inset: max(0.5rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right))
+      max(0.5rem, env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left));
+    width: auto !important;
     max-width: none;
+    height: auto;
     transform: none;
     translate: none;
     gap: 0.75rem;

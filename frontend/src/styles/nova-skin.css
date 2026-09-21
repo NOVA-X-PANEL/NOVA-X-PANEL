@@ -1223,3 +1223,291 @@ body.light .nc-landscape--page {
   background: linear-gradient(145deg, #64748b, #334155);
   box-shadow: 0 0 18px rgba(100, 116, 139, 0.45);
 }
+
+/* --------------------------------------------------------------------------
+   Legibility pass. The first cut of the skin was too glassy: surfaces were
+   translucent enough that the artwork behind them competed with the labels.
+   This raises surface opacity, brightens the text scale, darkens the card fill
+   and pushes the artwork back so it reads as ambience.
+   -------------------------------------------------------------------------- */
+
+/* the artwork steps back */
+
+body.dark {
+  background-image:
+    radial-gradient(900px 520px at 88% -8%, rgba(23, 107, 255, 0.13), transparent 62%),
+    radial-gradient(760px 520px at 4% 4%, rgba(113, 52, 240, 0.11), transparent 64%),
+    radial-gradient(700px 620px at 55% 112%, rgba(0, 201, 168, 0.07), transparent 62%);
+}
+
+.nc-landscape--page {
+  opacity: 0.3;
+}
+
+.nc-landscape--panel {
+  opacity: 0.5;
+}
+
+/* surfaces become solid rather than glassy */
+
+body.dark {
+  --nc-card: #071c3f;
+  --nc-card-2: #08224c;
+  --nc-border: #1b4a95;
+  --nc-divider: #123660;
+  --nc-field: #0b2450;
+
+  /* a brighter text scale: the biggest readability win */
+  --nc-text: #f2f6ff;
+  --nc-text-2: #cfdcf0;
+  --nc-text-3: #aabdd8;
+}
+
+/* card fill loses the see-through top edge */
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  :is(.ant-card, .nc-card) {
+  background: linear-gradient(150deg, #08224c 0%, #061a3b 100%);
+}
+
+/* the page-card glow drops so it stops washing over the surface */
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-card::after {
+  opacity: 0.4;
+}
+
+/* the sidebar becomes solid */
+
+.ant-sidebar > .ant-layout-sider {
+  background: linear-gradient(180deg, #061536 0%, #041027 100%) !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  ).is-dark
+  .ant-sidebar
+  > .ant-layout-sider {
+  background: linear-gradient(180deg, #061536 0%, #041027 100%) !important;
+}
+
+/* menu items and labels read clearly */
+
+.sider-nav .ant-menu-item,
+.sider-nav .ant-menu-submenu-title,
+.sider-utility .ant-menu-item {
+  color: #d7e3f7;
+  font-weight: 500;
+}
+
+.sider-nav .ant-menu-item .anticon,
+.sider-nav .ant-menu-submenu-title .anticon,
+.sider-utility .ant-menu-item .anticon {
+  color: #a9c3e8;
+}
+
+.sider-nav .ant-menu-item-selected {
+  color: #fff !important;
+  font-weight: 700 !important;
+}
+
+.sider-nav .ant-menu-item-selected .anticon {
+  color: #fff !important;
+}
+
+.nx-topbar .ant-menu-horizontal > .ant-menu-item:not(.ant-menu-item-selected) {
+  color: #cfdcf0;
+}
+
+/* small labels that were faintest */
+.nc-stat-label,
+.nc-kicker,
+.ov-kicker,
+.sider-status-sub,
+.nc-hero-sub {
+  color: var(--nc-text-2);
+}
+
+.nc-stat-foot,
+.nc-hero-metric-label,
+.sider-art-tag {
+  color: var(--nc-text-3);
+}
+
+.sider-version,
+.ov-panel-version {
+  color: var(--nc-text-2);
+}
+
+/* tables and fields get firmer edges */
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-table-thead
+  > tr
+  > th {
+  background: linear-gradient(180deg, rgba(27, 74, 149, 0.55), rgba(10, 33, 77, 0.85)) !important;
+  color: #d7e3f7 !important;
+  font-weight: 700;
+  border-bottom: 1px solid var(--nc-border) !important;
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-table-tbody
+  > tr
+  > td {
+  color: #e8f0ff;
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  :is(.ant-input, .ant-input-affix-wrapper, .ant-input-number, .ant-picker, .ant-select-selector) {
+  background: #0b2450 !important;
+  border-color: var(--nc-border) !important;
+}
+
+/* row action icons are visible at rest, not only on hover */
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-table-tbody
+  td
+  .anticon {
+  color: #bfd4f2;
+}
+
+/* final refinements */
+
+/* page artwork: quieter still, so it reads as ambience */
+.nc-landscape--page {
+  opacity: 0.24;
+}
+
+/* the sidebar foot gets a scrim so the brand and tagline stay legible */
+.sider-art::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(180deg, rgba(4, 16, 39, 0.55) 0%, rgba(4, 16, 39, 0.85) 100%);
+  pointer-events: none;
+}
+
+.sider-art .nc-landscape--panel {
+  opacity: 0.8;
+}
+
+/* the hero's artwork sits further back under its labels */
+.nc-landscape--panel {
+  opacity: 0.42;
+}
+
+/* one more step on the small text */
+body.dark {
+  --nc-text-3: #b8c9e0;
+}
+
+.nc-stat-foot,
+.nc-hero-metric-label,
+.sider-art-tag,
+.ant-table-column-sorter,
+.ant-pagination .ant-pagination-total-text,
+.ant-pagination .ant-pagination-options {
+  color: #b8c9e0 !important;
+}
+
+/* muted metadata inside cards */
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  :is(.ant-typography.ant-typography-secondary, .text-muted, small) {
+  color: #c3d2e8;
+}

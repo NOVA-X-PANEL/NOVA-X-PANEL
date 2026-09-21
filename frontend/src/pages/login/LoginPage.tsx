@@ -21,7 +21,7 @@ import { setMessageInstance } from '@/utils/messageBus';
 import { pauseAnimationsUntilLeave, useTheme } from '@/hooks/useTheme';
 import { LoginFormSchema } from '@/schemas/login';
 import NovaLogo from './NovaLogo';
-import NovaLandscape from './NovaLandscape';
+import NeonLandscape from '@/components/NeonLandscape';
 import './LoginPage.css';
 
 const basePath = window.X_UI_BASE_PATH || '';
@@ -249,7 +249,7 @@ export default function LoginPage() {
           </div>
 
           <div className="nx-hero__art">
-            <NovaLandscape idSuffix="hero" />
+            <NeonLandscape variant="panel" />
           </div>
         </section>
 

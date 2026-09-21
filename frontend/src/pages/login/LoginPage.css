@@ -32,17 +32,22 @@
 
 .nova-login {
   /* ---- design tokens ---------------------------------------------------- */
-  --nx-bg: #04060e;
-  --nx-bg-2: #070d1c;
-  --nx-panel: #050a16;
-  --nx-line: rgba(125, 211, 252, 0.16);
-  --nx-line-strong: rgba(125, 211, 252, 0.34);
-  --nx-text: #eaf2ff;
-  --nx-muted: #8ba3c7;
-  --nx-blue: #2f7dff;
-  --nx-blue-2: #1d4ed8;
-  --nx-cyan: #22d3ee;
-  --nx-success: #34d399;
+  /* The panel's own neon tokens, so the sign-in screen and the panel are one
+     product. Kept as --nx-* names because the rest of this file reads them. */
+  --nx-bg: #030b1d;
+  --nx-bg-2: #061633;
+  --nx-panel: #071c3f;
+  --nx-line: #123675;
+  --nx-line-strong: #1b4a95;
+  --nx-text: #f2f6ff;
+  --nx-muted: #cfdcf0;
+  --nx-faint: #b8c9e0;
+  --nx-blue: #176bff;
+  --nx-blue-2: #1548e9;
+  --nx-violet: #7134f0;
+  --nx-cyan: #00b9ff;
+  --nx-teal: #00c9a8;
+  --nx-success: #00e1b0;
   --nx-radius: 18px;
   --nx-font: 'Vazirmatn', 'Inter', system-ui, -apple-system, 'Segoe UI', Tahoma, sans-serif;
 
@@ -56,15 +61,17 @@
   overflow: hidden;
 }
 
-/* Ambience: two wide radial washes so the canvas is never flat black. */
+/* Ambience: the panel's own blue/violet/teal washes, so the sign-in canvas is
+   literally the same background the panel uses. */
 .nova-login::before {
   content: '';
   position: absolute;
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(900px 520px at 12% 18%, rgba(47, 125, 255, 0.16), transparent 70%),
-    radial-gradient(760px 500px at 88% 82%, rgba(34, 211, 238, 0.1), transparent 72%);
+    radial-gradient(900px 520px at 12% 18%, rgba(23, 107, 255, 0.2), transparent 70%),
+    radial-gradient(780px 520px at 88% 14%, rgba(113, 52, 240, 0.18), transparent 72%),
+    radial-gradient(760px 540px at 62% 92%, rgba(0, 201, 168, 0.12), transparent 72%);
 }
 
 .nova-login *,
@@ -84,7 +91,7 @@
   justify-content: space-between;
   padding: 48px 56px 0;
   overflow: hidden;
-  background: linear-gradient(160deg, #060b18 0%, #04070f 60%);
+  background: linear-gradient(160deg, #061633 0%, #030b1d 60%);
   border-inline-end: 1px solid var(--nx-line);
 }
 
@@ -138,14 +145,14 @@
   font-weight: 500;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: #7aa7e0;
+  color: #8fb0dc;
 }
 
 .nx-hero__slogan {
   margin: 22px 0 0;
   font-size: clamp(17px, 1.5vw, 21px);
   font-weight: 500;
-  color: #cfe2fb;
+  color: #cfdcf0;
 }
 
 .nx-hero__rule {
@@ -200,7 +207,7 @@
   border-radius: 11px;
   background: linear-gradient(145deg, rgba(47, 125, 255, 0.3), rgba(34, 211, 238, 0.14));
   border: 1px solid rgba(125, 211, 252, 0.28);
-  color: #bfe3ff;
+  color: #c9dcf5;
 }
 
 .nx-feature__copy {
@@ -275,7 +282,7 @@
   border: 1px solid var(--nx-line);
   border-radius: 11px;
   background: rgba(255, 255, 255, 0.04);
-  color: #cfe2fb;
+  color: #cfdcf0;
   font-size: 16px;
   cursor: pointer;
   backdrop-filter: blur(8px);
@@ -353,7 +360,7 @@
 .nx-field__label {
   font-size: 12px;
   font-weight: 500;
-  color: #a9c2e4;
+  color: #b8c9e0;
 }
 
 .nx-input {
@@ -383,7 +390,7 @@
 
 .nx-input__icon {
   flex: 0 0 auto;
-  color: #6f8dbb;
+  color: #a9bdd8;
   font-size: 15px;
 }
 
@@ -400,7 +407,7 @@
 }
 
 .nx-input input::placeholder {
-  color: #5f7ba6;
+  color: #9fb4d2;
 }
 
 /* Chrome's autofill repaint would otherwise wash the field out. */
@@ -422,7 +429,7 @@
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: #6f8dbb;
+  color: #a9bdd8;
   font-size: 15px;
   cursor: pointer;
   transition:
@@ -431,13 +438,13 @@
 }
 
 .nx-input__toggle:hover {
-  color: #cfe2fb;
+  color: #cfdcf0;
   background: rgba(125, 211, 252, 0.1);
 }
 
 .nx-field__error {
   font-size: 11.5px;
-  color: #fca5a5;
+  color: #ff8ab0;
 }
 
 /* submit */
@@ -450,7 +457,7 @@
   margin-top: 6px;
   border: 0;
   border-radius: 12px;
-  background: linear-gradient(100deg, var(--nx-blue-2) 0%, var(--nx-blue) 50%, #38bdf8 100%);
+  background: linear-gradient(100deg, #1548e9 0%, var(--nx-violet) 55%, var(--nx-blue) 100%);
   color: #ffffff;
   font-family: inherit;
   font-size: 14.5px;
@@ -522,7 +529,7 @@
   border: 0;
   padding: 0;
   background: none;
-  color: #7fb4ff;
+  color: #8fb8ff;
   font-family: inherit;
   font-size: 12.5px;
   cursor: pointer;
@@ -561,7 +568,7 @@
   border: 1px solid var(--nx-line);
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.03);
-  color: #d7e6ff;
+  color: #e2ecff;
   font-family: inherit;
   font-size: 13.5px;
   font-weight: 500;
@@ -584,7 +591,7 @@
 }
 
 .nx-telegram__icon {
-  color: #38bdf8;
+  color: #00b9ff;
 }
 
 /* footer */
@@ -603,7 +610,7 @@
 .nx-foot__brand {
   font-weight: 600;
   letter-spacing: 0.12em;
-  color: #a9c2e4;
+  color: #b8c9e0;
 }
 
 .nx-foot__ver {

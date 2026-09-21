@@ -211,7 +211,7 @@ export function InboundsRail({ dbInbounds, totals, online }: InboundsRailProps) 
               <li key={p.name}>
                 <span
                   className="nc-legend-dot"
-                  style={{ background: palette[idx % palette.length] }}
+                  style={{ background: DONUT_PALETTE[idx % DONUT_PALETTE.length] }}
                 />
                 <span className="nc-legend-name">{p.name}</span>
                 <span className="nc-legend-pct">{p.pct}%</span>

@@ -24,7 +24,7 @@ import AppSidebar from '@/layouts/AppSidebar';
 import { LazyMount } from '@/components/utility';
 import { setMessageInstance } from '@/utils/messageBus';
 import OverviewActionBar from './OverviewActionBar';
-import OverviewHero from './OverviewHero';
+import { OverviewHero as OverviewChromeHero, OverviewRail, OverviewStats } from './OverviewChrome';
 import VitalTile from './VitalTile';
 import ThroughputCard from './ThroughputCard';
 import ConnectionsCard from './ConnectionsCard';
@@ -194,7 +194,7 @@ export default function IndexPage() {
                 />
               ) : (
                 <div className="ov-page">
-                  <OverviewHero version={displayVersion} />
+                  <OverviewChromeHero panelVersion={displayVersion} />
                   <OverviewActionBar
                     status={status}
                     isMobile={isMobile}
@@ -224,75 +224,83 @@ export default function IndexPage() {
 
                   <hr className="ov-rule" />
 
-                  <div className="ov-vitals">
-                    <VitalTile
-                      icon={<DashboardOutlined />}
-                      label={t('pages.index.cpu')}
-                      percent={status.cpu.percent}
-                      statusColor={status.cpu.color}
-                      detail={`${CPUFormatter.cpuCoreFormat(status.cpuCores)} / ${status.logicalPro}T · ${CPUFormatter.cpuSpeedFormat(status.cpuSpeedMhz)}`}
-                      footLeft={`${t('pages.index.avg')} ${mean(history.series.cpu).toFixed(0)}%`}
-                      footRight={`${t('pages.index.peak')} ${peak(history.series.cpu).toFixed(0)}%`}
-                      data={history.series.cpu}
-                      isMobile={isMobile}
-                    />
-                    <VitalTile
-                      icon={<DatabaseOutlined />}
-                      label={t('pages.index.memory')}
-                      percent={status.mem.percent}
-                      statusColor={status.mem.color}
-                      detail={`${SizeFormatter.sizeFormat(status.mem.current)} / ${SizeFormatter.sizeFormat(status.mem.total)}`}
-                      footLeft={`${t('pages.index.avg')} ${mean(history.series.mem).toFixed(0)}%`}
-                      footRight={`${t('pages.index.peak')} ${peak(history.series.mem).toFixed(0)}%`}
-                      data={history.series.mem}
-                      isMobile={isMobile}
-                    />
-                    <VitalTile
-                      icon={<SwapOutlined />}
-                      label={t('pages.index.swap')}
-                      percent={status.swap.percent}
-                      statusColor={status.swap.color}
-                      detail={`${SizeFormatter.sizeFormat(status.swap.current)} / ${SizeFormatter.sizeFormat(status.swap.total)}`}
-                      footLeft={`${t('pages.index.avg')} ${mean(history.series.swap).toFixed(1)}%`}
-                      footRight={`${t('pages.index.peak')} ${peak(history.series.swap).toFixed(0)}%`}
-                      data={history.series.swap}
-                      isMobile={isMobile}
-                    />
-                    <VitalTile
-                      icon={<HddOutlined />}
-                      label={t('pages.index.storage')}
-                      percent={status.disk.percent}
-                      statusColor={status.disk.color}
-                      detail={`${SizeFormatter.sizeFormat(status.disk.current)} / ${SizeFormatter.sizeFormat(totalDisk)}`}
-                      footLeft={`${t('pages.index.free')} ${SizeFormatter.sizeFormat(freeDisk)}`}
-                      footRight={`${t('pages.index.avg')} ${mean(history.series.diskUsage).toFixed(1)}%`}
-                      data={history.series.diskUsage}
-                      isMobile={isMobile}
-                    />
-                  </div>
+                  <OverviewStats status={status} />
 
-                  <div className="ov-mid">
-                    <ThroughputCard
-                      status={status}
-                      up={history.series.netUp}
-                      down={history.series.netDown}
-                      labels={history.labels}
-                      isMobile={isMobile}
-                    />
-                    <ConnectionsCard
-                      status={status}
-                      tcp={history.series.tcpCount}
-                      udp={history.series.udpCount}
-                      labels={history.labels}
-                      isMobile={isMobile}
-                    />
-                  </div>
+                  <div className="nc-split">
+                    <div className="nc-main">
+                      <div className="ov-vitals">
+                        <VitalTile
+                          icon={<DashboardOutlined />}
+                          label={t('pages.index.cpu')}
+                          percent={status.cpu.percent}
+                          statusColor={status.cpu.color}
+                          detail={`${CPUFormatter.cpuCoreFormat(status.cpuCores)} / ${status.logicalPro}T · ${CPUFormatter.cpuSpeedFormat(status.cpuSpeedMhz)}`}
+                          footLeft={`${t('pages.index.avg')} ${mean(history.series.cpu).toFixed(0)}%`}
+                          footRight={`${t('pages.index.peak')} ${peak(history.series.cpu).toFixed(0)}%`}
+                          data={history.series.cpu}
+                          isMobile={isMobile}
+                        />
+                        <VitalTile
+                          icon={<DatabaseOutlined />}
+                          label={t('pages.index.memory')}
+                          percent={status.mem.percent}
+                          statusColor={status.mem.color}
+                          detail={`${SizeFormatter.sizeFormat(status.mem.current)} / ${SizeFormatter.sizeFormat(status.mem.total)}`}
+                          footLeft={`${t('pages.index.avg')} ${mean(history.series.mem).toFixed(0)}%`}
+                          footRight={`${t('pages.index.peak')} ${peak(history.series.mem).toFixed(0)}%`}
+                          data={history.series.mem}
+                          isMobile={isMobile}
+                        />
+                        <VitalTile
+                          icon={<SwapOutlined />}
+                          label={t('pages.index.swap')}
+                          percent={status.swap.percent}
+                          statusColor={status.swap.color}
+                          detail={`${SizeFormatter.sizeFormat(status.swap.current)} / ${SizeFormatter.sizeFormat(status.swap.total)}`}
+                          footLeft={`${t('pages.index.avg')} ${mean(history.series.swap).toFixed(1)}%`}
+                          footRight={`${t('pages.index.peak')} ${peak(history.series.swap).toFixed(0)}%`}
+                          data={history.series.swap}
+                          isMobile={isMobile}
+                        />
+                        <VitalTile
+                          icon={<HddOutlined />}
+                          label={t('pages.index.storage')}
+                          percent={status.disk.percent}
+                          statusColor={status.disk.color}
+                          detail={`${SizeFormatter.sizeFormat(status.disk.current)} / ${SizeFormatter.sizeFormat(totalDisk)}`}
+                          footLeft={`${t('pages.index.free')} ${SizeFormatter.sizeFormat(freeDisk)}`}
+                          footRight={`${t('pages.index.avg')} ${mean(history.series.diskUsage).toFixed(1)}%`}
+                          data={history.series.diskUsage}
+                          isMobile={isMobile}
+                        />
+                      </div>
 
-                  <SystemStrip
-                    status={status}
-                    showIp={showIp}
-                    onToggleIp={() => setShowIp((v) => !v)}
-                  />
+                      <div className="ov-mid">
+                        <ThroughputCard
+                          status={status}
+                          up={history.series.netUp}
+                          down={history.series.netDown}
+                          labels={history.labels}
+                          isMobile={isMobile}
+                        />
+                        <ConnectionsCard
+                          status={status}
+                          tcp={history.series.tcpCount}
+                          udp={history.series.udpCount}
+                          labels={history.labels}
+                          isMobile={isMobile}
+                        />
+                      </div>
+
+                      <SystemStrip
+                        status={status}
+                        showIp={showIp}
+                        onToggleIp={() => setShowIp((v) => !v)}
+                      />
+                    </div>
+
+                    <OverviewRail status={status} panelVersion={displayVersion} />
+                  </div>
                 </div>
               )}
             </Spin>

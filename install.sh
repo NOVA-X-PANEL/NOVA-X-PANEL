@@ -6,7 +6,7 @@
 #
 #  Usage:
 #    bash install.sh              # install latest release (or build from source)
-#    bash install.sh v1.8.0       # install a specific release tag
+#    bash install.sh v1.8.1       # install a specific release tag
 #    bash install.sh dev-latest   # install the rolling dev build
 #    XUI_NONINTERACTIVE=1 bash install.sh   # unattended install
 # ============================================================

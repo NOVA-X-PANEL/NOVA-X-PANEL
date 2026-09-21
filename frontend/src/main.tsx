@@ -9,6 +9,11 @@ import '@/styles/nova-glass.css';
 
 import { setupHttp } from '@/api/http-init';
 import { readyI18n } from '@/i18n/react';
+// Registers the ported admin screens' translation bundle. Its module body hooks
+// i18next, so it must be imported before readyI18n() initialises i18n; without
+// this import the whole bundle is tree-shaken away and every pg-ui string
+// renders as a raw key ("admins.createAdmin").
+import '@/pg-ui/i18n/admin-pages-bridge';
 import { ThemeProvider } from '@/hooks/useTheme';
 import { QueryProvider } from '@/api/QueryProvider';
 import { router } from '@/routes';

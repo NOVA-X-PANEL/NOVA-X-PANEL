@@ -448,7 +448,10 @@ body.dark .ant-drawer-body .drawer-menu .ant-menu-item-group-list {
 .ant-sidebar.nx-topbar-root {
   position: sticky;
   top: 0;
-  z-index: 60;
+  /* Above page content, below every overlay: dialogs/overlays in the panel sit
+     at z-index 50, so a higher bar would cover the top of a dialog that reaches
+     the top of a short viewport. */
+  z-index: 40;
   flex: 0 0 auto;
   width: 100%;
   max-width: none;

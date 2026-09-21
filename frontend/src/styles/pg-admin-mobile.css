@@ -10,6 +10,17 @@
  * `.pg-dialog` marks the two ported dialogs.
  */
 
+/* Baseline, all sizes: a dialog must never be taller than the viewport. The
+   vendored card is centred, so anything taller runs off the top of the screen
+   with no way to scroll back to it. Letting the dialog itself scroll keeps the
+   title and the action row reachable on short viewports too (a phone in
+   landscape, a split-screen window). */
+.pg-dialog {
+  max-height: calc(100dvh - 1rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
 @media (max-width: 768px) {
   /* The floating sidebar toggle is fixed at the top-left; the ported PageHeader
      has no lead-in for it, so it lands on top of the page title. */
@@ -27,7 +38,11 @@
 
 @media (max-width: 640px) {
   /* Turn the centred card into an inset sheet that fits the viewport, and let
-     the sheet itself scroll, so every field and both actions stay reachable. */
+     the sheet itself scroll, so every field and both actions stay reachable.
+     Tailwind v4 centres the card with the `translate` property, not `transform`
+     — resetting only `transform` left the sheet stretched between top and
+     bottom AND shifted up by half its height, so its top sat off-screen. Both
+     properties have to be cleared. */
   .pg-dialog {
     top: max(0.5rem, env(safe-area-inset-top));
     right: max(0.5rem, env(safe-area-inset-right));
@@ -35,8 +50,8 @@
     left: max(0.5rem, env(safe-area-inset-left));
     width: auto;
     max-width: none;
-    max-height: none;
     transform: none;
+    translate: none;
     gap: 0.75rem;
     padding: 1rem;
     border-radius: 0.9rem;

@@ -817,10 +817,11 @@ export default function ClientsPage() {
   );
 
   // Protocol mix for the rail's donut, over the rows the table actually shows.
+  // ClientRecord does not declare `protocol`, so read it defensively.
   const protocolCounts = useMemo(() => {
     const map = new Map<string, number>();
     clients.forEach((row) => {
-      const proto = row.protocol || 'other';
+      const proto = String((row as { protocol?: unknown }).protocol ?? 'other');
       map.set(proto, (map.get(proto) ?? 0) + 1);
     });
     return [...map.entries()].map(([name, n]) => ({ name, n }));

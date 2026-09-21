@@ -173,11 +173,14 @@ function ThemeCycleButton({
   );
 }
 
+// Default to expanded so the shell matches the Neon Console reference out of the
+// box; a stored choice still wins, so a user who collapsed it keeps that.
 function readSidebarPinned() {
   try {
-    return localStorage.getItem(SIDEBAR_PINNED_KEY) === 'true';
+    const stored = localStorage.getItem(SIDEBAR_PINNED_KEY);
+    return stored === null ? true : stored === 'true';
   } catch {
-    return false;
+    return true;
   }
 }
 

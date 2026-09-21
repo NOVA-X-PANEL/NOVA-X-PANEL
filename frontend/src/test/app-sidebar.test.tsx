@@ -35,7 +35,8 @@ test('expands on hover, shows the status card and artwork, and pins', () => {
   const sidebar = view.container.querySelector('.ant-layout-sider');
   const sidebarRoot = view.container.querySelector('.ant-sidebar');
 
-  expect(sidebar?.classList.contains('ant-layout-sider-collapsed')).toBe(true);
+  // a stored choice wins, but a fresh visit starts expanded
+  expect(sidebar?.classList.contains('ant-layout-sider-collapsed')).toBe(false);
 
   fireEvent.mouseEnter(sidebarRoot!);
 
@@ -63,7 +64,7 @@ test('unpinning returns to the compact rail', () => {
   const sidebar = view.container.querySelector('.ant-layout-sider');
 
   fireEvent.mouseEnter(sidebarRoot!);
-  fireEvent.click(screen.getByRole('button', { name: 'Pin sidebar' }));
+  // starts pinned, so unpinning is what collapses it
   fireEvent.click(screen.getByRole('button', { name: 'Pin sidebar' }));
   fireEvent.mouseLeave(sidebarRoot!);
 

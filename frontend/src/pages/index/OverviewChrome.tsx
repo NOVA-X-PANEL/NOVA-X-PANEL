@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import NeonLandscape from '@/components/NeonLandscape';
 import {
   ArrowDownOutlined,
   ArrowUpOutlined,
@@ -48,6 +49,7 @@ export function OverviewHero({ panelVersion }: OverviewHeroProps) {
 
   return (
     <div className="nc-hero">
+      <NeonLandscape variant="panel" />
       <span className="nc-hero-badge" aria-hidden="true">
         <SmileOutlined />
       </span>

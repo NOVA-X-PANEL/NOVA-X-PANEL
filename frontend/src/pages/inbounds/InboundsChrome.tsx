@@ -12,6 +12,7 @@ import {
 } from '@ant-design/icons';
 
 import { SizeFormatter } from '@/utils';
+import NeonLandscape from '@/components/NeonLandscape';
 
 /**
  * Page chrome for the Inbounds screen, matching the Neon Console reference: a
@@ -34,6 +35,7 @@ export function InboundsHero({ count }: InboundsHeroProps) {
   const { t } = useTranslation();
   return (
     <div className="nc-hero">
+      <NeonLandscape variant="panel" />
       <span className="nc-hero-icon">
         <CloudServerOutlined />
       </span>

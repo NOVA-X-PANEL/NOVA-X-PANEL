@@ -47,6 +47,7 @@ import { useAllSettings } from '@/api/queries/useAllSettings';
 import { useCommandPalette } from '@/components/command-palette/useCommandPalette';
 import { useAdmin } from '@/pg-ui/hooks/use-admin';
 import { canAccessRoute } from '@/pg-ui/utils/rbac';
+import NeonLandscape from '@/components/NeonLandscape';
 import { useStatusQuery } from '@/api/queries/useStatusQuery';
 import './AppSidebar.css';
 
@@ -495,16 +496,7 @@ export default function AppSidebar() {
 
         {!railCollapsed && (
           <div className="sider-art" aria-hidden="true">
-            <svg viewBox="0 0 260 110" preserveAspectRatio="none">
-              <path
-                d="M0 110 L44 50 L76 82 L112 34 L150 88 L186 56 L224 92 L260 64 L260 110 Z"
-                fill="rgba(6,22,51,.92)"
-              />
-              <path
-                d="M0 110 L40 70 L78 96 L118 56 L156 100 L196 76 L232 102 L260 82 L260 110 Z"
-                fill="rgba(4,12,32,.95)"
-              />
-            </svg>
+            <NeonLandscape variant="panel" />
             <div className="sider-art-brand">NOVA X</div>
             <div className="sider-art-tag">سریع • امن • آزاد</div>
           </div>
@@ -599,6 +591,9 @@ export default function AppSidebar() {
           <VersionBadge version={panelVersion} />
         </div>
       </Drawer>
+
+      {/* one landscape behind every page, so no screen is a flat colour */}
+      <NeonLandscape variant="page" />
 
       {!drawerOpen && (
         <button

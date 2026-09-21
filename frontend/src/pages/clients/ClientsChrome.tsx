@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import NeonLandscape from '@/components/NeonLandscape';
 import {
   CloudDownloadOutlined,
   CloudUploadOutlined,
@@ -27,6 +28,7 @@ export function ClientsHero({ total, online }: ClientsHeroProps) {
   const { t } = useTranslation();
   return (
     <div className="nc-hero">
+      <NeonLandscape variant="panel" />
       <span className="nc-hero-icon">
         <TeamOutlined />
       </span>

@@ -1084,3 +1084,87 @@ body.dark .pg-admin-page :is(.border, [class*='border']) {
   .ant-pagination-options {
   color: var(--nc-text-2);
 }
+
+/* --------------------------------------------------------------------------
+   The landscape: one artwork layer behind every page, plus the stronger copy
+   inside hero banners and the sidebar foot. This is the piece that gives the
+   panel the reference's identity rather than just its palette.
+   -------------------------------------------------------------------------- */
+
+.nc-landscape {
+  display: block;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* full-viewport wash, behind the shell */
+.nc-landscape--page {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 0;
+  width: 100%;
+  height: min(78vh, 760px);
+  object-fit: cover;
+  object-position: bottom;
+  opacity: 0.55;
+  mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.35) 35%, #000 100%);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.35) 35%, #000 100%);
+}
+
+body.light .nc-landscape--page {
+  opacity: 0.22;
+}
+
+/* inside a card: pinned to the end edge, faded under the content */
+.nc-landscape--panel {
+  position: absolute;
+  inset: 0 0 0 auto;
+  z-index: 0;
+  width: min(60%, 620px);
+  height: 100%;
+  object-fit: cover;
+  object-position: bottom right;
+  opacity: 0.75;
+  mask-image: linear-gradient(270deg, #000 0%, rgba(0, 0, 0, 0.55) 45%, transparent 100%);
+  -webkit-mask-image: linear-gradient(270deg, #000 0%, rgba(0, 0, 0, 0.55) 45%, transparent 100%);
+}
+
+/* the hero's own content must sit above the artwork */
+.nc-hero {
+  position: relative;
+  overflow: hidden;
+}
+
+.nc-hero > :not(.nc-landscape) {
+  position: relative;
+  z-index: 1;
+}
+
+/* the sidebar foot is a short panel, so the art fills it instead */
+.sider-art {
+  position: relative;
+  overflow: hidden;
+}
+
+.sider-art .nc-landscape--panel {
+  width: 100%;
+  inset: 0;
+  object-position: bottom center;
+  opacity: 1;
+  mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.5) 40%, #000 100%);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.5) 40%, #000 100%);
+}
+
+.sider-art-brand,
+.sider-art-tag {
+  position: relative;
+  z-index: 1;
+}
+
+/* light mode keeps the artwork from washing out the surfaces */
+@media (max-width: 1100px) {
+  .nc-landscape--panel {
+    width: 100%;
+    opacity: 0.5;
+  }
+}

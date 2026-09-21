@@ -6,7 +6,7 @@
 #
 #  Usage:
 #    bash install.sh              # install latest release (or build from source)
-#    bash install.sh v1.16.0       # install a specific release tag
+#    bash install.sh v1.17.0       # install a specific release tag
 #    bash install.sh dev-latest   # install the rolling dev build
 #    XUI_NONINTERACTIVE=1 bash install.sh   # unattended install
 # ============================================================
@@ -44,6 +44,66 @@ err()   { echo -e "${red}[ERR ]${plain} $*"; }
 
 confirm_or_exit() {
     [[ $EUID -ne 0 ]] && { err "Please run this script as root."; exit 1; }
+}
+
+# ---------------------------------------------------------------------------
+# banner
+# ---------------------------------------------------------------------------
+banner_unicode() {
+    cat <<'NOVA_ART'
+███╗   ██╗  ██████╗  ██╗   ██╗  █████╗      ██╗  ██╗
+████╗  ██║ ██╔═══██╗ ██║   ██║ ██╔══██╗     ╚██╗██╔╝
+██╔██╗ ██║ ██║   ██║ ██║   ██║ ███████║      ╚███╔╝
+██║╚██╗██║ ██║   ██║ ╚██╗ ██╔╝ ██╔══██║      ██╔██╗
+██║ ╚████║ ╚██████╔╝  ╚████╔╝  ██║  ██║     ██╔╝ ██╗
+╚═╝  ╚═══╝  ╚═════╝    ╚═══╝   ╚═╝  ╚═╝     ╚═╝  ╚═╝
+
+██████╗   █████╗  ███╗   ██╗ ███████╗ ██╗
+██╔══██╗ ██╔══██╗ ████╗  ██║ ██╔════╝ ██║
+██████╔╝ ███████║ ██╔██╗ ██║ █████╗   ██║
+██╔═══╝  ██╔══██║ ██║╚██╗██║ ██╔══╝   ██║
+██║      ██║  ██║ ██║ ╚████║ ███████╗ ███████╗
+╚═╝      ╚═╝  ╚═╝ ╚═╝  ╚═══╝ ╚══════╝ ╚══════╝
+NOVA_ART
+}
+
+# Fallback for a terminal that is not UTF-8: the block glyphs would be mojibake.
+banner_ascii() {
+    cat <<'NOVA_ART'
+============================================================
+                     N O V A   X
+                       P A N E L
+============================================================
+NOVA_ART
+}
+
+# Bright neon blue where the terminal supports it, plain bright blue otherwise.
+neon_colour() {
+    local n
+    n="$(tput colors 2>/dev/null || echo 8)"
+    if [[ "${n:-8}" -ge 256 ]]; then
+        printf '\033[1;38;5;45m'
+    else
+        printf '\033[1;94m'
+    fi
+}
+
+print_banner() {
+    # Set XUI_NO_BANNER=1 to keep the installer's output script-friendly.
+    [[ "${XUI_NO_BANNER:-0}" == "1" ]] && return 0
+    local colour='' reset=''
+    if [[ -t 1 ]]; then
+        colour="$(neon_colour)"
+        reset="$plain"
+    fi
+    local body
+    case "${LC_ALL:-${LC_CTYPE:-${LANG:-UTF-8}}}" in
+        *UTF-8*|*utf8*|*UTF8*) body="$(banner_unicode)" ;;
+        *)                     body="$(banner_ascii)" ;;
+    esac
+    printf '\n%b%s%b\n' "$colour" "$body" "$reset"
+    printf '%b  Independent panel  ·  built on 3x-ui (GPLv3)%b\n' "$colour" "$reset"
+    printf '%b  %s%b\n\n' "$colour" "$REPO_URL" "$reset"
 }
 
 # ---------------------------------------------------------------------------
@@ -359,6 +419,7 @@ print_summary() {
 # main
 # ---------------------------------------------------------------------------
 main() {
+    print_banner
     confirm_or_exit
     detect_os
     local a; a="$(arch)"

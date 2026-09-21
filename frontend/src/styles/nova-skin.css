@@ -1,0 +1,1086 @@
+/* NOVA X PANEL — "Neon Console" component skin.
+   Loaded after nova-glass.css. nova-glass paints the page shells, the sidebar
+   and the page chrome; this file re-skins the individual Ant Design primitives
+   so tables, forms, overlays and controls stop reading as a stock admin kit.
+   Palette and radii come from the reference: navy #030b1d canvas, #061a3b
+   cards, #123675 borders, blue #176bff / violet #7134f0 / teal #00c9a8. */
+
+/* ---------------------------------------------------------- ambient canvas */
+
+/* One glow behind every page, so no screen is a flat black rectangle. */
+body.dark {
+  background-color: #030b1d;
+  background-image:
+    radial-gradient(900px 520px at 88% -8%, rgba(23, 107, 255, 0.16), transparent 62%),
+    radial-gradient(760px 520px at 4% 4%, rgba(113, 52, 240, 0.14), transparent 64%),
+    radial-gradient(700px 620px at 55% 112%, rgba(0, 201, 168, 0.08), transparent 62%);
+  background-attachment: fixed;
+}
+
+body.light {
+  background-color: #eef2fb;
+  background-image:
+    radial-gradient(900px 520px at 88% -8%, rgba(23, 107, 255, 0.1), transparent 62%),
+    radial-gradient(760px 520px at 4% 4%, rgba(113, 52, 240, 0.08), transparent 64%);
+  background-attachment: fixed;
+}
+
+/* Every AntD layout layer stays clear so the glow reads through. */
+body.dark,
+body.light {
+  --nc-card: #061a3b;
+  --nc-card-2: #071d42;
+  --nc-border: #123675;
+  --nc-divider: #0e2a56;
+  --nc-field: #0a214d;
+  --nc-text: #e7f1ff;
+  --nc-text-2: #b7cbea;
+  --nc-blue: #176bff;
+  --nc-violet: #7134f0;
+  --nc-teal: #00c9a8;
+  --nc-green: #00e1b0;
+  --nc-pink: #c41d63;
+}
+
+:is(
+  .index-page,
+  .clients-page,
+  .inbounds-page,
+  .xray-page,
+  .settings-page,
+  .nodes-page,
+  .groups-page,
+  .api-docs-page,
+  .hosts-page,
+  .admins-page,
+  .admin-roles-page
+) {
+  background: transparent !important;
+  background-image: none !important;
+}
+
+/* ------------------------------------------------------------------ tables */
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-table-wrapper {
+  background: transparent;
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-table {
+  background: transparent;
+  border-radius: 0;
+}
+
+/* header: a tinted strip with a hairline, not a grey block */
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-table-thead
+  > tr
+  > th {
+  height: 44px;
+  padding: 10px 12px;
+  background: linear-gradient(
+    180deg,
+    rgba(23, 107, 255, 0.16),
+    rgba(23, 107, 255, 0.04)
+  ) !important;
+  border-bottom: 1px solid var(--nc-border) !important;
+  color: var(--nc-text-2) !important;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-table-thead
+  > tr
+  > th::before {
+  display: none !important;
+}
+
+/* rows: tall, hairline-separated, with a blue wash on hover */
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-table-tbody
+  > tr
+  > td {
+  height: 48px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--nc-divider) !important;
+  color: var(--nc-text);
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-table-tbody
+  > tr.ant-table-row:hover
+  > td,
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-table-tbody
+  > tr.ant-table-row-selected
+  > td {
+  background: linear-gradient(90deg, rgba(23, 107, 255, 0.14), rgba(113, 52, 240, 0.07)) !important;
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-table-tbody
+  > tr:last-child
+  > td {
+  border-bottom: 0 !important;
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-table-cell-fix-left,
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-table-cell-fix-right {
+  background: #061a3b !important;
+}
+
+/* the selection column and the row action column go quiet */
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-table-selection-column {
+  padding-inline: 8px !important;
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-table-placeholder
+  .ant-table-cell {
+  border-bottom: 0 !important;
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-table-column-sorter,
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-table-filter-trigger {
+  color: rgba(183, 203, 234, 0.7);
+}
+
+/* ------------------------------------------------------------ pagination */
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-pagination
+  .ant-pagination-item,
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-pagination
+  .ant-pagination-prev
+  .ant-pagination-item-link,
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-pagination
+  .ant-pagination-next
+  .ant-pagination-item-link {
+  border-radius: 9px;
+  border: 1px solid var(--nc-border);
+  background: rgba(10, 33, 77, 0.7);
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-pagination
+  .ant-pagination-item
+  a {
+  color: var(--nc-text-2);
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-pagination
+  .ant-pagination-item-active {
+  border-color: transparent;
+  background: linear-gradient(100deg, #1548e9, #3431e9);
+  box-shadow: 0 0 14px rgba(35, 135, 255, 0.45);
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-pagination
+  .ant-pagination-item-active
+  a {
+  color: #fff;
+}
+
+/* ------------------------------------------------- controls: box + accent */
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  :is(.ant-checkbox-inner, .ant-radio-inner, .ant-checkbox-wrapper .ant-checkbox-inner) {
+  border-radius: 5px;
+  border-color: var(--nc-border);
+  background: rgba(10, 33, 77, 0.75);
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  :is(.ant-checkbox-checked .ant-checkbox-inner, .ant-radio-checked .ant-radio-inner) {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--nc-blue), var(--nc-violet));
+  box-shadow: 0 0 10px rgba(23, 107, 255, 0.5);
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-switch {
+  background: rgba(10, 33, 77, 0.9);
+  border: 1px solid var(--nc-border);
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-switch.ant-switch-checked {
+  background: linear-gradient(135deg, var(--nc-blue), var(--nc-violet));
+  border-color: transparent;
+  box-shadow: 0 0 12px rgba(23, 107, 255, 0.5);
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-progress-bg {
+  background: linear-gradient(90deg, var(--nc-blue), var(--nc-teal)) !important;
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-progress-inner {
+  background: rgba(10, 33, 77, 0.9);
+}
+
+/* ----------------------------------------------------------- overlays */
+
+body.dark .ant-modal .ant-modal-content,
+body.dark .ant-drawer .ant-drawer-content,
+body.dark .ant-dropdown .ant-dropdown-menu,
+body.dark .ant-select-dropdown,
+body.dark .ant-picker-dropdown .ant-picker-panel-container,
+body.dark .ant-popover .ant-popover-inner,
+body.dark .ant-tooltip .ant-tooltip-inner {
+  border: 1px solid var(--nc-border);
+  background: linear-gradient(150deg, #071d42 0%, #061a3b 100%);
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.55),
+    0 0 26px rgba(23, 107, 255, 0.22);
+}
+
+body.dark .ant-modal .ant-modal-content {
+  border-radius: 14px;
+}
+
+body.dark .ant-modal .ant-modal-header,
+body.dark .ant-drawer .ant-drawer-header {
+  background: transparent;
+  border-bottom: 1px solid var(--nc-divider);
+}
+
+body.dark .ant-modal .ant-modal-title,
+body.dark .ant-drawer .ant-drawer-title {
+  color: var(--nc-text);
+  font-weight: 700;
+}
+
+body.dark .ant-modal .ant-modal-footer {
+  border-top: 1px solid var(--nc-divider);
+}
+
+body.dark .ant-modal-mask,
+body.dark .ant-drawer-mask {
+  background: rgba(2, 8, 22, 0.7);
+}
+
+body.dark .ant-dropdown-menu-item:hover,
+body.dark .ant-select-item-option-active,
+body.dark .ant-select-item-option-selected {
+  background: rgba(23, 107, 255, 0.16);
+}
+
+body.dark .ant-select-item-option-selected {
+  color: var(--nc-text);
+  font-weight: 600;
+}
+
+/* ------------------------------------------------- forms & fields */
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  :is(
+    .ant-input,
+    .ant-input-affix-wrapper,
+    .ant-input-number,
+    .ant-picker,
+    .ant-select-selector,
+    .ant-input-number-group-addon,
+    .ant-input-group-addon
+  ) {
+  border-color: var(--nc-border) !important;
+  background: var(--nc-field) !important;
+  color: var(--nc-text) !important;
+  border-radius: 9px;
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  :is(.ant-input, .ant-input-number-input, .ant-picker-input > input, .ant-select-selection-item) {
+  color: var(--nc-text) !important;
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  :is(
+    .ant-input::placeholder,
+    .ant-picker-input > input::placeholder,
+    .ant-select-selection-placeholder
+  ) {
+  color: rgba(183, 203, 234, 0.6) !important;
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-form-item-label
+  > label {
+  color: var(--nc-text-2);
+  font-size: 12px;
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-form-item-explain-error {
+  color: #ff8ab0;
+}
+
+/* ------------------------------------------------- tags, badges, alerts */
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-tag {
+  border-radius: 999px;
+  border: 1px solid rgba(23, 107, 255, 0.4);
+  padding: 2px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--nc-text-2);
+  background: rgba(23, 107, 255, 0.14);
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-badge
+  .ant-badge-count {
+  border-radius: 999px;
+  background: var(--nc-pink);
+  box-shadow: 0 0 10px rgba(196, 29, 99, 0.5);
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-alert {
+  border-radius: 10px;
+  border-color: var(--nc-border);
+  background: rgba(10, 33, 77, 0.75);
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-collapse {
+  border-radius: 10px;
+  border-color: var(--nc-border);
+  background: rgba(10, 33, 77, 0.5);
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-collapse-item {
+  border-bottom-color: var(--nc-divider);
+}
+
+/* ------------------------------------------------------------ spin/empty */
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-spin-dot-item {
+  background-color: var(--nc-blue);
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-empty-description {
+  color: var(--nc-text-2);
+}
+
+/* -------------------------------------------------------- scrollbars */
+
+body.dark ::-webkit-scrollbar-track {
+  background: #041027;
+}
+
+body.dark ::-webkit-scrollbar-thumb {
+  border-radius: 99px;
+  background: linear-gradient(180deg, var(--nc-blue), var(--nc-violet));
+}
+
+/* ------------------------------------------------------ pg-ui surfaces */
+
+body.dark .pg-admin-page :is(.border, [class*='border']) {
+  border-color: var(--nc-border);
+}
+
+/* --------------------------------------------------------------------------
+   Second pass: the interaction chrome that still read as a stock admin kit —
+   row action icons, the table toolbar, the checkbox and the scroll areas.
+   -------------------------------------------------------------------------- */
+
+/* Row action icons become small neon tiles instead of bare glyphs. */
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-table-tbody
+  td
+  .anticon:not(.anticon-spin) {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  border: 1px solid transparent;
+  color: var(--nc-text-2);
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.2s ease,
+    color 0.16s ease;
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-table-tbody
+  td
+  .anticon:hover {
+  border-color: var(--nc-blue);
+  color: #fff;
+  box-shadow: 0 0 14px rgba(23, 107, 255, 0.45);
+  background: rgba(23, 107, 255, 0.14);
+}
+
+/* The toolbar above a table reads as one console strip. */
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .card-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Field focus gets a stronger neon ring than the stock outline. */
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  :is(
+    .ant-input-affix-wrapper-focused,
+    .ant-input:focus,
+    .ant-select-focused .ant-select-selector
+  ) {
+  border-color: var(--nc-blue) !important;
+  box-shadow:
+    0 0 0 2px rgba(23, 107, 255, 0.25),
+    0 0 16px rgba(23, 107, 255, 0.35) !important;
+}
+
+/* Checkbox: a neon tick rather than the default blue square. */
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-checkbox-inner {
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-checkbox-checked
+  .ant-checkbox-inner::after {
+  inset-inline-start: 27%;
+}
+
+/* Scroll areas inside cards get the same gradient bar as the page. */
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  :is(.ant-table-body, .ant-table-content, .ant-table-sticky-scroll)::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  :is(.ant-table-body, .ant-table-content, .ant-table-sticky-scroll)::-webkit-scrollbar-thumb {
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--nc-blue), var(--nc-violet));
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  :is(.ant-table-body, .ant-table-content)::-webkit-scrollbar-track {
+  background: rgba(16, 46, 93, 0.5);
+}
+
+/* Pagination sits on the card, not on the page background. */
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-pagination
+  .ant-pagination-total-text,
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-pagination
+  .ant-pagination-options {
+  color: var(--nc-text-2);
+}

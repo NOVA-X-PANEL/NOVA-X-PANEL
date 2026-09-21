@@ -6,6 +6,7 @@ import '@/styles/utils.css';
 import '@/styles/page-shell.css';
 import '@/styles/page-cards.css';
 import '@/styles/nova-glass.css';
+import '@/styles/nova-skin.css';
 
 import { setupHttp } from '@/api/http-init';
 import { readyI18n } from '@/i18n/react';

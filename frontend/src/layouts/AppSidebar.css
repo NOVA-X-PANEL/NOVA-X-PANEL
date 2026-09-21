@@ -564,3 +564,26 @@ body.dark .ant-drawer-body .drawer-menu .ant-menu-item-group-list {
 .sider-footer {
   border-top: 1px solid var(--nc-divider, var(--ant-color-border-secondary));
 }
+
+/* The brand mark is the reference's neon tile: a gradient rounded square with a
+   bold white N, rather than an outline crest. */
+.brand-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 38px;
+  flex: none;
+  border-radius: 11px;
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1;
+  color: #fff;
+  background: linear-gradient(140deg, #2639f5 0%, #087bff 55%, #00b8ff 100%);
+  box-shadow: 0 0 22px rgba(8, 123, 255, 0.6);
+}
+
+.ant-layout-sider-collapsed .brand-mark {
+  width: 34px;
+  height: 32px;
+  font-size: 16px;
+}

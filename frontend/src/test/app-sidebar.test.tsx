@@ -21,48 +21,41 @@ function renderSidebar() {
   );
 }
 
-test('keeps the sidebar expanded after pinning it from the header and restores the choice', () => {
+test('renders the top navigation bar instead of a vertical sidebar', () => {
+  const view = renderSidebar();
+
+  expect(view.container.querySelector('.nx-topbar')).not.toBeNull();
+  expect(view.container.querySelector('.ant-layout-sider')).toBeNull();
+  expect(view.container.querySelector('.nx-brand-text')?.textContent).toBe('NOVA X');
+  expect(view.container.querySelector('.nx-nav')).not.toBeNull();
+});
+
+test('keeps the pinned choice made from the top bar and restores it', () => {
   const first = renderSidebar();
-  const sidebar = first.container.querySelector('.ant-layout-sider');
-  const sidebarRoot = first.container.querySelector('.ant-sidebar');
-
-  expect(sidebar?.classList.contains('ant-layout-sider-collapsed')).toBe(true);
-
-  fireEvent.mouseEnter(sidebarRoot!);
-
   const pinButton = screen.getByRole('button', { name: 'Pin sidebar' });
-  expect(pinButton.closest('.brand-actions')).not.toBeNull();
+
+  expect(pinButton.getAttribute('aria-pressed')).toBe('false');
 
   fireEvent.click(pinButton);
-  fireEvent.mouseLeave(sidebarRoot!);
 
-  expect(sidebar?.classList.contains('ant-layout-sider-collapsed')).toBe(false);
-  expect(sidebarRoot?.getAttribute('style')).toContain('--sider-rail: 220px');
   expect(localStorage.getItem('sidebar-pinned')).toBe('true');
 
   first.unmount();
 
   const second = renderSidebar();
-  const restoredSidebar = second.container.querySelector('.ant-layout-sider');
-  const restoredSidebarRoot = second.container.querySelector('.ant-sidebar');
+  const restoredPin = screen.getByRole('button', { name: 'Pin sidebar' });
 
-  expect(restoredSidebar?.classList.contains('ant-layout-sider-collapsed')).toBe(false);
-  expect(restoredSidebarRoot?.getAttribute('style')).toContain('--sider-rail: 220px');
-  expect(screen.getByRole('button', { name: 'Pin sidebar' })).not.toBeNull();
+  expect(restoredPin.getAttribute('aria-pressed')).toBe('true');
+  expect(second.container.querySelector('.nx-topbar')).not.toBeNull();
 });
 
-test('returns to the compact rail after unpinning', () => {
-  const view = renderSidebar();
-  const sidebar = view.container.querySelector('.ant-layout-sider');
-  const sidebarRoot = view.container.querySelector('.ant-sidebar');
+test('unpinning from the top bar clears the stored choice', () => {
+  renderSidebar();
+  const pinButton = screen.getByRole('button', { name: 'Pin sidebar' });
 
-  fireEvent.mouseEnter(sidebarRoot!);
+  fireEvent.click(pinButton);
   fireEvent.click(screen.getByRole('button', { name: 'Pin sidebar' }));
-  fireEvent.click(screen.getByRole('button', { name: 'Pin sidebar' }));
-  fireEvent.mouseLeave(sidebarRoot!);
 
-  expect(sidebar?.classList.contains('ant-layout-sider-collapsed')).toBe(true);
-  expect(sidebarRoot?.getAttribute('style')).toContain('--sider-rail: 72px');
   expect(localStorage.getItem('sidebar-pinned')).toBe('false');
 });
 

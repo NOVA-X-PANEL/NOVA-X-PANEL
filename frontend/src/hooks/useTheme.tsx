@@ -77,7 +77,7 @@ const AURORA = {
     borderSecondary: 'rgba(60, 60, 90, 0.1)',
     text: '#1e2333',
     textSecondary: '#4c5570',
-    textTertiary: '#6e7794',
+    textTertiary: '#626c88',
     c1: '#3f6fd8',
     c2: '#6d4fd0',
     c3: '#c2568f',

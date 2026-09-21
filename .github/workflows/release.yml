@@ -76,7 +76,7 @@ jobs:
       - name: Build 3X-UI
         run: |
           CURL_RETRY="--retry 5 --retry-all-errors --retry-delay 3"
-          fetch() { wget -q --tries=5 --waitretry=10 --retry-on-http-error=429,500,502,503 "$@"; }
+          fetch() { wget -q --tries=5 --waitretry=10 --retry-on-http-error=429,500,502,503,504 "$@"; }
           export CGO_ENABLED=1
           export GOOS=linux
           export GOARCH=${{ matrix.platform }}
@@ -177,7 +177,14 @@ jobs:
           # has 503'd whole release runs while asset downloads kept working.
           case "${{ matrix.platform }}" in
             amd64|arm64|armv7|armv6|386)
-              MTG_MULTI_VER=$(curl -sf $CURL_RETRY -o /dev/null -w '%{redirect_url}' "https://github.com/mhsanaei/mtg-multi/releases/latest" | sed -n 's#.*/releases/tag/##p')
+              # A 504 from the redirect endpoint leaves the tag empty; retry until it
+              # resolves so one flaky minute does not drop the whole architecture.
+              for _try in 1 2 3 4 5; do
+                MTG_MULTI_VER=$(curl -sf $CURL_RETRY -o /dev/null -w '%{redirect_url}' "https://github.com/mhsanaei/mtg-multi/releases/latest" | sed -n 's#.*/releases/tag/##p')
+                [ -n "$MTG_MULTI_VER" ] && break
+                echo "mtg-multi tag attempt $_try failed; retrying"
+                sleep $((_try * 5))
+              done
               if [ -z "$MTG_MULTI_VER" ]; then echo "could not resolve the latest mtg-multi release tag"; exit 1; fi
               MTG_PKG="mtg-multi-${MTG_MULTI_VER#v}-linux-${{ matrix.platform }}"
               curl -sfLRO $CURL_RETRY "https://github.com/mhsanaei/mtg-multi/releases/download/${MTG_MULTI_VER}/${MTG_PKG}.tar.gz"

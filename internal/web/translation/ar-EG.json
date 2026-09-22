@@ -125,7 +125,8 @@
     "openMenu": "فتح القائمة",
     "pinSidebar": "تثبيت الشريط الجانبي",
     "unpinSidebar": "إلغاء تثبيت الشريط الجانبي",
-    "subFormats": "Sub Formats"
+    "subFormats": "Sub Formats",
+    "myApi": "واجهتي البرمجية"
   },
   "pages": {
     "login": {
@@ -2545,5 +2546,22 @@
     "restartXray": "إعادة تشغيل خدمة Xray",
     "restartXraySuccess": "تمت إعادة تشغيل خدمة Xray بنجاح",
     "settings": "الإعدادات"
+  },
+  "admins": {
+    "tabAdmins": "المشرفون",
+    "tabMyApi": "واجهتي البرمجية",
+    "apiAccess": "الوصول إلى API",
+    "apiAccessHint": "يمكن لهذا المشرف إنشاء رمز API خاص به. يحمل الرمز دور هذا المشرف، لذلك لا يمكنه أبدًا تجاوز صلاحيات الدور.",
+    "myApiTitle": "رمز API الخاص بي",
+    "myApiDescription": "أنشئ رمزًا يعمل بصفة حسابك. يحمل دورك، لذا يمكنه فعل ما يمكنك فعله هنا بالضبط — لا أكثر. احتفظ به سرًا؛ تُعرض القيمة مرة واحدة فقط.",
+    "apiTokenCreate": "إنشاء رمز",
+    "apiTokenCreateFailed": "تعذّر إنشاء الرمز",
+    "apiTokenDeleteFailed": "تعذّر حذف الرمز",
+    "apiTokenToggle": "تمكين أو تعطيل",
+    "apiTokenNone": "لا توجد رموز بعد.",
+    "apiTokenReady": "رمزك",
+    "apiTokenOnce": "انسخه الآن — لن يُعرض مرة أخرى. أرسله في ترويسة Authorization: Bearer.",
+    "apiTokenNameHint": "أعطه اسمًا تتذكره لاحقًا.",
+    "createdAt": "أُنشئ"
   }
 }

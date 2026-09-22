@@ -125,7 +125,8 @@
     "openMenu": "Menüyü aç",
     "pinSidebar": "Kenar çubuğunu sabitle",
     "unpinSidebar": "Kenar çubuğu sabitlemesini kaldır",
-    "subFormats": "Abonelik Formatları"
+    "subFormats": "Abonelik Formatları",
+    "myApi": "API'im"
   },
   "pages": {
     "login": {
@@ -2545,5 +2546,22 @@
     "restartXray": "Xray Hizmetini Yeniden Başlat",
     "restartXraySuccess": "Xray hizmeti başarıyla yeniden başlatıldı",
     "settings": "Ayarlar"
+  },
+  "admins": {
+    "tabAdmins": "Yöneticiler",
+    "tabMyApi": "API'im",
+    "apiAccess": "API erişimi",
+    "apiAccessHint": "Bu yönetici kendi API token'ını oluşturabilir. Token bu yöneticinin rolünü taşır, bu yüzden rolün izin verdiğinden fazlasını asla yapamaz.",
+    "myApiTitle": "API token'ım",
+    "myApiDescription": "Hesabınız olarak çalışan bir token oluşturun. Rolünüzü taşır, bu yüzden burada yapabildiğinizin tam olarak aynısını yapabilir — fazlasını değil. Gizli tutun; değer yalnızca bir kez gösterilir.",
+    "apiTokenCreate": "Token oluştur",
+    "apiTokenCreateFailed": "Token oluşturulamadı",
+    "apiTokenDeleteFailed": "Token silinemedi",
+    "apiTokenToggle": "Etkinleştir veya devre dışı bırak",
+    "apiTokenNone": "Henüz token yok.",
+    "apiTokenReady": "Token'ınız",
+    "apiTokenOnce": "Şimdi kopyalayın — bir daha gösterilmez. Authorization: Bearer başlığıyla gönderin.",
+    "apiTokenNameHint": "Sonra tanıyacağınız bir ad verin.",
+    "createdAt": "Oluşturulma"
   }
 }

@@ -33,6 +33,8 @@ function normalizeCurrentAdmin(raw: any): CurrentAdmin | null {
     status: toString(raw.status),
     roleId: toNumber(raw.roleId ?? raw.role_id),
     role_id: toNumber(raw.role_id ?? raw.roleId),
+    api_access: Boolean(raw.apiAccess ?? raw.api_access),
+    apiAccess: Boolean(raw.apiAccess ?? raw.api_access),
     profileTitle: toString(raw.profileTitle ?? raw.profile_title),
     profile_title: toString(raw.profile_title ?? raw.profileTitle),
     permissions,

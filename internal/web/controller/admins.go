@@ -189,6 +189,10 @@ func (a *AdminController) current(c *gin.Context) {
 		"features":    role.FeaturesJSON,
 		"access":      role.AccessJSON,
 		"isOwner":     role.OwnerRole,
+		// Lets the shell decide whether to offer the account its own API page; the
+		// owner always may.
+		"apiAccess":  user.ApiAccess || role.OwnerRole,
+		"api_access": user.ApiAccess || role.OwnerRole,
 		"role": gin.H{
 			"id":          role.Id,
 			"name":        role.Name,

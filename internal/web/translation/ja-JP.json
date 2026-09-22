@@ -125,7 +125,8 @@
     "openMenu": "メニューを開く",
     "pinSidebar": "サイドバーを固定",
     "unpinSidebar": "サイドバーの固定を解除",
-    "subFormats": "Sub Formats"
+    "subFormats": "Sub Formats",
+    "myApi": "マイAPI"
   },
   "pages": {
     "login": {
@@ -2545,5 +2546,22 @@
     "restartXray": "Xrayサービスを再起動",
     "restartXraySuccess": "Xrayサービスが正常に再起動されました",
     "settings": "設定"
+  },
+  "admins": {
+    "tabAdmins": "管理者",
+    "tabMyApi": "マイAPI",
+    "apiAccess": "APIアクセス",
+    "apiAccessHint": "この管理者は自身の API トークンを作成できます。トークンはこの管理者のロールを引き継ぐため、ロールの範囲を超えることはできません。",
+    "myApiTitle": "マイAPIトークン",
+    "myApiDescription": "あなたのアカウントとして動作するトークンを作成します。あなたのロールを引き継ぐため、ここでできることと全く同じことだけが可能です。秘密に保管してください。値は一度しか表示されません。",
+    "apiTokenCreate": "トークンを作成",
+    "apiTokenCreateFailed": "トークンを作成できませんでした",
+    "apiTokenDeleteFailed": "トークンを削除できませんでした",
+    "apiTokenToggle": "有効／無効",
+    "apiTokenNone": "トークンはまだありません。",
+    "apiTokenReady": "あなたのトークン",
+    "apiTokenOnce": "今すぐコピーしてください。再表示はできません。Authorization: Bearer ヘッダーで送信します。",
+    "apiTokenNameHint": "後で分かる名前を付けてください。",
+    "createdAt": "作成日"
   }
 }

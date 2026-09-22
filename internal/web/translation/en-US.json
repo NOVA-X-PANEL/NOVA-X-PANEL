@@ -127,7 +127,8 @@
     "unpinSidebar": "Unpin sidebar",
     "subFormats": "Sub Formats",
     "admins": "Admins",
-    "adminRoles": "Admin Roles"
+    "adminRoles": "Admin Roles",
+    "myApi": "My API"
   },
   "pages": {
     "login": {
@@ -2744,5 +2745,22 @@
     "restartXray": "Restart Xray Service",
     "restartXraySuccess": "Xray has been successfully relaunched",
     "settings": "Settings"
+  },
+  "admins": {
+    "tabAdmins": "Admins",
+    "tabMyApi": "My API",
+    "apiAccess": "API access",
+    "apiAccessHint": "This admin can create its own API token. The token carries this admin's role, so it can never do more than the role allows.",
+    "myApiTitle": "My API token",
+    "myApiDescription": "Create a token that acts as your account. It carries your role, so it can do exactly what you can do here — nothing more. Keep it secret; the value is shown only once.",
+    "apiTokenCreate": "Create token",
+    "apiTokenCreateFailed": "Could not create the token",
+    "apiTokenDeleteFailed": "Could not delete the token",
+    "apiTokenToggle": "Enable or disable",
+    "apiTokenNone": "No tokens yet.",
+    "apiTokenReady": "Your token",
+    "apiTokenOnce": "Copy it now — it cannot be shown again. Send it as an Authorization: Bearer header.",
+    "apiTokenNameHint": "Give it a name you will recognise later.",
+    "createdAt": "Created"
   }
 }

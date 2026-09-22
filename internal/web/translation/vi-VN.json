@@ -125,7 +125,8 @@
     "openMenu": "Mở menu",
     "pinSidebar": "Ghim thanh bên",
     "unpinSidebar": "Bỏ ghim thanh bên",
-    "subFormats": "Sub Formats"
+    "subFormats": "Sub Formats",
+    "myApi": "API của tôi"
   },
   "pages": {
     "login": {
@@ -2545,5 +2546,22 @@
     "restartXray": "Khởi động lại dịch vụ Xray",
     "restartXraySuccess": "Dịch vụ Xray đã được khởi động lại thành công",
     "settings": "Cài đặt"
+  },
+  "admins": {
+    "tabAdmins": "Quản trị viên",
+    "tabMyApi": "API của tôi",
+    "apiAccess": "Quyền truy cập API",
+    "apiAccessHint": "Quản trị viên này có thể tạo token API của riêng mình. Token mang vai trò của họ, nên không bao giờ vượt quá quyền của vai trò.",
+    "myApiTitle": "Token API của tôi",
+    "myApiDescription": "Tạo token hoạt động như tài khoản của bạn. Token mang vai trò của bạn, nên chỉ làm được đúng những gì bạn làm ở đây — không hơn. Hãy giữ bí mật; giá trị chỉ hiển thị một lần.",
+    "apiTokenCreate": "Tạo token",
+    "apiTokenCreateFailed": "Không thể tạo token",
+    "apiTokenDeleteFailed": "Không thể xóa token",
+    "apiTokenToggle": "Bật hoặc tắt",
+    "apiTokenNone": "Chưa có token nào.",
+    "apiTokenReady": "Token của bạn",
+    "apiTokenOnce": "Sao chép ngay — sẽ không hiển thị lại. Gửi kèm tiêu đề Authorization: Bearer.",
+    "apiTokenNameHint": "Đặt tên để bạn dễ nhận ra sau này.",
+    "createdAt": "Đã tạo"
   }
 }

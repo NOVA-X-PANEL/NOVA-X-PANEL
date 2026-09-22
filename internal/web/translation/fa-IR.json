@@ -127,7 +127,8 @@
     "unpinSidebar": "برداشتن تثبیت نوار کناری",
     "subFormats": "Sub Formats",
     "admins": "مدیران",
-    "adminRoles": "نقش‌های مدیر"
+    "adminRoles": "نقش‌های مدیر",
+    "myApi": "API من"
   },
   "pages": {
     "login": {
@@ -2744,5 +2745,22 @@
     "restartXray": "راه‌اندازی مجدد سرویس Xray",
     "restartXraySuccess": "سرویس Xray با موفقیت مجدداً راه‌اندازی شد",
     "settings": "تنظیمات"
+  },
+  "admins": {
+    "tabAdmins": "ادمین‌ها",
+    "tabMyApi": "API من",
+    "apiAccess": "دسترسی API",
+    "apiAccessHint": "این ادمین می‌تواند توکن API خودش را بسازد. توکن دقیقاً نقش همین ادمین را دارد، پس هرگز نمی‌تواند بیشتر از نقش او کار کند.",
+    "myApiTitle": "توکن API من",
+    "myApiDescription": "توکنی بسازید که به‌جای حساب شما عمل کند. نقش شما را دارد، پس دقیقاً همان کارهایی را می‌تواند بکند که شما اینجا می‌توانید — نه بیشتر. آن را محرمانه نگه دارید؛ مقدار فقط یک‌بار نشان داده می‌شود.",
+    "apiTokenCreate": "ساخت توکن",
+    "apiTokenCreateFailed": "ساخت توکن انجام نشد",
+    "apiTokenDeleteFailed": "حذف توکن انجام نشد",
+    "apiTokenToggle": "فعال یا غیرفعال کردن",
+    "apiTokenNone": "هنوز توکنی ساخته نشده است.",
+    "apiTokenReady": "توکن شما",
+    "apiTokenOnce": "همین حالا کپی کنید — دیگر نمایش داده نمی‌شود. آن را در هدر Authorization: Bearer بفرستید.",
+    "apiTokenNameHint": "نامی بگذارید که بعداً بشناسید.",
+    "createdAt": "ساخته‌شده"
   }
 }

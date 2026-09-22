@@ -125,7 +125,8 @@
     "openMenu": "打开菜单",
     "pinSidebar": "固定侧边栏",
     "unpinSidebar": "取消固定侧边栏",
-    "subFormats": "Sub Formats"
+    "subFormats": "Sub Formats",
+    "myApi": "我的 API"
   },
   "pages": {
     "login": {
@@ -2545,5 +2546,22 @@
     "restartXray": "重启 Xray 服务",
     "restartXraySuccess": "Xray 服务已成功重启",
     "settings": "设置"
+  },
+  "admins": {
+    "tabAdmins": "管理员",
+    "tabMyApi": "我的 API",
+    "apiAccess": "API 访问权限",
+    "apiAccessHint": "该管理员可以创建自己的 API 令牌。令牌继承此管理员的角色，因此绝不会超出该角色的权限。",
+    "myApiTitle": "我的 API 令牌",
+    "myApiDescription": "创建一个以你的账户身份运行的令牌。它继承你的角色，因此能做的与你在面板中完全相同——不会更多。请妥善保管；该值仅显示一次。",
+    "apiTokenCreate": "创建令牌",
+    "apiTokenCreateFailed": "无法创建令牌",
+    "apiTokenDeleteFailed": "无法删除令牌",
+    "apiTokenToggle": "启用或禁用",
+    "apiTokenNone": "还没有令牌。",
+    "apiTokenReady": "你的令牌",
+    "apiTokenOnce": "请立即复制——之后不再显示。请通过 Authorization: Bearer 请求头发送。",
+    "apiTokenNameHint": "取一个以后能认出的名称。",
+    "createdAt": "创建于"
   }
 }

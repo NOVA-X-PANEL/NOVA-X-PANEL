@@ -58,6 +58,11 @@ const ROUTE_PERMISSIONS: Record<string, RoutePermission[]> = {
   '/groups': [{ resource: 'groups', action: 'read' }],
   '/nodes': [{ resource: 'nodes', action: 'read' }],
   '/admins': [{ resource: 'admins', action: 'read' }],
+  // Reachable by any account the owner granted API access to. It is gated on
+  // that flag rather than a resource permission below, because the point of the
+  // page is a limited admin managing its own token without needing admins.read —
+  // which is exactly the permission an operator does not have.
+  '/my-api': [],
   '/admin-roles': [{ resource: 'admin_roles', action: 'read' }],
   '/outbound': [{ resource: 'outbounds', action: 'read' }],
   '/routing': [{ resource: 'routing', action: 'read' }],
@@ -160,6 +165,16 @@ function findPermissionValue(admin: unknown, resource: string, action: string): 
   return undefined
 }
 
+/**
+ * Whether the account may hold its own API token. The owner always may; anyone
+ * else needs the grant the owner sets on the admin form.
+ */
+export function hasApiAccess(value: unknown): boolean {
+  if (isOwner(value)) return true
+  const root = asRecord(value)
+  return Boolean(root.api_access ?? root.apiAccess)
+}
+
 export function isOwner(value: unknown): boolean {
   const root = asRecord(value)
   const role = asRecord(root.role)
@@ -212,6 +227,7 @@ function routeKey(pathname: string) {
   if (path.startsWith('/clients')) return '/clients'
   if (path.startsWith('/groups')) return '/groups'
   if (path.startsWith('/nodes')) return '/nodes'
+  if (path.startsWith('/my-api')) return '/my-api'
   if (path.startsWith('/admins')) return '/admins'
   if (path.startsWith('/hosts')) return '/hosts'
   return path
@@ -220,12 +236,13 @@ function routeKey(pathname: string) {
 export function canAccessRoute(admin: unknown, pathname: string): boolean {
   const key = routeKey(pathname)
   if (key === '/api-docs') return true
+  if (key === '/my-api') return hasApiAccess(admin)
   const requirements = ROUTE_PERMISSIONS[key]
   if (!requirements) return true
   return requirements.some(req => hasPermission(admin, req.resource, req.action))
 }
 
 export function firstAllowedRoute(admin: unknown): string {
-  const orderedRoutes = ['/', '/inbounds', '/clients', '/groups', '/nodes', '/admins', '/admin-roles', '/outbound', '/routing', '/settings', '/xray', '/hosts']
+  const orderedRoutes = ['/', '/inbounds', '/clients', '/groups', '/nodes', '/admins', '/admin-roles', '/outbound', '/routing', '/settings', '/xray', '/hosts', '/my-api']
   return orderedRoutes.find(route => canAccessRoute(admin, route)) || FALLBACK_ROUTE
 }

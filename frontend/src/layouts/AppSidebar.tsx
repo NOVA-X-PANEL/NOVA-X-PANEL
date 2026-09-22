@@ -38,6 +38,7 @@ import {
   TagsOutlined,
   TeamOutlined,
   ToolOutlined,
+  KeyOutlined,
 } from '@ant-design/icons';
 
 import { HttpUtil, TimeFormatter } from '@/utils';
@@ -77,6 +78,7 @@ type IconName =
   | 'hosts'
   | 'logout'
   | 'apidocs'
+  | 'apikey'
   | 'outbound'
   | 'routing';
 
@@ -93,6 +95,7 @@ const iconByName: Record<IconName, ComponentType> = {
   hosts: GlobalOutlined,
   logout: LogoutOutlined,
   apidocs: ApiOutlined,
+  apikey: KeyOutlined,
   outbound: ExportOutlined,
   routing: SwapOutlined,
 };
@@ -242,6 +245,8 @@ export default function AppSidebar() {
       { key: '/groups', icon: 'groups', title: t('menu.groups') },
       { key: '/nodes', icon: 'cluster', title: t('menu.nodes') },
       { key: '/admins', icon: 'admins', title: t('menu.admins') },
+      // Shown only when the account may hold an API token; canAccessRoute gates it.
+      { key: '/my-api', icon: 'apikey', title: t('menu.myApi') },
       { key: '/admin-roles', icon: 'roles', title: t('menu.adminRoles') },
       { key: '/hosts', icon: 'hosts', title: t('menu.hosts') },
       { key: '/outbound', icon: 'outbound', title: t('menu.outbounds') },

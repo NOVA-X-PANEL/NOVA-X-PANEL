@@ -125,7 +125,8 @@
     "openMenu": "Buka menu",
     "pinSidebar": "Sematkan bilah sisi",
     "unpinSidebar": "Lepas sematan bilah sisi",
-    "subFormats": "Sub Formats"
+    "subFormats": "Sub Formats",
+    "myApi": "API Saya"
   },
   "pages": {
     "login": {
@@ -2545,5 +2546,22 @@
     "restartXray": "Mulai Ulang Layanan Xray",
     "restartXraySuccess": "Layanan Xray berhasil dimulai ulang",
     "settings": "Pengaturan"
+  },
+  "admins": {
+    "tabAdmins": "Admin",
+    "tabMyApi": "API Saya",
+    "apiAccess": "Akses API",
+    "apiAccessHint": "Admin ini dapat membuat token API-nya sendiri. Token membawa peran admin ini, jadi tidak akan pernah melebihi izin perannya.",
+    "myApiTitle": "Token API saya",
+    "myApiDescription": "Buat token yang bertindak sebagai akun Anda. Token membawa peran Anda, jadi hanya bisa melakukan persis seperti yang Anda bisa di sini — tidak lebih. Jaga kerahasiaannya; nilainya hanya ditampilkan sekali.",
+    "apiTokenCreate": "Buat token",
+    "apiTokenCreateFailed": "Gagal membuat token",
+    "apiTokenDeleteFailed": "Gagal menghapus token",
+    "apiTokenToggle": "Aktifkan atau nonaktifkan",
+    "apiTokenNone": "Belum ada token.",
+    "apiTokenReady": "Token Anda",
+    "apiTokenOnce": "Salin sekarang — tidak akan ditampilkan lagi. Kirim sebagai header Authorization: Bearer.",
+    "apiTokenNameHint": "Beri nama yang mudah Anda kenali nanti.",
+    "createdAt": "Dibuat"
   }
 }

@@ -13,6 +13,7 @@ const NodesPage = lazy(() => import('@/pages/nodes/NodesPage'));
 const AdminsPage = lazy(() => import('@/pages/admins/AdminsPage'));
 const AdminRolesPage = lazy(() => import('@/pages/admin-roles/AdminRolesPage'));
 const HostsPage = lazy(() => import('@/pages/hosts/HostsPage'));
+const MyApiPage = lazy(() => import('@/pages/my-api/MyApiPage'));
 const SettingsPage = lazy(() => import('@/pages/settings/SettingsPage'));
 const XrayPage = lazy(() => import('@/pages/xray/XrayPage'));
 const ApiDocsPage = lazy(() => import('@/pages/api-docs/ApiDocsPage'));
@@ -53,6 +54,7 @@ const routes: RouteObject[] = [
       { path: 'groups', element: withSuspense(<GroupsPage />) },
       { path: 'nodes', element: withSuspense(<NodesPage />) },
       { path: 'admins', element: withSuspense(<AdminsPage />) },
+      { path: 'my-api', element: withSuspense(<MyApiPage />) },
       { path: 'admin-roles', element: withSuspense(<AdminRolesPage />) },
       { path: 'hosts', element: withSuspense(<HostsPage />) },
       { path: 'settings', element: withSuspense(<SettingsPage />) },

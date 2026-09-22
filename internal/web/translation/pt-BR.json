@@ -125,7 +125,8 @@
     "openMenu": "Abrir menu",
     "pinSidebar": "Fixar barra lateral",
     "unpinSidebar": "Desafixar barra lateral",
-    "subFormats": "Sub Formats"
+    "subFormats": "Sub Formats",
+    "myApi": "Minha API"
   },
   "pages": {
     "login": {
@@ -2545,5 +2546,22 @@
     "restartXray": "Reiniciar serviço Xray",
     "restartXraySuccess": "O serviço Xray foi reiniciado com sucesso",
     "settings": "Configurações"
+  },
+  "admins": {
+    "tabAdmins": "Administradores",
+    "tabMyApi": "Minha API",
+    "apiAccess": "Acesso à API",
+    "apiAccessHint": "Este administrador pode criar seu próprio token de API. O token carrega o papel dele, então nunca poderá fazer mais do que o papel permite.",
+    "myApiTitle": "Meu token de API",
+    "myApiDescription": "Crie um token que age como sua conta. Ele carrega seu papel, então pode fazer exatamente o que você pode fazer aqui — nada mais. Mantenha-o em segredo; o valor é mostrado apenas uma vez.",
+    "apiTokenCreate": "Criar token",
+    "apiTokenCreateFailed": "Não foi possível criar o token",
+    "apiTokenDeleteFailed": "Não foi possível excluir o token",
+    "apiTokenToggle": "Ativar ou desativar",
+    "apiTokenNone": "Ainda não há tokens.",
+    "apiTokenReady": "Seu token",
+    "apiTokenOnce": "Copie agora — não será mostrado novamente. Envie no cabeçalho Authorization: Bearer.",
+    "apiTokenNameHint": "Dê um nome que você reconheça depois.",
+    "createdAt": "Criado"
   }
 }

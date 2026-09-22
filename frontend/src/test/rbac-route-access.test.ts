@@ -28,6 +28,21 @@ describe('route access', () => {
     expect(canAccessRoute(admin({ inbounds: { read: true } }), '/clients')).toBe(false);
   });
 
+  it('opens the API page only for accounts granted API access', () => {
+    expect(canAccessRoute({ role: { slug: 'owner' } }, '/my-api')).toBe(true);
+    expect(canAccessRoute({ api_access: true }, '/my-api')).toBe(true);
+    expect(canAccessRoute({ role: { permissions: { inbounds: { read: true } } } }, '/my-api')).toBe(
+      false,
+    );
+  });
+
+  it("keeps the API page out of a tokenless account's fallback route", () => {
+    // An operator with no other grant must not be silently dropped on the API page.
+    const operator = { role: { permissions: { inbounds: { read_simple: true } } } };
+    expect(canAccessRoute(operator, '/my-api')).toBe(false);
+    expect(canAccessRoute(operator, '/inbounds')).toBe(true);
+  });
+
   it('treats the owner role as full access', () => {
     expect(canAccessRoute({ role: { slug: 'owner' } }, '/clients')).toBe(true);
     expect(canAccessRoute({ role: { ownerRole: true } }, '/inbounds')).toBe(true);

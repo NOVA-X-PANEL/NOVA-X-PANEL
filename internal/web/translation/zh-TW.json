@@ -125,7 +125,8 @@
     "openMenu": "開啟選單",
     "pinSidebar": "固定側邊欄",
     "unpinSidebar": "取消固定側邊欄",
-    "subFormats": "Sub Formats"
+    "subFormats": "Sub Formats",
+    "myApi": "我的 API"
   },
   "pages": {
     "login": {
@@ -2545,5 +2546,22 @@
     "restartXray": "重啟 Xray 服務",
     "restartXraySuccess": "Xray 服務已成功重啟",
     "settings": "設定"
+  },
+  "admins": {
+    "tabAdmins": "管理員",
+    "tabMyApi": "我的 API",
+    "apiAccess": "API 存取權",
+    "apiAccessHint": "該管理員可以建立自己的 API 權杖。權杖繼承此管理員的角色，因此絕不會超出該角色的權限。",
+    "myApiTitle": "我的 API 權杖",
+    "myApiDescription": "建立一個以你的帳戶身分運作的權杖。它繼承你的角色，因此能做的與你在面板中完全相同——不會更多。請妥善保管；該值僅顯示一次。",
+    "apiTokenCreate": "建立權杖",
+    "apiTokenCreateFailed": "無法建立權杖",
+    "apiTokenDeleteFailed": "無法刪除權杖",
+    "apiTokenToggle": "啟用或停用",
+    "apiTokenNone": "還沒有權杖。",
+    "apiTokenReady": "你的權杖",
+    "apiTokenOnce": "請立即複製——之後不再顯示。請透過 Authorization: Bearer 標頭傳送。",
+    "apiTokenNameHint": "取一個日後能認出的名稱。",
+    "createdAt": "建立於"
   }
 }

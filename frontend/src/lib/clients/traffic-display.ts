@@ -23,7 +23,9 @@ const DISABLED_STROKE = {
   dark: 'rgb(72, 84, 105)',
 } as const;
 
-const UNLIMITED_STROKE = '#722ed1';
+// Matches the unlimited entry in ColorUtils' usage palette, so an unlimited client
+// reads the same whether the bar is unlimited or merely below its limit.
+const UNLIMITED_STROKE = '#5b7cff';
 
 export function computeTrafficDisplay(input: TrafficDisplayInput, isDark: boolean): TrafficDisplay {
   const up = input.up || 0;

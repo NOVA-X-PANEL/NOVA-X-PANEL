@@ -52,8 +52,16 @@ func NewClientController(g *gin.RouterGroup) *ClientController {
 }
 
 func (a *ClientController) initRouter(g *gin.RouterGroup) {
-	g.GET("/list", a.list)
-	g.GET("/list/paged", a.listPaged)
+	// The clients list had no permission gate at all: a role without users.read
+	// silently received an empty list instead of a refusal, which is
+	// indistinguishable from "there are no clients". Read or read_simple may
+	// list; the scope below still narrows the rows.
+	clientsRead := requireAnyPanelPermission(
+		panelPermissionRequirement{Section: "clients", Permission: "view"},
+		panelPermissionRequirement{Section: "clients", Permission: "viewSimple"},
+	)
+	g.GET("/list", clientsRead, a.list)
+	g.GET("/list/paged", clientsRead, a.listPaged)
 	g.GET("/get/:email", a.get)
 	g.GET("/get/tgId/:tgId", a.getByTgId)
 	g.GET("/traffic/:email", a.getTrafficByEmail)
@@ -268,6 +276,25 @@ func (a *ClientController) getByTgId(c *gin.Context) {
 	jsonObj(c, results, nil)
 }
 
+// requireInboundsInScope rejects a call that would place or attach a client on an
+// inbound the acting role may not use. The role editor's "Allowed Inbounds" is
+// documented as restricting exactly this, but nothing enforced it: a role limited
+// to one inbound could still create clients on every other one.
+func (a *ClientController) requireInboundsInScope(c *gin.Context, inboundIds []int) bool {
+	if len(inboundIds) == 0 {
+		return true
+	}
+	scope := a.clientScope(c, "create")
+	if scope.Mode == service.ClientAccessNone {
+		return true // the create permission gate already decided this call
+	}
+	if service.ClientInboundsAllowedForScope(scope, inboundIds) {
+		return true
+	}
+	pureJsonMsg(c, http.StatusForbidden, false, "inbounds not allowed for this role")
+	return false
+}
+
 func (a *ClientController) create(c *gin.Context) {
 	var payload service.ClientCreatePayload
 	if err := c.ShouldBindJSON(&payload); err != nil {
@@ -278,6 +305,9 @@ func (a *ClientController) create(c *gin.Context) {
 	user := a.loginUser(c)
 	if user != nil && !a.clientService.CanCreateClientForAdmin(user) {
 		pureJsonMsg(c, http.StatusForbidden, false, "clients.create permission required")
+		return
+	}
+	if !a.requireInboundsInScope(c, payload.InboundIds) {
 		return
 	}
 
@@ -378,6 +408,9 @@ func (a *ClientController) attach(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
+	if !a.requireInboundsInScope(c, body.InboundIds) {
+		return
+	}
 	needRestart, err := a.clientService.AttachByEmail(&a.inboundService, email, body.InboundIds)
 	if needRestart {
 		a.xrayService.SetToNeedRestart()
@@ -467,6 +500,9 @@ func (a *ClientController) bulkAttach(c *gin.Context) {
 		return
 	}
 	req.Emails = a.scopeEmails(c, req.Emails, "update")
+	if !a.requireInboundsInScope(c, req.InboundIds) {
+		return
+	}
 	result, needRestart, err := a.clientService.BulkAttach(&a.inboundService, req.Emails, req.InboundIds)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)

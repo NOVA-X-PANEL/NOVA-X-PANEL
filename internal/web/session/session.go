@@ -41,6 +41,18 @@ func SetAPIAuthUser(c *gin.Context, user *model.User) {
 	c.Set(apiAuthUserKey, user)
 }
 
+// Available reports whether the sessions middleware ran for this request.
+//
+// sessions.Default panics when it did not, so every reader must check first.
+// That happens whenever a route group is mounted without the middleware: a unit
+// test that puts one controller on a bare engine, for instance. Without this
+// guard the whole test binary dies on a panic and every later test in the
+// package is skipped.
+func Available(c *gin.Context) bool {
+	_, ok := c.Get(sessions.DefaultKey)
+	return ok
+}
+
 func GetLoginUser(c *gin.Context) *model.User {
 	if v, ok := c.Get(apiAuthUserKey); ok {
 		if u, ok2 := v.(*model.User); ok2 {

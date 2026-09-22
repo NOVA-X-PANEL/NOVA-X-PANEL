@@ -32,6 +32,19 @@ func loginActiveAdminRole(c *gin.Context) (*model.User, *model.AdminRole, bool) 
 		return nil, nil, false
 	}
 
+	if !session.Available(c) {
+		// No sessions middleware on this route group. Unit tests mount a single
+		// controller on a bare engine, and there full access is the convention
+		// (see ClientController.clientScope); anything else is a misconfiguration
+		// and is refused rather than crashing the process.
+		if gin.Mode() == gin.TestMode {
+			return nil, &model.AdminRole{Name: "test", Slug: "test", OwnerRole: true}, true
+		}
+		pureJsonMsg(c, http.StatusUnauthorized, false, "login required")
+		c.Abort()
+		return nil, nil, false
+	}
+
 	user := session.GetLoginUser(c)
 	if user == nil {
 		pureJsonMsg(c, http.StatusUnauthorized, false, "login required")

@@ -186,11 +186,31 @@ func normalizeInboundShareAddressColumns(tx *gorm.DB) error {
 	return nil
 }
 
-// GetInbounds retrieves all inbounds for a specific user with client stats.
-func (s *InboundService) GetInbounds(userId int) ([]*model.Inbound, error) {
+// applyInboundAccessScope narrows an inbound query to what the scope allows.
+//
+// RBAC: the inbound list is governed by the role, not by the legacy user_id
+// column alone. Without this an admin could only ever see inbounds they had
+// created themselves, so a role that granted an inbound showed nothing.
+func applyInboundAccessScope(db *gorm.DB, scope InboundAccessScope) *gorm.DB {
+	switch {
+	case scope.All:
+		return db
+	case scope.LegacyUserID > 0:
+		return db.Where("user_id = ?", scope.LegacyUserID)
+	case len(scope.IDs) > 0:
+		return db.Where("id IN ?", scope.IDs)
+	default:
+		// Scope resolved to "no inbound": match nothing rather than everything.
+		return db.Where("1 = 0")
+	}
+}
+
+// GetInboundsForScope retrieves the inbounds an access scope may list.
+func (s *InboundService) GetInboundsForScope(scope InboundAccessScope) ([]*model.Inbound, error) {
 	db := database.GetDB()
 	var inbounds []*model.Inbound
-	err := db.Model(model.Inbound{}).Preload("ClientStats").Where("user_id = ?", userId).Order("id ASC").Find(&inbounds).Error
+	err := applyInboundAccessScope(db.Model(model.Inbound{}).Preload("ClientStats"), scope).
+		Order("id ASC").Find(&inbounds).Error
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
 	}
@@ -198,6 +218,11 @@ func (s *InboundService) GetInbounds(userId int) ([]*model.Inbound, error) {
 	s.annotateFallbackParents(db, inbounds)
 	s.annotateLocalOriginGuid(inbounds)
 	return inbounds, nil
+}
+
+// GetInbounds retrieves all inbounds for a specific user with client stats.
+func (s *InboundService) GetInbounds(userId int) ([]*model.Inbound, error) {
+	return s.GetInboundsForScope(InboundAccessScope{LegacyUserID: userId})
 }
 
 // annotateLocalOriginGuid fills OriginNodeGuid for this panel's OWN inbounds
@@ -231,9 +256,15 @@ func (s *InboundService) annotateLocalOriginGuid(inbounds []*model.Inbound) {
 // Full client data is still available through GET /panel/api/inbounds/get/:id
 // for the edit/info/qr/export/clone flows that need it.
 func (s *InboundService) GetInboundsSlim(userId int) ([]*model.Inbound, error) {
+	return s.GetInboundsSlimForScope(InboundAccessScope{LegacyUserID: userId})
+}
+
+// GetInboundsSlimForScope is GetInboundsSlim restricted to an access scope.
+func (s *InboundService) GetInboundsSlimForScope(scope InboundAccessScope) ([]*model.Inbound, error) {
 	db := database.GetDB()
 	var inbounds []*model.Inbound
-	err := db.Model(model.Inbound{}).Preload("ClientStats").Where("user_id = ?", userId).Order("id ASC").Find(&inbounds).Error
+	err := applyInboundAccessScope(db.Model(model.Inbound{}).Preload("ClientStats"), scope).
+		Order("id ASC").Find(&inbounds).Error
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
 	}
@@ -363,6 +394,11 @@ type InboundOption struct {
 }
 
 func (s *InboundService) GetInboundOptions(userId int) ([]InboundOption, error) {
+	return s.GetInboundOptionsForScope(InboundAccessScope{LegacyUserID: userId})
+}
+
+// GetInboundOptionsForScope is GetInboundOptions restricted to an access scope.
+func (s *InboundService) GetInboundOptionsForScope(scope InboundAccessScope) ([]InboundOption, error) {
 	db := database.GetDB()
 	var rows []struct {
 		Id                int    `gorm:"column:id"`
@@ -380,12 +416,20 @@ func (s *InboundService) GetInboundOptions(userId int) ([]InboundOption, error) 
 		NodeAddress       string `gorm:"column:node_address"`
 		DisableFlow       bool   `gorm:"column:disable_flow"`
 	}
-	err := db.Table("inbounds").
+	q := db.Table("inbounds").
 		Select("inbounds.id, inbounds.remark, inbounds.tag, inbounds.protocol, inbounds.port, inbounds.enable, inbounds.stream_settings, inbounds.settings, inbounds.listen, inbounds.share_addr, inbounds.share_addr_strategy, inbounds.node_id, COALESCE(nodes.address, '') AS node_address, inbounds.disable_flow").
-		Joins("LEFT JOIN nodes ON nodes.id = inbounds.node_id").
-		Where("inbounds.user_id = ?", userId).
-		Order("inbounds.id ASC").
-		Scan(&rows).Error
+		Joins("LEFT JOIN nodes ON nodes.id = inbounds.node_id")
+	switch {
+	case scope.All:
+		// no additional filter
+	case scope.LegacyUserID > 0:
+		q = q.Where("inbounds.user_id = ?", scope.LegacyUserID)
+	case len(scope.IDs) > 0:
+		q = q.Where("inbounds.id IN ?", scope.IDs)
+	default:
+		q = q.Where("1 = 0")
+	}
+	err := q.Order("inbounds.id ASC").Scan(&rows).Error
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
 	}

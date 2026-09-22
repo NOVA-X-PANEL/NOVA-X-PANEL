@@ -71,8 +71,18 @@ func (a *InboundController) inboundServiceFor(c *gin.Context) *service.InboundSe
 // initRouter initializes the routes for inbound-related operations.
 func (a *InboundController) initRouter(g *gin.RouterGroup) {
 	g.GET("/list", requirePanelPermission("inbounds", "view"), a.getInbounds)
-	g.GET("/list/slim", requirePanelPermission("inbounds", "view"), a.getInboundsSlim)
-	g.GET("/options", requirePanelPermission("inbounds", "viewSimple"), a.getInboundOptions)
+	// The Inbounds page reads the slim list and its pickers read options, so a
+	// role holding either the full or the simple read may open the page. Gating
+	// the slim list on "view" alone left a read_simple role (the seeded Operator)
+	// with a 403 on a page its own role was meant to allow.
+	g.GET("/list/slim", requireAnyPanelPermission(
+		panelPermissionRequirement{Section: "inbounds", Permission: "view"},
+		panelPermissionRequirement{Section: "inbounds", Permission: "viewSimple"},
+	), a.getInboundsSlim)
+	g.GET("/options", requireAnyPanelPermission(
+		panelPermissionRequirement{Section: "inbounds", Permission: "view"},
+		panelPermissionRequirement{Section: "inbounds", Permission: "viewSimple"},
+	), a.getInboundOptions)
 	g.GET("/allLinks", requirePanelPermission("inbounds", "view"), a.getAllInboundLinks)
 	g.GET("/get/:id", requirePanelPermission("inbounds", "view"), a.getInbound)
 	g.GET("/:id/fallbacks", requirePanelPermission("inbounds", "view"), a.getFallbacks)
@@ -92,9 +102,19 @@ func (a *InboundController) initRouter(g *gin.RouterGroup) {
 }
 
 // getInbounds retrieves the list of inbounds for the logged-in user.
-func (a *InboundController) getInbounds(c *gin.Context) {
+// inboundScope resolves the inbound listing scope for the acting account. A
+// missing session (unit mounts, API-token callers) keeps full access, matching
+// clientScope's behaviour.
+func (a *InboundController) inboundScope(c *gin.Context) service.InboundAccessScope {
 	user := session.GetLoginUser(c)
-	inbounds, err := a.inboundService.GetInbounds(user.Id)
+	if user == nil {
+		return service.InboundAccessScope{All: true}
+	}
+	return service.InboundAccessScopeForAdmin(user)
+}
+
+func (a *InboundController) getInbounds(c *gin.Context) {
+	inbounds, err := a.inboundService.GetInboundsForScope(a.inboundScope(c))
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.obtain"), err)
 		return
@@ -105,8 +125,7 @@ func (a *InboundController) getInbounds(c *gin.Context) {
 // getInboundsSlim is the list-page variant that strips full client
 // payloads from settings.clients[]. Detail-view flows still use /get/:id.
 func (a *InboundController) getInboundsSlim(c *gin.Context) {
-	user := session.GetLoginUser(c)
-	inbounds, err := a.inboundService.GetInboundsSlim(user.Id)
+	inbounds, err := a.inboundService.GetInboundsSlimForScope(a.inboundScope(c))
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.obtain"), err)
 		return
@@ -118,8 +137,8 @@ func (a *InboundController) getInboundsSlim(c *gin.Context) {
 // rendered through the same subscription engine the client pages use so the
 // remark template (name-only display part) is applied consistently.
 func (a *InboundController) getAllInboundLinks(c *gin.Context) {
-	user := session.GetLoginUser(c)
-	links, err := a.inboundService.GetAllInboundLinks(resolveHost(c), user.Id)
+	scope := a.inboundScope(c)
+	links, err := a.inboundService.GetAllInboundLinksForScope(resolveHost(c), scope)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.obtain"), err)
 		return
@@ -131,8 +150,7 @@ func (a *InboundController) getAllInboundLinks(c *gin.Context) {
 // (id, remark, protocol, port, tlsFlowCapable) for pickers in the clients UI.
 // Avoids shipping per-client settings and traffic stats just to fill a dropdown.
 func (a *InboundController) getInboundOptions(c *gin.Context) {
-	user := session.GetLoginUser(c)
-	options, err := a.inboundService.GetInboundOptions(user.Id)
+	options, err := a.inboundService.GetInboundOptionsForScope(a.inboundScope(c))
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.obtain"), err)
 		return

@@ -446,10 +446,12 @@ func ClientAccessScopeForAdmin(user *model.User, permission string) ClientAccess
 		})
 	}
 
+	// A role that says "all" means all: every client on the panel, including the
+	// ones other admins created. Roles that must stay inside their own records
+	// ask for "own" explicitly. (Until v1.21 this was silently downgraded to
+	// "own", so an admin whose role granted "all" saw an empty list whenever they
+	// had not created clients themselves.)
 	mode := ClientAccessModeFromPermission(rolePermissionValue(role, "users", permission))
-	if mode == ClientAccessAll {
-		mode = ClientAccessOwn
-	}
 	return normalizeClientAccessScope(ClientAccessScope{
 		AdminID:           user.Id,
 		Mode:              mode,
@@ -460,6 +462,59 @@ func ClientAccessScopeForAdmin(user *model.User, permission string) ClientAccess
 		AllowAllInbounds:  allowAllInbounds,
 		AllowedInboundIDs: allowedInboundIDs,
 	})
+}
+
+// ---- inbound listing scope ------------------------------------------------
+
+// InboundAccessScope says which inbounds an account may list.
+//
+// The inbound list used to be filtered by the legacy `user_id` column alone, so
+// an admin only ever saw inbounds they had created themselves: granting a role
+// an inbound did not make it appear, and an admin who had created none saw an
+// empty Inbounds page no matter what the role allowed.
+//
+// Resolution order, most explicit first:
+//
+//  1. no account (API token, unit test)      -> every inbound
+//  2. the owner role                         -> every inbound
+//  3. access.allowed_inbound_ids non-empty   -> exactly those ids
+//  4. access document present, no id list    -> every inbound ("leave empty to
+//     allow all inbounds", as the role editor states)
+//  5. no usable access document at all       -> the legacy rule: only the
+//     inbounds this account created, so an unknown role cannot widen access
+type InboundAccessScope struct {
+	// All lists every inbound on the panel.
+	All bool
+	// IDs is the allowed set when All is false. An empty set with All false
+	// means no inbound is visible.
+	IDs []int
+	// LegacyUserID filters by the inbound's owner when no role document applies.
+	LegacyUserID int
+}
+
+// InboundAccessScopeForAdmin resolves the inbound listing scope for one account.
+func InboundAccessScopeForAdmin(user *model.User) InboundAccessScope {
+	if user == nil {
+		return InboundAccessScope{All: true}
+	}
+	role, err := adminRoleForUser(user)
+	if err != nil {
+		return InboundAccessScope{LegacyUserID: user.Id}
+	}
+	if role.OwnerRole {
+		return InboundAccessScope{All: true}
+	}
+
+	root := map[string]any{}
+	if err := json.Unmarshal([]byte(role.AccessJSON), &root); err != nil || len(root) == 0 {
+		return InboundAccessScope{LegacyUserID: user.Id}
+	}
+
+	restrict, allowAll, ids := roleInboundAccessScope(role)
+	if !restrict || allowAll {
+		return InboundAccessScope{All: true}
+	}
+	return InboundAccessScope{IDs: ids}
 }
 
 // FilterClientEmailsForScope keeps only the emails the scope may see.

@@ -11,8 +11,11 @@ const RESOURCE_ALIASES: Record<string, string[]> = {
 const ACTION_ALIASES: Record<string, string[]> = {
   view: ['view', 'read'],
   read: ['read', 'view'],
-  viewSimple: ['viewSimple', 'read_simple'],
-  read_simple: ['read_simple', 'viewSimple'],
+  // The Go readers accept these four spellings for one grant (the owner role
+  // document itself uses viewSimpleList), so the browser must resolve them too or
+  // a role can pass the API gate and still be hidden in the menu.
+  viewSimple: ['viewSimple', 'read_simple', 'readSimple', 'viewSimpleList'],
+  read_simple: ['read_simple', 'viewSimple', 'readSimple', 'viewSimpleList'],
   viewGeneral: ['viewGeneral', 'read_general'],
   read_general: ['read_general', 'viewGeneral'],
   resetUsage: ['resetUsage', 'reset_usage'],
@@ -38,10 +41,20 @@ type RoutePermission = {
   action: string
 }
 
+// A route opens when any listed permission is granted. The two lists that a
+// "simple read" role is meant to reach also accept read_simple: gating them on
+// the full read alone hid the Inbounds page from the seeded Operator role, whose
+// role document grants exactly that.
 const ROUTE_PERMISSIONS: Record<string, RoutePermission[]> = {
   '/': [{ resource: 'system', action: 'read' }],
-  '/inbounds': [{ resource: 'inbounds', action: 'read' }],
-  '/clients': [{ resource: 'users', action: 'read' }],
+  '/inbounds': [
+    { resource: 'inbounds', action: 'read' },
+    { resource: 'inbounds', action: 'read_simple' },
+  ],
+  '/clients': [
+    { resource: 'users', action: 'read' },
+    { resource: 'users', action: 'read_simple' },
+  ],
   '/groups': [{ resource: 'groups', action: 'read' }],
   '/nodes': [{ resource: 'nodes', action: 'read' }],
   '/admins': [{ resource: 'admins', action: 'read' }],
@@ -180,7 +193,11 @@ export function hasScopeAll(admin: unknown, resource: string, action: string): b
 }
 
 export function canReadResourcePage(admin: unknown, resource: string): boolean {
-  return hasPermission(admin, resource, 'read') || hasPermission(admin, resource, 'view')
+  return (
+    hasPermission(admin, resource, 'read') ||
+    hasPermission(admin, resource, 'view') ||
+    hasPermission(admin, resource, 'read_simple')
+  )
 }
 
 function routeKey(pathname: string) {

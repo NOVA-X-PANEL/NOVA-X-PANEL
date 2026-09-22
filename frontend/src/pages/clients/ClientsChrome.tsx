@@ -71,6 +71,7 @@ export function ClientsRail({
   onImport,
   onExport,
   onResetTraffic,
+  onDefaults,
 }: ClientsRailProps) {
   const { t } = useTranslation();
 

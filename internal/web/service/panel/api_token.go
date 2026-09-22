@@ -27,6 +27,10 @@ type ApiTokenView struct {
 	CreatedAt int64  `json:"createdAt" example:"1736000000"`
 	Scope     string `json:"scope" example:"admin"`
 	ExpiresAt int64  `json:"expiresAt" example:"0"`
+	// AdminId is the account this token acts as; 0 is a panel-wide token.
+	AdminId int `json:"adminId" example:"0"`
+	// AdminName is filled for the admin-facing list.
+	AdminName string `json:"adminName,omitempty" example:"operator"`
 }
 
 func apiTokenCreatedAtSeconds(createdAt int64) int64 {
@@ -47,6 +51,7 @@ func toView(t *model.ApiToken) *ApiTokenView {
 		CreatedAt: apiTokenCreatedAtSeconds(t.CreatedAt),
 		Scope:     t.Scope,
 		ExpiresAt: t.ExpiresAt,
+		AdminId:   t.AdminId,
 	}
 }
 
@@ -114,6 +119,128 @@ func (s *ApiTokenService) Create(name, scope string, expiresAt int64) (*ApiToken
 	}
 	view := toView(row)
 	view.Token = plaintext
+	return view, nil
+}
+
+// CreateForAdmin mints a token bound to one panel account.
+//
+// The scope is always "admin": it is the account's *role* that limits what the
+// token may do, so allowing a narrower scope here would only confuse callers. A
+// bound token is validated against the account's role on every request.
+func (s *ApiTokenService) CreateForAdmin(name string, adminId int, expiresAt int64) (*ApiTokenView, error) {
+	if adminId <= 0 {
+		return nil, common.NewError("a valid admin is required")
+	}
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return nil, common.NewError("token name is required")
+	}
+	if len(name) > 64 {
+		return nil, common.NewError("token name must be 64 characters or fewer")
+	}
+	if expiresAt < 0 || (expiresAt != 0 && expiresAt <= nowMilli()) {
+		return nil, common.NewError("expiresAt must be 0 (never) or a future unix-ms timestamp")
+	}
+	db := database.GetDB()
+	var count int64
+	if err := db.Model(model.ApiToken{}).Where("name = ?", name).Count(&count).Error; err != nil {
+		return nil, err
+	}
+	if count > 0 {
+		return nil, common.NewError("a token with that name already exists")
+	}
+	plaintext := random.Seq(apiTokenLength)
+	row := &model.ApiToken{
+		Name:      name,
+		Token:     crypto.HashTokenSHA256(plaintext),
+		Enabled:   true,
+		Scope:     model.ApiScopeAdmin,
+		ExpiresAt: expiresAt,
+		AdminId:   adminId,
+	}
+	if err := db.Create(row).Error; err != nil {
+		return nil, err
+	}
+	view := toView(row)
+	view.Token = plaintext
+	return view, nil
+}
+
+// ListForAdmin returns only the tokens bound to one account, with the account's
+// username attached for display.
+func (s *ApiTokenService) ListForAdmin(adminId int) ([]*ApiTokenView, error) {
+	if adminId <= 0 {
+		return []*ApiTokenView{}, nil
+	}
+	db := database.GetDB()
+	var rows []*model.ApiToken
+	if err := db.Model(model.ApiToken{}).Where("admin_id = ?", adminId).Order("id asc").Find(&rows).Error; err != nil {
+		return nil, err
+	}
+	var username string
+	if err := db.Model(&model.User{}).Where("id = ?", adminId).Pluck("username", &username).Error; err != nil {
+		username = ""
+	}
+	out := make([]*ApiTokenView, 0, len(rows))
+	for _, r := range rows {
+		v := toView(r)
+		v.AdminName = username
+		out = append(out, v)
+	}
+	return out, nil
+}
+
+// CountForAdmin reports how many tokens an account holds, so the UI can show it
+// and the create path can cap runaway growth.
+func (s *ApiTokenService) CountForAdmin(adminId int) (int64, error) {
+	if adminId <= 0 {
+		return 0, nil
+	}
+	db := database.GetDB()
+	var count int64
+	err := db.Model(model.ApiToken{}).Where("admin_id = ?", adminId).Count(&count).Error
+	return count, err
+}
+
+// DeleteForAdmin removes a token only when it belongs to that account, so an
+// admin cannot revoke (or probe for) another account's credentials.
+func (s *ApiTokenService) DeleteForAdmin(adminId, id int) error {
+	if adminId <= 0 || id <= 0 {
+		return common.NewError("invalid token")
+	}
+	db := database.GetDB()
+	res := db.Where("id = ? AND admin_id = ?", id, adminId).Delete(&model.ApiToken{})
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return common.NewError("token not found")
+	}
+	return nil
+}
+
+// SetEnabledForAdmin enables or disables one of the account's own tokens.
+func (s *ApiTokenService) SetEnabledForAdmin(adminId, id int, enabled bool) (*ApiTokenView, error) {
+	if adminId <= 0 || id <= 0 {
+		return nil, common.NewError("invalid token")
+	}
+	db := database.GetDB()
+	res := db.Model(&model.ApiToken{}).Where("id = ? AND admin_id = ?", id, adminId).
+		Update("enabled", enabled)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	if res.RowsAffected == 0 {
+		return nil, common.NewError("token not found")
+	}
+	var row model.ApiToken
+	if err := db.Where("id = ?", id).First(&row).Error; err != nil {
+		return nil, err
+	}
+	var username string
+	_ = db.Model(&model.User{}).Where("id = ?", adminId).Pluck("username", &username).Error
+	view := toView(&row)
+	view.AdminName = username
 	return view, nil
 }
 

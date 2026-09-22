@@ -54,6 +54,11 @@ type User struct {
 	DataLimit int64 `json:"dataLimit" gorm:"column:data_limit;default:0"`
 	UsedBytes int64 `json:"usedBytes" gorm:"column:used_bytes;default:0"`
 
+	// ApiAccess lets this account mint its own API token. The token carries the
+	// account's role, so whatever the role may do in the panel, the token may do
+	// over the API — and nothing more. The owner always has it.
+	ApiAccess bool `json:"apiAccess" gorm:"column:api_access;default:false"`
+
 	// CreatedAt/UpdatedAt are populated for RBAC admin management views.
 	CreatedAt int64 `json:"createdAt" gorm:"autoCreateTime:milli"`
 	UpdatedAt int64 `json:"updatedAt" gorm:"autoUpdateTime:milli"`
@@ -191,6 +196,13 @@ type ApiToken struct {
 	CreatedAt int64  `json:"createdAt" gorm:"autoCreateTime"`
 	Scope     string `json:"scope" gorm:"not null;default:admin"`
 	ExpiresAt int64  `json:"expiresAt" gorm:"not null;default:0"`
+
+	// AdminId binds the token to a panel account. 0 is a legacy panel-wide token
+	// (settings page): it carries full authority, which is what node-sync and
+	// existing integrations rely on. Any other value makes the token act as that
+	// account, so every permission check applies exactly as it does for a browser
+	// session — an admin's own token can never exceed that admin's role.
+	AdminId int `json:"adminId" gorm:"column:admin_id;index;default:0"`
 }
 
 // MarshalJSON emits settings, streamSettings, and sniffing as nested JSON

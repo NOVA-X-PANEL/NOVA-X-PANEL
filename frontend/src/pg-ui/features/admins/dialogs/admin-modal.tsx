@@ -10,6 +10,7 @@ import { Input } from '@/pg-ui/components/ui/input';
 import { LoaderButton } from '@/pg-ui/components/ui/loader-button';
 import { PasswordInput } from '@/pg-ui/components/ui/password-input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/pg-ui/components/ui/select';
+import { Switch } from '@/pg-ui/components/ui/switch';
 
 import { useAdmin } from '@/pg-ui/hooks/use-admin';
 import useDynamicErrorHandler from '@/pg-ui/hooks/use-dynamic-errors'
@@ -153,6 +154,7 @@ export default function AdminModal({ isDialogOpen, onOpenChange, editingAdminId,
       const editData = {
         password: values.password || undefined,
         ...(form.formState.dirtyFields.status ? { status: values.status || 'active' } : {}),
+        ...(form.formState.dirtyFields.api_access ? { api_access: values.api_access === true } : {}),
         ...dataLimitPayload,
         discord_webhook: values.discord_webhook,
         sub_domain: values.sub_domain,
@@ -202,6 +204,7 @@ export default function AdminModal({ isDialogOpen, onOpenChange, editingAdminId,
           password: values.password, // Ensure password is present
           status: values.status || 'active',
           ...dataLimitPayload,
+          api_access: values.api_access === true,
           discord_webhook: values.discord_webhook,
           sub_domain: values.sub_domain,
           sub_template: values.sub_template,
@@ -389,6 +392,33 @@ export default function AdminModal({ isDialogOpen, onOpenChange, editingAdminId,
                   )}
                 />
                 <AdminDataLimitField form={form} />
+
+                {/* Owner-only: lets this account mint its own API token, which
+                    then carries this account's role over the API. */}
+                <FormField
+                  control={form.control}
+                  name="api_access"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-md border p-3">
+                      <div className="space-y-0.5 pr-3">
+                        <FormLabel>{t('admins.apiAccess', { defaultValue: 'API access' })}</FormLabel>
+                        <p className="text-muted-foreground text-xs">
+                          {t('admins.apiAccessHint', {
+                            defaultValue:
+                              'This admin can create its own API token. The token carries this admin\'s role, so it can never do more than the role allows.',
+                          })}
+                        </p>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value === true}
+                          onCheckedChange={field.onChange}
+                          disabled={editingAdmin && editingAdminId === currentAdmin?.id}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
               </div>
 
               {/* Advanced settings: collapsed by default */}

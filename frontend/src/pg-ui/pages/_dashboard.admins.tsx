@@ -20,7 +20,9 @@ import { removeAdminFromAdminsCache, upsertAdminInAdminsCache } from '@/pg-ui/ut
 import { useQueryClient } from '@tanstack/react-query';
 import { useGetRolesSimple } from '@/pg-ui/service/api';
 import { useAdmin } from '@/pg-ui/hooks/use-admin';
-import { hasPermission } from '@/pg-ui/utils/rbac';
+import { hasPermission, isOwner } from '@/pg-ui/utils/rbac';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/pg-ui/components/ui/tabs';
+import MyApiTokens from '@/pg-ui/features/admins/components/my-api-tokens';
 
 export default function AdminsPage() {
   const { t } = useTranslation()
@@ -28,6 +30,9 @@ export default function AdminsPage() {
   const { admin: currentAdmin } = useAdmin()
   const canCreateAdmins = hasPermission(currentAdmin, 'admins', 'create')
   const canUpdateAdmins = hasPermission(currentAdmin, 'admins', 'update')
+  // The API tab is the account's own tokens, so it shows whenever the account may
+  // hold one: the owner always may, everyone else needs the grant.
+  const canUseApi = isOwner(currentAdmin) || currentAdmin?.api_access === true || currentAdmin?.apiAccess === true
   const [editingAdmin, setEditingAdmin] = useState<Partial<AdminDetails> | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [adminCounts, setAdminCounts] = useState<{ total: number; active: number; disabled: number; limited: number } | null>(null)
@@ -230,6 +235,16 @@ export default function AdminsPage() {
       </div>
 
       <div className="w-full px-4 pt-2">
+        {/* Only accounts that may hold an API token see the second tab. */}
+        <Tabs defaultValue="admins" className="w-full">
+          {canUseApi && (
+            <TabsList className="mb-3">
+              <TabsTrigger value="admins">{t('admins.tabAdmins', { defaultValue: 'Admins' })}</TabsTrigger>
+              <TabsTrigger value="api">{t('admins.tabMyApi', { defaultValue: 'My API' })}</TabsTrigger>
+            </TabsList>
+          )}
+
+          <TabsContent value="admins" className="mt-0">
         <div className="animate-slide-up transform-gpu" style={{ animationDuration: '500ms', animationDelay: '100ms', animationFillMode: 'both' }}>
           <AdminsStatistics counts={adminCounts} />
         </div>
@@ -237,6 +252,14 @@ export default function AdminsPage() {
         <div className="animate-slide-up transform-gpu" style={{ animationDuration: '500ms', animationDelay: '250ms', animationFillMode: 'both' }}>
           <AdminsTable onEdit={handleEdit} onDelete={handleDelete} onToggleStatus={handleToggleStatus} onResetUsage={resetUsage} onTotalAdminsChange={setAdminCounts} />
         </div>
+          </TabsContent>
+
+          {canUseApi && (
+            <TabsContent value="api" className="mt-0">
+              <MyApiTokens />
+            </TabsContent>
+          )}
+        </Tabs>
 
         {(canCreateAdmins || canUpdateAdmins) && (
           <AdminModal

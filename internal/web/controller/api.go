@@ -51,7 +51,22 @@ func (a *APIController) checkAPIAuth(c *gin.Context) {
 	if after, ok := strings.CutPrefix(auth, "Bearer "); ok {
 		tok := after
 		if row, ok := a.apiTokenService.MatchToken(tok); ok {
-			if u, err := a.userService.GetFirstUser(); err == nil {
+			// A token minted by an admin acts as that admin: bind the account so
+			// every permission check applies exactly as it does for a session.
+			// A panel-wide token (AdminId 0) resolves to the first account, which
+			// is how node-sync and existing integrations have always worked.
+			if row.AdminId > 0 {
+				u, err := apiTokenUser(row.AdminId)
+				if err != nil {
+					c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+						"success": false,
+						"msg":     "this API token's account is missing or disabled",
+					})
+					return
+				}
+				session.SetAPIAuthUser(c, u)
+				c.Set("api_token_admin_id", row.AdminId)
+			} else if u, err := a.userService.GetFirstUser(); err == nil {
 				session.SetAPIAuthUser(c, u)
 			}
 			c.Set("api_authed", true)
@@ -127,6 +142,14 @@ func (a *APIController) enforceTokenScope(c *gin.Context) {
 	}
 	scope, _ := scopeVal.(string)
 	if scope == model.ApiScopeAdmin {
+		// Admin tokens: panel-wide ones carry full authority, admin-bound ones are
+		// narrowed by the bound account's role inside requireAdminPermission.
+		c.Next()
+		return
+	}
+	if c.GetInt("api_token_admin_id") > 0 {
+		// A bound token is never a monitor/node-sync token even if mislabelled;
+		// its role decides, so hand it to the role gate rather than an allowlist.
 		c.Next()
 		return
 	}

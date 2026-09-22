@@ -77,10 +77,13 @@ func (a *SettingController) initRouter(g *gin.RouterGroup) {
 	g.POST("/updateUser", a.updateUser)
 	g.POST("/restartPanel", requirePanelPermission("settings", "update"), a.restartPanel)
 	g.GET("/getDefaultJsonConfig", requirePanelAccount(), a.getDefaultXrayConfig)
-	g.GET("/apiTokens", a.listApiTokens)
-	g.POST("/apiTokens/create", a.createApiToken)
-	g.POST("/apiTokens/delete/:id", a.deleteApiToken)
-	g.POST("/apiTokens/setEnabled/:id", a.setApiTokenEnabled)
+	// Owner-only: these mint panel-wide tokens, which carry full authority
+	// regardless of the minting account's role. Left ungated, any signed-in
+	// account could create one and own the panel.
+	g.GET("/apiTokens", requireOwnerRole(), a.listApiTokens)
+	g.POST("/apiTokens/create", requireOwnerRole(), a.createApiToken)
+	g.POST("/apiTokens/delete/:id", requireOwnerRole(), a.deleteApiToken)
+	g.POST("/apiTokens/setEnabled/:id", requireOwnerRole(), a.setApiTokenEnabled)
 	g.POST("/testSmtp", requirePanelPermission("settings", "update"), a.testSmtp)
 	g.POST("/testTgBot", requirePanelPermission("settings", "update"), a.testTgBot)
 	g.POST("/testDiscord", requirePanelPermission("settings", "update"), a.testDiscord)

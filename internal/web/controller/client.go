@@ -117,10 +117,12 @@ func (a *ClientController) initRouter(g *gin.RouterGroup) {
 // this controller without the session middleware, so a missing user in test
 // mode keeps full access; production always resolves through the session.
 func (a *ClientController) clientScope(c *gin.Context, permission string) service.ClientAccessScope {
-	// API-token callers (monitor / node-sync / admin tokens) are already
-	// constrained by enforceTokenScope and have no panel account, so scoping
-	// them by owner would silently turn node sync into a no-op.
-	if c.GetBool("api_authed") {
+	// Panel-wide API tokens (monitor / node-sync / the settings page) have no
+	// panel account, so scoping them by owner would silently turn node sync into
+	// a no-op; they keep full scope and are constrained by enforceTokenScope.
+	// A token minted by an admin *is* bound to an account, and falls through so
+	// that account's role narrows it exactly as it does for a browser session.
+	if c.GetBool("api_authed") && c.GetInt("api_token_admin_id") <= 0 {
 		return service.ClientAccessScope{Mode: service.ClientAccessAll}
 	}
 

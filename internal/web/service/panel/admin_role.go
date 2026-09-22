@@ -242,6 +242,111 @@ func (s *AdminRoleService) Create(payload AdminRolePayload) (*AdminRoleView, err
 }
 
 // Update edits a non-owner role; built-in roles keep their identity.
+// PermissionGrants is one resource → action grant.
+type PermissionGrants map[string]map[string]bool
+
+// RolePermissionGrants flattens a role document into resource → action → allowed.
+// Only truthy grants are listed: an action absent or set to false is not a grant.
+func RolePermissionGrants(role *model.AdminRole) PermissionGrants {
+	out := PermissionGrants{}
+	if role == nil {
+		return out
+	}
+	var root map[string]any
+	if err := json.Unmarshal([]byte(role.PermissionsJSON), &root); err != nil {
+		return out
+	}
+	for section, value := range root {
+		sectionMap, ok := value.(map[string]any)
+		if !ok {
+			continue
+		}
+		grants := map[string]bool{}
+		for action, raw := range sectionMap {
+			if permissionValueTruthy(raw) {
+				grants[action] = true
+			}
+		}
+		if len(grants) > 0 {
+			out[section] = grants
+		}
+	}
+	return out
+}
+
+// permissionValueTruthy mirrors the panel's grant test for one permission value.
+func permissionValueTruthy(v any) bool {
+	switch t := v.(type) {
+	case bool:
+		return t
+	case float64:
+		return int(t) != 0
+	case int:
+		return t != 0
+	case string:
+		switch strings.ToLower(strings.TrimSpace(t)) {
+		case "", "false", "no", "0", "none", "deny", "null":
+			return false
+		default:
+			return true
+		}
+	case map[string]any:
+		return permissionValueTruthy(t["scope"])
+	}
+	return false
+}
+
+// RedirectsOrWidens reports whether `target` grants anything `actor` does not.
+//
+// It is the anti-escalation test: an admin may only hand out, or edit a role
+// into, a permission set inside its own. Without it any account holding
+// admins.create or admin_roles.update could grant itself (or a puppet) the
+// administrator preset and take the panel over.
+//
+// The owner role is exempt — it is allowed to do anything by definition.
+func RedirectsOrWidens(actor *model.AdminRole, target *model.AdminRole) bool {
+	if actor == nil {
+		return true
+	}
+	if actor.OwnerRole {
+		return false
+	}
+	have := RolePermissionGrants(actor)
+	want := RolePermissionGrants(target)
+	for section, actions := range want {
+		for action := range actions {
+			if !have[section][action] {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// PermissionsWidenActor reports whether a raw permission map grants anything the
+// actor's role does not, for validating a role before it is stored.
+func PermissionsWidenActor(actor *model.AdminRole, permissions map[string]any) bool {
+	if actor == nil {
+		return true
+	}
+	if actor.OwnerRole {
+		return false
+	}
+	have := RolePermissionGrants(actor)
+	for section, value := range permissions {
+		sectionMap, ok := value.(map[string]any)
+		if !ok {
+			continue
+		}
+		for action, raw := range sectionMap {
+			if permissionValueTruthy(raw) && !have[section][action] {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func (s *AdminRoleService) Update(id int, payload AdminRolePayload) (*AdminRoleView, error) {
 	if id <= 0 {
 		return nil, errors.New("invalid role id")

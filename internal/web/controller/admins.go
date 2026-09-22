@@ -4,6 +4,8 @@ import (
 	"errors"
 	"strconv"
 
+	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service/panel"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/session"
 
@@ -16,10 +18,22 @@ func errSelfAction() error {
 	return errors.New("cannot perform this action on your own account")
 }
 
+// errEscalation rejects an attempt to grant more authority than the caller
+// holds. Without it any account with admins.create or admin_roles.update could
+// hand itself the administrator preset and take the panel over.
+func errEscalation() error {
+	return errors.New("cannot grant permissions beyond your own role")
+}
+
 // RBAC (NOVA X PANEL) — panel account management API.
 
+// maxOwnApiTokens caps how many tokens one account may hold, so a scripted loop
+// cannot fill the table.
+const maxOwnApiTokens = 10
+
 type AdminController struct {
-	adminService panel.AdminService
+	adminService    panel.AdminService
+	apiTokenService panel.ApiTokenService
 }
 
 func NewAdminController(g *gin.RouterGroup) *AdminController {
@@ -42,6 +56,120 @@ func (a *AdminController) initRouter(g *gin.RouterGroup) {
 	g.POST("/users/disableActive/:id", requireAdminPermission("users", "update"), a.disableActiveUsers)
 	g.POST("/users/activateDisabled/:id", requireAdminPermission("users", "update"), a.activateDisabledUsers)
 	g.POST("/users/removeAll/:id", requireAdminPermission("users", "delete"), a.removeAllUsers)
+
+	// Self-service API tokens. Any account the owner has granted apiAccess may
+	// mint a token that acts as itself: the token carries this account's role, so
+	// it can never exceed what the account may already do in the panel.
+	g.GET("/apiTokens", requirePanelAccount(), a.listOwnApiTokens)
+	g.POST("/apiTokens/create", requirePanelAccount(), a.createOwnApiToken)
+	g.POST("/apiTokens/delete/:id", requirePanelAccount(), a.deleteOwnApiToken)
+	g.POST("/apiTokens/setEnabled/:id", requirePanelAccount(), a.setOwnApiTokenEnabled)
+}
+
+// errNoApiAccess is returned when an account without the permission tries to use
+// the self-service token endpoints.
+func errNoApiAccess() error {
+	return errors.New("API access is not enabled for this account")
+}
+
+// apiAccessActor returns the acting account when it may manage its own tokens.
+func (a *AdminController) apiAccessActor(c *gin.Context) (*model.User, *model.AdminRole, bool) {
+	if admin := apiTokenAdmin(c); admin != nil {
+		// A bound token may list and revoke its own tokens, which is how a
+		// compromised token is rotated.
+		if role, err := adminRoleOf(admin); err == nil {
+			return admin, role, true
+		}
+	}
+	if !session.Available(c) {
+		return nil, nil, false
+	}
+	user, role, ok := loginActiveAdminRole(c)
+	if !ok {
+		return nil, nil, false
+	}
+	if role.OwnerRole || user.ApiAccess {
+		return user, role, true
+	}
+	jsonMsg(c, "api access", errNoApiAccess())
+	c.Abort()
+	return nil, nil, false
+}
+
+// listOwnApiTokens returns only the caller's tokens.
+func (a *AdminController) listOwnApiTokens(c *gin.Context) {
+	user, _, ok := a.apiAccessActor(c)
+	if !ok {
+		return
+	}
+	rows, err := a.apiTokenService.ListForAdmin(user.Id)
+	jsonObj(c, rows, err)
+}
+
+type ownApiTokenPayload struct {
+	Name      string `json:"name"`
+	ExpiresAt int64  `json:"expiresAt"`
+}
+
+// createOwnApiToken mints a token bound to the caller. The plaintext is in the
+// response exactly once; only its hash is stored.
+func (a *AdminController) createOwnApiToken(c *gin.Context) {
+	user, _, ok := a.apiAccessActor(c)
+	if !ok {
+		return
+	}
+	var payload ownApiTokenPayload
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		jsonMsg(c, "create api token", err)
+		return
+	}
+	if count, err := a.apiTokenService.CountForAdmin(user.Id); err == nil && count >= maxOwnApiTokens {
+		jsonMsg(c, "create api token", errors.New("token limit reached; delete one first"))
+		return
+	}
+	row, err := a.apiTokenService.CreateForAdmin(payload.Name, user.Id, payload.ExpiresAt)
+	if err != nil {
+		jsonMsg(c, "create api token", err)
+		return
+	}
+	logger.Infof("%s created an API token for its own account", user.Username)
+	jsonMsgObj(c, "create api token", row, nil)
+}
+
+// deleteOwnApiToken removes one of the caller's tokens.
+func (a *AdminController) deleteOwnApiToken(c *gin.Context) {
+	user, _, ok := a.apiAccessActor(c)
+	if !ok {
+		return
+	}
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		jsonMsg(c, "delete api token", err)
+		return
+	}
+	jsonMsg(c, "delete api token", a.apiTokenService.DeleteForAdmin(user.Id, id))
+}
+
+// setOwnApiTokenEnabled flips one of the caller's tokens on or off.
+func (a *AdminController) setOwnApiTokenEnabled(c *gin.Context) {
+	user, _, ok := a.apiAccessActor(c)
+	if !ok {
+		return
+	}
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		jsonMsg(c, "api token", err)
+		return
+	}
+	body := struct {
+		Enabled bool `json:"enabled"`
+	}{}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		jsonMsg(c, "api token", err)
+		return
+	}
+	row, err := a.apiTokenService.SetEnabledForAdmin(user.Id, id, body.Enabled)
+	jsonMsgObj(c, "api token", row, err)
 }
 
 // current returns the logged-in account with its role document.
@@ -76,6 +204,30 @@ func (a *AdminController) current(c *gin.Context) {
 	}, nil)
 }
 
+// actingRole resolves the role of the account making the call, going through the
+// same paths the permission gate uses (session or admin-bound API token).
+func actingRole(c *gin.Context) *model.AdminRole {
+	if u := apiTokenAdmin(c); u != nil {
+		if role, err := adminRoleOf(u); err == nil {
+			return role
+		}
+		return nil
+	}
+	if !session.Available(c) {
+		// Unit mounts and panel-wide API tokens have no account: treat as owner,
+		// matching the convention the permission gate already uses.
+		if gin.Mode() == gin.TestMode || c.GetBool("api_authed") {
+			return &model.AdminRole{Name: "owner", Slug: model.AdminRoleSlugOwner, OwnerRole: true}
+		}
+		return nil
+	}
+	_, role, ok := loginActiveAdminRole(c)
+	if !ok {
+		return nil
+	}
+	return role
+}
+
 func (a *AdminController) list(c *gin.Context) {
 	self := 0
 	if user := session.GetLoginUser(c); user != nil {
@@ -106,6 +258,19 @@ func (a *AdminController) add(c *gin.Context) {
 		jsonMsg(c, "create admin", err)
 		return
 	}
+	// Anti-escalation: an admin may not mint an account more privileged than its
+	// own role, or every account holding admins.create could become the owner.
+	if actor := actingRole(c); actor != nil {
+		target, err := a.adminService.RoleByID(payload.RoleId)
+		if err != nil {
+			jsonMsg(c, "create admin", err)
+			return
+		}
+		if panel.RedirectsOrWidens(actor, target) {
+			jsonMsg(c, "create admin", errEscalation())
+			return
+		}
+	}
 	row, err := a.adminService.Create(payload)
 	jsonMsgObj(c, "create admin", row, err)
 }
@@ -120,6 +285,40 @@ func (a *AdminController) update(c *gin.Context) {
 	if err := c.ShouldBindJSON(&payload); err != nil {
 		jsonMsg(c, "update admin", err)
 		return
+	}
+	if self := session.GetLoginUser(c); self != nil && self.Id == id {
+		// Self-service edits are scoped to password/username; a role change is how
+		// an admin would promote itself, and enabling its own API access cannot be
+		// allowed without a second pair of eyes either.
+		if payload.RoleId > 0 && payload.RoleId != self.RoleId {
+			jsonMsg(c, "update admin", errSelfAction())
+			return
+		}
+		if payload.ApiAccess != nil {
+			payload.ApiAccess = nil
+		}
+	}
+	target, err := a.adminService.Get(id)
+	if err != nil {
+		jsonMsg(c, "update admin", err)
+		return
+	}
+	if actor := actingRole(c); actor != nil && !actor.OwnerRole {
+		if target.OwnerRole {
+			jsonMsg(c, "update admin", errEscalation())
+			return
+		}
+		if payload.RoleId > 0 && payload.RoleId != target.RoleId {
+			role, rErr := a.adminService.RoleByID(payload.RoleId)
+			if rErr != nil {
+				jsonMsg(c, "update admin", rErr)
+				return
+			}
+			if panel.RedirectsOrWidens(actor, role) {
+				jsonMsg(c, "update admin", errEscalation())
+				return
+			}
+		}
 	}
 	row, err := a.adminService.Update(id, payload)
 	jsonMsgObj(c, "update admin", row, err)
@@ -143,6 +342,13 @@ func (a *AdminController) enable(c *gin.Context) {
 }
 
 func (a *AdminController) disable(c *gin.Context) {
+	// Disabling yourself is a lockout, not a permission decision.
+	if self := session.GetLoginUser(c); self != nil {
+		if id, err := strconv.Atoi(c.Param("id")); err == nil && id == self.Id {
+			jsonMsg(c, "disable admin", errSelfAction())
+			return
+		}
+	}
 	a.setStatus(c, "disabled")
 }
 

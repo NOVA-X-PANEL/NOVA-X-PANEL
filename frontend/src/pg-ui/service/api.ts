@@ -114,6 +114,8 @@ export interface AdminDetails {
   role?: AdminRoleResponse;
   role_id?: number;
   data_limit?: number | null;
+  /** Whether this admin may mint its own API token. */
+  api_access?: boolean;
   used_traffic?: number;
   lifetime_used_traffic?: number;
   total_users?: number;
@@ -197,6 +199,7 @@ function normalizeAdmin(value: unknown): AdminDetails {
     role,
     role_id: toNumber(row.roleId ?? row.role_id),
     data_limit: row.dataLimit === undefined ? toNumber(row.data_limit) : toNumber(row.dataLimit),
+    api_access: row.apiAccess === undefined ? Boolean(row.api_access) : Boolean(row.apiAccess),
     used_traffic: row.usedBytes === undefined ? toNumber(row.used_traffic) : toNumber(row.usedBytes),
     lifetime_used_traffic: row.lifetimeUsedTraffic === undefined ? toNumber(row.lifetime_used_traffic) : toNumber(row.lifetimeUsedTraffic),
     total_users: row.totalUsers === undefined ? toNumber(row.total_users) : toNumber(row.totalUsers),
@@ -220,6 +223,7 @@ function pgAdminToHeimdallPayload(data: Record<string, unknown>): Record<string,
     password: toString(data.password).trim(),
     roleId: toNumber(data.role_id ?? data.roleId),
     status: toString(data.status || (toBool(data.is_disabled) ? 'disabled' : 'active')) || 'active',
+    apiAccess: typeof data.api_access === 'boolean' ? data.api_access : undefined,
     dataLimit: data.data_limit == null ? 0 : toNumber(data.data_limit),
     telegramId: toString(data.telegram_id),
     discordWebhook: toString(data.discord_webhook),
@@ -396,6 +400,7 @@ export function useModifyAdminById() {
         data_limit: data.data_limit === undefined && data.dataLimit === undefined
           ? existing.data_limit
           : data.data_limit ?? data.dataLimit,
+        api_access: data.api_access ?? existing.api_access,
         telegram_id: data.telegram_id ?? existing.telegram_id,
         discord_webhook: data.discord_webhook ?? existing.discord_webhook,
         support_url: data.support_url ?? existing.support_url,

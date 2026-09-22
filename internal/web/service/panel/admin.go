@@ -25,6 +25,9 @@ type AdminPayload struct {
 	RoleId    int    `json:"roleId" form:"roleId"`
 	Status    string `json:"status" form:"status"`
 	DataLimit int64  `json:"dataLimit" form:"dataLimit"`
+	// ApiAccess lets the account mint its own API token, which then carries this
+	// account's role over the API.
+	ApiAccess *bool `json:"apiAccess" form:"apiAccess"`
 }
 
 // AdminView is the API representation of a panel account (password omitted).
@@ -41,6 +44,7 @@ type AdminView struct {
 	UsedBytes  int64  `json:"usedBytes"`
 	TotalUsers int64  `json:"totalUsers"`
 	Limited    bool   `json:"limited"`
+	ApiAccess  bool   `json:"apiAccess"`
 	CreatedAt  int64  `json:"createdAt"`
 	UpdatedAt  int64  `json:"updatedAt"`
 }
@@ -133,6 +137,7 @@ func adminToView(user *model.User, role *model.AdminRole, selfID int, usedBytes,
 		UsedBytes:  usedBytes,
 		TotalUsers: totalUsers,
 		Limited:    adminIsLimited(user),
+		ApiAccess:  user.ApiAccess || (role != nil && role.OwnerRole),
 		CreatedAt:  user.CreatedAt,
 		UpdatedAt:  user.UpdatedAt,
 	}
@@ -267,6 +272,11 @@ func (s *AdminService) SyncAdminUsedBytes() error {
 }
 
 // Create adds a new panel account bound to the given role.
+// RoleByID exposes the role lookup used by the anti-escalation checks.
+func (s *AdminService) RoleByID(id int) (*model.AdminRole, error) {
+	return s.roleByID(database.GetDB(), id)
+}
+
 func (s *AdminService) Create(payload AdminPayload) (*AdminView, error) {
 	username := strings.TrimSpace(payload.Username)
 	if username == "" {
@@ -308,6 +318,7 @@ func (s *AdminService) Create(payload AdminPayload) (*AdminView, error) {
 		RoleId:    payload.RoleId,
 		Status:    status,
 		DataLimit: payload.DataLimit,
+		ApiAccess: payload.ApiAccess != nil && *payload.ApiAccess,
 	}
 	if err := db.Create(user).Error; err != nil {
 		return nil, err
@@ -352,6 +363,13 @@ func (s *AdminService) Update(id int, payload AdminPayload) (*AdminView, error) 
 
 	if payload.DataLimit != user.DataLimit {
 		updates["data_limit"] = payload.DataLimit
+	}
+
+	if payload.ApiAccess != nil && *payload.ApiAccess != user.ApiAccess {
+		if isOwner && !*payload.ApiAccess {
+			return nil, errors.New("the owner always keeps API access")
+		}
+		updates["api_access"] = *payload.ApiAccess
 	}
 
 	if payload.RoleId > 0 && payload.RoleId != user.RoleId {

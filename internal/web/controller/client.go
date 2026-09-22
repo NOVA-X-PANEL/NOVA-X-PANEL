@@ -56,50 +56,61 @@ func (a *ClientController) initRouter(g *gin.RouterGroup) {
 	// silently received an empty list instead of a refusal, which is
 	// indistinguishable from "there are no clients". Read or read_simple may
 	// list; the scope below still narrows the rows.
+	// Every route needs a permission gate. Most of these previously had none, so
+	// any account that could log in — including a role with no client grants at
+	// all — could create, import, enable/disable, reset, detach or delete clients.
+	// The gates below match the actions the role editor exposes for "clients"
+	// (stored under "users"). Ownership is narrowed separately, inside the
+	// handlers, so an "own"-scoped role still only reaches its own records.
 	clientsRead := requireAnyPanelPermission(
 		panelPermissionRequirement{Section: "clients", Permission: "view"},
 		panelPermissionRequirement{Section: "clients", Permission: "viewSimple"},
 	)
+	clientsCreate := requirePanelPermission("clients", "create")
+	clientsUpdate := requirePanelPermission("clients", "update")
+	clientsDelete := requirePanelPermission("clients", "delete")
+	clientsReset := requirePanelPermission("clients", "resetUsage")
+
 	g.GET("/list", clientsRead, a.list)
 	g.GET("/list/paged", clientsRead, a.listPaged)
-	g.GET("/get/:email", a.get)
-	g.GET("/get/tgId/:tgId", a.getByTgId)
-	g.GET("/traffic/:email", a.getTrafficByEmail)
-	g.GET("/subLinks/:subId", a.getSubLinks)
-	g.GET("/links/:email", a.getClientLinks)
-	g.POST("/happLink/:id", a.generateHappLink)
+	g.GET("/get/:email", clientsRead, a.get)
+	g.GET("/get/tgId/:tgId", clientsRead, a.getByTgId)
+	g.GET("/traffic/:email", clientsRead, a.getTrafficByEmail)
+	g.GET("/subLinks/:subId", clientsRead, a.getSubLinks)
+	g.GET("/links/:email", clientsRead, a.getClientLinks)
+	g.POST("/happLink/:id", clientsRead, a.generateHappLink)
 
-	g.POST("/add", a.create)
-	g.POST("/update/:email", a.update)
-	g.POST("/del/:email", a.delete)
-	g.POST("/:email/attach", a.attach)
-	g.POST("/:email/detach", a.detach)
-	g.POST("/:email/externalLinks", a.setExternalLinks)
-	g.GET("/export", a.export)
-	g.POST("/import", a.importClients)
-	g.POST("/delOrphans", a.delOrphans)
-	g.POST("/resetAllTraffics", a.resetAllTraffics)
-	g.POST("/delDepleted", a.delDepleted)
-	g.POST("/bulkAdjust", a.bulkAdjust)
-	g.POST("/bulkEnable", a.bulkEnable)
-	g.POST("/bulkDisable", a.bulkDisable)
-	g.POST("/bulkDel", a.bulkDelete)
-	g.POST("/bulkCreate", a.bulkCreate)
-	g.POST("/bulkAttach", a.bulkAttach)
-	g.POST("/bulkDetach", a.bulkDetach)
-	g.POST("/bulkResetTraffic", a.bulkResetTraffic)
-	g.POST("/resetTraffic/:email", a.resetTrafficByEmail)
-	g.POST("/updateTraffic/:email", a.updateTrafficByEmail)
-	g.POST("/ips/:email", a.getIps)
-	g.POST("/clearIps/:email", a.clearIps)
-	g.POST("/hwids/:email", a.getHwids)
-	g.DELETE("/hwids/:email", a.clearHwids)
-	g.DELETE("/hwids/:email/:id", a.deleteHwid)
-	g.POST("/onlines", a.onlines)
-	g.POST("/onlinesByGuid", a.onlinesByGuid)
-	g.POST("/clientIpsByGuid", a.clientIpsByGuid)
-	g.POST("/activeInbounds", a.activeInbounds)
-	g.POST("/lastOnline", a.lastOnline)
+	g.POST("/add", clientsCreate, a.create)
+	g.POST("/update/:email", clientsUpdate, a.update)
+	g.POST("/del/:email", clientsDelete, a.delete)
+	g.POST("/:email/attach", clientsUpdate, a.attach)
+	g.POST("/:email/detach", clientsUpdate, a.detach)
+	g.POST("/:email/externalLinks", clientsUpdate, a.setExternalLinks)
+	g.GET("/export", clientsRead, a.export)
+	g.POST("/import", clientsCreate, a.importClients)
+	g.POST("/delOrphans", clientsDelete, a.delOrphans)
+	g.POST("/resetAllTraffics", clientsReset, a.resetAllTraffics)
+	g.POST("/delDepleted", clientsDelete, a.delDepleted)
+	g.POST("/bulkAdjust", clientsUpdate, a.bulkAdjust)
+	g.POST("/bulkEnable", clientsUpdate, a.bulkEnable)
+	g.POST("/bulkDisable", clientsUpdate, a.bulkDisable)
+	g.POST("/bulkDel", clientsDelete, a.bulkDelete)
+	g.POST("/bulkCreate", clientsCreate, a.bulkCreate)
+	g.POST("/bulkAttach", clientsUpdate, a.bulkAttach)
+	g.POST("/bulkDetach", clientsUpdate, a.bulkDetach)
+	g.POST("/bulkResetTraffic", clientsReset, a.bulkResetTraffic)
+	g.POST("/resetTraffic/:email", clientsReset, a.resetTrafficByEmail)
+	g.POST("/updateTraffic/:email", clientsUpdate, a.updateTrafficByEmail)
+	g.POST("/ips/:email", clientsRead, a.getIps)
+	g.POST("/clearIps/:email", clientsUpdate, a.clearIps)
+	g.POST("/hwids/:email", clientsRead, a.getHwids)
+	g.DELETE("/hwids/:email", clientsUpdate, a.clearHwids)
+	g.DELETE("/hwids/:email/:id", clientsUpdate, a.deleteHwid)
+	g.POST("/onlines", clientsRead, a.onlines)
+	g.POST("/onlinesByGuid", clientsRead, a.onlinesByGuid)
+	g.POST("/clientIpsByGuid", clientsRead, a.clientIpsByGuid)
+	g.POST("/activeInbounds", clientsRead, a.activeInbounds)
+	g.POST("/lastOnline", clientsRead, a.lastOnline)
 }
 
 // clientScope resolves the RBAC scope for the acting account. Unit tests mount
@@ -131,6 +142,23 @@ func (a *ClientController) loginUser(c *gin.Context) *model.User {
 		user = session.GetLoginUser(c)
 	}()
 	return user
+}
+
+// requireGlobalClientScope allows a call that touches every client at once only
+// when the acting scope covers every client. An "own" or "none" scoped role must
+// not be able to wipe another admin's traffic by calling a bulk endpoint.
+func (a *ClientController) requireGlobalClientScope(c *gin.Context, permission string) bool {
+	if c.GetBool("api_authed") || gin.Mode() == gin.TestMode {
+		return true
+	}
+	if a.loginUser(c) == nil {
+		return true
+	}
+	if a.clientScope(c, permission).Mode == service.ClientAccessAll {
+		return true
+	}
+	pureJsonMsg(c, http.StatusForbidden, false, "this operation requires access to every client")
+	return false
 }
 
 // requireClientInScope loads a client by email and aborts when the acting
@@ -276,17 +304,40 @@ func (a *ClientController) getByTgId(c *gin.Context) {
 	jsonObj(c, results, nil)
 }
 
+// stampOwnerForPayloads records the acting account as the owner of freshly
+// created clients, the same way the single-client create does.
+func (a *ClientController) stampOwnerForPayloads(c *gin.Context, payloads []service.ClientCreatePayload) {
+	user := a.loginUser(c)
+	if user == nil {
+		return
+	}
+	emails := make([]string, 0, len(payloads))
+	for _, p := range payloads {
+		if p.Client.Email != "" {
+			emails = append(emails, p.Client.Email)
+		}
+	}
+	if len(emails) == 0 {
+		return
+	}
+	if err := a.clientService.AssignOwnerAdmin(emails, user.Id); err != nil {
+		logger.Warning("failed to stamp client owners:", err)
+	}
+}
+
 // requireInboundsInScope rejects a call that would place or attach a client on an
 // inbound the acting role may not use. The role editor's "Allowed Inbounds" is
 // documented as restricting exactly this, but nothing enforced it: a role limited
 // to one inbound could still create clients on every other one.
-func (a *ClientController) requireInboundsInScope(c *gin.Context, inboundIds []int) bool {
+func (a *ClientController) requireInboundsInScope(c *gin.Context, permission string, inboundIds []int) bool {
 	if len(inboundIds) == 0 {
 		return true
 	}
-	scope := a.clientScope(c, "create")
+	scope := a.clientScope(c, permission)
 	if scope.Mode == service.ClientAccessNone {
-		return true // the create permission gate already decided this call
+		// The route's own permission gate already refused this call, so there is
+		// nothing extra to decide here.
+		return true
 	}
 	if service.ClientInboundsAllowedForScope(scope, inboundIds) {
 		return true
@@ -307,7 +358,7 @@ func (a *ClientController) create(c *gin.Context) {
 		pureJsonMsg(c, http.StatusForbidden, false, "clients.create permission required")
 		return
 	}
-	if !a.requireInboundsInScope(c, payload.InboundIds) {
+	if !a.requireInboundsInScope(c, "create", payload.InboundIds) {
 		return
 	}
 
@@ -403,12 +454,15 @@ type externalLinksBody struct {
 
 func (a *ClientController) attach(c *gin.Context) {
 	email := c.Param("email")
+	if _, ok := a.requireClientInScope(c, email, "update"); !ok {
+		return
+	}
 	var body attachDetachBody
 	if err := c.ShouldBindJSON(&body); err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
-	if !a.requireInboundsInScope(c, body.InboundIds) {
+	if !a.requireInboundsInScope(c, "update", body.InboundIds) {
 		return
 	}
 	needRestart, err := a.clientService.AttachByEmail(&a.inboundService, email, body.InboundIds)
@@ -429,6 +483,9 @@ func (a *ClientController) attach(c *gin.Context) {
 
 func (a *ClientController) setExternalLinks(c *gin.Context) {
 	email := c.Param("email")
+	if _, ok := a.requireClientInScope(c, email, "update"); !ok {
+		return
+	}
 	var body externalLinksBody
 	if err := c.ShouldBindJSON(&body); err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
@@ -443,6 +500,9 @@ func (a *ClientController) setExternalLinks(c *gin.Context) {
 }
 
 func (a *ClientController) resetAllTraffics(c *gin.Context) {
+	if !a.requireGlobalClientScope(c, "reset_usage") {
+		return
+	}
 	needRestart, err := a.clientService.ResetAllTraffics()
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
@@ -500,7 +560,7 @@ func (a *ClientController) bulkAttach(c *gin.Context) {
 		return
 	}
 	req.Emails = a.scopeEmails(c, req.Emails, "update")
-	if !a.requireInboundsInScope(c, req.InboundIds) {
+	if !a.requireInboundsInScope(c, "update", req.InboundIds) {
 		return
 	}
 	result, needRestart, err := a.clientService.BulkAttach(&a.inboundService, req.Emails, req.InboundIds)
@@ -600,6 +660,9 @@ func (a *ClientController) bulkCreate(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
+	// Same ownership stamp as the single create: without it an "own"-scoped
+	// admin would create clients it could not then see.
+	a.stampOwnerForPayloads(c, payloads)
 	jsonObj(c, result, nil)
 	if needRestart {
 		a.xrayService.SetToNeedRestart()
@@ -608,6 +671,9 @@ func (a *ClientController) bulkCreate(c *gin.Context) {
 }
 
 func (a *ClientController) delDepleted(c *gin.Context) {
+	if !a.requireGlobalClientScope(c, "delete") {
+		return
+	}
 	deleted, needRestart, err := a.clientService.DelDepleted(&a.inboundService)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
@@ -655,6 +721,7 @@ func (a *ClientController) importClients(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
+	a.stampOwnerForPayloads(c, items)
 	jsonObj(c, result, nil)
 	if needRestart {
 		a.xrayService.SetToNeedRestart()
@@ -663,6 +730,9 @@ func (a *ClientController) importClients(c *gin.Context) {
 }
 
 func (a *ClientController) delOrphans(c *gin.Context) {
+	if !a.requireGlobalClientScope(c, "delete") {
+		return
+	}
 	deleted, err := a.clientService.DeleteOrphans()
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
@@ -696,6 +766,9 @@ type trafficUpdateRequest struct {
 
 func (a *ClientController) updateTrafficByEmail(c *gin.Context) {
 	email := c.Param("email")
+	if _, ok := a.requireClientInScope(c, email, "update"); !ok {
+		return
+	}
 	var req trafficUpdateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
@@ -711,6 +784,9 @@ func (a *ClientController) updateTrafficByEmail(c *gin.Context) {
 
 func (a *ClientController) getIps(c *gin.Context) {
 	email := c.Param("email")
+	if _, ok := a.requireClientInScope(c, email, "view"); !ok {
+		return
+	}
 	infos, err := a.inboundService.GetClientIpsWithNodes(email)
 	jsonObj(c, infos, err)
 }
@@ -722,6 +798,9 @@ func (a *ClientController) clientIpsByGuid(c *gin.Context) {
 
 func (a *ClientController) clearIps(c *gin.Context) {
 	email := c.Param("email")
+	if _, ok := a.requireClientInScope(c, email, "update"); !ok {
+		return
+	}
 	if err := a.inboundService.ClearClientIps(email); err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.updateSuccess"), err)
 		return
@@ -730,11 +809,19 @@ func (a *ClientController) clearIps(c *gin.Context) {
 }
 
 func (a *ClientController) getHwids(c *gin.Context) {
+	email := c.Param("email")
+	if _, ok := a.requireClientInScope(c, email, "view"); !ok {
+		return
+	}
 	infos, err := a.clientService.ListClientHwids(c.Param("email"))
 	jsonObj(c, infos, err)
 }
 
 func (a *ClientController) clearHwids(c *gin.Context) {
+	email := c.Param("email")
+	if _, ok := a.requireClientInScope(c, email, "update"); !ok {
+		return
+	}
 	if err := a.clientService.ClearClientHwids(c.Param("email")); err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.updateSuccess"), err)
 		return
@@ -743,6 +830,9 @@ func (a *ClientController) clearHwids(c *gin.Context) {
 }
 
 func (a *ClientController) deleteHwid(c *gin.Context) {
+	if _, ok := a.requireClientInScope(c, c.Param("email"), "update"); !ok {
+		return
+	}
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
@@ -774,6 +864,9 @@ func (a *ClientController) lastOnline(c *gin.Context) {
 
 func (a *ClientController) getTrafficByEmail(c *gin.Context) {
 	email := c.Param("email")
+	if _, ok := a.requireClientInScope(c, email, "view"); !ok {
+		return
+	}
 	traffic, err := a.inboundService.GetClientTrafficByEmail(email)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.trafficGetError"), err)
@@ -792,6 +885,10 @@ func (a *ClientController) getSubLinks(c *gin.Context) {
 }
 
 func (a *ClientController) getClientLinks(c *gin.Context) {
+	email := c.Param("email")
+	if _, ok := a.requireClientInScope(c, email, "view"); !ok {
+		return
+	}
 	links, err := a.inboundService.GetAllClientLinks(resolveHost(c), c.Param("email"))
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.obtain"), err)
@@ -822,6 +919,9 @@ func (a *ClientController) generateHappLink(c *gin.Context) {
 
 func (a *ClientController) detach(c *gin.Context) {
 	email := c.Param("email")
+	if _, ok := a.requireClientInScope(c, email, "update"); !ok {
+		return
+	}
 	var body attachDetachBody
 	if err := c.ShouldBindJSON(&body); err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
@@ -855,6 +955,7 @@ func (a *ClientController) bulkResetTraffic(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
+	req.Emails = a.scopeEmails(c, req.Emails, "reset_usage")
 	affected, err := a.clientService.BulkResetTraffic(&a.inboundService, req.Emails)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)

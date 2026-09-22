@@ -80,6 +80,44 @@ import {
   SPEED_TAG_CLASS_NAME,
   SPEED_TAG_STYLE,
 } from '@/components/utility/speedTagStyle';
+/**
+ * Neon Console table accents.
+ *
+ * A client's badge colour is derived from its address, so the same client keeps
+ * the same colour across reloads instead of shifting with the row order. The
+ * protocol hue drives the row stripe, which is what makes a long list scannable.
+ */
+const CLIENT_ACCENTS = [
+  'linear-gradient(140deg,#3b82f6,#1d4ed8)',
+  'linear-gradient(140deg,#8b5cf6,#5b21b6)',
+  'linear-gradient(140deg,#ec4899,#9d174d)',
+  'linear-gradient(140deg,#22d3ee,#0369a1)',
+  'linear-gradient(140deg,#14b8a6,#0f766e)',
+  'linear-gradient(140deg,#f59e0b,#b45309)',
+  'linear-gradient(140deg,#a3e635,#4d7c0f)',
+];
+
+function clientAccent(email: string): string {
+  let h = 0;
+  for (let i = 0; i < email.length; i++) h = (h * 31 + email.charCodeAt(i)) >>> 0;
+  return CLIENT_ACCENTS[h % CLIENT_ACCENTS.length];
+}
+
+const PROTOCOL_HUES: Array<[RegExp, string]> = [
+  [/vless/i, '#4a8cff'],
+  [/vmess/i, '#a06bff'],
+  [/trojan/i, '#00c2ff'],
+  [/shadow/i, '#00cfa8'],
+  [/wireguard/i, '#f0a020'],
+];
+
+/** The accent hue for a row, taken from the client's first attached inbound. */
+function protocolHue(record: Record<string, unknown>): string {
+  const attached = (record.attachedInbounds as Array<{ remark?: string }> | undefined) ?? [];
+  const name = String(attached[0]?.remark ?? record.protocol ?? '');
+  return PROTOCOL_HUES.find(([re]) => re.test(name))?.[1] ?? '#4a8cff';
+}
+
 const ClientFormModal = lazy(() => import('./ClientFormModal'));
 const ClientInfoModal = lazy(() => import('./ClientInfoModal'));
 const ClientQrModal = lazy(() => import('./ClientQrModal'));
@@ -1093,21 +1131,28 @@ export default function ClientsPage() {
           if (bucket === 'depleted')
             return (
               <Tooltip title={lastOnlineTitle}>
-                <Tag color="red">{t('depleted')}</Tag>
+                <Tag color="red" className="nc-pill nc-pill-warn">
+                  {t('depleted')}
+                </Tag>
               </Tooltip>
             );
           if (record.enable && isOnline(record.email))
             return (
-              <Tag color="green" className="dot-tag">
+              <Tag color="green" className="dot-tag nc-pill nc-pill-on">
                 <span className="online-dot" />
                 {t('pages.clients.online')}
               </Tag>
             );
           if (!record.enable) return <Tag>{t('disabled')}</Tag>;
-          if (bucket === 'expiring') return <Tag color="orange">{t('depletingSoon')}</Tag>;
+          if (bucket === 'expiring')
+            return (
+              <Tag color="orange" className="nc-pill nc-pill-warn">
+                {t('depletingSoon')}
+              </Tag>
+            );
           return (
             <Tooltip title={lastOnlineTitle}>
-              <Tag>{t('pages.clients.offline')}</Tag>
+              <Tag className="nc-pill nc-pill-off">{t('pages.clients.offline')}</Tag>
             </Tooltip>
           );
         },
@@ -1118,6 +1163,13 @@ export default function ClientsPage() {
         width: 220,
         render: (_v, record) => (
           <div className="email-cell">
+            <span
+              className="nc-av"
+              style={{ background: clientAccent(record.email) }}
+              aria-hidden="true"
+            >
+              {(record.email || '?').trim().charAt(0).toUpperCase()}
+            </span>
             <span className="email">{record.email}</span>
             {record.subId && (
               <span className="sub" title={record.subId}>

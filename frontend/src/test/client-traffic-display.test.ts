@@ -22,7 +22,7 @@ describe('computeTrafficDisplay', () => {
     );
     expect(d.percent).toBe(100);
     expect(d.isUnlimited).toBe(true);
-    expect(d.strokeColor).toBe('#722ed1');
+    expect(d.strokeColor).toBe('#5b7cff');
   });
 
   it('marks depleted clients with exception status', () => {
@@ -44,12 +44,31 @@ describe('computeTrafficDisplay', () => {
     expect(d.status).toBeUndefined();
   });
 
-  it('uses warning color near traffic limit', () => {
+  // The three usage levels use the Neon Console hues rather than antd's
+  // success/warning/danger tokens, so a full bar reads as an alert without
+  // clashing with the surrounding surface.
+  it('uses the near-limit colour when the remaining budget is inside the diff', () => {
     const diff = 0.1 * gb;
     const d = computeTrafficDisplay(
       { up: 0.95 * gb, down: 0, total: gb, enabled: true, trafficDiff: diff },
       false,
     );
-    expect(d.strokeColor).toBe('#faad14');
+    expect(d.strokeColor).toBe('#f0a020');
+  });
+
+  it('uses the low-usage colour while there is room to spare', () => {
+    const d = computeTrafficDisplay(
+      { up: 0.2 * gb, down: 0, total: gb, enabled: true, trafficDiff: 0 },
+      false,
+    );
+    expect(d.strokeColor).toBe('#00cfa8');
+  });
+
+  it('uses the over-limit colour once the budget is spent', () => {
+    const d = computeTrafficDisplay(
+      { up: gb, down: 0, total: gb, enabled: true, trafficDiff: 0 },
+      false,
+    );
+    expect(d.strokeColor).toBe('#e0348a');
   });
 });

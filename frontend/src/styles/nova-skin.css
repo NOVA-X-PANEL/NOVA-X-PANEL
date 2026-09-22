@@ -1917,3 +1917,67 @@ body.dark .ant-command-palette,
   border-color: rgba(240, 160, 32, 0.5) !important;
   background: rgba(240, 160, 32, 0.15) !important;
 }
+
+/* ============================================================================
+   Clients table: seamless interior.
+   The hairlines under the header, between the rows and between the columns made
+   the list read as a grid of boxes. They are gone; the table separates its parts
+   with spacing, a header gradient that fades out, and a faint alternate-row tint.
+
+   Specificity is deliberate: the rules above set these borders with :is(...) plus
+   !important, so each selector here carries an extra class and wins on specificity
+   rather than on load order. `.nc-full` exists only on the clients page, so no
+   other table is affected.
+   ========================================================================== */
+
+:is(.clients-page, .nc-page) .nc-full .ant-table-wrapper .ant-table-thead > tr > th,
+:is(.clients-page, .nc-page) .nc-full .ant-table-wrapper .ant-table-tbody > tr > td,
+:is(.clients-page, .nc-page) .nc-full .ant-table-wrapper .ant-table-cell {
+  border-top: 0 !important;
+  border-bottom: 0 !important;
+  border-inline-start: 0 !important;
+  border-inline-end: 0 !important;
+  box-shadow: none !important;
+}
+
+:is(.clients-page, .nc-page) .nc-full .ant-table-wrapper .ant-table-thead > tr > th::before,
+:is(.clients-page, .nc-page) .nc-full .ant-table-wrapper .ant-table-thead > tr > th::after {
+  display: none !important;
+}
+
+:is(.clients-page, .nc-page) .nc-full .ant-table-wrapper .ant-table,
+:is(.clients-page, .nc-page) .nc-full .ant-table-wrapper .ant-table-container,
+:is(.clients-page, .nc-page) .nc-full .ant-table-wrapper .ant-table-content,
+:is(.clients-page, .nc-page) .nc-full .ant-table-wrapper .ant-table-body,
+:is(.clients-page, .nc-page) .nc-full .ant-table-wrapper .ant-table-header {
+  border: 0 !important;
+  box-shadow: none !important;
+  background-image: none !important;
+}
+
+/* the rule under the toolbar strip inside the card */
+:is(.clients-page, .nc-page) .nc-full .ant-card > .ant-card-head {
+  border-bottom: 0 !important;
+  box-shadow: none !important;
+}
+
+/* The card itself keeps its border and its opaque surface: without them the block
+   floats and the page artwork shows through the rows. */
+:is(.clients-page, .nc-page) .nc-full > .ant-card {
+  background: linear-gradient(150deg, var(--nc-card-2) 0%, var(--nc-card) 100%) !important;
+}
+
+/* the header column keeps a soft top glow so it still reads as a header */
+:is(.clients-page, .nc-page) .nc-full .ant-table-thead > tr > th {
+  background: linear-gradient(180deg, rgba(23, 107, 255, 0.16), rgba(23, 107, 255, 0)) !important;
+}
+
+/* spacing does the separating now */
+:is(.clients-page, .nc-page) .nc-full .ant-table-tbody > tr > td {
+  padding-top: 13px !important;
+  padding-bottom: 13px !important;
+}
+
+:is(.clients-page, .nc-page) .nc-full .ant-table-tbody > tr:nth-child(even) > td {
+  background-color: rgba(255, 255, 255, 0.016);
+}

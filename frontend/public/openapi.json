@@ -13261,6 +13261,10 @@
                 "required": [
                   "name"
                 ]
+              },
+              "example": {
+                "name": "ci-deploy",
+                "expiresAt": 0
               }
             }
           }
@@ -13363,6 +13367,9 @@
                 "required": [
                   "enabled"
                 ]
+              },
+              "example": {
+                "enabled": false
               }
             }
           }

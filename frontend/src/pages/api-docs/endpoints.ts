@@ -2050,7 +2050,7 @@ export const sections: readonly Section[] = [
             defaultValue: 0,
           },
         ],
-        requestBody: '{\n  "name": "ci-deploy",\n  "expiresAt": 0\n}',
+        body: '{\n  "name": "ci-deploy",\n  "expiresAt": 0\n}',
       },
       {
         method: 'POST',
@@ -2068,7 +2068,7 @@ export const sections: readonly Section[] = [
           { name: 'id', in: 'path', type: 'integer', desc: 'API token ID.' },
           { name: 'enabled', in: 'body (json)', type: 'boolean', desc: 'Desired state.' },
         ],
-        requestBody: '{\n  "enabled": false\n}',
+        body: '{\n  "enabled": false\n}',
       },
     ],
   },

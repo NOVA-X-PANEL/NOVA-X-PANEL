@@ -34,9 +34,9 @@ describe('route access', () => {
   });
 
   it('reads the camelCase spellings the older role documents used', () => {
-    expect(canAccessRoute(admin({ inbounds: { readSimple: true, viewSimple: true } }), '/inbounds')).toBe(
-      true,
-    );
+    expect(
+      canAccessRoute(admin({ inbounds: { readSimple: true, viewSimple: true } }), '/inbounds'),
+    ).toBe(true);
     expect(canReadResourcePage(admin({ users: { viewSimpleList: true } }), 'users')).toBe(true);
   });
 

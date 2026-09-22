@@ -327,6 +327,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "running": true
   },
   "ApiToken": {
+    "adminId": 0,
     "createdAt": 0,
     "enabled": false,
     "expiresAt": 0,
@@ -336,6 +337,8 @@ export const EXAMPLES: Record<string, unknown> = {
     "token": ""
   },
   "ApiTokenView": {
+    "adminId": 0,
+    "adminName": "operator",
     "createdAt": 1736000000,
     "enabled": true,
     "expiresAt": 0,
@@ -1062,6 +1065,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "zero_rtt_handshake": false
   },
   "User": {
+    "apiAccess": false,
     "createdAt": 0,
     "dataLimit": 0,
     "id": 0,

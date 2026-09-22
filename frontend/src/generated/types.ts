@@ -2,6 +2,7 @@
 export type ClientAccessMode = string;
 export type GeoKind = string;
 export type OnlineAPISupport = number;
+export type PermissionGrants = Record<string, Record<string, boolean>>;
 export type ProcessState = string;
 export type Protocol = string;
 export type staticEgressResolver = string;
@@ -323,6 +324,7 @@ export interface AmneziaWGLogs {
 }
 
 export interface ApiToken {
+  adminId: number;
   createdAt: number;
   enabled: boolean;
   expiresAt: number;
@@ -333,6 +335,8 @@ export interface ApiToken {
 }
 
 export interface ApiTokenView {
+  adminId: number;
+  adminName?: string;
   createdAt: number;
   enabled: boolean;
   expiresAt: number;
@@ -982,6 +986,7 @@ export interface TuicServerSettings {
 }
 
 export interface User {
+  apiAccess: boolean;
   createdAt: number;
   dataLimit: number;
   id: number;

@@ -1326,6 +1326,10 @@ export const SCHEMAS: Record<string, unknown> = {
   },
   "ApiToken": {
     "properties": {
+      "adminId": {
+        "description": "AdminId binds the token to a panel account. 0 is a legacy panel-wide token\n(settings page): it carries full authority, which is what node-sync and\nexisting integrations rely on. Any other value makes the token act as that\naccount, so every permission check applies exactly as it does for a browser\nsession — an admin's own token can never exceed that admin's role.",
+        "type": "integer"
+      },
       "createdAt": {
         "format": "int64",
         "type": "integer"
@@ -1352,6 +1356,7 @@ export const SCHEMAS: Record<string, unknown> = {
       }
     },
     "required": [
+      "adminId",
       "createdAt",
       "enabled",
       "expiresAt",
@@ -1364,6 +1369,16 @@ export const SCHEMAS: Record<string, unknown> = {
   },
   "ApiTokenView": {
     "properties": {
+      "adminId": {
+        "description": "AdminId is the account this token acts as; 0 is a panel-wide token.",
+        "example": 0,
+        "type": "integer"
+      },
+      "adminName": {
+        "description": "AdminName is filled for the admin-facing list.",
+        "example": "operator",
+        "type": "string"
+      },
       "createdAt": {
         "example": 1736000000,
         "format": "int64",
@@ -1396,6 +1411,7 @@ export const SCHEMAS: Record<string, unknown> = {
       }
     },
     "required": [
+      "adminId",
       "createdAt",
       "enabled",
       "expiresAt",
@@ -4297,6 +4313,10 @@ export const SCHEMAS: Record<string, unknown> = {
   "User": {
     "description": "User represents a user account in the 3x-ui panel.",
     "properties": {
+      "apiAccess": {
+        "description": "ApiAccess lets this account mint its own API token. The token carries the\naccount's role, so whatever the role may do in the panel, the token may do\nover the API — and nothing more. The owner always has it.",
+        "type": "boolean"
+      },
       "createdAt": {
         "description": "CreatedAt/UpdatedAt are populated for RBAC admin management views.",
         "format": "int64",
@@ -4333,6 +4353,7 @@ export const SCHEMAS: Record<string, unknown> = {
       }
     },
     "required": [
+      "apiAccess",
       "createdAt",
       "dataLimit",
       "id",

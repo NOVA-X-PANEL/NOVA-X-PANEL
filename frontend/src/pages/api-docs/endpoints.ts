@@ -2021,6 +2021,55 @@ export const sections: readonly Section[] = [
         summary: 'Delete every client owned by this administrator.',
         params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Administrator ID.' }],
       },
+      {
+        method: 'GET',
+        path: '/panel/api/admins/apiTokens',
+        summary: "List the caller's own API tokens.",
+        description:
+          'Self-service: returns only the tokens bound to the calling account. Requires the account to have API access (set by the owner) or to hold the owner role.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/admins/apiTokens/create',
+        summary: "Mint an API token for the caller's own account.",
+        description:
+          "The token acts as the calling account: every request it makes is checked against that account's role, so it can never do more than the account can in the panel. The plaintext is returned once and only its hash is stored. At most 10 tokens per account.",
+        params: [
+          {
+            name: 'name',
+            in: 'body (json)',
+            type: 'string',
+            desc: 'Unique token name, 64 characters or fewer.',
+          },
+          {
+            name: 'expiresAt',
+            in: 'body (json)',
+            type: 'integer',
+            desc: 'Unix-ms expiry. 0 means the token never expires.',
+            optional: true,
+            defaultValue: 0,
+          },
+        ],
+        requestBody: '{\n  "name": "ci-deploy",\n  "expiresAt": 0\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/admins/apiTokens/delete/:id',
+        summary: "Revoke one of the caller's own API tokens.",
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'API token ID.' }],
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/admins/apiTokens/setEnabled/:id',
+        summary: "Enable or disable one of the caller's own API tokens.",
+        description:
+          'A disabled token is rejected immediately; re-enabling restores it. Disabling the account disables its tokens too.',
+        params: [
+          { name: 'id', in: 'path', type: 'integer', desc: 'API token ID.' },
+          { name: 'enabled', in: 'body (json)', type: 'boolean', desc: 'Desired state.' },
+        ],
+        requestBody: '{\n  "enabled": false\n}',
+      },
     ],
   },
 

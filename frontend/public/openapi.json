@@ -1352,6 +1352,10 @@
       },
       "ApiToken": {
         "properties": {
+          "adminId": {
+            "description": "AdminId binds the token to a panel account. 0 is a legacy panel-wide token\n(settings page): it carries full authority, which is what node-sync and\nexisting integrations rely on. Any other value makes the token act as that\naccount, so every permission check applies exactly as it does for a browser\nsession — an admin's own token can never exceed that admin's role.",
+            "type": "integer"
+          },
           "createdAt": {
             "format": "int64",
             "type": "integer"
@@ -1378,6 +1382,7 @@
           }
         },
         "required": [
+          "adminId",
           "createdAt",
           "enabled",
           "expiresAt",
@@ -1390,6 +1395,16 @@
       },
       "ApiTokenView": {
         "properties": {
+          "adminId": {
+            "description": "AdminId is the account this token acts as; 0 is a panel-wide token.",
+            "example": 0,
+            "type": "integer"
+          },
+          "adminName": {
+            "description": "AdminName is filled for the admin-facing list.",
+            "example": "operator",
+            "type": "string"
+          },
           "createdAt": {
             "example": 1736000000,
             "format": "int64",
@@ -1422,6 +1437,7 @@
           }
         },
         "required": [
+          "adminId",
           "createdAt",
           "enabled",
           "expiresAt",
@@ -4323,6 +4339,10 @@
       "User": {
         "description": "User represents a user account in the 3x-ui panel.",
         "properties": {
+          "apiAccess": {
+            "description": "ApiAccess lets this account mint its own API token. The token carries the\naccount's role, so whatever the role may do in the panel, the token may do\nover the API — and nothing more. The owner always has it.",
+            "type": "boolean"
+          },
           "createdAt": {
             "description": "CreatedAt/UpdatedAt are populated for RBAC admin management views.",
             "format": "int64",
@@ -4359,6 +4379,7 @@
           }
         },
         "required": [
+          "apiAccess",
           "createdAt",
           "dataLimit",
           "id",
@@ -13181,6 +13202,194 @@
         }
       }
     },
+    "/panel/api/admins/apiTokens": {
+      "get": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "List the caller's own API tokens.",
+        "operationId": "get_panel_api_admins_apiTokens",
+        "description": "Self-service: returns only the tokens bound to the calling account. Requires the account to have API access (set by the owner) or to hold the owner role.",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admins/apiTokens/create": {
+      "post": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "Mint an API token for the caller's own account.",
+        "operationId": "post_panel_api_admins_apiTokens_create",
+        "description": "The token acts as the calling account: every request it makes is checked against that account's role, so it can never do more than the account can in the panel. The plaintext is returned once and only its hash is stored. At most 10 tokens per account.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Unique token name, 64 characters or fewer."
+                  },
+                  "expiresAt": {
+                    "type": "integer",
+                    "default": 0,
+                    "description": "Unix-ms expiry. 0 means the token never expires."
+                  }
+                },
+                "required": [
+                  "name"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admins/apiTokens/delete/{id}": {
+      "post": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "Revoke one of the caller's own API tokens.",
+        "operationId": "post_panel_api_admins_apiTokens_delete_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "API token ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admins/apiTokens/setEnabled/{id}": {
+      "post": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "Enable or disable one of the caller's own API tokens.",
+        "operationId": "post_panel_api_admins_apiTokens_setEnabled_id",
+        "description": "A disabled token is rejected immediately; re-enabling restores it. Disabling the account disables its tokens too.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "API token ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "enabled": {
+                    "type": "boolean",
+                    "description": "Desired state."
+                  }
+                },
+                "required": [
+                  "enabled"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/panel/api/admin-roles/list": {
       "get": {
         "tags": [
@@ -13554,6 +13763,8 @@
                 "example": {
                   "success": true,
                   "obj": {
+                    "adminId": 0,
+                    "adminName": "operator",
                     "createdAt": 1736000000,
                     "enabled": true,
                     "expiresAt": 0,

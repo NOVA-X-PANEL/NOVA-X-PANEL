@@ -9,6 +9,9 @@ export type GeoKind = z.infer<typeof GeoKindSchema>;
 export const OnlineAPISupportSchema = z.number().int();
 export type OnlineAPISupport = z.infer<typeof OnlineAPISupportSchema>;
 
+export const PermissionGrantsSchema = z.record(z.string(), z.record(z.string(), z.boolean()));
+export type PermissionGrants = z.infer<typeof PermissionGrantsSchema>;
+
 export const ProcessStateSchema = z.string();
 export type ProcessState = z.infer<typeof ProcessStateSchema>;
 
@@ -342,6 +345,7 @@ export const AmneziaWGLogsSchema = z.object({
 export type AmneziaWGLogs = z.infer<typeof AmneziaWGLogsSchema>;
 
 export const ApiTokenSchema = z.object({
+  adminId: z.number().int(),
   createdAt: z.number().int(),
   enabled: z.boolean(),
   expiresAt: z.number().int(),
@@ -353,6 +357,8 @@ export const ApiTokenSchema = z.object({
 export type ApiToken = z.infer<typeof ApiTokenSchema>;
 
 export const ApiTokenViewSchema = z.object({
+  adminId: z.number().int(),
+  adminName: z.string().optional(),
   createdAt: z.number().int(),
   enabled: z.boolean(),
   expiresAt: z.number().int(),
@@ -1047,6 +1053,7 @@ export const TuicServerSettingsSchema = z.object({
 export type TuicServerSettings = z.infer<typeof TuicServerSettingsSchema>;
 
 export const UserSchema = z.object({
+  apiAccess: z.boolean(),
   createdAt: z.number().int(),
   dataLimit: z.number().int(),
   id: z.number().int(),

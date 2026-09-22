@@ -1,23 +1,33 @@
-import { useMemo } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import NeonLandscape from '@/components/NeonLandscape';
+import { InputNumber, message } from 'antd';
 import {
   CloudDownloadOutlined,
   CloudUploadOutlined,
-  DownloadOutlined,
+  DownOutlined,
   PlusOutlined,
   ReloadOutlined,
-  SlidersOutlined,
+  SettingOutlined,
   TeamOutlined,
-  ThunderboltOutlined,
-  WifiOutlined,
 } from '@ant-design/icons';
 
+import NeonLandscape from '@/components/NeonLandscape';
+import {
+  type ClientDefaults,
+  readClientDefaults,
+  writeClientDefaults,
+} from '@/lib/clients/default-limits';
+
 /**
- * Page chrome for the Clients screen, matching the Neon Console reference: a
- * hero banner with two headline metrics, and a right-hand rail holding quick
- * actions and a protocol donut. Presentational only — the page owns the data and
- * the handlers.
+ * Page chrome for the Clients screen, matching the Neon Console reference: a hero
+ * banner with two headline metrics, and a full-width action bar above the table.
+ *
+ * The action bar replaced a right-hand rail. The rail took a third of the width,
+ * which left the clients table scrolling horizontally for no good reason, so the
+ * actions now sit in a row above it and the table keeps the whole column. The
+ * client defaults are a collapsible inside the same card rather than a separate
+ * dialog: they are two numbers, and a section that opens in place costs one click
+ * instead of three.
  */
 
 interface ClientsHeroProps {
@@ -51,54 +61,41 @@ export function ClientsHero({ total, online }: ClientsHeroProps) {
   );
 }
 
-interface ClientsRailProps {
-  protocols: Array<{ name: string; n: number }>;
-  total: number;
+interface ClientsActionsProps {
   onAdd: () => void;
   onImport: () => void;
   onExport: () => void;
   onResetTraffic: () => void;
-  onDefaults: () => void;
 }
 
-const DONUT_PALETTE = ['#2563ff', '#7140ff', '#00bfff', '#13d6b0', '#f13b96'];
-
-/** Right-hand rail: quick actions and a protocol donut. */
-export function ClientsRail({
-  protocols,
-  total,
-  onAdd,
-  onImport,
-  onExport,
-  onResetTraffic,
-  onDefaults,
-}: ClientsRailProps) {
+/** Full-width action bar: the four client actions, plus the default-limits editor. */
+export function ClientsActions({ onAdd, onImport, onExport, onResetTraffic }: ClientsActionsProps) {
   const { t } = useTranslation();
+  const [messageApi, messageContextHolder] = message.useMessage();
+  const [open, setOpen] = useState(false);
+  // Read once, lazily: the values live in this browser's storage and reading them
+  // in an effect would render the empty state first and then swap it.
+  const [defaults, setDefaults] = useState<ClientDefaults>(() => readClientDefaults());
 
-  const slices = useMemo(() => {
-    const sum = protocols.reduce((acc, p) => acc + p.n, 0) || 1;
-    return protocols
-      .map((p) => ({ ...p, pct: Math.round((p.n / sum) * 100) }))
-      .sort((a, b) => b.n - a.n)
-      .slice(0, 5);
-  }, [protocols]);
+  const saveDefaults = () => {
+    const next = writeClientDefaults(defaults);
+    setDefaults(next);
+    messageApi.success(t('pages.clients.defaultLimitsSaved'));
+  };
 
-  const donut = useMemo(() => {
-    const arcs = slices.map((p, idx) => ({
-      color: DONUT_PALETTE[idx % DONUT_PALETTE.length],
-      pct: p.pct,
-    }));
-    const stops = arcs.map((a, idx) => {
-      const from = arcs.slice(0, idx).reduce((acc, x) => acc + x.pct, 0);
-      return `${a.color} ${from}% ${from + a.pct}%`;
-    });
-    const used = arcs.reduce((acc, a) => acc + a.pct, 0);
-    if (used < 100) stops.push(`rgba(255,255,255,.10) ${used}% 100%`);
-    return `conic-gradient(${stops.join(',')})`;
-  }, [slices]);
+  const summary =
+    defaults.limitIp > 0 || defaults.limitHwid > 0
+      ? `IP ${defaults.limitIp} · HWID ${defaults.limitHwid}`
+      : '—';
 
   const actions = [
-    { key: 'add', icon: <PlusOutlined />, label: t('pages.clients.addClients'), onClick: onAdd },
+    {
+      key: 'add',
+      icon: <PlusOutlined />,
+      label: t('pages.clients.addClients'),
+      onClick: onAdd,
+      cls: 'is-primary',
+    },
     {
       key: 'import',
       icon: <CloudUploadOutlined />,
@@ -116,66 +113,71 @@ export function ClientsRail({
       icon: <ReloadOutlined />,
       label: t('pages.clients.resetAllTrafficsTitle'),
       onClick: onResetTraffic,
-    },
-    {
-      key: 'defaults',
-      icon: <SlidersOutlined />,
-      label: t('pages.clients.defaultLimits'),
-      onClick: onDefaults,
+      cls: 'is-danger',
     },
   ];
 
   return (
-    <aside className="nc-rail">
-      <div className="nc-card">
-        <div className="nc-card-head">
-          <ThunderboltOutlined />
-          <span>{t('pages.clients.actions')}</span>
-        </div>
-        <div className="nc-actions">
+    <div className="nc-actionbar">
+      {messageContextHolder}
+      <div className="nc-card nc-actionbar-card">
+        <div className="nc-actionbar-row">
           {actions.map((a) => (
-            <button key={a.key} type="button" className="nc-action" onClick={a.onClick}>
-              <span className="nc-action-icon">{a.icon}</span>
-              <span className="nc-action-label">{a.label}</span>
-              <span className="nc-action-chevron" aria-hidden="true">
-                <DownloadOutlined />
-              </span>
+            <button
+              key={a.key}
+              type="button"
+              className={`nc-action-flat${a.cls ? ` ${a.cls}` : ''}`}
+              onClick={a.onClick}
+            >
+              <span className="nc-action-flat-icon">{a.icon}</span>
+              <span>{a.label}</span>
             </button>
           ))}
+
+          <button
+            type="button"
+            className={`nc-action-flat nc-defaults-trigger${open ? ' is-open' : ''}`}
+            aria-expanded={open}
+            onClick={() => setOpen((v) => !v)}
+          >
+            <span className="nc-action-flat-icon">
+              <SettingOutlined />
+            </span>
+            <span>{t('pages.clients.defaultLimits')}</span>
+            <span className="nc-defaults-summary">{summary}</span>
+            <DownOutlined className="nc-defaults-chevron" />
+          </button>
         </div>
       </div>
 
-      <div className="nc-card">
-        <div className="nc-card-head">
-          <WifiOutlined />
-          <span>{t('pages.inbounds.protocol')}</span>
+      {open && (
+        <div className="nc-collapse is-open">
+          <p className="nc-collapse-desc">{t('pages.clients.defaultLimitsHint')}</p>
+          <div className="nc-collapse-fields">
+            <label className="nc-field-row">
+              <span>{t('pages.clients.limitIp')}</span>
+              <InputNumber
+                min={0}
+                value={defaults.limitIp}
+                onChange={(v) => setDefaults((d) => ({ ...d, limitIp: Number(v) || 0 }))}
+              />
+            </label>
+            <label className="nc-field-row">
+              <span>{t('pages.clients.limitHwid')}</span>
+              <InputNumber
+                min={0}
+                value={defaults.limitHwid}
+                onChange={(v) => setDefaults((d) => ({ ...d, limitHwid: Number(v) || 0 }))}
+              />
+            </label>
+          </div>
+          <div className="nc-collapse-foot">
+            <button type="button" className="nc-save" onClick={saveDefaults}>
+              {t('save')}
+            </button>
+          </div>
         </div>
-        <div className="nc-donut-wrap">
-          <span className="nc-donut" style={{ background: donut }}>
-            <span className="nc-donut-hole">
-              <span className="nc-donut-num">{total}</span>
-              <span className="nc-donut-cap">{t('menu.clients')}</span>
-            </span>
-          </span>
-          <ul className="nc-legend">
-            {slices.length === 0 && (
-              <li>
-                <span className="nc-legend-name">{t('noData')}</span>
-              </li>
-            )}
-            {slices.map((p, idx) => (
-              <li key={p.name}>
-                <span
-                  className="nc-legend-dot"
-                  style={{ background: DONUT_PALETTE[idx % DONUT_PALETTE.length] }}
-                />
-                <span className="nc-legend-name">{p.name}</span>
-                <span className="nc-legend-pct">{p.pct}%</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-    </aside>
+      )}
+    </div>
   );
 }

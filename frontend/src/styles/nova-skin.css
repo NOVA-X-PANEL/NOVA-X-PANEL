@@ -1694,3 +1694,226 @@ body.dark .ant-command-palette,
 .nova-login .nx-field {
   background: #0b2450;
 }
+
+/* ============================================================================
+   Clients page: the action bar and the table accents.
+   The right-hand rail is gone — it held a third of the width, which forced the
+   table into a horizontal scroll — so its actions sit in a row above the table
+   and the clients get the full column.
+   ========================================================================== */
+
+.nc-full {
+  display: block;
+  width: 100%;
+}
+
+.nc-actionbar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+/* The bar keeps the rail card's surface, so the actions still read as one
+   grouped panel rather than loose buttons on the page background. */
+.nc-actionbar-card {
+  padding: 12px 14px;
+}
+
+.nc-actionbar-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.nc-action-flat {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 15px;
+  border-radius: 10px;
+  border: 1px solid var(--nc-border);
+  background: rgba(23, 107, 255, 0.09);
+  color: var(--nc-text);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.2s ease,
+    transform 0.16s ease;
+}
+
+.nc-action-flat:hover {
+  border-color: var(--nc-blue);
+  box-shadow: 0 0 16px rgba(23, 107, 255, 0.35);
+  transform: translateY(-1px);
+}
+
+.nc-action-flat-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  font-size: 12px;
+  color: #fff;
+  background: linear-gradient(140deg, var(--nc-blue), var(--nc-violet));
+}
+
+.nc-action-flat.is-primary {
+  border-color: #2387ff;
+  background: linear-gradient(100deg, #1548e9, #3431e9);
+  box-shadow: 0 0 18px rgba(35, 135, 255, 0.45);
+}
+
+.nc-action-flat.is-primary .nc-action-flat-icon {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.nc-action-flat.is-danger {
+  border-color: rgba(224, 52, 138, 0.45);
+  background: rgba(224, 52, 138, 0.1);
+}
+
+.nc-action-flat.is-danger .nc-action-flat-icon {
+  background: linear-gradient(140deg, #e0348a, #b5185a);
+}
+
+/* the defaults trigger carries the current values, so they are readable closed */
+.nc-defaults-trigger {
+  margin-inline-start: auto;
+}
+
+.nc-defaults-trigger.is-open {
+  border-color: var(--nc-blue);
+  box-shadow: 0 0 16px rgba(23, 107, 255, 0.35);
+}
+
+.nc-defaults-summary {
+  font-size: 11px;
+  font-weight: 700;
+  color: #8fb8ff;
+}
+
+.nc-defaults-chevron {
+  font-size: 10px;
+  color: var(--nc-text-2);
+  transition: transform 0.18s ease;
+}
+
+.nc-defaults-trigger.is-open .nc-defaults-chevron {
+  transform: rotate(180deg);
+}
+
+/* the panel that opens under the bar */
+.nc-collapse {
+  border: 1px solid var(--nc-border);
+  border-radius: 12px;
+  background: linear-gradient(150deg, var(--nc-card-2) 0%, var(--nc-card) 100%);
+  padding: 14px 16px 16px;
+}
+
+.nc-collapse-desc {
+  margin: 0 0 12px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--nc-text-2);
+}
+
+.nc-collapse-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+}
+
+.nc-field-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+  color: var(--nc-text-2);
+}
+
+.nc-collapse-foot {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 14px;
+}
+
+.nc-save {
+  padding: 8px 18px;
+  border: 0;
+  border-radius: 9px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(100deg, #1548e9, #7134f0);
+  box-shadow: 0 0 16px rgba(23, 107, 255, 0.45);
+}
+
+/* ---------------------------------------------------------- table accents */
+
+/* per-client badge, coloured from the address so it is stable across reloads */
+.nc-av {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  margin-inline-end: 9px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.35);
+}
+
+/* the row stripe and wash follow the attached inbound's protocol */
+:is(.clients-page, .nc-page) .ant-table-tbody tr.nc-row-accent > td:first-child {
+  box-shadow: inset 3px 0 0 var(--row-accent, var(--nc-blue));
+}
+
+:is(.clients-page, .nc-page) .ant-table-tbody tr.nc-row-accent > td {
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--row-accent, var(--nc-blue)) 7%, transparent),
+    transparent 60%
+  );
+}
+
+:is(.clients-page, .nc-page) .ant-table-tbody tr.nc-row-accent:hover > td {
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--row-accent, var(--nc-blue)) 18%, transparent),
+    color-mix(in srgb, var(--row-accent, var(--nc-blue)) 5%, transparent)
+  );
+}
+
+/* status pills in the panel's own palette rather than antd's defaults */
+.clients-page .ant-table-tbody td .nc-pill {
+  border-radius: 999px !important;
+  font-weight: 700 !important;
+}
+
+.clients-page .ant-table-tbody td .nc-pill-on {
+  color: #00f0c2 !important;
+  border-color: rgba(0, 225, 176, 0.55) !important;
+  background: rgba(0, 225, 176, 0.14) !important;
+}
+
+.clients-page .ant-table-tbody td .nc-pill-off {
+  color: #ff86b8 !important;
+  border-color: rgba(224, 52, 138, 0.5) !important;
+  background: rgba(224, 52, 138, 0.16) !important;
+}
+
+.clients-page .ant-table-tbody td .nc-pill-warn {
+  color: #ffd166 !important;
+  border-color: rgba(240, 160, 32, 0.5) !important;
+  background: rgba(240, 160, 32, 0.15) !important;
+}

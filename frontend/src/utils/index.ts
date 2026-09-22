@@ -799,6 +799,16 @@ const COLORS = {
   purple: '#722ed1',
 } as const;
 
+// Traffic-bar palette for the Neon Console theme: the same three levels as
+// success/warning/danger but in the panel's own hues, so a full bar reads as an
+// alert without clashing with the surrounding surface.
+const USAGE_COLORS = {
+  low: '#00cfa8',
+  mid: '#f0a020',
+  high: '#e0348a',
+  unlimited: '#5b7cff',
+} as const;
+
 export type UsageColor = 'purple' | 'green' | 'orange' | 'red';
 
 export interface ClientUsageStats {
@@ -842,13 +852,13 @@ export class ColorUtils {
   ): string {
     switch (true) {
       case !clientStats || clientStats.total == 0:
-        return COLORS.purple;
+        return USAGE_COLORS.unlimited;
       case clientStats!.up + clientStats!.down < clientStats!.total - trafficDiff:
-        return COLORS.success;
+        return USAGE_COLORS.low;
       case clientStats!.up + clientStats!.down < clientStats!.total:
-        return COLORS.warning;
+        return USAGE_COLORS.mid;
       default:
-        return COLORS.danger;
+        return USAGE_COLORS.high;
     }
   }
 

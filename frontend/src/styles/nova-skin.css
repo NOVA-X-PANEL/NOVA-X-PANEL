@@ -40,6 +40,25 @@ body.light {
   --nc-teal: #00c9a8;
   --nc-green: #00e1b0;
   --nc-pink: #c41d63;
+
+  /* The `--nv-*` names predate the `--nc-*` rename and are still referenced by
+     the Overview and sidebar stylesheets, but nothing ever defined them. An
+     undefined custom property makes the whole declaration invalid, so those
+     surfaces simply had no background at all — which is why the artwork showed
+     straight through them — and every `var(--nv-accent, #c08a63)` fell back to
+     the old Umber brown. Defining them here, on a scope every page and the
+     sidebar share, fixes both. */
+  --nv-card: #071c3f;
+  --nv-border: #123675;
+  --nv-shadow: 0 12px 30px rgba(0, 0, 0, 0.38);
+  --nv-accent: #176bff;
+  --nv-on-accent: #ffffff;
+  --nv-blue: #176bff;
+  --nv-violet: #7134f0;
+  --nv-cyan: #00b9ff;
+  --nv-teal: #00c9a8;
+  --nv-grad: linear-gradient(135deg, #08224c 0%, #061a3b 100%);
+  --nv-topbar-bg: #061633;
 }
 
 :is(
@@ -1097,11 +1116,14 @@ body.dark .pg-admin-page :is(.border, [class*='border']) {
   user-select: none;
 }
 
-/* full-viewport wash, behind the shell */
+/* Full-viewport wash. It is portalled to <body> and parked at a negative index
+   so it paints above the page colour but below every panel: in place it lived in
+   the sidebar's z-index 210 stacking context and covered the whole content
+   column, which is what made the panels look translucent. */
 .nc-landscape--page {
   position: fixed;
   inset: auto 0 0 0;
-  z-index: 0;
+  z-index: -1;
   width: 100%;
   height: min(78vh, 760px);
   object-fit: cover;
@@ -1510,4 +1532,165 @@ body.dark {
   )
   :is(.ant-typography.ant-typography-secondary, .text-muted, small) {
   color: #c3d2e8;
+}
+
+/* ============================================================================
+   Solid surfaces. The theme still read as glass: several panels carried a
+   backdrop blur, and a number of fields, tags and dropdowns sat on translucent
+   fills so the artwork behind them bled into the controls.
+
+   Everything that is a surface — cards, fields, overlays, menus, the sidebar —
+   is now an opaque colour. Only two things stay translucent, because dimming is
+   their whole job: the modal/drawer scrim and the drawer's tap-out layer.
+   ========================================================================== */
+
+/* ---- 1. no backdrop blur anywhere ---- */
+
+.nova-login *,
+.nova-login *::before,
+.nova-login *::after,
+body.dark .ant-modal-content,
+body.dark .ant-drawer-content,
+body.dark .ant-dropdown-menu,
+body.dark .ant-select-dropdown,
+body.dark .ant-popover-inner,
+body.dark .ant-tooltip-inner {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  * {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* the scrims keep their dim, they only lose the blur */
+body.dark .ant-modal-mask,
+body.dark .ant-drawer-mask {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* ---- 2. Overview surfaces get a real background ---- */
+
+.index-page .ov-hero,
+.index-page .ov-state,
+.index-page .ov-card,
+.index-page .ov-rule {
+  background: var(--nv-card);
+}
+
+/* ---- 3. fields, tags, switches, dropdowns: opaque fills ---- */
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  :is(
+    .ant-pagination .ant-pagination-item,
+    .ant-pagination .ant-pagination-prev .ant-pagination-item-link,
+    .ant-pagination .ant-pagination-next .ant-pagination-item-link,
+    .ant-checkbox-inner,
+    .ant-radio-inner,
+    .ant-switch,
+    .ant-progress-inner,
+    .ant-alert,
+    .ant-collapse,
+    .ant-input,
+    .ant-input-affix-wrapper,
+    .ant-input-number,
+    .ant-picker,
+    .ant-select-selector
+  ) {
+  background-color: #0b2450 !important;
+}
+
+/* the collapse header keeps the same fill as its body now */
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-collapse
+  > .ant-collapse-item
+  > .ant-collapse-header {
+  background-color: #0b2450 !important;
+}
+
+/* scroll tracks inside cards */
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  :is(.ant-table-body, .ant-table-content, .ant-table-sticky-scroll)::-webkit-scrollbar-track {
+  background: #102e5d;
+}
+
+/* the command palette's own surfaces */
+body.dark .ant-command-palette,
+.cp-panel,
+.cp-input-wrap {
+  background: #071c3f;
+}
+
+/* ---- 4. the sidebar: opaque, with a solid status card ---- */
+
+.ant-sidebar .sider-status {
+  background: #08224c !important;
+}
+
+.ant-sidebar .sider-nav .ant-menu-item:not(.ant-menu-item-selected):hover,
+.ant-sidebar .sider-utility .ant-menu-item:not(.ant-menu-item-selected):hover {
+  background-color: #0d2c5e !important;
+}
+
+/* ---- 5. login: solid card and fields, no glass ---- */
+
+.nova-login .nx-card,
+.nova-login .nx-auth {
+  background: #071c3f;
+}
+
+.nova-login .nx-input,
+.nova-login .nx-field {
+  background: #0b2450;
 }

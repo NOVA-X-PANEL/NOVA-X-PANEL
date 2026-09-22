@@ -7,6 +7,7 @@ import {
   DownloadOutlined,
   PlusOutlined,
   ReloadOutlined,
+  SlidersOutlined,
   TeamOutlined,
   ThunderboltOutlined,
   WifiOutlined,
@@ -57,6 +58,7 @@ interface ClientsRailProps {
   onImport: () => void;
   onExport: () => void;
   onResetTraffic: () => void;
+  onDefaults: () => void;
 }
 
 const DONUT_PALETTE = ['#2563ff', '#7140ff', '#00bfff', '#13d6b0', '#f13b96'];
@@ -113,6 +115,12 @@ export function ClientsRail({
       icon: <ReloadOutlined />,
       label: t('pages.clients.resetAllTrafficsTitle'),
       onClick: onResetTraffic,
+    },
+    {
+      key: 'defaults',
+      icon: <SlidersOutlined />,
+      label: t('pages.clients.defaultLimits'),
+      onClick: onDefaults,
     },
   ];
 

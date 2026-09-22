@@ -3,3 +3,11 @@
 .client-form-modal .ant-tabs-content > .ant-form-item:last-child {
   margin-bottom: 0;
 }
+
+/* Client-defaults dialog: one muted line under the title, then the two fields. */
+.client-defaults-hint {
+  margin: 0 0 16px;
+  color: var(--nc-text-2, rgba(255, 255, 255, 0.72));
+  font-size: 13px;
+  line-height: 1.6;
+}

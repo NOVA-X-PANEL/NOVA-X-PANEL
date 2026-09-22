@@ -48,6 +48,7 @@ import type {
   ExternalLinkInput,
 } from '@/hooks/useClients';
 import { useFail2banStatusQuery, getLimitIpNotice } from '@/api/queries/useFail2banStatusQuery';
+import { readClientDefaults } from '@/lib/clients/default-limits';
 import { ClientFormSchema, ClientCreateFormSchema, type ClientFormValues } from '@/schemas/client';
 import './ClientFormModal.css';
 
@@ -403,6 +404,9 @@ export default function ClientFormModal({
       const wgKeypair = Wireguard.generateKeypair();
       methods.reset({
         ...EMPTY,
+        // A brand-new client starts from the panel's saved defaults; editing an
+        // existing one keeps whatever that client already has.
+        ...readClientDefaults(),
         email: RandomUtil.randomLowerAndNum(10),
         uuid: RandomUtil.randomUUID(),
         subId: RandomUtil.randomLowerAndNum(16),

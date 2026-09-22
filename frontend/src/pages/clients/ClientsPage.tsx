@@ -69,6 +69,11 @@ import type {
 } from '@/hooks/useClients';
 import ClientTrafficCell from '@/components/clients/ClientTrafficCell';
 import { ClientsHero, ClientsRail } from './ClientsChrome';
+import {
+  type ClientDefaults,
+  EMPTY_CLIENT_DEFAULTS,
+  readClientDefaults,
+} from '@/lib/clients/default-limits';
 import ClientSpeedTag, { isActiveSpeed } from '@/components/clients/ClientSpeedTag';
 import ClientCardComment from '@/components/clients/ClientCardComment';
 import AppSidebar from '@/layouts/AppSidebar';
@@ -85,6 +90,7 @@ const ClientInfoModal = lazy(() => import('./ClientInfoModal'));
 const ClientQrModal = lazy(() => import('./ClientQrModal'));
 const ClientBulkAddModal = lazy(() => import('./ClientBulkAddModal'));
 const ClientBulkAdjustModal = lazy(() => import('./ClientBulkAdjustModal'));
+const ClientDefaultsModal = lazy(() => import('./ClientDefaultsModal'));
 const FilterDrawer = lazy(() => import('./FilterDrawer'));
 const SubLinksModal = lazy(() => import('./SubLinksModal'));
 const BulkAddToGroupModal = lazy(() => import('./BulkAddToGroupModal'));
@@ -405,6 +411,8 @@ export default function ClientsPage() {
     {},
   );
   const [bulkAddOpen, setBulkAddOpen] = useState(false);
+  const [defaultsOpen, setDefaultsOpen] = useState(false);
+  const [clientDefaults, setClientDefaults] = useState<ClientDefaults>(EMPTY_CLIENT_DEFAULTS);
   const [bulkAdjustOpen, setBulkAdjustOpen] = useState(false);
   const [subLinksOpen, setSubLinksOpen] = useState(false);
   const [bulkGroupOpen, setBulkGroupOpen] = useState(false);
@@ -1900,6 +1908,10 @@ export default function ClientsPage() {
                         onImport={onImportClients}
                         onExport={onExportClients}
                         onResetTraffic={onResetAllTraffics}
+                        onDefaults={() => {
+                          setClientDefaults(readClientDefaults());
+                          setDefaultsOpen(true);
+                        }}
                       />
                     </div>
                   </Col>
@@ -1909,6 +1921,14 @@ export default function ClientsPage() {
           </Layout.Content>
         </Layout>
 
+        <LazyMount when={defaultsOpen}>
+          <ClientDefaultsModal
+            open={defaultsOpen}
+            current={clientDefaults}
+            onOpenChange={setDefaultsOpen}
+            onSaved={setClientDefaults}
+          />
+        </LazyMount>
         <LazyMount when={formOpen}>
           <ClientFormModal
             open={formOpen}

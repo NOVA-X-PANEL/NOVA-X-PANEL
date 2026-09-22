@@ -25,6 +25,7 @@ import { DateTimePicker, SelectAllClearButtons } from '@/components/form';
 import { FormField } from '@/components/form/rhf';
 import { useClients, type InboundOption } from '@/hooks/useClients';
 import { useFail2banStatusQuery, getLimitIpNotice } from '@/api/queries/useFail2banStatusQuery';
+import { readClientDefaults } from '@/lib/clients/default-limits';
 import { ClientBulkAddFormSchema, type ClientBulkAddFormValues } from '@/schemas/client';
 
 const FLOW_OPTIONS = Object.values(TLS_FLOW_CONTROL);
@@ -101,7 +102,8 @@ export default function ClientBulkAddModal({
   if (open !== wasOpen) {
     setWasOpen(open);
     if (open) {
-      methods.reset(EMPTY);
+      // Every client this dialog creates inherits the panel's saved defaults.
+      methods.reset({ ...EMPTY, ...readClientDefaults() });
       setDelayedStart(false);
     }
   }

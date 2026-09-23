@@ -34,13 +34,23 @@ interface ApiTokenRow {
   createdAt: number;
 }
 
+/**
+ * Reads this account's tokens.
+ *
+ * GET, matching `g.GET("/apiTokens")`. This was a POST, and the route only
+ * accepts GET, so every load returned 404 — and the old `catch` then swallowed it
+ * into an empty array. The page said "No tokens yet" forever, with no error,
+ * which is why it looked like a dead screen rather than a broken request.
+ *
+ * The failure is now thrown so React Query can surface it: the list renders the
+ * reason instead of an empty state.
+ */
 async function readList(): Promise<ApiTokenRow[]> {
-  try {
-    const res = await HttpUtil.post('/panel/api/admins/apiTokens');
-    return Array.isArray(res?.obj) ? res.obj : [];
-  } catch {
-    return [];
+  const res = await HttpUtil.get('/panel/api/admins/apiTokens', undefined, { silent: true });
+  if (res.success === false) {
+    throw new Error(res.msg || 'Could not load your tokens');
   }
+  return Array.isArray(res?.obj) ? res.obj : [];
 }
 
 function formatDate(unixSeconds: number): string {
@@ -115,6 +125,15 @@ export default function MyApiTokens() {
         <CardContent>
           {tokens.isLoading ? (
             <Skeleton className="h-16 w-full" />
+          ) : tokens.isError ? (
+            // Without this branch a failed request looks identical to an empty
+            // list — which is how the POST/GET mismatch stayed invisible while
+            // the page showed "No tokens yet." forever.
+            <p className="text-destructive text-sm">
+              {tokens.error instanceof Error && tokens.error.message
+                ? tokens.error.message
+                : t('admins.apiTokenLoadFailed', { defaultValue: 'Could not load your tokens' })}
+            </p>
           ) : rows.length === 0 ? (
             <p className="text-muted-foreground text-sm">
               {t('admins.apiTokenNone', { defaultValue: 'No tokens yet.' })}

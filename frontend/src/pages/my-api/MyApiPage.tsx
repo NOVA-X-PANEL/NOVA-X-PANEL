@@ -3,6 +3,18 @@ import { ConfigProvider, Layout, Spin } from 'antd';
 
 import AppSidebar from '@/layouts/AppSidebar';
 import { useTheme } from '@/hooks/useTheme';
+// The Tailwind layer, and the ONLY place the semantic colour tokens
+// (--card, --muted-foreground, --border, --accent, …) are defined.
+//
+// Every component this page renders — Button, Card, Dialog, Switch, Badge,
+// Separator, Skeleton — is a Tailwind/shadcn component, so without this import
+// they all fall back to unstyled HTML. The Dialog is the visible casualty: it is
+// a Radix portal with no positioning styles, so it renders off-screen and the
+// page appears to ignore every click.
+//
+// The other vendored screens (`_dashboard.admins`, `_dashboard.admin-roles`)
+// import it inside their own shell, which is why only this page was broken.
+import '@/pg-ui/styles/pasarguard.css';
 import '@/styles/pg-admin-mobile.css';
 
 /**

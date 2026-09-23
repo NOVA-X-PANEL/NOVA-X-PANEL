@@ -334,8 +334,14 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* The ring is 156px wide, but the label is translated: a longer word in another
+   locale must wrap inside the circle rather than run past it. */
 .sub-ring-label {
+  max-width: 96px;
   font-size: 12px;
+  line-height: 1.2;
+  text-align: center;
+  overflow-wrap: anywhere;
   color: var(--ant-color-text-tertiary);
 }
 

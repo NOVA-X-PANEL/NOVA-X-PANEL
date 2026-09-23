@@ -205,7 +205,9 @@ export function InboundsRail({ dbInbounds, totals, online }: InboundsRailProps) 
           <span className="nc-donut" style={{ background: donut }}>
             <span className="nc-donut-hole">
               <span className="nc-donut-num">{dbInbounds.length}</span>
-              <span className="nc-donut-cap">{t('pages.inbounds.inboundCount')}</span>
+              {/* A short unit, not "Total Inbounds": the hole is ~78px wide, so a
+                  two-word caption overflowed the ring and looked cramped. */}
+              <span className="nc-donut-cap">{t('menu.inbounds')}</span>
             </span>
           </span>
           <ul className="nc-legend">

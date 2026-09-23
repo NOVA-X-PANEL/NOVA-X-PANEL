@@ -126,7 +126,8 @@
     "pinSidebar": "Fijar barra lateral",
     "unpinSidebar": "Desfijar barra lateral",
     "subFormats": "Sub Formats",
-    "myApi": "Mi API"
+    "myApi": "Mi API",
+    "brandTagline": "Rápido • Seguro • Libre"
   },
   "pages": {
     "login": {

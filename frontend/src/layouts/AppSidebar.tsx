@@ -481,7 +481,7 @@ export default function AppSidebar() {
           <div className="sider-art" aria-hidden="true">
             <NeonLandscape variant="panel" />
             <div className="sider-art-brand">NOVA X</div>
-            <div className="sider-art-tag">سریع • امن • آزاد</div>
+            <div className="sider-art-tag">{t('menu.brandTagline')}</div>
           </div>
         )}
 

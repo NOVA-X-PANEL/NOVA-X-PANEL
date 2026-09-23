@@ -126,7 +126,8 @@
     "pinSidebar": "固定侧边栏",
     "unpinSidebar": "取消固定侧边栏",
     "subFormats": "Sub Formats",
-    "myApi": "我的 API"
+    "myApi": "我的 API",
+    "brandTagline": "快速 • 安全 • 免费"
   },
   "pages": {
     "login": {

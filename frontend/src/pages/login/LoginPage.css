@@ -49,7 +49,10 @@
   --nx-teal: #00c9a8;
   --nx-success: #00e1b0;
   --nx-radius: 18px;
-  --nx-font: 'Vazirmatn', 'Inter', system-ui, -apple-system, 'Segoe UI', Tahoma, sans-serif;
+  /* Latin first, Persian next. Inter carries the Latin glyphs, and Vazirmatn
+     picks up the Persian ones through fallback — so an English panel does not
+     render its English text in a Persian typeface. */
+  --nx-font: 'Inter', 'Vazirmatn', system-ui, -apple-system, 'Segoe UI', Tahoma, sans-serif;
 
   position: relative;
   display: grid;

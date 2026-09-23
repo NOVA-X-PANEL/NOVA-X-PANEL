@@ -126,7 +126,8 @@
     "pinSidebar": "サイドバーを固定",
     "unpinSidebar": "サイドバーの固定を解除",
     "subFormats": "Sub Formats",
-    "myApi": "マイAPI"
+    "myApi": "マイAPI",
+    "brandTagline": "高速 • 安全 • 無料"
   },
   "pages": {
     "login": {

@@ -28,20 +28,23 @@ const basePath = window.X_UI_BASE_PATH || '';
 const REMEMBER_KEY = 'nova-login-remember';
 
 /**
- * Fallback copy for the login screen. The panel ships 13 locales, so a key may
- * be missing when a new design lands; these are the values the Persian design
- * specifies and they double as defaults for every other language.
+ * Last-resort copy for the login screen, in English.
+ *
+ * It is the default value i18next falls back to only when a key is missing from
+ * every loaded bundle. English is the base language here — the translations live
+ * in the 13 locale files — so an English fallback keeps an English panel English
+ * even if a new key has not been translated yet.
  */
 const COPY = {
-  slogan: 'مدیریت آسان، اتصال بدون مرز',
-  cardSubtitle: 'برای ادامه وارد حساب کاربری خود شوید',
-  rememberMe: 'مرا به خاطر بسپار',
-  forgotPassword: 'رمز عبور را فراموش کرده‌اید؟',
-  or: 'یا',
-  telegramLogin: 'ورود با تلگرام',
-  telegramUnavailable: 'ورود با تلگرام روی این پنل فعال نشده است',
-  credit: 'طراحی و توسعه اختصاصی',
-  alwaysOnline: 'همیشه آنلاین',
+  slogan: 'Easy management, borderless connection',
+  cardSubtitle: 'Sign in to your account to continue',
+  rememberMe: 'Remember me',
+  forgotPassword: 'Forgot your password?',
+  or: 'or',
+  telegramLogin: 'Sign in with Telegram',
+  telegramUnavailable: 'Telegram sign-in is not enabled on this panel',
+  credit: 'Designed and developed exclusively',
+  alwaysOnline: 'Always online',
 } as const;
 
 /** Telegram mark, inline so the button needs no icon-font import. */

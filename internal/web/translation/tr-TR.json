@@ -126,7 +126,8 @@
     "pinSidebar": "Kenar çubuğunu sabitle",
     "unpinSidebar": "Kenar çubuğu sabitlemesini kaldır",
     "subFormats": "Abonelik Formatları",
-    "myApi": "API'im"
+    "myApi": "API'im",
+    "brandTagline": "Hızlı • Güvenli • Ücretsiz"
   },
   "pages": {
     "login": {

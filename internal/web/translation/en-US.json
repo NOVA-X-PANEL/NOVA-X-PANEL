@@ -128,7 +128,8 @@
     "subFormats": "Sub Formats",
     "admins": "Admins",
     "adminRoles": "Admin Roles",
-    "myApi": "My API"
+    "myApi": "My API",
+    "brandTagline": "Fast • Secure • Free"
   },
   "pages": {
     "login": {

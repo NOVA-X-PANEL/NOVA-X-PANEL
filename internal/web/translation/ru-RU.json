@@ -126,7 +126,8 @@
     "pinSidebar": "Закрепить боковую панель",
     "unpinSidebar": "Открепить боковую панель",
     "subFormats": "Форматы подписки",
-    "myApi": "Мой API"
+    "myApi": "Мой API",
+    "brandTagline": "Быстро • Безопасно • Бесплатно"
   },
   "pages": {
     "login": {

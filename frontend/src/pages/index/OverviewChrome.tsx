@@ -30,7 +30,7 @@ interface OverviewHeroProps {
 }
 
 export function OverviewHero({ panelVersion }: OverviewHeroProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
@@ -38,13 +38,21 @@ export function OverviewHero({ panelVersion }: OverviewHeroProps) {
     return () => window.clearInterval(id);
   }, []);
 
+  // Follow the panel language. This was pinned to 'fa-IR', so an English panel
+  // still showed a Jalali date in Persian digits.
+  const locale = useMemo(() => {
+    const active = (i18n.resolvedLanguage || i18n.language || 'en').trim();
+    if (!active) return 'en';
+    return active.replace('_', '-').split('-')[0];
+  }, [i18n.resolvedLanguage, i18n.language]);
+
   const date = useMemo(
-    () => new Intl.DateTimeFormat('fa-IR', { dateStyle: 'short' }).format(now),
-    [now],
+    () => new Intl.DateTimeFormat(locale, { dateStyle: 'short' }).format(now),
+    [now, locale],
   );
   const time = useMemo(
-    () => new Intl.DateTimeFormat('fa-IR', { hour: '2-digit', minute: '2-digit' }).format(now),
-    [now],
+    () => new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' }).format(now),
+    [now, locale],
   );
 
   return (

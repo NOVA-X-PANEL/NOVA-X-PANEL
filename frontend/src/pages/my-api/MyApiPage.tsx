@@ -3,19 +3,22 @@ import { ConfigProvider, Layout, Spin } from 'antd';
 
 import AppSidebar from '@/layouts/AppSidebar';
 import { useTheme } from '@/hooks/useTheme';
-// The Tailwind layer, and the ONLY place the semantic colour tokens
-// (--card, --muted-foreground, --border, --accent, …) are defined.
+// NOTE: neither the Tailwind layer (pasarguard.css) nor the phone layer
+// (pg-admin-mobile.css) is imported here, deliberately.
 //
 // Every component this page renders — Button, Card, Dialog, Switch, Badge,
-// Separator, Skeleton — is a Tailwind/shadcn component, so without this import
-// they all fall back to unstyled HTML. The Dialog is the visible casualty: it is
-// a Radix portal with no positioning styles, so it renders off-screen and the
-// page appears to ignore every click.
+// Separator, Skeleton — is a Tailwind/shadcn component, so this page needs both
+// layers. It just cannot get them from here.
 //
-// The other vendored screens (`_dashboard.admins`, `_dashboard.admin-roles`)
-// import it inside their own shell, which is why only this page was broken.
-import '@/pg-ui/styles/pasarguard.css';
-import '@/styles/pg-admin-mobile.css';
+// Importing them in this file produced `/* empty css */` in the built chunk. The
+// bundler hoists a stylesheet that several lazy routes import into a shared CSS
+// chunk and attaches that chunk to only some of the importers; this page, which
+// imports them directly and has no other pg-ui page beside it, was left out. It
+// rendered as unstyled HTML, with the Radix Dialog (no positioning of its own)
+// drawn off-screen — so the page looked like it ignored every click.
+//
+// Both layers are therefore loaded once at the entry point, in main.tsx. Nothing
+// on this page should import them again.
 
 /**
  * Standalone wrapper for the account's own API tokens.

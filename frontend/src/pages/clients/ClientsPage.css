@@ -332,3 +332,229 @@
   text-align: center;
   color: var(--ant-color-text-secondary);
 }
+
+/* ==========================================================================
+   Fitting the list on screen
+   ==========================================================================
+
+   Measured on a 1440x900 viewport before this block existed:
+
+     hero 87px + stat strip ~160px + action bar 68px + card header 44px
+       = 509px of chrome, which left room for 4 whole rows
+     table 1454px inside a 1146px container
+       = 308px of horizontal scroll, so ~3 of the ten columns were off-screen
+     pagination disabled, so 200 rows rendered into a 22,047px document
+
+   Everything here is scoped to `.clients-page`. The `nc-` rules that shape the
+   other screens are shared through `:is(.index-page, .clients-page, …)`
+   selectors in nova-skin.css / nova-glass.css, so changing those would restyle
+   Overview, Inbounds and Nodes too. This file is imported only here.
+   -------------------------------------------------------------------------- */
+
+/* ---- 1. Chrome: hero, stat strip and action bar ------------------------- */
+
+.clients-page .nc-hero {
+  padding: 9px 14px;
+  gap: 10px;
+}
+
+.clients-page .nc-hero-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  font-size: 15px;
+}
+
+.clients-page .nc-hero-title {
+  font-size: 17px;
+  line-height: 1.25;
+}
+
+/* Guard, not a fix: the banner's subtitle used to render `menu.clients` — the
+   same string as its title — so it printed "Clients" twice. The element is gone
+   (ClientsChrome.tsx), and this keeps a future re-introduction from costing a
+   line of height until it carries real text. */
+.clients-page .nc-hero-sub {
+  display: none;
+}
+
+.clients-page .nc-hero-metric-label {
+  font-size: 10px;
+}
+
+.clients-page .nc-hero-metric-value {
+  font-size: 17px;
+  line-height: 1.2;
+}
+
+.clients-page .nc-stats {
+  gap: 6px;
+  margin: 10px 0;
+}
+
+.clients-page .nc-stat {
+  padding: 6px 9px;
+  gap: 1px;
+}
+
+.clients-page .nc-stat-icon {
+  width: 20px;
+  height: 20px;
+  font-size: 12px;
+}
+
+.clients-page .nc-stat-label {
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+.clients-page .nc-stat-value {
+  font-size: 15px;
+  line-height: 1.25;
+}
+
+.clients-page .nc-actionbar {
+  margin-bottom: 10px;
+}
+
+.clients-page .nc-actionbar-card {
+  padding: 7px 9px;
+}
+
+.clients-page .nc-action-flat {
+  padding: 6px 12px;
+}
+
+/* ---- 2. The table: bound the height, keep the header in view ------------ */
+
+/*
+   With "unlimited" pagination the operator asked for, the page lists every row
+   at once. Left alone that is a 22,000px document: the header scrolls away and
+   the footer is unreachable. Bounding the body and pinning the header keeps the
+   whole list navigable inside one screen, whatever the row count.
+*/
+.clients-page .ant-table-content,
+.clients-page .ant-table-body {
+  /* The chrome above the table is ~27rem tall once it is compacted, and the
+     pagination row plus its margin is another ~5rem, so subtracting 32rem is
+     what keeps the table, its header and the pager all inside one viewport
+     rather than letting the pager fall below the fold. */
+  max-height: clamp(220px, calc(100vh - 32rem), 78vh);
+  overflow: auto !important;
+  overscroll-behavior: contain;
+}
+
+.clients-page .ant-table-thead > tr > th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  /* Opaque, or the rows show through the pinned header as they scroll under it. */
+  background: var(--nc-card-2, var(--nc-card, #14141f)) !important;
+  background-clip: padding-box;
+}
+
+/* antd draws a vertical separator on the header cell; it floats over the sticky
+   header once the body scrolls, so it goes. */
+.clients-page .ant-table-thead > tr > th::before {
+  display: none !important;
+}
+
+/* ---- 3. Tighter cells, so more of the ten columns fit ------------------- */
+
+/* antd's small table pads cells 8px inline; at 8px x 10 columns the padding alone
+   is 160px of the width budget. 6px returns 40px without crowding the text. */
+.clients-page .ant-table-tbody > tr > td,
+.clients-page .ant-table-thead > tr > th {
+  padding-inline: 6px;
+}
+
+/* The row action icons are the tallest thing in a row; trimming their size
+   shortens every row, which is worth a few more visible lines. */
+.clients-page .ant-table-tbody .ant-btn-icon-only {
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+}
+
+@media (max-width: 900px) {
+  .clients-page .ant-table-content,
+  .clients-page .ant-table-body {
+    max-height: none;
+  }
+}
+
+/* ---- 4. Row height: the real reason the list did not fit ----------------- */
+
+/*
+   Measured before this change: a data row was 113px tall, and `.email-cell` was
+   87px of it. The cell was `flex-direction: column`, so the avatar, the address,
+   the sub id and the comment each claimed a line — and with a 200px column the
+   addresses wrapped on top of that. Four lines of content plus 26px of cell
+   padding is a row you can only fit four of on a laptop screen.
+
+   The cell is now two lines and the cell padding is halved, which is where most
+   of the extra visible rows come from. NOTE: this is the row-height half of the
+   fix; the scroll and chrome rules above are the other half.
+*/
+.clients-page .email-cell {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.clients-page .email-cell .email-lines {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 1px;
+}
+
+.clients-page .email-cell .email {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.clients-page .email-cell .email-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.clients-page .email-cell .sub {
+  max-width: none;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/*
+   The cell padding is locked at 13px top and bottom by
+   `:is(.clients-page, .nc-page) .nc-full .ant-table-tbody > tr > td { padding-top:
+   13px !important; padding-bottom: 13px !important; }` in nova-skin.css — 26px of
+   every row. That rule is clients-specific, so overruling it here cannot affect
+   another page, but it does need `!important` and one more step of specificity to
+   win: adding `.ant-table-cell` to the target beats `:is(.clients-page)`.
+
+   Measured on the live panel: 13px -> 86px rows, 6px -> 72px, 5px -> 70px.
+
+   NOT changed, deliberately: the same block sets `height: 48px` on these cells,
+   and that is the floor every row sits on. It is shared with Overview, Inbounds,
+   Nodes, Admins and Admin Roles, so it is the panel's row density rather than a
+   clients-page setting, and changing it here would either not take effect or
+   quietly restyle five other screens. A denser table therefore wants a decision
+   about all of them, not a local override.
+*/
+.clients-page .nc-full .ant-table-tbody > tr > td.ant-table-cell {
+  padding-top: 5px !important;
+  padding-bottom: 5px !important;
+}
+
+/* Keep the row's own controls on one line so they do not set the row height. */
+.clients-page .ant-table-tbody .ant-space {
+  flex-wrap: nowrap;
+}

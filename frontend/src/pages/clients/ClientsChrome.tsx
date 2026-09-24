@@ -45,7 +45,13 @@ export function ClientsHero({ total, online }: ClientsHeroProps) {
       </span>
       <div className="nc-hero-text">
         <div className="nc-hero-title">{t('menu.clients')}</div>
-        <div className="nc-hero-sub">{t('menu.clients')}</div>
+        {/*
+          A `.nc-hero-sub` used to sit here rendering `menu.clients` as well — the
+          same string as the title, so the banner printed "Clients" twice and spent
+          a line of height on it. Removed rather than re-worded: there is no second
+          line of information to show, and inventing one would mean a new
+          translation key in all thirteen locales.
+        */}
       </div>
       <div className="nc-hero-metrics">
         <div className="nc-hero-metric">

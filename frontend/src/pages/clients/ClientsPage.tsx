@@ -37,7 +37,6 @@ import {
   InfoCircleOutlined,
   LinkOutlined,
   MoreOutlined,
-  PlusOutlined,
   QrcodeOutlined,
   RestOutlined,
   RetweetOutlined,
@@ -1094,7 +1093,7 @@ export default function ClientsPage() {
       {
         title: t('pages.clients.actions'),
         key: 'actions',
-        width: 200,
+        width: 132,
         render: (_v, record) => (
           <ClientRowActions
             email={record.email}
@@ -1109,7 +1108,7 @@ export default function ClientsPage() {
       {
         title: t('pages.clients.enabled'),
         key: 'enable',
-        width: 80,
+        width: 62,
         render: (_v, record) => (
           <Switch
             checked={!!record.enable}
@@ -1122,7 +1121,7 @@ export default function ClientsPage() {
       {
         title: t('pages.clients.online'),
         key: 'online',
-        width: 90,
+        width: 68,
         render: (_v, record) => {
           const bucket = clientBucket(record);
           const lastOnline = record.traffic?.lastOnline ?? 0;
@@ -1160,7 +1159,7 @@ export default function ClientsPage() {
       {
         title: t('pages.clients.client'),
         key: 'email',
-        width: 220,
+        width: 200,
         render: (_v, record) => (
           <div className="email-cell">
             <span
@@ -1170,20 +1169,36 @@ export default function ClientsPage() {
             >
               {(record.email || '?').trim().charAt(0).toUpperCase()}
             </span>
-            <span className="email">{record.email}</span>
-            {record.subId && (
-              <span className="sub" title={record.subId}>
-                {record.subId}
+            {/*
+              Two lines, not four. The cell used to be a column flex, so the
+              avatar, the address, the sub id and the comment each took their own
+              line: 87px of a 113px row, and a 200px column wrapped them further.
+              The address keeps the first line and the two secondary values share
+              the second, which halves the row and is what makes a useful number of
+              clients fit on screen at once.
+            */}
+            <div className="email-lines">
+              <span className="email" title={record.email}>
+                {record.email}
               </span>
-            )}
-            <ClientCardComment comment={record.comment} className="sub" />
+              {(record.subId || record.comment) && (
+                <span className="email-meta">
+                  {record.subId && (
+                    <span className="sub" title={record.subId}>
+                      {record.subId}
+                    </span>
+                  )}
+                  <ClientCardComment comment={record.comment} className="sub" />
+                </span>
+              )}
+            </div>
           </div>
         ),
       },
       {
         title: t('pages.clients.group'),
         key: 'group',
-        width: 130,
+        width: 104,
         hidden: allGroups.length === 0,
         render: (_v, record) => {
           if (!record.group) return <Typography.Text type="secondary">—</Typography.Text>;
@@ -1207,7 +1222,7 @@ export default function ClientsPage() {
       {
         title: t('pages.clients.attachedInbounds'),
         key: 'inboundIds',
-        width: 170,
+        width: 126,
         render: (_v, record) => {
           return (
             <ClientInboundChips
@@ -1222,7 +1237,7 @@ export default function ClientsPage() {
       {
         title: t('pages.clients.traffic'),
         key: 'traffic',
-        width: 300,
+        width: 190,
         render: (_v, record) => (
           <ClientTrafficCell
             up={record.traffic?.up}
@@ -1253,13 +1268,13 @@ export default function ClientsPage() {
       {
         title: t('pages.clients.remaining'),
         key: 'remaining',
-        width: 130,
+        width: 100,
         render: (_v, record) => <Tag color={remainingColor(record)}>{remainingLabel(record)}</Tag>,
       },
       {
         title: t('pages.clients.duration'),
         key: 'expiryTime',
-        width: 130,
+        width: 92,
         render: (_v, record) => (
           <Tooltip title={expiryLabel(record)}>
             <Tag color={expiryColor(record)}>
@@ -1432,16 +1447,14 @@ export default function ClientsPage() {
                         hoverable
                         title={
                           <div className="card-toolbar">
-                            {selectedRowKeys.length === 0 ? (
-                              <Button
-                                type="primary"
-                                icon={<PlusOutlined />}
-                                onClick={onAdd}
-                                aria-label={t('pages.clients.addClients')}
-                              >
-                                {!isMobile && t('pages.clients.addClients')}
-                              </Button>
-                            ) : (
+                            {/*
+                              The action bar above the card already offers Add,
+                              Import, Export and Reset. A second "Add Clients"
+                              button here cost a row of height and read as a
+                              different control doing the same thing, so this
+                              header now shows only the bulk-selection state.
+                            */}
+                            {selectedRowKeys.length > 0 && (
                               <Tag
                                 color="blue"
                                 closable
@@ -1760,6 +1773,15 @@ export default function ClientsPage() {
                             rowSelection={rowSelection}
                             pagination={tablePagination}
                             size="small"
+                            // Antd defaults to `table-layout: auto`, where a column's
+                            // `width` is only a hint. It was sizing the 200px actions
+                            // column down to 152px and letting the traffic column push
+                            // the table to 1454px inside a 1146px container, which is
+                            // what drove the last columns off-screen. Fixing the layout
+                            // makes the widths above authoritative.
+                            tableLayout="fixed"
+                            // A floor for narrow viewports; at the widths above the
+                            // table is ~1320px, so anything narrower scrolls.
                             scroll={{ x: 1200 }}
                             onChange={onTableChange}
                             locale={{

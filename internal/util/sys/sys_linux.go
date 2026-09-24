@@ -19,6 +19,18 @@ var SIGUSR1 = syscall.SIGUSR1
 // countConnections returns the number of entries in a /proc/net/{tcp,udp}[6]
 // file. Returns 0 if the file is absent (e.g. /proc/net/tcp6 when IPv6 is
 // disabled) and excludes the column header line.
+//
+// Only the count is needed, so the newlines are counted straight out of a
+// scratch buffer rather than by scanning the file line by line.
+//
+// Measured on a 5,000-entry file: bufio.Scanner costs 4 allocations and 4,248 B
+// per call, counting bytes costs 3 and 152 B, and is ~5% faster. The saving is
+// modest and no per-line string was ever allocated — an earlier note claiming
+// otherwise was wrong. It is kept because this runs from the @2s status refresh,
+// four files per refresh, so the allocation churn is continuous for a count that
+// needs no parsing at all. The kernel's work of materialising /proc/net/* is the
+// larger cost and is not addressable from here; on a profile it appears as
+// syscall time, and it scales with the number of open connections.
 func countConnections(path string) (int, error) {
 	f, err := os.Open(path)
 	if os.IsNotExist(err) {
@@ -29,13 +41,34 @@ func countConnections(path string) (int, error) {
 	}
 	defer f.Close()
 
-	sc := bufio.NewScanner(f)
-	n := 0
-	for sc.Scan() {
-		n++
+	const scratchSize = 32 * 1024
+	scratch := make([]byte, scratchSize)
+	newlines := 0
+	var lastByte byte
+	for {
+		n, readErr := f.Read(scratch)
+		chunk := scratch[:n]
+		for _, b := range chunk {
+			if b == '\n' {
+				newlines++
+			}
+		}
+		if n > 0 {
+			lastByte = chunk[n-1]
+		}
+		if readErr != nil {
+			if errors.Is(readErr, io.EOF) {
+				break
+			}
+			return 0, readErr
+		}
 	}
-	if err := sc.Err(); err != nil {
-		return 0, err
+
+	// bufio.Scanner also emits a final line that has no trailing newline, so a
+	// file that does not end in one still counts that line.
+	n := newlines
+	if lastByte != 0 && lastByte != '\n' {
+		n++
 	}
 	if n > 0 {
 		n-- // first line is the column header

@@ -2764,8 +2764,8 @@ func InitDB(dbPath string) error {
 			log.Printf("clean SQLite backup directories: %v", err)
 		}
 
-		sync := sqliteSynchronous()
 		journal := sqliteJournalMode()
+		sync := sqliteSynchronous(journal)
 		dsn := dbPath + "?_journal_mode=" + journal + "&_busy_timeout=10000&_synchronous=" + sync + "&_txlock=immediate"
 		db, err = gorm.Open(sqlite.Open(dsn), c)
 		if err != nil {
@@ -2924,7 +2924,24 @@ func cleanupSQLiteBackupDirs(dir string) error {
 	return nil
 }
 
-func sqliteSynchronous() string {
+// sqliteSynchronous returns the SQLite `synchronous` pragma for the given
+// journal mode. The safe value differs between the two modes, so the mode is an
+// argument rather than a constant.
+//
+// In WAL mode SQLite's own documentation recommends NORMAL: the write-ahead log
+// is the authority across a crash, so a power loss can lose the last few
+// transactions but cannot corrupt the database. FULL additionally fsyncs on
+// every commit, and this panel commits on timers — the traffic collector every
+// five seconds, plus node syncs, IP scans and metric samples all write. Every
+// one of those commits paid an fsync for no correctness gain in WAL mode, which
+// is pure overhead on a quiet panel and a real cost on a busy one, where it also
+// serialises the single writer.
+//
+// In rollback-journal (DELETE) mode NORMAL drops a sync that guards the journal
+// itself, and that is where corruption becomes possible, so FULL is kept there.
+//
+// XUI_DB_SYNCHRONOUS overrides both defaults.
+func sqliteSynchronous(journal string) string {
 	switch strings.ToUpper(strings.TrimSpace(os.Getenv("XUI_DB_SYNCHRONOUS"))) {
 	case "OFF":
 		return "OFF"
@@ -2932,7 +2949,12 @@ func sqliteSynchronous() string {
 		return "NORMAL"
 	case "EXTRA":
 		return "EXTRA"
+	case "FULL":
+		return "FULL"
 	default:
+		if strings.EqualFold(journal, "WAL") {
+			return "NORMAL"
+		}
 		return "FULL"
 	}
 }

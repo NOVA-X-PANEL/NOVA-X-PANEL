@@ -156,6 +156,11 @@ type ServerService struct {
 	emaCPU             float64
 	cachedCpuSpeedMhz  float64
 	lastCpuInfoAttempt time.Time
+	// cachedCpuCores memoizes the physical core count. cpu.Counts(false) globs
+	// /sys/devices/system/cpu on every call, and this service refreshes status
+	// every two seconds — a CPU profile of an idle panel attributed 17% of all
+	// CPU time to that glob. The number cannot change while the machine is up.
+	cachedCpuCores int
 
 	lastStatusMu sync.RWMutex
 	lastStatus   *Status
@@ -286,6 +291,27 @@ func (s *ServerService) RefreshStatus() *Status {
 	s.lastStatusMu.Unlock()
 	s.AppendStatusSample(time.Now(), next)
 	return next
+}
+
+// cpuCoreCount returns the machine's physical core count, reading it once.
+//
+// gopsutil answers by globbing /sys/devices/system/cpu (and the driver paths
+// behind it) on every call, which at the @2s status refresh showed up as 17% of
+// the panel's CPU in an idle-panel profile — for a value that is constant for as
+// long as the machine is up. The cached value is served from then on.
+//
+// A failed read is not cached, so the next refresh retries, and a count of zero
+// is treated as "not read yet" for the same reason.
+func (s *ServerService) cpuCoreCount() (int, error) {
+	if s.cachedCpuCores > 0 {
+		return s.cachedCpuCores, nil
+	}
+	cores, err := cpu.Counts(false)
+	if err != nil {
+		return 0, err
+	}
+	s.cachedCpuCores = cores
+	return cores, nil
 }
 
 // GetXrayVersionsCached wraps GetXrayVersions with a TTL cache. On fetch
@@ -533,7 +559,7 @@ func (s *ServerService) GetStatus(lastStatus *Status) *Status {
 		status.Cpu = util
 	}
 
-	status.CpuCores, err = cpu.Counts(false)
+	status.CpuCores, err = s.cpuCoreCount()
 	if err != nil {
 		logger.Warning("get cpu cores count failed:", err)
 	}

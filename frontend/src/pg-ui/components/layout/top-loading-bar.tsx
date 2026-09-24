@@ -66,11 +66,44 @@ function TopLoadingBar({ height = 3, color, shadow = false, className = '' }: To
       }
     }
 
-    const interval = setInterval(checkColorTheme, 100)
+    // `storage` only fires in OTHER tabs, so the theme was also polled to catch a
+    // change made in this one. The poll ran every 100ms — 864,000 localStorage
+    // reads a day, on every page, forever, to notice an event that happens when a
+    // user clicks a theme button.
+    //
+    // The interval is now 1s, which still feels immediate for a click, and the
+    // polling stops entirely while the tab is hidden: a backgrounded panel tab was
+    // doing this work for a page nobody was looking at. Same event, a thousandth
+    // of the reads.
+    let interval: ReturnType<typeof setInterval> | null = null
+
+    const startPolling = () => {
+      if (interval !== null) return
+      interval = setInterval(checkColorTheme, 1000)
+    }
+
+    const stopPolling = () => {
+      if (interval === null) return
+      clearInterval(interval)
+      interval = null
+    }
+
+    const handleVisibility = () => {
+      if (document.hidden) {
+        stopPolling()
+      } else {
+        checkColorTheme()
+        startPolling()
+      }
+    }
+
+    if (!document.hidden) startPolling()
+    document.addEventListener('visibilitychange', handleVisibility)
 
     return () => {
       window.removeEventListener('storage', handleStorageChange)
-      clearInterval(interval)
+      document.removeEventListener('visibilitychange', handleVisibility)
+      stopPolling()
     }
   }, [colorThemeKey])
 

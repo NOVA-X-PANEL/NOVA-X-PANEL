@@ -45,6 +45,23 @@ interface ApiTokenRow {
  * The failure is now thrown so React Query can surface it: the list renders the
  * reason instead of an empty state.
  */
+/**
+ * Every handler under /panel/api/admins/* binds its body with `ShouldBindJSON`,
+ * which requires `Content-Type: application/json`.
+ *
+ * The panel's own HTTP client does not default to JSON: given a body and no
+ * content type it encodes the body as a form and sets
+ * `application/x-www-form-urlencoded`, which `ShouldBindJSON` rejects outright —
+ * the request comes back `200` with `success:false` and
+ * "invalid character 'a' in literal null", and the token is never created.
+ *
+ * The rest of the codebase pairs these endpoints with an explicit JSON header
+ * (`JSON_OPTIONS` in pg-ui/service/api.ts, `JSON_HEADERS` in GroupsPage); this is
+ * the same idea declared once for this file. Without it, Create did nothing and
+ * Enable/Disable did nothing, silently.
+ */
+const JSON_BODY = { headers: { 'Content-Type': 'application/json' } } as const;
+
 async function readList(): Promise<ApiTokenRow[]> {
   const res = await HttpUtil.get('/panel/api/admins/apiTokens', undefined, { silent: true });
   if (res.success === false) {
@@ -78,6 +95,7 @@ export default function MyApiTokens() {
       const res = await HttpUtil.post<ApiTokenRow & { token?: string }>(
         '/panel/api/admins/apiTokens/create',
         { name: tokenName, expiresAt: 0 },
+        JSON_BODY,
       );
       return res?.obj;
     },
@@ -126,7 +144,7 @@ export default function MyApiTokens() {
 
   const toggleMutation = useMutation({
     mutationFn: ({ id, enabled }: { id: number; enabled: boolean }) =>
-      HttpUtil.post(`/panel/api/admins/apiTokens/setEnabled/${id}`, { enabled }),
+      HttpUtil.post(`/panel/api/admins/apiTokens/setEnabled/${id}`, { enabled }, JSON_BODY),
     onSuccess: refresh,
   });
 

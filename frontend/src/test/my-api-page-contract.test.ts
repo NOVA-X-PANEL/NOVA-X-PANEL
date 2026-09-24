@@ -139,6 +139,37 @@ describe('the token list contract', () => {
     expect(source).toContain('isError');
   });
 
+  it('sends a JSON content type on every body-carrying call', () => {
+    // The root cause of "I create a token and nothing happens".
+    //
+    // The panel's HTTP client does NOT default to JSON: given a body and no
+    // content type it form-encodes the body and sets
+    // `application/x-www-form-urlencoded`. Every handler under /panel/api/admins
+    // binds with `ShouldBindJSON`, which rejects that outright — the request
+    // returns 200 with `success:false` and "invalid character 'a' in literal
+    // null", and the token is never created.
+    //
+    // Verified against a live panel: the form-encoded request failed with exactly
+    // that message, and the same request with the JSON content type succeeded.
+    const source = stripComments(read(componentPath));
+
+    // One declaration, used by both calls that carry a body.
+    expect(source).toContain("'Content-Type': 'application/json'");
+    // create
+    expect(source).toMatch(/apiTokens\/create'[\s\S]{0,120}JSON_BODY/);
+    // setEnabled, which binds {"enabled": bool}
+    expect(source).toMatch(/apiTokens\/setEnabled\/\$\{id\}`[\s\S]{0,80}JSON_BODY/);
+  });
+
+  it('every /admins/* body handler on the server demands JSON, so the pairing holds', () => {
+    // Pinned from the server side too: if one of these is ever relaxed to a
+    // lenient binder the client assertion above becomes unnecessary rather than
+    // wrong, and this test is where that shows up.
+    const controller = readFileSync(join(repoRoot, 'internal/web/controller/admins.go'), 'utf8');
+    const binderCount = (controller.match(/ShouldBindJSON/g) ?? []).length;
+    expect(binderCount).toBeGreaterThanOrEqual(4);
+  });
+
   it('creates the token with the payload the server binds', () => {
     const source = stripComments(read(componentPath));
     const controller = readFileSync(join(repoRoot, 'internal/web/controller/admins.go'), 'utf8');

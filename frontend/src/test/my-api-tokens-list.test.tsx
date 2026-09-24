@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import MyApiTokens from '@/pg-ui/features/admins/components/my-api-tokens';
@@ -104,6 +104,44 @@ describe('My API token list', () => {
 
     // Rendering the list must not have a side effect on the account's tokens.
     expect(post).not.toHaveBeenCalled();
+  });
+
+  it('creates the token with a JSON content type', async () => {
+    // The component must tell the panel's HTTP client to send JSON. Given a body
+    // and no content type, that client form-encodes the body — and every
+    // /panel/api/admins handler binds with ShouldBindJSON, which rejects a form
+    // outright: the request returns 200 with `success:false` and
+    // "invalid character 'a' in literal null", and the token is never created.
+    //
+    // This asserts the header on the outgoing call rather than the rendered row,
+    // so it does not depend on how the refetch afterwards behaves.
+    vi.spyOn(HttpUtil, 'get').mockResolvedValue(envelope([]));
+    const post = vi.spyOn(HttpUtil, 'post').mockResolvedValue(
+      envelope({
+        id: 9,
+        name: 'json-body',
+        token: 'PLAINTEXT',
+        enabled: true,
+        scope: 'admin',
+        expiresAt: 0,
+        createdAt: 1782485394,
+      }),
+    );
+
+    renderPage();
+    await screen.findByText('No tokens yet.');
+
+    fireEvent.click(screen.getByRole('button', { name: /Create token/i }));
+    fireEvent.change(await screen.findByLabelText('Name'), { target: { value: 'json-body' } });
+    fireEvent.click(screen.getByRole('button', { name: /^Create$/i }));
+
+    await waitFor(() => {
+      expect(post.mock.calls.some((c) => String(c[0]).endsWith('/apiTokens/create'))).toBe(true);
+    });
+
+    const createCall = post.mock.calls.find((c) => String(c[0]).endsWith('/apiTokens/create'));
+    const options = createCall?.[2] as { headers?: Record<string, string> } | undefined;
+    expect(options?.headers?.['Content-Type']).toBe('application/json');
   });
 
   it('shows a created token even when the refresh afterwards fails', async () => {

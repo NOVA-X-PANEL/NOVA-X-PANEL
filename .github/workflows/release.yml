@@ -13,6 +13,11 @@ on:
       - "go.sum"
       - "**.sh"
       - "frontend/**"
+      # The panel's version lives in this extensionless file and is embedded at
+      # build time. Without it listed here, a commit that only bumps the version
+      # matches no path, so neither the tag push nor the push to main starts this
+      # workflow — and a release tag would end up with no artefacts attached.
+      - "internal/config/version"
       - "x-ui.service.debian"
       - "x-ui.service.arch"
       - "x-ui.service.rhel"
@@ -24,6 +29,11 @@ on:
       - "go.sum"
       - "**.sh"
       - "frontend/**"
+      # The panel's version lives in this extensionless file and is embedded at
+      # build time. Without it listed here, a commit that only bumps the version
+      # matches no path, so neither the tag push nor the push to main starts this
+      # workflow — and a release tag would end up with no artefacts attached.
+      - "internal/config/version"
       - "x-ui.service.debian"
       - "x-ui.service.arch"
       - "x-ui.service.rhel"

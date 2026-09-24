@@ -7,6 +7,10 @@ on:
       - "go.mod"
       - "go.sum"
       - "frontend/**"
+      # Embedded at build time and read by config_test.go, so a change to it is a
+      # change to the built binary and belongs in the validated set.
+      - "internal/config/version"
+      - "internal/config/name"
       - ".nvmrc"
       - "Makefile"
       - ".github/workflows/ci.yml"
@@ -18,6 +22,10 @@ on:
       - "go.mod"
       - "go.sum"
       - "frontend/**"
+      # Embedded at build time and read by config_test.go, so a change to it is a
+      # change to the built binary and belongs in the validated set.
+      - "internal/config/version"
+      - "internal/config/name"
       - ".nvmrc"
       - "Makefile"
       - ".github/workflows/ci.yml"

@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Copy, KeyRound, Plus, Trash2 } from 'lucide-react';
+import { Copy, KeyRound, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Badge } from '@/pg-ui/components/ui/badge';
@@ -75,13 +75,44 @@ export default function MyApiTokens() {
 
   const createMutation = useMutation({
     mutationFn: async (tokenName: string) => {
-      const res = await HttpUtil.post('/panel/api/admins/apiTokens/create', { name: tokenName, expiresAt: 0 });
+      const res = await HttpUtil.post<ApiTokenRow & { token?: string }>(
+        '/panel/api/admins/apiTokens/create',
+        { name: tokenName, expiresAt: 0 },
+      );
       return res?.obj;
     },
     onSuccess: (row) => {
       setPlaintext(row?.token ?? null);
       setCreateOpen(false);
       setName('');
+      // Put the new row into the list immediately, then refetch in the
+      // background.
+      //
+      // The refetch is the slow path and the one that can fail — a dropped
+      // connection, a session that rolled over, a bundled client older than the
+      // server. When it failed the row simply never appeared, and the page looked
+      // as though "Create" had done nothing at all, which is exactly how this was
+      // reported. A create that returned 200 already has everything the list
+      // needs, so the row is written to the cache directly.
+      //
+      // The fields are copied explicitly rather than spread, so the plaintext
+      // cannot travel into the list cache: the list never shows it, and the only
+      // copy should be the one in the reveal dialog.
+      if (row) {
+        const metadata: ApiTokenRow = {
+          id: row.id,
+          name: row.name,
+          enabled: row.enabled,
+          scope: row.scope,
+          expiresAt: row.expiresAt,
+          createdAt: row.createdAt,
+        };
+        queryClient.setQueryData<ApiTokenRow[]>(['my-api-tokens'], (old) => {
+          const list = Array.isArray(old) ? old : [];
+          if (list.some((entry) => entry.id === metadata.id)) return list;
+          return [...list, metadata];
+        });
+      }
       refresh();
     },
     onError: () => toast.error(t('admins.apiTokenCreateFailed', { defaultValue: 'Could not create the token' })),
@@ -117,29 +148,41 @@ export default function MyApiTokens() {
               })}
             </CardDescription>
           </div>
-          <Button onClick={() => setCreateOpen(true)} size="sm">
-            <Plus className="mr-1 h-4 w-4" />
-            {t('admins.apiTokenCreate', { defaultValue: 'Create token' })}
-          </Button>
+          <div className="flex items-center gap-1">
+            {/* A manual reload. The list refetches on window focus and after
+                every mutation, but a visible control removes the guesswork when
+                a user wonders whether the list is simply out of date. */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={refresh}
+              disabled={tokens.isFetching}
+              aria-label={t('refresh', { defaultValue: 'Refresh' })}
+            >
+              <RefreshCw className={`h-4 w-4 ${tokens.isFetching ? 'animate-spin' : ''}`} />
+            </Button>
+            <Button onClick={() => setCreateOpen(true)} size="sm">
+              <Plus className="mr-1 h-4 w-4" />
+              {t('admins.apiTokenCreate', { defaultValue: 'Create token' })}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
-          {tokens.isLoading ? (
+          {tokens.isLoading && rows.length === 0 ? (
             <Skeleton className="h-16 w-full" />
-          ) : tokens.isError ? (
-            // Without this branch a failed request looks identical to an empty
-            // list — which is how the POST/GET mismatch stayed invisible while
-            // the page showed "No tokens yet." forever.
-            <p className="text-destructive text-sm">
-              {tokens.error instanceof Error && tokens.error.message
-                ? tokens.error.message
-                : t('admins.apiTokenLoadFailed', { defaultValue: 'Could not load your tokens' })}
-            </p>
-          ) : rows.length === 0 ? (
-            <p className="text-muted-foreground text-sm">
-              {t('admins.apiTokenNone', { defaultValue: 'No tokens yet.' })}
-            </p>
-          ) : (
+          ) : rows.length > 0 ? (
+            // Rows win over an error. A refresh failing *after* a successful
+            // create would otherwise replace the list with an error message and
+            // hide the token the user just made — the same failure the optimistic
+            // write in onSuccess guards against, one layer down.
             <div className="flex flex-col">
+              {tokens.isError && (
+                <p className="text-destructive mb-2 text-xs">
+                  {t('admins.apiTokenStale', {
+                    defaultValue: 'Showing the last known list — the refresh failed.',
+                  })}
+                </p>
+              )}
               {rows.map((row, index) => (
                 <div key={row.id}>
                   {index > 0 && <Separator />}
@@ -176,6 +219,19 @@ export default function MyApiTokens() {
                 </div>
               ))}
             </div>
+          ) : tokens.isError ? (
+            // No rows and a failure: say what went wrong rather than showing an
+            // empty list, which is how the POST/GET mismatch stayed invisible
+            // while the page said "No tokens yet." forever.
+            <p className="text-destructive text-sm">
+              {tokens.error instanceof Error && tokens.error.message
+                ? tokens.error.message
+                : t('admins.apiTokenLoadFailed', { defaultValue: 'Could not load your tokens' })}
+            </p>
+          ) : (
+            <p className="text-muted-foreground text-sm">
+              {t('admins.apiTokenNone', { defaultValue: 'No tokens yet.' })}
+            </p>
           )}
         </CardContent>
       </Card>

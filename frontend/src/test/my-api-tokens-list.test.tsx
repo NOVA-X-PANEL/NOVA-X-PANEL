@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import MyApiTokens from '@/pg-ui/features/admins/components/my-api-tokens';
@@ -104,5 +104,46 @@ describe('My API token list', () => {
 
     // Rendering the list must not have a side effect on the account's tokens.
     expect(post).not.toHaveBeenCalled();
+  });
+
+  it('shows a created token even when the refresh afterwards fails', async () => {
+    // This is the reported failure, stated as a test: create succeeds, the refresh
+    // that follows does not, and the row never appeared — so the page looked as
+    // though "Create" had done nothing at all.
+    //
+    // The create response already carries every field the list renders, so the row
+    // is written to the cache directly instead of waiting for the refetch.
+    const get = vi.spyOn(HttpUtil, 'get').mockResolvedValue(envelope([]));
+    vi.spyOn(HttpUtil, 'post').mockResolvedValue(
+      envelope({
+        id: 71,
+        name: 'survives-a-failed-refresh',
+        token: 'PLAINTEXT-SHOULD-NOT-REACH-THE-LIST',
+        enabled: true,
+        scope: 'admin',
+        expiresAt: 0,
+        createdAt: 1782485394,
+      }),
+    );
+
+    renderPage();
+    await screen.findByText('No tokens yet.');
+
+    // Every later list read fails, so only the optimistic write can supply the row.
+    get.mockResolvedValue(envelope(null, false, 'the panel could not be reached'));
+
+    fireEvent.click(screen.getByRole('button', { name: /Create token/i }));
+    fireEvent.change(await screen.findByLabelText('Name'), {
+      target: { value: 'survives-a-failed-refresh' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /^Create$/i }));
+
+    // The row is visible...
+    expect(await screen.findByText('survives-a-failed-refresh')).toBeTruthy();
+    // ...the empty state is gone...
+    expect(screen.queryByText('No tokens yet.')).toBeNull();
+    // ...and the plaintext was shown in the one-time reveal, not written into the
+    // list, which never renders it.
+    expect(await screen.findByText('PLAINTEXT-SHOULD-NOT-REACH-THE-LIST')).toBeTruthy();
   });
 });

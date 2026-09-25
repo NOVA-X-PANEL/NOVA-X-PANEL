@@ -25,9 +25,31 @@ body.light {
   background-attachment: fixed;
 }
 
-/* Every AntD layout layer stays clear so the glow reads through. */
+/* Every AntD layout layer stays clear so the glow reads through.
+   The palette hues are the same in both themes; surfaces and text are not, so
+   they live in the two per-theme blocks below. */
 body.dark,
 body.light {
+  --nc-blue: #176bff;
+  --nc-violet: #7134f0;
+  --nc-teal: #00c9a8;
+  --nc-green: #00e1b0;
+  --nc-pink: #c41d63;
+  --nv-on-accent: #ffffff;
+}
+
+/* The `--nv-*` names predate the `--nc-*` rename and are still referenced by the
+   Overview and sidebar stylesheets, but nothing ever defined them. An undefined
+   custom property makes the whole declaration invalid, so those surfaces simply
+   had no background at all — which is why the artwork showed straight through
+   them — and every `var(--nv-accent, #c08a63)` fell back to the old Umber brown.
+
+   They were then defined once, on a `body.dark, body.light` scope, which handed
+   the light theme the dark values: `--nv-card` painted the Overview panels
+   #071c3f navy and the sidebar's text tones were light-on-light, in a theme whose
+   panels are white. Each theme now carries its own. */
+
+body.dark {
   --nc-card: #061a3b;
   --nc-card-2: #071d42;
   --nc-border: #123675;
@@ -35,30 +57,42 @@ body.light {
   --nc-field: #0a214d;
   --nc-text: #e7f1ff;
   --nc-text-2: #b7cbea;
-  --nc-blue: #176bff;
-  --nc-violet: #7134f0;
-  --nc-teal: #00c9a8;
-  --nc-green: #00e1b0;
-  --nc-pink: #c41d63;
-
-  /* The `--nv-*` names predate the `--nc-*` rename and are still referenced by
-     the Overview and sidebar stylesheets, but nothing ever defined them. An
-     undefined custom property makes the whole declaration invalid, so those
-     surfaces simply had no background at all — which is why the artwork showed
-     straight through them — and every `var(--nv-accent, #c08a63)` fell back to
-     the old Umber brown. Defining them here, on a scope every page and the
-     sidebar share, fixes both. */
   --nv-card: #071c3f;
   --nv-border: #123675;
   --nv-shadow: 0 12px 30px rgba(0, 0, 0, 0.38);
   --nv-accent: #176bff;
-  --nv-on-accent: #ffffff;
   --nv-blue: #176bff;
   --nv-violet: #7134f0;
   --nv-cyan: #00b9ff;
   --nv-teal: #00c9a8;
   --nv-grad: linear-gradient(135deg, #08224c 0%, #061a3b 100%);
   --nv-topbar-bg: #061633;
+}
+
+/* Light surfaces, mirroring the light palette nova-glass.css sets on the page
+   elements. The sidebar is not a page element, so it reads these instead. */
+body.light {
+  --nc-card: #ffffff;
+  --nc-card-2: #f7f9ff;
+  --nc-border: rgba(37, 99, 255, 0.22);
+  --nc-divider: rgba(60, 100, 180, 0.16);
+  --nc-field: #eef3ff;
+  --nc-text: #0f1830;
+  --nc-text-2: #48587a;
+  /* The dark block defines a third text tone; without it here every
+     var(--nc-text-3) would be undefined and drop its declaration. */
+  --nc-text-3: #6b7c9c;
+  --nc-blue: #2563ff;
+  --nv-card: #ffffff;
+  --nv-border: rgba(37, 99, 255, 0.22);
+  --nv-shadow: 0 12px 30px rgba(20, 40, 90, 0.12);
+  --nv-accent: #2563ff;
+  --nv-blue: #2563ff;
+  --nv-violet: #7140ff;
+  --nv-cyan: #00bfff;
+  --nv-teal: #13d6b0;
+  --nv-grad: linear-gradient(135deg, #ffffff 0%, #eef3ff 100%);
+  --nv-topbar-bg: #ffffff;
 }
 
 :is(
@@ -1300,7 +1334,7 @@ body.dark {
     .admin-roles-page
   )
   :is(.ant-card, .nc-card) {
-  background: linear-gradient(150deg, #08224c 0%, #061a3b 100%);
+  background: linear-gradient(150deg, var(--nc-card-2) 0%, var(--nc-card) 100%);
 }
 
 /* the page-card glow drops so it stops washing over the surface */
@@ -1324,9 +1358,13 @@ body.dark {
 /* the sidebar becomes solid */
 
 .ant-sidebar > .ant-layout-sider {
-  background: linear-gradient(180deg, #061536 0%, #041027 100%) !important;
+  background: var(--nc-card) !important;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
+}
+
+body.dark .ant-sidebar > .ant-layout-sider {
+  background: linear-gradient(180deg, #061536 0%, #041027 100%) !important;
 }
 
 :is(
@@ -1352,14 +1390,14 @@ body.dark {
 .sider-nav .ant-menu-item,
 .sider-nav .ant-menu-submenu-title,
 .sider-utility .ant-menu-item {
-  color: #d7e3f7;
+  color: var(--nc-text-2);
   font-weight: 500;
 }
 
 .sider-nav .ant-menu-item .anticon,
 .sider-nav .ant-menu-submenu-title .anticon,
 .sider-utility .ant-menu-item .anticon {
-  color: #a9c3e8;
+  color: var(--nc-text-3);
 }
 
 .sider-nav .ant-menu-item-selected {
@@ -1372,7 +1410,7 @@ body.dark {
 }
 
 .nx-topbar .ant-menu-horizontal > .ant-menu-item:not(.ant-menu-item-selected) {
-  color: #cfdcf0;
+  color: var(--nc-text-2);
 }
 
 /* small labels that were faintest */
@@ -1413,10 +1451,31 @@ body.dark {
   .ant-table-thead
   > tr
   > th {
-  background: linear-gradient(180deg, rgba(27, 74, 149, 0.55), rgba(10, 33, 77, 0.85)) !important;
-  color: #d7e3f7 !important;
+  background: var(--nc-card-2) !important;
+  color: var(--nc-text) !important;
   font-weight: 700;
   border-bottom: 1px solid var(--nc-border) !important;
+}
+
+body.dark
+  :is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-table-thead
+  > tr
+  > th {
+  background: linear-gradient(180deg, rgba(27, 74, 149, 0.55), rgba(10, 33, 77, 0.85)) !important;
+  color: #d7e3f7 !important;
 }
 
 :is(
@@ -1452,7 +1511,7 @@ body.dark {
     .admin-roles-page
   )
   :is(.ant-input, .ant-input-affix-wrapper, .ant-input-number, .ant-picker, .ant-select-selector) {
-  background: #0b2450 !important;
+  background: var(--nc-field) !important;
   border-color: var(--nc-border) !important;
 }
 
@@ -1473,7 +1532,7 @@ body.dark {
   .ant-table-tbody
   td
   .anticon {
-  color: #bfd4f2;
+  color: var(--nc-text-3);
 }
 
 /* final refinements */
@@ -1489,8 +1548,14 @@ body.dark {
   position: absolute;
   inset: 0;
   z-index: 0;
-  background: linear-gradient(180deg, rgba(4, 16, 39, 0.55) 0%, rgba(4, 16, 39, 0.85) 100%);
+  /* Light scrim: the brand and tagline are dark text in light mode and the
+     artwork sits behind them. The dark scrim is scoped below. */
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.62) 0%, rgba(255, 255, 255, 0.88) 100%);
   pointer-events: none;
+}
+
+body.dark .sider-art::after {
+  background: linear-gradient(180deg, rgba(4, 16, 39, 0.55) 0%, rgba(4, 16, 39, 0.85) 100%);
 }
 
 .sider-art .nc-landscape--panel {
@@ -1624,7 +1689,7 @@ body.dark .ant-drawer-mask {
     .ant-picker,
     .ant-select-selector
   ) {
-  background-color: #0b2450 !important;
+  background-color: var(--nc-field) !important;
 }
 
 /* the collapse header keeps the same fill as its body now */
@@ -1644,7 +1709,7 @@ body.dark .ant-drawer-mask {
   .ant-collapse
   > .ant-collapse-item
   > .ant-collapse-header {
-  background-color: #0b2450 !important;
+  background-color: var(--nc-field) !important;
 }
 
 /* scroll tracks inside cards */
@@ -1662,37 +1727,37 @@ body.dark .ant-drawer-mask {
     .admin-roles-page
   )
   :is(.ant-table-body, .ant-table-content, .ant-table-sticky-scroll)::-webkit-scrollbar-track {
-  background: #102e5d;
+  background: var(--nc-field);
 }
 
 /* the command palette's own surfaces */
 body.dark .ant-command-palette,
 .cp-panel,
 .cp-input-wrap {
-  background: #071c3f;
+  background: var(--nc-card);
 }
 
 /* ---- 4. the sidebar: opaque, with a solid status card ---- */
 
 .ant-sidebar .sider-status {
-  background: #08224c !important;
+  background: color-mix(in srgb, var(--nc-blue) 12%, var(--nc-card)) !important;
 }
 
 .ant-sidebar .sider-nav .ant-menu-item:not(.ant-menu-item-selected):hover,
 .ant-sidebar .sider-utility .ant-menu-item:not(.ant-menu-item-selected):hover {
-  background-color: #0d2c5e !important;
+  background-color: color-mix(in srgb, var(--nc-blue) 18%, var(--nc-card)) !important;
 }
 
 /* ---- 5. login: solid card and fields, no glass ---- */
 
 .nova-login .nx-card,
 .nova-login .nx-auth {
-  background: #071c3f;
+  background: var(--nc-card);
 }
 
 .nova-login .nx-input,
 .nova-login .nx-field {
-  background: #0b2450;
+  background: var(--nc-field);
 }
 
 /* ============================================================================

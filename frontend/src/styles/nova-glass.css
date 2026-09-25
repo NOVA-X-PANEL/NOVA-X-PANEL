@@ -1563,7 +1563,7 @@ body.dark .pg-admin-page {
   height: 11px;
   border-radius: 999px;
   overflow: hidden;
-  background: #12325d;
+  background: var(--nc-field);
 }
 
 .nc-bar > i {

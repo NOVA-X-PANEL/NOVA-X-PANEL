@@ -37,6 +37,19 @@ type pagingSeed struct {
 // seedPagingClients writes one vless and one trojan inbound plus a fixed client
 // set covering every bucket, sort key and search field ListPaged supports.
 // Returns "now" so the expectations can be phrased relative to it.
+
+// allClientScope is the scope that sees every client. The paging tests exercise
+// filtering, sorting and paging rather than access control, and an unrestricted
+// scope leaves their assertions unchanged. Access control for this query is
+// covered by the tests that restrict the scope.
+func allClientScope() ClientAccessScope {
+	return ClientAccessScope{
+		Mode:             ClientAccessAll,
+		AllowAllGroups:   true,
+		AllowAllInbounds: true,
+	}
+}
+
 func seedPagingClients(t *testing.T) (int64, []pagingSeed) {
 	t.Helper()
 	db := database.GetDB()
@@ -270,7 +283,7 @@ func TestListPagedFilters(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			resp, err := svc.ListPaged(inboundSvc, settingSvc, tc.params)
+			resp, err := svc.ListPaged(inboundSvc, settingSvc, tc.params, allClientScope())
 			if err != nil {
 				t.Fatalf("ListPaged: %v", err)
 			}
@@ -346,7 +359,7 @@ func TestListPagedSorting(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			resp, err := svc.ListPaged(inboundSvc, settingSvc, ClientPageParams{PageSize: 3, Sort: tc.sort, Order: tc.order})
+			resp, err := svc.ListPaged(inboundSvc, settingSvc, ClientPageParams{PageSize: 3, Sort: tc.sort, Order: tc.order}, allClientScope())
 			if err != nil {
 				t.Fatalf("ListPaged: %v", err)
 			}
@@ -363,7 +376,7 @@ func TestListPagedPagination(t *testing.T) {
 	seedPagingClients(t)
 
 	t.Run("second page continues where the first stopped", func(t *testing.T) {
-		resp, err := svc.ListPaged(inboundSvc, settingSvc, ClientPageParams{Page: 2, PageSize: 5, Sort: "email", Order: "ascend"})
+		resp, err := svc.ListPaged(inboundSvc, settingSvc, ClientPageParams{Page: 2, PageSize: 5, Sort: "email", Order: "ascend"}, allClientScope())
 		if err != nil {
 			t.Fatalf("ListPaged: %v", err)
 		}
@@ -377,7 +390,7 @@ func TestListPagedPagination(t *testing.T) {
 	})
 
 	t.Run("page past the end is empty but keeps the counts", func(t *testing.T) {
-		resp, err := svc.ListPaged(inboundSvc, settingSvc, ClientPageParams{Page: 9, PageSize: 5})
+		resp, err := svc.ListPaged(inboundSvc, settingSvc, ClientPageParams{Page: 9, PageSize: 5}, allClientScope())
 		if err != nil {
 			t.Fatalf("ListPaged: %v", err)
 		}
@@ -390,7 +403,7 @@ func TestListPagedPagination(t *testing.T) {
 	})
 
 	t.Run("page size is clamped to the maximum", func(t *testing.T) {
-		resp, err := svc.ListPaged(inboundSvc, settingSvc, ClientPageParams{Page: 1, PageSize: 5000})
+		resp, err := svc.ListPaged(inboundSvc, settingSvc, ClientPageParams{Page: 1, PageSize: 5000}, allClientScope())
 		if err != nil {
 			t.Fatalf("ListPaged: %v", err)
 		}
@@ -404,7 +417,7 @@ func TestListPagedRowContents(t *testing.T) {
 	svc, inboundSvc, settingSvc := setupPagingServices(t)
 	seedPagingClients(t)
 
-	resp, err := svc.ListPaged(inboundSvc, settingSvc, ClientPageParams{PageSize: 50})
+	resp, err := svc.ListPaged(inboundSvc, settingSvc, ClientPageParams{PageSize: 50}, allClientScope())
 	if err != nil {
 		t.Fatalf("ListPaged: %v", err)
 	}
@@ -447,7 +460,7 @@ func TestListPagedSummary(t *testing.T) {
 	svc, inboundSvc, settingSvc := setupPagingServices(t)
 	seedPagingClients(t)
 
-	resp, err := svc.ListPaged(inboundSvc, settingSvc, ClientPageParams{PageSize: 5, Filter: "depleted"})
+	resp, err := svc.ListPaged(inboundSvc, settingSvc, ClientPageParams{PageSize: 5, Filter: "depleted"}, allClientScope())
 	if err != nil {
 		t.Fatalf("ListPaged: %v", err)
 	}
@@ -480,7 +493,7 @@ func TestListPagedSummary(t *testing.T) {
 	t.Run("clicking a stat card filters to exactly the clients it counts", func(t *testing.T) {
 		cards := map[string]int{"active": s.Active, "depleted": s.DepletedCount, "expiring": s.ExpiringCount, "deactive": s.DeactiveCount}
 		for bucket, count := range cards {
-			page, err := svc.ListPaged(inboundSvc, settingSvc, ClientPageParams{PageSize: 50, Filter: bucket})
+			page, err := svc.ListPaged(inboundSvc, settingSvc, ClientPageParams{PageSize: 50, Filter: bucket}, allClientScope())
 			if err != nil {
 				t.Fatalf("ListPaged(%s): %v", bucket, err)
 			}
@@ -516,7 +529,7 @@ func TestListPagedSummaryEmailListsAreCapped(t *testing.T) {
 		}
 	}
 
-	resp, err := svc.ListPaged(inboundSvc, settingSvc, ClientPageParams{PageSize: 25})
+	resp, err := svc.ListPaged(inboundSvc, settingSvc, ClientPageParams{PageSize: 25}, allClientScope())
 	if err != nil {
 		t.Fatalf("ListPaged: %v", err)
 	}
@@ -540,7 +553,7 @@ func TestListPagedGlobalTrafficOverlay(t *testing.T) {
 		t.Fatalf("AcceptGlobalTraffic: %v", err)
 	}
 
-	resp, err := svc.ListPaged(inboundSvc, settingSvc, ClientPageParams{PageSize: 50, Filter: "depleted"})
+	resp, err := svc.ListPaged(inboundSvc, settingSvc, ClientPageParams{PageSize: 50, Filter: "depleted"}, allClientScope())
 	if err != nil {
 		t.Fatalf("ListPaged: %v", err)
 	}
@@ -565,7 +578,7 @@ func TestClientQueryOnlineEmails(t *testing.T) {
 	_, _, _ = setupPagingServices(t)
 	seedPagingClients(t)
 
-	q := newClientQuery(database.GetDB(), time.Now().UnixMilli(), 0, 0)
+	q := newClientQuery(database.GetDB(), allClientScope(), time.Now().UnixMilli(), 0, 0)
 	emails, count, err := q.onlineEmails([]string{"alpha@x", "echo@x", "ghost@x", "kilo1@x"})
 	if err != nil {
 		t.Fatalf("onlineEmails: %v", err)
@@ -621,7 +634,7 @@ func TestEscapeLikeLiteral(t *testing.T) {
 func TestListPagedEmptyPanel(t *testing.T) {
 	svc, inboundSvc, settingSvc := setupPagingServices(t)
 
-	resp, err := svc.ListPaged(inboundSvc, settingSvc, ClientPageParams{})
+	resp, err := svc.ListPaged(inboundSvc, settingSvc, ClientPageParams{}, allClientScope())
 	if err != nil {
 		t.Fatalf("ListPaged on a panel with no clients: %v", err)
 	}
@@ -634,4 +647,113 @@ func TestListPagedEmptyPanel(t *testing.T) {
 	if resp.Groups == nil {
 		t.Fatal("groups = nil, want an empty list so the filter drawer renders")
 	}
+}
+
+// A role restricted to some inbounds must see only the clients reachable through
+// them, and that has to hold for the paged query the clients page actually calls —
+// the row set, the page count and the summary all narrowed together.
+//
+// Reported as: an admin given permission to view one inbound saw every client on
+// the panel. The clients page filters in Go over the returned page, and its guard
+// only tested the group and ownership dimensions, so an inbound-only restriction
+// skipped it entirely; even when it did run it could not fix the pagination, since
+// the database had already paged over every client.
+func TestListPagedHonoursInboundRestriction(t *testing.T) {
+	svc, inboundSvc, settingSvc := setupPagingServices(t)
+	seedPagingClients(t)
+
+	db := database.GetDB()
+	inboundIDByTag := func(tag string) int {
+		var ib model.Inbound
+		if err := db.Where("tag = ?", tag).First(&ib).Error; err != nil {
+			t.Fatalf("load inbound %s: %v", tag, err)
+		}
+		return ib.Id
+	}
+	vlessID := inboundIDByTag("in-vless")
+	trojanID := inboundIDByTag("in-trojan")
+
+	params := ClientPageParams{PageSize: 50, Sort: "email", Order: "ascend"}
+
+	t.Run("scope on one inbound hides the clients on the other", func(t *testing.T) {
+		resp, err := svc.ListPaged(inboundSvc, settingSvc, params, ClientAccessScope{
+			Mode:              ClientAccessAll,
+			RestrictInbounds:  true,
+			AllowedInboundIDs: []int{vlessID},
+		})
+		if err != nil {
+			t.Fatalf("ListPaged: %v", err)
+		}
+
+		// From seedPagingClients: vless only -> alpha, delta, echo, golf, hotel,
+		// india, juliet; trojan only -> charlie, foxtrot, kilo1; both -> bravo;
+		// none -> kilo_1. A client on the allowed inbound is visible even when it
+		// is also on a forbidden one, which is why bravo belongs here.
+		want := []string{
+			"alpha@x", "bravo@x", "delta@x", "echo@x",
+			"golf@x", "hotel@x", "india@x", "juliet@x",
+		}
+		if got := pagedEmails(resp.Items); !slices.Equal(got, want) {
+			t.Errorf("emails = %v, want %v", got, want)
+		}
+
+		// The counts have to be the scoped counts, not the panel's. Reporting 12
+		// here is what made the page show "12 clients" above a list of eight.
+		if resp.Total != len(want) {
+			t.Errorf("Total = %d, want %d (the panel has 12 clients)", resp.Total, len(want))
+		}
+		if resp.Filtered != len(want) {
+			t.Errorf("Filtered = %d, want %d", resp.Filtered, len(want))
+		}
+		if resp.Summary.Total != len(want) {
+			t.Errorf("Summary.Total = %d, want %d", resp.Summary.Total, len(want))
+		}
+
+		// The clients on the other inbound, and the one on no inbound, are absent.
+		got := pagedEmails(resp.Items)
+		for _, absent := range []string{"charlie@x", "foxtrot@x", "kilo1@x", "kilo_1@x"} {
+			if slices.Contains(got, absent) {
+				t.Errorf("%s is on the forbidden inbound but was returned", absent)
+			}
+		}
+	})
+
+	t.Run("the other inbound yields the other set", func(t *testing.T) {
+		resp, err := svc.ListPaged(inboundSvc, settingSvc, params, ClientAccessScope{
+			Mode:              ClientAccessAll,
+			RestrictInbounds:  true,
+			AllowedInboundIDs: []int{trojanID},
+		})
+		if err != nil {
+			t.Fatalf("ListPaged: %v", err)
+		}
+		want := []string{"bravo@x", "charlie@x", "foxtrot@x", "kilo1@x"}
+		if got := pagedEmails(resp.Items); !slices.Equal(got, want) {
+			t.Errorf("emails = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("an unrestricted scope still sees every client", func(t *testing.T) {
+		resp, err := svc.ListPaged(inboundSvc, settingSvc, params, allClientScope())
+		if err != nil {
+			t.Fatalf("ListPaged: %v", err)
+		}
+		if resp.Total != 12 || len(resp.Items) != 12 {
+			t.Errorf("total/items = %d/%d, want 12/12", resp.Total, len(resp.Items))
+		}
+	})
+
+	t.Run("an empty allowed set hides everything", func(t *testing.T) {
+		resp, err := svc.ListPaged(inboundSvc, settingSvc, params, ClientAccessScope{
+			Mode:              ClientAccessAll,
+			RestrictInbounds:  true,
+			AllowedInboundIDs: nil,
+		})
+		if err != nil {
+			t.Fatalf("ListPaged: %v", err)
+		}
+		if len(resp.Items) != 0 || resp.Total != 0 {
+			t.Errorf("items/total = %d/%d, want 0/0", len(resp.Items), resp.Total)
+		}
+	})
 }

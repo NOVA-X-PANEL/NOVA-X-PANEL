@@ -133,6 +133,13 @@ type clientQuery struct {
 	nowMs            int64
 	expireDiffMs     int64
 	trafficDiffBytes int64
+	// scope is the acting admin's client scope. It is applied in from(), so every
+	// statement this type builds — the page rows, the head count, the bucket
+	// summary and the online-email list — is narrowed by it.
+	//
+	// It used to be absent: this query selected every row in `clients`, so the
+	// clients page handed a scoped admin the whole panel regardless of their role.
+	scope ClientAccessScope
 }
 
 type clientQueryJoin struct {
@@ -140,9 +147,10 @@ type clientQueryJoin struct {
 	args []any
 }
 
-func newClientQuery(db *gorm.DB, nowMs, expireDiffMs, trafficDiffBytes int64) clientQuery {
+func newClientQuery(db *gorm.DB, scope ClientAccessScope, nowMs, expireDiffMs, trafficDiffBytes int64) clientQuery {
 	q := clientQuery{
 		db:               db,
+		scope:            scope,
 		nowMs:            nowMs,
 		expireDiffMs:     expireDiffMs,
 		trafficDiffBytes: trafficDiffBytes,
@@ -169,12 +177,22 @@ func newClientQuery(db *gorm.DB, nowMs, expireDiffMs, trafficDiffBytes int64) cl
 	return q
 }
 
+// from is the base statement: the clients table plus its joins, narrowed to the
+// scope. Routing the scope through here is what makes every statement this type
+// builds scoped, including the ones that do not take a params argument.
 func (q clientQuery) from() *gorm.DB {
 	tx := q.db.Table("clients AS c")
 	for _, j := range q.joins {
 		tx = tx.Joins(j.sql, j.args...)
 	}
-	return tx
+	if !clientScopeRestricts(q.scope) {
+		return tx
+	}
+	// Constrain the row ids against the scope applied to the clients table, rather
+	// than repeating the scope's predicates against the alias. A second copy of
+	// them would be a second thing to keep correct, and a bare column name in this
+	// statement could bind to a joined table.
+	return tx.Where("c.id IN (?)", clientIdsInScope(q.db, q.scope))
 }
 
 func (q clientQuery) depletedExpr() string {
@@ -333,7 +351,7 @@ func (q clientQuery) applyOrder(tx *gorm.DB, sortKey, order string) *gorm.DB {
 // ListPaged returns one page of clients together with the counts the clients
 // page header needs. Every predicate runs in SQL, so the cost tracks the page
 // size rather than the number of clients on the panel.
-func (s *ClientService) ListPaged(inboundSvc *InboundService, settingSvc *SettingService, params ClientPageParams) (*ClientPageResponse, error) {
+func (s *ClientService) ListPaged(inboundSvc *InboundService, settingSvc *SettingService, params ClientPageParams, scope ClientAccessScope) (*ClientPageResponse, error) {
 	db := database.GetDB()
 
 	pageSize := params.PageSize
@@ -359,10 +377,13 @@ func (s *ClientService) ListPaged(inboundSvc *InboundService, settingSvc *Settin
 	}
 
 	onlines := inboundSvc.GetOnlineClients()
-	q := newClientQuery(db, time.Now().UnixMilli(), expireDiffMs, trafficDiffBytes)
+	q := newClientQuery(db, scope, time.Now().UnixMilli(), expireDiffMs, trafficDiffBytes)
 
 	var total int64
-	if err := db.Model(&model.ClientRecord{}).Count(&total).Error; err != nil {
+	// Scoped, like the rows and the summary. Unscoped, this one number leaked the
+	// panel's real client count to an admin who could see none of them, and the
+	// summary below is computed from the same set so the two have to agree.
+	if err := applyClientAccessScope(db.Model(&model.ClientRecord{}), scope).Count(&total).Error; err != nil {
 		return nil, err
 	}
 

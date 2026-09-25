@@ -131,10 +131,72 @@ func applyClientGroupAccessScope(db *gorm.DB, scope ClientAccessScope) *gorm.DB 
 	return db.Where("LOWER(group_name) IN ?", scope.AllowedGroups)
 }
 
+// applyClientInboundAccessScope narrows a client query to the clients attached to
+// the scope's allowed inbounds.
+//
+// The inbound side of a role's access document used to be enforced only where an
+// operation names an inbound explicitly (ClientInboundsAllowedForScope), so a role
+// limited to one inbound still saw every client on the panel in the clients list
+// and could read any of them by email. The restriction is part of the scope, so it
+// belongs here, where the scope is already applied.
+//
+// A client attached to no inbound at all cannot be "on an allowed inbound", so it
+// is excluded. That is the safe reading: the role said which inbounds it may see,
+// and a client that is on none of them is not one of them.
+func applyClientInboundAccessScope(db *gorm.DB, scope ClientAccessScope) *gorm.DB {
+	scope = normalizeClientAccessScope(scope)
+	if !scope.RestrictInbounds || scope.AllowAllInbounds {
+		return db
+	}
+	if len(scope.AllowedInboundIDs) == 0 {
+		// Restricted to an empty set: nothing is visible. Matching the empty-state
+		// behaviour of the group restriction, which also denies rather than allows.
+		return db.Where("1 = 0")
+	}
+	return db.Where(
+		// An inline subquery rather than a nested *gorm.DB: building the inner
+		// query from the same session makes gorm share one Statement between the
+		// two, and rendering it then recurses until the stack overflows. The
+		// statement is spelled out so the two are independent.
+		"id IN (SELECT client_id FROM "+model.ClientInbound{}.TableName()+" WHERE inbound_id IN ?)",
+		scope.AllowedInboundIDs,
+	)
+}
+
+// ScopeRestrictsClients reports whether a scope narrows what a caller may see.
+//
+// Exported because a caller can use it to skip a lookup entirely: a scope that
+// restricts nothing has nothing to deny, so there is no point consulting the
+// database to confirm it. The check stays authoritative where it matters — a
+// restricting scope still denies out-of-scope clients — and the common
+// unrestricted path (an owner, an internal caller, a unit test) stops paying for
+// a query whose answer cannot be "no".
+func ScopeRestrictsClients(scope ClientAccessScope) bool {
+	return clientScopeRestricts(scope)
+}
+
+// clientScopeRestricts reports whether the scope narrows a client query at all.
+// A scope that allows every group, every inbound and every owner leaves the query
+// untouched, which lets callers skip the subquery entirely.
+func clientScopeRestricts(scope ClientAccessScope) bool {
+	scope = normalizeClientAccessScope(scope)
+	if scope.Mode != ClientAccessAll {
+		return true
+	}
+	if scope.RestrictGroups && !scope.AllowAllGroups {
+		return true
+	}
+	if scope.RestrictInbounds && !scope.AllowAllInbounds {
+		return true
+	}
+	return false
+}
+
 // applyClientAccessScope narrows a query to the scope's ownership mode.
 func applyClientAccessScope(db *gorm.DB, scope ClientAccessScope) *gorm.DB {
 	scope = normalizeClientAccessScope(scope)
 	db = applyClientGroupAccessScope(db, scope)
+	db = applyClientInboundAccessScope(db, scope)
 	switch scope.Mode {
 	case ClientAccessAll:
 		return db
@@ -145,13 +207,72 @@ func applyClientAccessScope(db *gorm.DB, scope ClientAccessScope) *gorm.DB {
 	}
 }
 
+// clientIdsInScope returns a subquery selecting the ids the scope allows.
+//
+// The paged clients query selects from "clients AS c" with joins, where a bare
+// column name could bind to the wrong table. Constraining c.id against the scope
+// applied to the clients table keeps that query's predicates identical to every
+// other scoped query instead of duplicating them with an alias — a second copy is
+// a second thing to keep correct.
+func clientIdsInScope(db *gorm.DB, scope ClientAccessScope) *gorm.DB {
+	// A fresh session, so the scope's predicates are rendered against a statement
+	// of their own and cannot be folded into the caller's query — which is what
+	// makes this safe to hand to another Where as a subquery.
+	base := db.Session(&gorm.Session{NewDB: true}).Model(&model.ClientRecord{})
+	return applyClientAccessScope(base, scope).Select("id")
+}
+
+// clientInboundsVisibleForScope reports whether a client is reachable through at
+// least one inbound the scope allows.
+//
+// "At least one", not "all of them": a client attached to inbound A and inbound B
+// is genuinely on A, so a role allowed to see A has to see it — that is the whole
+// point of filtering the clients list by inbound, and the inbound's own client
+// view lists it for the same reason. Requiring every attachment to be allowed
+// would hide clients that legitimately appear on an allowed inbound.
+//
+// This is deliberately NOT ClientInboundsAllowedForScope, which asks the other
+// question: whether an operation may target a given set of inbounds. Attaching a
+// client to inbound B must still be refused when B is out of scope, even though
+// the client itself is visible.
+func clientInboundsVisibleForScope(scope ClientAccessScope, inboundIDs []int) bool {
+	scope = normalizeClientAccessScope(scope)
+	if !scope.RestrictInbounds || scope.AllowAllInbounds {
+		return true
+	}
+	if len(scope.AllowedInboundIDs) == 0 || len(inboundIDs) == 0 {
+		// Restricted to an empty set of inbounds, or the client is on none: there is
+		// no allowed inbound it could be reached through.
+		return false
+	}
+	allowed := make(map[int]struct{}, len(scope.AllowedInboundIDs))
+	for _, id := range scope.AllowedInboundIDs {
+		allowed[id] = struct{}{}
+	}
+	for _, id := range inboundIDs {
+		if _, ok := allowed[id]; ok {
+			return true
+		}
+	}
+	return false
+}
+
 // ClientRecordAllowed reports whether a single client is inside the scope.
-func ClientRecordAllowed(scope ClientAccessScope, rec *model.ClientRecord) bool {
+//
+// inboundIDs are the inbounds the client is attached to, which the caller already
+// has whenever it loaded the client's attachments. They are a parameter rather
+// than a lookup so this stays a pure predicate, and so a caller cannot forget to
+// supply them: the previous signature had no inbound dimension at all, which is
+// how a role restricted to one inbound could still authorise any client by email.
+func ClientRecordAllowed(scope ClientAccessScope, rec *model.ClientRecord, inboundIDs []int) bool {
 	scope = normalizeClientAccessScope(scope)
 	if rec == nil {
 		return false
 	}
 	if !clientGroupAllowed(scope, rec.Group) {
+		return false
+	}
+	if !clientInboundsVisibleForScope(scope, inboundIDs) {
 		return false
 	}
 	switch scope.Mode {
@@ -608,6 +729,117 @@ func (s *ClientService) RequireClientForScopeByEmail(scope ClientAccessScope, em
 		return nil, errors.New("client not found or not permitted")
 	}
 	return &rec, nil
+}
+
+// RequireClientForScopeBySubID loads a client by subscription id and fails when
+// the scope may not touch it.
+//
+// The subscription id is an opaque per-client token, which made it a way to reach
+// a client without going through any lookup that checks the scope: the sub-link
+// route took the id and rendered that client's links. A scoped admin had to be
+// able to guess or observe a sub id to use it, but nothing else stopped them.
+func (s *ClientService) RequireClientForScopeBySubID(scope ClientAccessScope, subID string) (*model.ClientRecord, error) {
+	if strings.TrimSpace(subID) == "" {
+		return nil, errors.New("sub id is required")
+	}
+	return s.requireClientForScope(scope, "sub_id = ?", subID)
+}
+
+// RequireClientForScopeByID loads a client by numeric id inside the scope. The
+// Happ-link route addresses a client this way, and an id is trivially enumerable.
+func (s *ClientService) RequireClientForScopeByID(scope ClientAccessScope, id int) (*model.ClientRecord, error) {
+	if id <= 0 {
+		return nil, errors.New("client id is required")
+	}
+	return s.requireClientForScope(scope, "id = ?", id)
+}
+
+func (s *ClientService) requireClientForScope(scope ClientAccessScope, cond string, arg any) (*model.ClientRecord, error) {
+	db := database.GetDB()
+	if db == nil {
+		return nil, errors.New("database is not initialized")
+	}
+	var rec model.ClientRecord
+	if err := applyClientAccessScope(db.Model(&model.ClientRecord{}), scope).
+		Where(cond, arg).First(&rec).Error; err != nil {
+		return nil, errors.New("client not found or not permitted")
+	}
+	return &rec, nil
+}
+
+// FilterRecordsForScope keeps the records a scope may see.
+//
+// For lookups that resolve a client by something other than an email — a telegram
+// id can match several rows — this filters the result instead of failing the whole
+// request on the first row outside the scope.
+func FilterRecordsForScope(scope ClientAccessScope, records []*model.ClientRecord) []*model.ClientRecord {
+	scope = normalizeClientAccessScope(scope)
+	if len(records) == 0 {
+		return records
+	}
+	if !clientScopeRestricts(scope) {
+		return records
+	}
+	db := database.GetDB()
+	if db == nil {
+		return nil
+	}
+	ids := make([]int, 0, len(records))
+	for _, rec := range records {
+		if rec != nil {
+			ids = append(ids, rec.Id)
+		}
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	var allowedIDs []int
+	if err := applyClientAccessScope(db.Model(&model.ClientRecord{}), scope).
+		Where("id IN ?", ids).
+		Pluck("id", &allowedIDs).Error; err != nil {
+		return nil
+	}
+	allowed := make(map[int]struct{}, len(allowedIDs))
+	for _, id := range allowedIDs {
+		allowed[id] = struct{}{}
+	}
+	out := make([]*model.ClientRecord, 0, len(allowedIDs))
+	for _, rec := range records {
+		if rec == nil {
+			continue
+		}
+		if _, ok := allowed[rec.Id]; ok {
+			out = append(out, rec)
+		}
+	}
+	return out
+}
+
+// UUIDsForScope returns the set of client uuids the scope may see.
+//
+// Several live-status endpoints are keyed by a client's guid (its uuid) rather than
+// its email: which inbounds it is active on, its observed addresses. They were
+// unscoped, so a role that hid a client from the clients list could still read that
+// client's uuid, its addresses and the inbounds it was using from them. Keying the
+// filter on the uuid lets those endpoints be narrowed by the same scope.
+func (s *ClientService) UUIDsForScope(scope ClientAccessScope) (map[string]struct{}, error) {
+	db := database.GetDB()
+	if db == nil {
+		return nil, errors.New("database is not initialized")
+	}
+	var uuids []string
+	if err := applyClientAccessScope(db.Model(&model.ClientRecord{}), scope).
+		Where("COALESCE(uuid, '') <> ''").
+		Pluck("uuid", &uuids).Error; err != nil {
+		return nil, err
+	}
+	out := make(map[string]struct{}, len(uuids))
+	for _, u := range uuids {
+		if u != "" {
+			out[u] = struct{}{}
+		}
+	}
+	return out, nil
 }
 
 // CanCreateClientForAdmin reports whether the role may create clients.

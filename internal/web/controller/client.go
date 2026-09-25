@@ -180,6 +180,67 @@ func (a *ClientController) scopeEmails(c *gin.Context, emails []string, permissi
 	return service.FilterClientEmailsForScope(a.clientScope(c, permission), emails)
 }
 
+// requireClientInScopeBySubID and requireClientInScopeByID are the same check as
+// requireClientInScope for the two routes that address a client by something other
+// than its email: the subscription id, and a numeric id.
+//
+// Both were reachable without any scope check, which made the scoping on the
+// email-addressed routes decorative — a restricted role could read a client's
+// subscription links or its Happ link through them instead. A sub id is an opaque
+// token, but it is rendered into subscription URLs the admin can see, and an id is
+// simply countable.
+func (a *ClientController) requireClientInScopeBySubID(c *gin.Context, subID string, permission string) (*model.ClientRecord, bool) {
+	scope := a.clientScope(c, permission)
+	if !service.ScopeRestrictsClients(scope) {
+		// Nothing is hidden from this caller, so there is nothing to deny and no
+		// reason to spend a query finding that out.
+		return nil, true
+	}
+	rec, err := a.clientService.RequireClientForScopeBySubID(scope, subID)
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "get"), err)
+		return nil, false
+	}
+	return rec, true
+}
+
+func (a *ClientController) requireClientInScopeByID(c *gin.Context, id int, permission string) (*model.ClientRecord, bool) {
+	scope := a.clientScope(c, permission)
+	if !service.ScopeRestrictsClients(scope) {
+		return nil, true
+	}
+	rec, err := a.clientService.RequireClientForScopeByID(scope, id)
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "get"), err)
+		return nil, false
+	}
+	return rec, true
+}
+
+// filterByScopedUUIDs keeps only the entries whose key is a client uuid the acting
+// scope may see. The live-status endpoints are keyed by uuid, so this is the uuid
+// counterpart of FilterClientEmailsForScope.
+//
+// On any failure it returns an empty map rather than the unfiltered one: an error
+// resolving the scope must not widen what a caller receives.
+func filterByScopedUUIDs[V any](a *ClientController, c *gin.Context, data map[string]V) map[string]V {
+	scope := a.clientScope(c, "view")
+	if !service.ScopeRestrictsClients(scope) {
+		return data
+	}
+	allowed, err := a.clientService.UUIDsForScope(scope)
+	if err != nil {
+		return map[string]V{}
+	}
+	out := make(map[string]V, len(allowed))
+	for uuid, value := range data {
+		if _, ok := allowed[uuid]; ok {
+			out[uuid] = value
+		}
+	}
+	return out
+}
+
 func (a *ClientController) list(c *gin.Context) {
 	rows, err := a.clientService.ListForScope(a.clientScope(c, "view"))
 	if err != nil {
@@ -195,40 +256,20 @@ func (a *ClientController) listPaged(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.obtain"), err)
 		return
 	}
-	resp, err := a.clientService.ListPaged(&a.inboundService, &a.settingService, params)
+	// The scope goes into the query, not over the result.
+	//
+	// Filtering the returned page in Go could not have been correct even when it
+	// did run: the database had already paged over every client on the panel, so a
+	// scoped admin saw pages of other people's rows reduced to one or two, a total
+	// that was really the size of the page, and summary counters for the whole
+	// panel. Worse, it did not run at all for a role restricted to some inbounds
+	// but not to a group or an owner — the guard only tested the group and
+	// ownership dimensions — which is exactly the role this was reported for: an
+	// admin allowed to see one inbound saw every client on the panel.
+	resp, err := a.clientService.ListPaged(&a.inboundService, &a.settingService, params, a.clientScope(c, "view"))
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.obtain"), err)
 		return
-	}
-
-	// Narrow the page to the acting scope. An unrestricted owner short-circuits
-	// so the common path costs nothing extra.
-	scope := a.clientScope(c, "view")
-	if scope.Mode != service.ClientAccessAll || (scope.RestrictGroups && !scope.AllowAllGroups) {
-		if resp != nil {
-			emails := make([]string, 0, len(resp.Items))
-			for _, item := range resp.Items {
-				emails = append(emails, item.Email)
-			}
-			allowed := map[string]struct{}{}
-			for _, email := range service.FilterClientEmailsForScope(scope, emails) {
-				allowed[email] = struct{}{}
-			}
-			filtered := make([]service.ClientSlim, 0, len(resp.Items))
-			for _, item := range resp.Items {
-				if _, ok := allowed[item.Email]; ok {
-					filtered = append(filtered, item)
-				}
-			}
-			resp.Items = filtered
-			resp.Total = len(filtered)
-			resp.Filtered = len(filtered)
-			resp.Summary.Online = service.FilterClientEmailsForScope(scope, resp.Summary.Online)
-			resp.Summary.Depleted = service.FilterClientEmailsForScope(scope, resp.Summary.Depleted)
-			resp.Summary.Expiring = service.FilterClientEmailsForScope(scope, resp.Summary.Expiring)
-			resp.Summary.Deactive = service.FilterClientEmailsForScope(scope, resp.Summary.Deactive)
-			resp.Summary.Total = len(filtered)
-		}
 	}
 	jsonObj(c, resp, nil)
 }
@@ -294,6 +335,9 @@ func (a *ClientController) getByTgId(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.obtain"), err)
 		return
 	}
+	// A telegram id can match several clients, so the result is narrowed rather
+	// than rejected: the caller sees the ones their role allows.
+	records = service.FilterRecordsForScope(a.clientScope(c, "view"), records)
 	results := make([]gin.H, 0, len(records))
 	for _, rec := range records {
 		payload, err := a.buildClientPayload(rec)
@@ -692,7 +736,9 @@ func (a *ClientController) delDepleted(c *gin.Context) {
 // envelope. The frontend renders it in a read-only CodeMirror viewer (Copy /
 // Download), so this hands back data rather than streaming a file attachment.
 func (a *ClientController) export(c *gin.Context) {
-	items, err := a.clientService.ExportAll()
+	// Scoped: an export is a copy of the clients list, and handing out every row
+	// would undo the scoping the list itself applies.
+	items, err := a.clientService.ExportForScope(a.clientScope(c, "view"))
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
@@ -795,7 +841,11 @@ func (a *ClientController) getIps(c *gin.Context) {
 
 func (a *ClientController) clientIpsByGuid(c *gin.Context) {
 	data, err := a.inboundService.GetClientIpsByGuid()
-	jsonObj(c, data, err)
+	if err != nil {
+		jsonObj(c, data, err)
+		return
+	}
+	jsonObj(c, filterByScopedUUIDs(a, c, data), nil)
 }
 
 func (a *ClientController) clearIps(c *gin.Context) {
@@ -848,20 +898,45 @@ func (a *ClientController) deleteHwid(c *gin.Context) {
 }
 
 func (a *ClientController) onlines(c *gin.Context) {
-	jsonObj(c, a.inboundService.GetOnlineClients(), nil)
+	// The online list is a list of client emails, so it is scoped like every other
+	// list of client emails.
+	scope := a.clientScope(c, "view")
+	jsonObj(c, service.FilterClientEmailsForScope(scope, a.inboundService.GetOnlineClients()), nil)
 }
 
 func (a *ClientController) onlinesByGuid(c *gin.Context) {
-	jsonObj(c, a.inboundService.GetOnlineClientsByGuid(), nil)
+	jsonObj(c, filterByScopedUUIDs(a, c, a.inboundService.GetOnlineClientsByGuid()), nil)
 }
 
 func (a *ClientController) activeInbounds(c *gin.Context) {
-	jsonObj(c, a.inboundService.GetActiveInboundsByGuid(), nil)
+	jsonObj(c, filterByScopedUUIDs(a, c, a.inboundService.GetActiveInboundsByGuid()), nil)
 }
 
 func (a *ClientController) lastOnline(c *gin.Context) {
 	data, err := a.inboundService.GetClientsLastOnline()
-	jsonObj(c, data, err)
+	if err != nil {
+		jsonObj(c, data, err)
+		return
+	}
+	// Keyed by client email, so a scoped caller must not receive entries for
+	// clients their role hides. The keys are narrowed with the same filter the
+	// online list uses.
+	scope := a.clientScope(c, "view")
+	emails := make([]string, 0, len(data))
+	for email := range data {
+		emails = append(emails, email)
+	}
+	allowed := make(map[string]struct{}, len(emails))
+	for _, email := range service.FilterClientEmailsForScope(scope, emails) {
+		allowed[email] = struct{}{}
+	}
+	out := make(map[string]int64, len(allowed))
+	for email, ts := range data {
+		if _, ok := allowed[email]; ok {
+			out[email] = ts
+		}
+	}
+	jsonObj(c, out, nil)
 }
 
 func (a *ClientController) getTrafficByEmail(c *gin.Context) {
@@ -878,6 +953,11 @@ func (a *ClientController) getTrafficByEmail(c *gin.Context) {
 }
 
 func (a *ClientController) getSubLinks(c *gin.Context) {
+	// The sub id is an opaque token that addresses a client without an email, so
+	// it needs the same scope check every email-addressed read performs.
+	if _, ok := a.requireClientInScopeBySubID(c, c.Param("subId"), "view"); !ok {
+		return
+	}
 	links, err := a.inboundService.GetSubLinks(resolveHost(c), c.Param("subId"))
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.obtain"), err)
@@ -904,6 +984,11 @@ func (a *ClientController) generateHappLink(c *gin.Context) {
 	clientID, err := strconv.Atoi(c.Param("id"))
 	if err != nil || clientID < 1 {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), service.ErrHappLinkUnavailable)
+		return
+	}
+	// A numeric client id is the easiest thing on the panel to enumerate, so this
+	// route has to check the scope like the email-addressed ones do.
+	if _, ok := a.requireClientInScopeByID(c, clientID, "view"); !ok {
 		return
 	}
 	result, err := a.happGenerator.Generate(c.Request.Context(), clientID, c.Request.Host)

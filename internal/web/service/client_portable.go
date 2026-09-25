@@ -18,9 +18,27 @@ import (
 // through Import. Clients with no inbound attachment are included with an empty
 // inboundIds list so an export taken before DeleteOrphans can restore them.
 func (s *ClientService) ExportAll() ([]ClientCreatePayload, error) {
+	return s.exportScoped(ClientAccessScope{
+		Mode:             ClientAccessAll,
+		AllowAllGroups:   true,
+		AllowAllInbounds: true,
+	})
+}
+
+// ExportForScope is ExportAll restricted to what the acting scope may see.
+//
+// The export route called ExportAll regardless of the caller, so an admin whose
+// role hid clients from the clients list could still download all of them from the
+// export button — the same rows, in a file, including their credentials.
+func (s *ClientService) ExportForScope(scope ClientAccessScope) ([]ClientCreatePayload, error) {
+	return s.exportScoped(scope)
+}
+
+func (s *ClientService) exportScoped(scope ClientAccessScope) ([]ClientCreatePayload, error) {
 	db := database.GetDB()
 	var rows []model.ClientRecord
-	if err := db.Order("id ASC").Find(&rows).Error; err != nil {
+	if err := applyClientAccessScope(db.Model(&model.ClientRecord{}), scope).
+		Order("id ASC").Find(&rows).Error; err != nil {
 		return nil, err
 	}
 	out := make([]ClientCreatePayload, 0, len(rows))

@@ -156,6 +156,19 @@ func (t *Tgbot) prepareServerUsageInfo() string {
 	info += t.I18nBot("tgbot.messages.traffic", "Total=="+common.FormatTraffic(int64(t.lastStatus.NetTraffic.Sent+t.lastStatus.NetTraffic.Recv)), "Upload=="+common.FormatTraffic(int64(t.lastStatus.NetTraffic.Sent)), "Download=="+common.FormatTraffic(int64(t.lastStatus.NetTraffic.Recv)))
 	info += t.I18nBot("tgbot.messages.xrayStatus", "State=="+fmt.Sprint(t.lastStatus.Xray.State))
 
+	// When the core is not running, its own error text is the most useful line in
+	// this message — it usually names the inbound or setting at fault. The report
+	// is sent regardless of the core's state (see StatsNotifyJob for why that gate
+	// was removed), so the reason has to travel with it, otherwise the operator
+	// reads "Status: error" and still has to go and find out why.
+	//
+	// The text is the core's own message, so it is not translated; the label
+	// reuses the existing crash-notification key rather than adding one to all
+	// thirteen locales.
+	if t.lastStatus.Xray.State != service.Running && t.lastStatus.Xray.ErrorMsg != "" {
+		info += t.I18nBot("tgbot.messages.eventXrayCrashError", "Error=="+t.lastStatus.Xray.ErrorMsg)
+	}
+
 	// Cache the complete server stats
 	t.setCachedServerStats(info)
 

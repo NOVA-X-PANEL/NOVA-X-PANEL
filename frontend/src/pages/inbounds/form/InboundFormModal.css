@@ -14,10 +14,11 @@
 }
 
 .advanced-panel {
-  padding: 14px;
-  border: 1px solid var(--ant-color-border-secondary);
+  padding: 16px;
+  border: 1px solid rgba(56, 189, 248, 0.2);
   border-radius: 12px;
-  background: var(--ant-color-fill-quaternary);
+  background: rgba(11, 15, 25, 0.85);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
 .advanced-panel__header {
@@ -25,14 +26,19 @@
 }
 
 .advanced-panel__title {
-  font-size: 14px;
-  font-weight: 600;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #22d3ee;
   line-height: 1.4;
 }
 
 .advanced-panel__subtitle {
   margin-top: 4px;
-  opacity: 0.7;
+  color: #94a3b8;
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
   line-height: 1.5;
 }
 

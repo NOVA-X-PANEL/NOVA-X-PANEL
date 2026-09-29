@@ -204,7 +204,7 @@ export default function AdminRolesList({ isDialogOpen, onOpenChange }: AdminRole
             size="icon-md"
             variant="ghost"
             onClick={handleRefresh}
-            className={cn('h-9 w-9 rounded-lg border border-cyan-500/20 bg-slate-900/60 text-cyan-400 hover:bg-cyan-500/15 hover:border-cyan-400 hover:text-white transition-all shadow-sm', isFetching && 'opacity-70')}
+            className={cn('h-9 w-9 rounded-lg border border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200 dark:border-cyan-500/20 dark:bg-slate-900/60 dark:text-cyan-400 dark:hover:bg-cyan-500/15 dark:hover:border-cyan-400 dark:hover:text-white transition-all shadow-sm', isFetching && 'opacity-70')}
             aria-label={t('autoRefresh.refreshNow', { defaultValue: 'Refresh now' })}
             title={t('autoRefresh.refreshNow', { defaultValue: 'Refresh now' })}
           >

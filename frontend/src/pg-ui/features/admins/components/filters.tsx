@@ -62,7 +62,7 @@ export function Filters<T extends BaseFilters>({ filters, onFilterChange, handle
   const dir = useDirDetection()
   const [search, setSearch] = useState(filters.username || '')
   const onFilterChangeRef = useRef(onFilterChange)
-  const compactActionButtonClass = 'relative flex h-9 w-9 items-center justify-center rounded-lg border border-cyan-500/20 bg-slate-900/60 text-cyan-400 hover:bg-cyan-500/15 hover:border-cyan-400 hover:text-white transition-all shadow-sm'
+  const compactActionButtonClass = 'relative flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200 dark:border-cyan-500/20 dark:bg-slate-900/60 dark:text-cyan-400 dark:hover:bg-cyan-500/15 dark:hover:border-cyan-400 dark:hover:text-white transition-all shadow-sm'
 
   // Keep the ref in sync with the prop
   onFilterChangeRef.current = onFilterChange

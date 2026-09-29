@@ -539,7 +539,7 @@ body.dark
   text-shadow: 0 0 8px rgba(56, 189, 248, 0.35) !important;
 }
 
-body.light
+body:not(.dark)
   :is(
     .index-page,
     .clients-page,
@@ -629,7 +629,7 @@ body.dark
   background-image: none !important;
 }
 
-body.light
+body:not(.dark)
   :is(
     .index-page,
     .clients-page,
@@ -1087,7 +1087,7 @@ body.dark .pg-admin-page {
 
 /* — hero banner — */
 
-.nc-hero {
+body.dark .nc-hero {
   position: relative;
   display: flex;
   align-items: center;
@@ -1098,6 +1098,47 @@ body.dark .pg-admin-page {
   border-radius: 14px !important;
   background: linear-gradient(135deg, rgba(17, 24, 43, 0.85) 0%, rgba(11, 15, 28, 0.95) 100%) !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+}
+
+body:not(.dark) .nc-hero {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  overflow: hidden;
+  padding: 18px 24px;
+  border: 1px solid rgba(99, 102, 241, 0.18) !important;
+  border-radius: 14px !important;
+  background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05) !important;
+}
+
+body:not(.dark) .nc-hero-title {
+  color: #0f172a !important;
+}
+
+body:not(.dark) .nc-hero-sub {
+  color: #0284c7 !important;
+}
+
+body:not(.dark) .nc-hero-clock-date {
+  color: #475569 !important;
+}
+
+body:not(.dark) .nc-hero-clock-time {
+  color: #0284c7 !important;
+}
+
+body:not(.dark) .nc-hero-metric-label {
+  color: #64748b !important;
+}
+
+body:not(.dark) .nc-hero-metric-value {
+  color: #0284c7 !important;
+}
+
+body:not(.dark) .nc-hero .nc-landscape {
+  display: none !important;
 }
 
 .nc-hero::before {
@@ -1175,7 +1216,7 @@ body.dark .pg-admin-page {
   }
 }
 
-.nc-stat {
+body.dark .nc-stat {
   padding: 16px 18px !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   border-radius: 12px !important;
@@ -1188,6 +1229,39 @@ body.dark .pg-admin-page {
     transform 0.2s ease,
     box-shadow 0.25s ease,
     border-color 0.2s ease;
+}
+
+body:not(.dark) .nc-stat {
+  padding: 16px 18px !important;
+  border: 1px solid rgba(99, 102, 241, 0.16) !important;
+  border-radius: 12px !important;
+  background: #ffffff !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04) !important;
+  position: relative !important;
+  overflow: hidden !important;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.25s ease,
+    border-color 0.2s ease;
+}
+
+body:not(.dark) .nc-stat:hover {
+  transform: translateY(-2px);
+  border-color: rgba(99, 102, 241, 0.35) !important;
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.12) !important;
+  background: #ffffff !important;
+}
+
+body:not(.dark) .nc-stat-label {
+  color: #64748b !important;
+}
+
+body:not(.dark) .nc-stat-value {
+  color: #0f172a !important;
+}
+
+body:not(.dark) .nc-stat-foot {
+  color: #64748b !important;
 }
 
 .nc-stat::before {
@@ -1237,7 +1311,7 @@ body.dark .pg-admin-page {
   box-shadow: 0 0 16px rgba(241, 59, 150, 0.45);
 }
 
-.nc-stat-label {
+body.dark .nc-stat-label {
   margin-top: 10px;
   font-size: 11.5px;
   letter-spacing: 0.05em;
@@ -1246,7 +1320,7 @@ body.dark .pg-admin-page {
   font-family: 'JetBrains Mono', monospace;
 }
 
-.nc-stat-value {
+body.dark .nc-stat-value {
   margin-top: 2px;
   font-family: 'JetBrains Mono', monospace !important;
   font-size: 24px !important;
@@ -1783,8 +1857,7 @@ body.dark .pg-admin-page {
    ========================================================================== */
 
 body.dark .ant-sidebar > .ant-layout-sider,
-body.dark .ant-layout-sider,
-.ant-sidebar > .ant-layout-sider {
+body.dark .ant-layout-sider {
   background: #07090e !important;
   background-image:
     linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
@@ -1793,6 +1866,112 @@ body.dark .ant-layout-sider,
   border-right: 1px solid rgba(56, 189, 248, 0.15) !important;
   border-inline-end: 1px solid rgba(56, 189, 248, 0.15) !important;
   box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5) !important;
+}
+
+body:not(.dark) .ant-sidebar > .ant-layout-sider,
+body:not(.dark) .ant-layout-sider {
+  background: #ffffff !important;
+  background-image: none !important;
+  border-right: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border-inline-end: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.03) !important;
+}
+
+body:not(.dark) .sider-brand {
+  background: #ffffff !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+
+body:not(.dark) .sider-brand .brand-text {
+  color: #0f172a !important;
+  text-shadow: none !important;
+}
+
+body:not(.dark) .sider-brand .brand-sub {
+  color: #0284c7 !important;
+}
+
+body:not(.dark) .sider-nav .ant-menu-item,
+body:not(.dark) .sider-nav .ant-menu-submenu-title,
+body:not(.dark) .sider-utility .ant-menu-item {
+  color: #334155 !important;
+}
+
+body:not(.dark) .sider-nav .ant-menu-item .anticon,
+body:not(.dark) .sider-nav .ant-menu-submenu-title .anticon,
+body:not(.dark) .sider-utility .ant-menu-item .anticon {
+  color: #64748b !important;
+}
+
+body:not(.dark) .sider-nav .ant-menu-item:not(.ant-menu-item-selected):hover,
+body:not(.dark) .sider-utility .ant-menu-item:not(.ant-menu-item-selected):hover {
+  background-color: rgba(2, 132, 199, 0.08) !important;
+  color: #0284c7 !important;
+  border-inline-start: 3px solid rgba(2, 132, 199, 0.4) !important;
+}
+
+body:not(.dark) .sider-nav .ant-menu-item:not(.ant-menu-item-selected):hover .anticon,
+body:not(.dark) .sider-utility .ant-menu-item:not(.ant-menu-item-selected):hover .anticon {
+  color: #0284c7 !important;
+  filter: none !important;
+}
+
+body:not(.dark) .sider-nav .ant-menu-item-selected,
+body:not(.dark) .sider-utility .ant-menu-item-selected,
+body:not(.dark) .drawer-menu .ant-menu-item-selected {
+  background: linear-gradient(90deg, rgba(2, 132, 199, 0.12) 0%, rgba(168, 85, 247, 0.1) 100%) !important;
+  border-left: 3px solid #0284c7 !important;
+  border-inline-start: 3px solid #0284c7 !important;
+  box-shadow: none !important;
+  color: #0284c7 !important;
+  font-weight: 700 !important;
+}
+
+body:not(.dark) .sider-nav .ant-menu-item-selected .anticon,
+body:not(.dark) .sider-utility .ant-menu-item-selected .anticon,
+body:not(.dark) .drawer-menu .ant-menu-item-selected .anticon {
+  color: #0284c7 !important;
+  filter: none !important;
+}
+
+body:not(.dark) .sider-status {
+  background: rgba(240, 253, 250, 0.95) !important;
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.08) !important;
+}
+
+body:not(.dark) .sider-status-title {
+  color: #059669 !important;
+}
+
+body:not(.dark) .sider-status-sub {
+  color: #64748b !important;
+}
+
+body:not(.dark) .sider-art {
+  display: none !important;
+}
+
+body:not(.dark) .sider-footer {
+  border-top: 1px solid rgba(0, 0, 0, 0.06) !important;
+  background: #ffffff !important;
+}
+
+body:not(.dark) .sider-footer .sider-version {
+  background: rgba(168, 85, 247, 0.08) !important;
+  border: 1px solid rgba(168, 85, 247, 0.25) !important;
+  color: #7e22ce !important;
+}
+
+body:not(.dark) .sider-tools button,
+body:not(.dark) .sider-tools a {
+  color: #64748b !important;
+}
+
+body:not(.dark) .sider-tools button:hover,
+body:not(.dark) .sider-tools a:hover {
+  color: #0284c7 !important;
+  filter: none !important;
 }
 
 body.dark .sider-nav .ant-menu,
@@ -1881,8 +2060,8 @@ body.dark .cyber-action-dropdown .ant-dropdown-menu {
     inset 0 1px 0 rgba(56, 189, 248, 0.4) !important;
 }
 
-body.light .ant-dropdown .ant-dropdown-menu,
-body.light .cyber-action-dropdown .ant-dropdown-menu {
+body:not(.dark) .ant-dropdown .ant-dropdown-menu,
+body:not(.dark) .cyber-action-dropdown .ant-dropdown-menu {
   background: #ffffff !important;
   border: 1px solid #cbd5e1 !important;
   border-radius: 12px !important;

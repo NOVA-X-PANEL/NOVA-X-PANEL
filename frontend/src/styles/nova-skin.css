@@ -1506,7 +1506,8 @@ body.dark
   color: #d7e3f7 !important;
 }
 
-:is(
+body.dark
+  :is(
     .index-page,
     .clients-page,
     .inbounds-page,

@@ -878,54 +878,83 @@ func (s *ClientService) ValidateClientCreationForAdmin(user *model.User, count i
 
 	// 2. Admin personal traffic quota check
 	if user.DataLimit > 0 && user.UsedBytes >= user.DataLimit {
-		return fmt.Errorf("admin traffic quota exhausted: used %d of %d bytes", user.UsedBytes, user.DataLimit)
+		return fmt.Errorf("admin traffic quota exhausted: used %s of %s", formatBytes(user.UsedBytes), formatBytes(user.DataLimit))
 	}
 
-	// 3. Role limits check (max_users)
-	if strings.TrimSpace(role.LimitsJSON) != "" {
-		var limits map[string]any
-		if err := json.Unmarshal([]byte(role.LimitsJSON), &limits); err == nil && limits != nil {
-			var maxUsers int64 = 0
-			if raw, ok := limits["max_users"]; ok && raw != nil {
-				switch v := raw.(type) {
-				case float64:
-					if v > 0 {
-						maxUsers = int64(v)
-					}
-				case int:
-					if v > 0 {
-						maxUsers = int64(v)
-					}
-				case int64:
-					if v > 0 {
-						maxUsers = v
-					}
-				case string:
-					if s := strings.TrimSpace(v); s != "" {
-						if n, pErr := strconv.ParseInt(s, 10, 64); pErr == nil && n > 0 {
-							maxUsers = n
-						}
-					}
-				}
+	// 3. Find max_users from permission_overrides first, then role limits
+	var maxUsers int64 = 0
+	if strings.TrimSpace(user.PermissionOverridesJSON) != "" {
+		var ov map[string]any
+		if err := json.Unmarshal([]byte(user.PermissionOverridesJSON), &ov); err == nil && ov != nil {
+			if n, ok := parseLimitInt64(ov["max_users"]); ok && n > 0 {
+				maxUsers = n
 			}
+		}
+	}
+	if maxUsers == 0 && strings.TrimSpace(role.LimitsJSON) != "" {
+		var rl map[string]any
+		if err := json.Unmarshal([]byte(role.LimitsJSON), &rl); err == nil && rl != nil {
+			if n, ok := parseLimitInt64(rl["max_users"]); ok && n > 0 {
+				maxUsers = n
+			}
+		}
+	}
 
-			if maxUsers > 0 {
-				db := database.GetDB()
-				if db != nil {
-					var currentCount int64
-					if err := db.Model(&model.ClientRecord{}).
-						Where("owner_admin_id = ?", user.Id).
-						Count(&currentCount).Error; err == nil {
-						if currentCount+int64(count) > maxUsers {
-							return fmt.Errorf("client limit reached: this admin role allows at most %d clients (currently has %d)", maxUsers, currentCount)
-						}
-					}
+	if maxUsers > 0 {
+		db := database.GetDB()
+		if db != nil {
+			var currentCount int64
+			if err := db.Model(&model.ClientRecord{}).
+				Where("owner_admin_id = ?", user.Id).
+				Count(&currentCount).Error; err == nil {
+				if currentCount+int64(count) > maxUsers {
+					return fmt.Errorf("client limit reached: this admin role allows at most %d clients (currently has %d)", maxUsers, currentCount)
 				}
 			}
 		}
 	}
 
 	return nil
+}
+
+func parseLimitInt64(raw any) (int64, bool) {
+	if raw == nil {
+		return 0, false
+	}
+	switch v := raw.(type) {
+	case float64:
+		if v > 0 {
+			return int64(v), true
+		}
+	case int:
+		if v > 0 {
+			return int64(v), true
+		}
+	case int64:
+		if v > 0 {
+			return v, true
+		}
+	case string:
+		if s := strings.TrimSpace(v); s != "" {
+			if n, pErr := strconv.ParseInt(s, 10, 64); pErr == nil && n > 0 {
+				return n, true
+			}
+		}
+	}
+	return 0, false
+}
+
+func formatBytes(b int64) string {
+	const unit = 1024
+	if b < unit {
+		return fmt.Sprintf("%d B", b)
+	}
+	div, exp := int64(unit), 0
+	for n := b / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.2f %cB", float64(b)/float64(div), "KMGTPE"[exp])
 }
 
 // ValidateClientTrafficForAdmin validates that a client's allocated traffic limit (Total)
@@ -939,55 +968,50 @@ func (s *ClientService) ValidateClientTrafficForAdmin(user *model.User, totalByt
 		return nil
 	}
 
-	if strings.TrimSpace(role.LimitsJSON) == "" {
-		return nil
+	// 1. Admin account cumulative quota check
+	if user.DataLimit > 0 && user.UsedBytes >= user.DataLimit {
+		return fmt.Errorf("admin traffic quota exhausted: used %s of %s", formatBytes(user.UsedBytes), formatBytes(user.DataLimit))
 	}
 
-	var limits map[string]any
-	if err := json.Unmarshal([]byte(role.LimitsJSON), &limits); err != nil || limits == nil {
-		return nil
-	}
-
-	parseLimitInt64 := func(key string) (int64, bool) {
-		if raw, ok := limits[key]; ok && raw != nil {
-			switch v := raw.(type) {
-			case float64:
-				if v > 0 {
-					return int64(v), true
+	// Extract limits, checking permission_overrides first then role limits
+	findLimit := func(key string) (int64, bool) {
+		if strings.TrimSpace(user.PermissionOverridesJSON) != "" {
+			var ov map[string]any
+			if err := json.Unmarshal([]byte(user.PermissionOverridesJSON), &ov); err == nil && ov != nil {
+				if n, ok := parseLimitInt64(ov[key]); ok && n > 0 {
+					return n, true
 				}
-			case int:
-				if v > 0 {
-					return int64(v), true
-				}
-			case int64:
-				if v > 0 {
-					return v, true
-				}
-			case string:
-				if s := strings.TrimSpace(v); s != "" {
-					if n, pErr := strconv.ParseInt(s, 10, 64); pErr == nil && n > 0 {
-						return n, true
-					}
+			}
+		}
+		if strings.TrimSpace(role.LimitsJSON) != "" {
+			var rl map[string]any
+			if err := json.Unmarshal([]byte(role.LimitsJSON), &rl); err == nil && rl != nil {
+				if n, ok := parseLimitInt64(rl[key]); ok && n > 0 {
+					return n, true
 				}
 			}
 		}
 		return 0, false
 	}
 
-	// data_limit_max: maximum allowed traffic quota per client
-	if maxLimit, ok := parseLimitInt64("data_limit_max"); ok && maxLimit > 0 {
+	// data_limit_max (or max_traffic): maximum allowed traffic quota per client
+	maxLimit, hasMax := findLimit("data_limit_max")
+	if !hasMax {
+		maxLimit, hasMax = findLimit("max_traffic")
+	}
+	if hasMax && maxLimit > 0 {
 		if totalBytes <= 0 {
-			return fmt.Errorf("unlimited traffic is not permitted: role maximum is %d bytes", maxLimit)
+			return fmt.Errorf("role requires a traffic limit: maximum allowed is %s", formatBytes(maxLimit))
 		}
 		if totalBytes > maxLimit {
-			return fmt.Errorf("client traffic limit (%d bytes) exceeds role maximum of %d bytes", totalBytes, maxLimit)
+			return fmt.Errorf("client traffic limit (%s) exceeds role maximum of %s", formatBytes(totalBytes), formatBytes(maxLimit))
 		}
 	}
 
 	// data_limit_min: minimum allowed traffic quota per client
-	if minLimit, ok := parseLimitInt64("data_limit_min"); ok && minLimit > 0 {
+	if minLimit, ok := findLimit("data_limit_min"); ok && minLimit > 0 {
 		if totalBytes > 0 && totalBytes < minLimit {
-			return fmt.Errorf("client traffic limit (%d bytes) is below role minimum of %d bytes", totalBytes, minLimit)
+			return fmt.Errorf("client traffic limit (%s) is below role minimum of %s", formatBytes(totalBytes), formatBytes(minLimit))
 		}
 	}
 

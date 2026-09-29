@@ -402,11 +402,11 @@ func (a *ClientController) create(c *gin.Context) {
 	user := a.loginUser(c)
 	if user != nil {
 		if err := a.clientService.ValidateClientCreationForAdmin(user, 1); err != nil {
-			pureJsonMsg(c, http.StatusForbidden, false, err.Error())
+			jsonMsg(c, err.Error(), err)
 			return
 		}
 		if err := a.clientService.ValidateClientTrafficForAdmin(user, payload.Client.TotalGB); err != nil {
-			pureJsonMsg(c, http.StatusBadRequest, false, err.Error())
+			jsonMsg(c, err.Error(), err)
 			return
 		}
 	}
@@ -456,7 +456,7 @@ func (a *ClientController) update(c *gin.Context) {
 	user := a.loginUser(c)
 	if user != nil {
 		if err := a.clientService.ValidateClientTrafficForAdmin(user, req.Client.TotalGB); err != nil {
-			pureJsonMsg(c, http.StatusBadRequest, false, err.Error())
+			jsonMsg(c, err.Error(), err)
 			return
 		}
 	}
@@ -717,12 +717,12 @@ func (a *ClientController) bulkCreate(c *gin.Context) {
 	user := a.loginUser(c)
 	if user != nil {
 		if err := a.clientService.ValidateClientCreationForAdmin(user, len(payloads)); err != nil {
-			pureJsonMsg(c, http.StatusForbidden, false, err.Error())
+			jsonMsg(c, err.Error(), err)
 			return
 		}
 		for _, p := range payloads {
 			if err := a.clientService.ValidateClientTrafficForAdmin(user, p.Client.TotalGB); err != nil {
-				pureJsonMsg(c, http.StatusBadRequest, false, err.Error())
+				jsonMsg(c, err.Error(), err)
 				return
 			}
 		}
@@ -793,12 +793,12 @@ func (a *ClientController) importClients(c *gin.Context) {
 	user := a.loginUser(c)
 	if user != nil {
 		if err := a.clientService.ValidateClientCreationForAdmin(user, len(items)); err != nil {
-			pureJsonMsg(c, http.StatusForbidden, false, err.Error())
+			jsonMsg(c, err.Error(), err)
 			return
 		}
 		for _, it := range items {
 			if err := a.clientService.ValidateClientTrafficForAdmin(user, it.Client.TotalGB); err != nil {
-				pureJsonMsg(c, http.StatusBadRequest, false, err.Error())
+				jsonMsg(c, err.Error(), err)
 				return
 			}
 		}

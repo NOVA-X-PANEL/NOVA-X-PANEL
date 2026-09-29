@@ -567,3 +567,19 @@
   background-image: none !important;
   background-color: rgba(37, 99, 255, 0.09) !important;
 }
+
+body:not(.dark) .clients-page .ant-table-thead > tr > th {
+  background: #f1f5f9 !important;
+  color: #334155 !important;
+  border-bottom: 1px solid #cbd5e1 !important;
+}
+
+body:not(.dark) .clients-page .email-cell .email {
+  color: #0f172a !important;
+  font-weight: 600 !important;
+}
+
+body:not(.dark) .clients-page .email-cell .sub {
+  color: #475569 !important;
+  opacity: 0.9 !important;
+}

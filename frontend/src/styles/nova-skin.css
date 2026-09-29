@@ -1938,25 +1938,13 @@ body.dark .ant-command-palette,
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.35);
 }
 
-/* the row stripe and wash follow the attached inbound's protocol */
+/* the row stripe follows the attached inbound's protocol */
 :is(.clients-page, .nc-page) .ant-table-tbody tr.nc-row-accent > td:first-child {
   box-shadow: inset 3px 0 0 var(--row-accent, var(--nc-blue));
 }
 
-:is(.clients-page, .nc-page) .ant-table-tbody tr.nc-row-accent > td {
-  background-image: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--row-accent, var(--nc-blue)) 7%, transparent),
-    transparent 60%
-  );
-}
-
 :is(.clients-page, .nc-page) .ant-table-tbody tr.nc-row-accent:hover > td {
-  background-image: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--row-accent, var(--nc-blue)) 18%, transparent),
-    color-mix(in srgb, var(--row-accent, var(--nc-blue)) 5%, transparent)
-  );
+  background-color: color-mix(in srgb, var(--row-accent, var(--nc-blue)) 6%, transparent);
 }
 
 /* status pills in the panel's own palette rather than antd's defaults */

@@ -11,7 +11,6 @@ type ApiMsg<T = unknown> = {
 
 type CurrentAdmin = AdminDetails
 
-
 function toNumber(value: unknown): number {
   const n = Number(value)
   return Number.isFinite(n) ? n : 0
@@ -62,54 +61,117 @@ function normalizeCurrentAdmin(raw: any): CurrentAdmin | null {
   }
 }
 
+const SESSION_CACHE_KEY = 'nova_current_admin';
+
+function readCachedAdmin(): CurrentAdmin | null {
+  try {
+    if (typeof window === 'undefined' || !window.sessionStorage) return null;
+    const raw = sessionStorage.getItem(SESSION_CACHE_KEY);
+    if (!raw) return null;
+    return normalizeCurrentAdmin(JSON.parse(raw));
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedAdmin(value: CurrentAdmin | null) {
+  try {
+    if (typeof window === 'undefined' || !window.sessionStorage) return;
+    if (value) {
+      sessionStorage.setItem(SESSION_CACHE_KEY, JSON.stringify(value));
+    } else {
+      sessionStorage.removeItem(SESSION_CACHE_KEY);
+    }
+  } catch {}
+}
+
+let sharedAdmin: CurrentAdmin | null = readCachedAdmin();
+let sharedLoading: boolean = !sharedAdmin;
+let sharedError: string = '';
+let fetchPromise: Promise<CurrentAdmin | null> | null = null;
+const listeners = new Set<() => void>();
+
+function emitChange() {
+  listeners.forEach((listener) => {
+    try {
+      listener();
+    } catch {}
+  });
+}
+
+export function clearAdminCache() {
+  sharedAdmin = null;
+  sharedLoading = true;
+  sharedError = '';
+  writeCachedAdmin(null);
+  emitChange();
+}
+
+export async function fetchCurrentAdmin(force = false): Promise<CurrentAdmin | null> {
+  if (fetchPromise && !force) {
+    return fetchPromise;
+  }
+
+  fetchPromise = (async () => {
+    try {
+      const msg = await HttpUtil.get('/panel/api/admins/current', undefined, { silent: true }) as ApiMsg<unknown>;
+      if (msg?.success === false) {
+        throw new Error(msg?.msg || 'Failed to load current admin');
+      }
+
+      const normalized = normalizeCurrentAdmin(msg?.obj ?? msg);
+      if (!normalized) {
+        throw new Error('Invalid current admin payload');
+      }
+
+      sharedAdmin = normalized;
+      sharedError = '';
+      writeCachedAdmin(normalized);
+      return normalized;
+    } catch (err) {
+      if (!sharedAdmin) {
+        sharedAdmin = null;
+        sharedError = err instanceof Error ? err.message : 'Failed to load current admin';
+        writeCachedAdmin(null);
+      }
+      return sharedAdmin;
+    } finally {
+      sharedLoading = false;
+      fetchPromise = null;
+      emitChange();
+    }
+  })();
+
+  return fetchPromise;
+}
+
 export function useAdmin() {
-  const [admin, setAdmin] = useState<CurrentAdmin | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState('')
+  const [admin, setAdmin] = useState<CurrentAdmin | null>(() => sharedAdmin);
+  const [isLoading, setIsLoading] = useState<boolean>(() => !sharedAdmin && sharedLoading);
+  const [error, setError] = useState<string>(() => sharedError);
 
   useEffect(() => {
-    let cancelled = false
+    const handleChange = () => {
+      setAdmin(sharedAdmin);
+      setIsLoading(sharedLoading);
+      setError(sharedError);
+    };
 
-    async function loadCurrentAdmin() {
-      setIsLoading(true)
-      setError('')
+    listeners.add(handleChange);
 
-      try {
-        const msg = await HttpUtil.get('/panel/api/admins/current', undefined, { silent: true }) as ApiMsg<unknown>
-        if (cancelled) return
-
-        if (msg?.success === false) {
-          throw new Error(msg?.msg || 'Failed to load current admin')
-        }
-
-        const normalized = normalizeCurrentAdmin(msg?.obj ?? msg)
-        if (!normalized) {
-          throw new Error('Invalid current admin payload')
-        }
-
-        setAdmin(normalized)
-      } catch (err) {
-        if (cancelled) return
-        setAdmin(null)
-        setError(err instanceof Error ? err.message : 'Failed to load current admin')
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false)
-        }
-      }
+    if (!sharedAdmin || (!fetchPromise && !sharedAdmin)) {
+      fetchCurrentAdmin();
     }
-
-    loadCurrentAdmin()
 
     return () => {
-      cancelled = true
-    }
-  }, [])
+      listeners.delete(handleChange);
+    };
+  }, []);
 
   return useMemo(() => ({
     admin,
     isLoading,
     loading: isLoading,
     error,
-  }), [admin, isLoading, error])
+  }), [admin, isLoading, error]);
 }

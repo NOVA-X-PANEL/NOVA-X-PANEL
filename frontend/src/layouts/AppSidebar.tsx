@@ -46,7 +46,7 @@ import { formatPanelVersion } from '@/lib/panel-version';
 import { pauseAnimationsUntilLeave, useTheme } from '@/hooks/useTheme';
 import { useAllSettings } from '@/api/queries/useAllSettings';
 import { useCommandPalette } from '@/components/command-palette/useCommandPalette';
-import { useAdmin } from '@/pg-ui/hooks/use-admin';
+import { clearAdminCache, useAdmin } from '@/pg-ui/hooks/use-admin';
 import { canAccessRoute } from '@/pg-ui/utils/rbac';
 import NeonLandscape from '@/components/NeonLandscape';
 import { useStatusQuery } from '@/api/queries/useStatusQuery';
@@ -260,10 +260,10 @@ export default function AppSidebar() {
   );
 
   // Hide the entries this role cannot open so the sidebar matches what the
-  // RouteGuard will actually allow. Until the current admin resolves the list
-  // stays complete to avoid a flash of an empty menu.
+  // RouteGuard will actually allow. If the admin is not resolved yet, do not
+  // leak all unauthorized options.
   const visibleTabs = useMemo(() => {
-    if (!admin) return tabs;
+    if (!admin) return [];
     return tabs.filter((tab) => tab.icon === 'logout' || canAccessRoute(admin, tab.key));
   }, [tabs, admin]);
 
@@ -363,6 +363,7 @@ export default function AppSidebar() {
   const openLink = useCallback(
     async (key: string) => {
       if (key === LOGOUT_KEY) {
+        clearAdminCache();
         await HttpUtil.post('/logout');
         window.location.href = window.X_UI_BASE_PATH || '/';
         return;

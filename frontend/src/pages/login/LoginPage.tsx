@@ -163,6 +163,7 @@ export default function LoginPage() {
       try {
         const msg = await HttpUtil.post('/login', parsed.data);
         if (msg.success) {
+          try { sessionStorage.removeItem('nova_current_admin'); } catch {}
           localStorage.setItem(REMEMBER_KEY, remember ? '1' : '0');
           window.location.href = basePath + 'panel/';
         } else {

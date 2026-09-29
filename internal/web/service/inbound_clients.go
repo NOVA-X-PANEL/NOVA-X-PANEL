@@ -124,6 +124,29 @@ func (s *InboundService) backfillClientStats(db *gorm.DB, inbounds []*model.Inbo
 	return clientsByInbound
 }
 
+// filterClientStatsByScope removes ClientStats entries whose InboundId is not
+// within the scope's allowed set. This prevents backfillClientStats from leaking
+// stats from hidden inbounds to scoped admins who can only see a subset.
+// When the scope allows all inbounds (All=true or LegacyUserID>0) this is a no-op.
+func filterClientStatsByScope(inbounds []*model.Inbound, scope InboundAccessScope) {
+	if scope.All || scope.LegacyUserID > 0 || len(scope.IDs) == 0 {
+		return
+	}
+	allowed := make(map[int]struct{}, len(scope.IDs))
+	for _, id := range scope.IDs {
+		allowed[id] = struct{}{}
+	}
+	for _, ib := range inbounds {
+		filtered := ib.ClientStats[:0]
+		for _, st := range ib.ClientStats {
+			if _, ok := allowed[st.InboundId]; ok {
+				filtered = append(filtered, st)
+			}
+		}
+		ib.ClientStats = filtered
+	}
+}
+
 // emailUsedByOtherInbounds reports whether email lives in any inbound other
 // than exceptInboundId. Empty email returns false.
 func (s *InboundService) emailUsedByOtherInbounds(email string, exceptInboundId int) (bool, error) {

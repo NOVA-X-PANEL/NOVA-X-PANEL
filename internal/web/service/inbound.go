@@ -215,6 +215,8 @@ func (s *InboundService) GetInboundsForScope(scope InboundAccessScope) ([]*model
 		return nil, err
 	}
 	s.enrichClientStats(db, inbounds)
+	// Drop ClientStats from inbounds outside the scope (backfill leaks sibling stats).
+	filterClientStatsByScope(inbounds, scope)
 	s.annotateFallbackParents(db, inbounds)
 	s.annotateLocalOriginGuid(inbounds)
 	return inbounds, nil
@@ -274,6 +276,10 @@ func (s *InboundService) GetInboundsSlimForScope(scope InboundAccessScope) ([]*m
 	// so the list's depleted/expiring badges see every client; the UUID/SubId
 	// enrichment stays skipped. Must run before slimming strips the settings.
 	s.backfillClientStats(db, inbounds)
+	// When the scope restricts which inbounds are visible, drop ClientStats rows
+	// whose InboundId falls outside the allowed set — backfill may have added them
+	// for multi-attached clients whose primary stat is on a hidden inbound.
+	filterClientStatsByScope(inbounds, scope)
 	// Slim feeds the panel UI only (masters poll the full list), so the badge
 	// math may see the cross-panel totals a master pushed.
 	s.overlayInboundsClientStats(db, inbounds)

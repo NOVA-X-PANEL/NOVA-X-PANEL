@@ -34,21 +34,21 @@
   /* ---- design tokens ---------------------------------------------------- */
   /* The panel's own neon tokens, so the sign-in screen and the panel are one
      product. Kept as --nx-* names because the rest of this file reads them. */
-  --nx-bg: #030b1d;
-  --nx-bg-2: #061633;
-  --nx-panel: #071c3f;
-  --nx-line: #123675;
-  --nx-line-strong: #1b4a95;
-  --nx-text: #f2f6ff;
-  --nx-muted: #cfdcf0;
-  --nx-faint: #b8c9e0;
-  --nx-blue: #176bff;
-  --nx-blue-2: #1548e9;
-  --nx-violet: #7134f0;
-  --nx-cyan: #00b9ff;
-  --nx-teal: #00c9a8;
-  --nx-success: #00e1b0;
-  --nx-radius: 18px;
+  --nx-bg: #07090e;
+  --nx-bg-2: #0b0e17;
+  --nx-panel: rgba(15, 20, 32, 0.85);
+  --nx-line: rgba(56, 189, 248, 0.18);
+  --nx-line-strong: rgba(168, 85, 247, 0.4);
+  --nx-text: #f1f5f9;
+  --nx-muted: #94a3b8;
+  --nx-faint: #64748b;
+  --nx-blue: #0ea5e9;
+  --nx-blue-2: #0284c7;
+  --nx-violet: #8b5cf6;
+  --nx-cyan: #22d3ee;
+  --nx-teal: #10b981;
+  --nx-success: #10b981;
+  --nx-radius: 14px;
   /* Latin first, Persian next. Inter carries the Latin glyphs, and Vazirmatn
      picks up the Persian ones through fallback — so an English panel does not
      render its English text in a Persian typeface. */
@@ -58,7 +58,13 @@
   display: grid;
   grid-template-columns: 1.05fr 0.95fr;
   min-height: 100vh;
-  background: var(--nx-bg);
+  background-color: #07090e;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(120, 50, 220, 0.18), transparent),
+    radial-gradient(circle at 10% 20%, rgba(34, 211, 238, 0.08), transparent 40%),
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
   color: var(--nx-text);
   font-family: var(--nx-font);
   overflow: hidden;
@@ -72,9 +78,9 @@
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(900px 520px at 12% 18%, rgba(23, 107, 255, 0.2), transparent 70%),
-    radial-gradient(780px 520px at 88% 14%, rgba(113, 52, 240, 0.18), transparent 72%),
-    radial-gradient(760px 540px at 62% 92%, rgba(0, 201, 168, 0.12), transparent 72%);
+    radial-gradient(900px 520px at 12% 18%, rgba(14, 165, 233, 0.15), transparent 70%),
+    radial-gradient(780px 520px at 88% 14%, rgba(139, 92, 246, 0.18), transparent 72%),
+    radial-gradient(760px 540px at 62% 92%, rgba(16, 185, 129, 0.08), transparent 72%);
 }
 
 .nova-login *,
@@ -94,7 +100,7 @@
   justify-content: space-between;
   padding: 48px 56px 0;
   overflow: hidden;
-  background: linear-gradient(160deg, #061633 0%, #030b1d 60%);
+  background: linear-gradient(160deg, rgba(17, 24, 43, 0.85) 0%, rgba(7, 9, 14, 0.95) 100%);
   border-inline-end: 1px solid var(--nx-line);
 }
 
@@ -181,18 +187,33 @@
   align-items: center;
   gap: 14px;
   padding: 14px 16px;
-  border: 1px solid var(--nx-line);
-  border-radius: 14px;
-  background: #08224c;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: rgba(15, 20, 32, 0.85);
+  backdrop-filter: blur(12px);
+  position: relative;
+  overflow: hidden;
   transition:
     border-color 0.25s ease,
     transform 0.25s ease,
-    background 0.25s ease;
+    background 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.nx-feature::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #22d3ee, transparent);
 }
 
 .nx-feature:hover {
-  border-color: var(--nx-line-strong);
-  transform: translateX(-4px);
+  border-color: rgba(168, 85, 247, 0.5);
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.25);
+  transform: translateY(-2px);
 }
 
 .nx-feature__icon {
@@ -301,14 +322,15 @@
   width: 100%;
   max-width: 452px;
   padding: 34px 32px 30px;
-  border: 1px solid var(--nx-line);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--nx-radius);
   /* opaque: the artwork behind used to read through this card */
-  background: linear-gradient(165deg, #08224c 0%, #061a3b 100%);
+  background: rgba(15, 20, 32, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   box-shadow:
-    0 30px 70px rgba(0, 0, 0, 0.55),
-    0 0 0 1px rgba(255, 255, 255, 0.02) inset,
-    0 1px 0 rgba(255, 255, 255, 0.07) inset;
+    0 30px 70px rgba(0, 0, 0, 0.6),
+    0 0 30px rgba(168, 85, 247, 0.2);
 }
 
 /* fine specular reflection along the top edge */
@@ -316,9 +338,9 @@
   content: '';
   position: absolute;
   inset: 0 0 auto 0;
-  height: 1px;
+  height: 2px;
   border-radius: var(--nx-radius) var(--nx-radius) 0 0;
-  background: linear-gradient(90deg, transparent, rgba(186, 230, 253, 0.6), transparent);
+  background: linear-gradient(90deg, transparent, #22d3ee, #c084fc, transparent);
 }
 
 .nx-card__head {
@@ -365,9 +387,9 @@
   gap: 10px;
   height: 46px;
   padding: 0 14px;
-  border: 1px solid var(--nx-line);
-  border-radius: 12px;
-  background: rgba(6, 12, 26, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  background: rgba(11, 14, 23, 0.85);
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease,
@@ -375,9 +397,9 @@
 }
 
 .nx-input:focus-within {
-  border-color: var(--nx-line-strong);
-  background: rgba(8, 16, 34, 0.9);
-  box-shadow: 0 0 0 3px rgba(47, 125, 255, 0.16);
+  border-color: #22d3ee;
+  background: rgba(15, 20, 32, 0.95);
+  box-shadow: 0 0 16px rgba(34, 211, 238, 0.25);
 }
 
 .nx-input--error {
@@ -452,25 +474,22 @@
   height: 48px;
   margin-top: 6px;
   border: 0;
-  border-radius: 12px;
-  background: linear-gradient(100deg, #1548e9 0%, var(--nx-violet) 55%, var(--nx-blue) 100%);
+  border-radius: 10px;
+  background: linear-gradient(135deg, #0ea5e9, #8b5cf6) !important;
   color: #ffffff;
   font-family: inherit;
-  font-size: 14.5px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
   cursor: pointer;
-  box-shadow: 0 12px 30px rgba(47, 125, 255, 0.34);
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease,
-    filter 0.2s ease;
+  box-shadow: 0 0 20px rgba(14, 165, 233, 0.45);
+  transition: all 0.25s ease;
 }
 
 .nx-submit:hover:not(:disabled) {
   transform: translateY(-1px);
-  filter: brightness(1.06);
-  box-shadow: 0 16px 38px rgba(47, 125, 255, 0.44);
+  filter: brightness(1.1);
+  box-shadow: 0 0 30px rgba(168, 85, 247, 0.65);
 }
 
 .nx-submit:disabled {

@@ -377,6 +377,8 @@ func downloadPanelUpdater() (string, error) {
 	if reqErr != nil {
 		return "", fmt.Errorf("download panel updater: %w", reqErr)
 	}
+	req.Header.Set("Cache-Control", "no-cache")
+	req.Header.Set("Pragma", "no-cache")
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("download panel updater: %w", err)

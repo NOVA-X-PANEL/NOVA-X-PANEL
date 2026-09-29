@@ -1,0 +1,373 @@
+/* ==========================================================================
+   NOVA-X-PANEL — Inbounds Cyberpunk HUD Styling
+   ========================================================================== */
+
+.inbounds-cyber-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+/* — HUD Header Banner — */
+.inb-hud-banner {
+  position: relative;
+  background: linear-gradient(135deg, rgba(17, 24, 43, 0.85) 0%, rgba(11, 15, 28, 0.95) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  border-radius: 16px;
+  padding: 20px 26px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.inb-hud-banner::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #22d3ee, #c084fc, transparent);
+}
+
+.inb-hud-left {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  z-index: 1;
+}
+
+.inb-hud-icon-box {
+  width: 50px;
+  height: 50px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(168, 85, 247, 0.25));
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: #22d3ee;
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+  flex-shrink: 0;
+}
+
+.inb-hud-title-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.inb-hud-path {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #38bdf8;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.inb-hud-title {
+  font-family: 'Rajdhani', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  line-height: 1.2;
+}
+
+.inb-version-chip {
+  background: rgba(168, 85, 247, 0.2);
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  color: #c084fc;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.inb-hud-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  z-index: 1;
+}
+
+.inb-telemetry-chip {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 8px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.inb-tele-label {
+  font-size: 10px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+
+.inb-tele-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: #22d3ee;
+}
+
+/* — Top KPI Stat Cards — */
+.inb-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 1024px) {
+  .inb-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .inb-stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.inb-stat-card {
+  background: rgba(15, 20, 32, 0.85);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  padding: 16px 18px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.inb-stat-card:hover {
+  background: rgba(22, 29, 46, 0.95);
+  border-color: rgba(168, 85, 247, 0.4);
+  box-shadow: 0 0 25px rgba(168, 85, 247, 0.2);
+  transform: translateY(-2px);
+}
+
+.inb-card-top-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+}
+
+.inb-card-top-line.cyan { background: linear-gradient(90deg, transparent, #22d3ee, transparent); }
+.inb-card-top-line.purple { background: linear-gradient(90deg, transparent, #c084fc, transparent); }
+.inb-card-top-line.emerald { background: linear-gradient(90deg, transparent, #34d399, transparent); }
+.inb-card-top-line.amber { background: linear-gradient(90deg, transparent, #fbbf24, transparent); }
+
+.inb-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.inb-card-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.inb-card-icon {
+  font-size: 16px;
+  opacity: 0.9;
+}
+
+.inb-card-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  line-height: 1;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.inb-card-unit {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.inb-card-sub {
+  font-size: 11.5px;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.inb-micro-bar {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+
+.inb-micro-fill {
+  height: 100%;
+  border-radius: 2px;
+}
+
+/* — Bottom Dual Telemetry Console — */
+.inb-bottom-console {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-top: 10px;
+}
+
+@media (max-width: 1024px) {
+  .inb-bottom-console {
+    grid-template-columns: 1fr;
+  }
+}
+
+.inb-console-card {
+  background: rgba(15, 20, 32, 0.85);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 18px 22px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.inb-console-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 20px;
+  right: 20px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.4), transparent);
+}
+
+.inb-console-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.inb-console-title {
+  font-family: 'Rajdhani', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.inb-console-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #22d3ee;
+}
+
+/* Oscilloscope */
+.inb-osc-wrap {
+  height: 84px;
+  width: 100%;
+  position: relative;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  overflow: hidden;
+}
+
+.inb-osc-grid {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(34, 211, 238, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34, 211, 238, 0.05) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.inb-tele-stats-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.inb-tele-metric {
+  display: flex;
+  flex-direction: column;
+}
+
+.inb-tele-metric-lbl {
+  font-size: 10px;
+  color: #64748b;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.inb-tele-metric-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+/* Protocol & Inbound Breakdown */
+.inb-matrix-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.inb-matrix-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.inb-matrix-label-row {
+  display: flex;
+  justify-content: space-between;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+}
+
+.inb-matrix-track {
+  height: 5px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.inb-matrix-fill {
+  height: 100%;
+  border-radius: 3px;
+}

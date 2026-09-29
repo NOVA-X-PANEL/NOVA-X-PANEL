@@ -741,7 +741,7 @@ export default function InboundsPage() {
                   }
                 />
               ) : (
-                <div className="nc-page">
+                <div className="nc-page inbounds-cyber-page">
                   <InboundsHero count={dbInbounds.length} />
 
                   <InboundsStats
@@ -751,37 +751,35 @@ export default function InboundsPage() {
                     online={onlineClients.length}
                   />
 
-                  <div className="nc-split">
-                    <div className="nc-main">
-                      <InboundList
-                        dbInbounds={dbInbounds}
-                        clientCount={clientCount}
-                        onlineClients={onlineClients}
-                        lastOnlineMap={lastOnlineMap}
-                        inboundSpeed={inboundSpeed}
-                        expireDiff={expireDiff}
-                        trafficDiff={trafficDiff}
-                        pageSize={pageSize}
-                        isMobile={isMobile}
-                        subEnable={subSettings.enable}
-                        nodesById={nodesById}
-                        hasActiveNode={showNodeInfo}
-                        hosts={hosts}
-                        onAddInbound={onAddInbound}
-                        onGeneralAction={onGeneralAction}
-                        onRowAction={({ key, dbInbound }) =>
-                          onRowAction({ key, dbInbound: dbInbound as unknown as DBInbound })
-                        }
-                        onBulkDelete={confirmBulkDelete}
-                      />
-                    </div>
-
-                    <InboundsRail
-                      dbInbounds={dbInbounds as never}
-                      totals={totals}
-                      online={onlineClients.length}
+                  <div className="inbounds-main-block">
+                    <InboundList
+                      dbInbounds={dbInbounds}
+                      clientCount={clientCount}
+                      onlineClients={onlineClients}
+                      lastOnlineMap={lastOnlineMap}
+                      inboundSpeed={inboundSpeed}
+                      expireDiff={expireDiff}
+                      trafficDiff={trafficDiff}
+                      pageSize={pageSize}
+                      isMobile={isMobile}
+                      subEnable={subSettings.enable}
+                      nodesById={nodesById}
+                      hasActiveNode={showNodeInfo}
+                      hosts={hosts}
+                      onAddInbound={onAddInbound}
+                      onGeneralAction={onGeneralAction}
+                      onRowAction={({ key, dbInbound }) =>
+                        onRowAction({ key, dbInbound: dbInbound as unknown as DBInbound })
+                      }
+                      onBulkDelete={confirmBulkDelete}
                     />
                   </div>
+
+                  <InboundsRail
+                    dbInbounds={dbInbounds as never}
+                    totals={totals}
+                    online={onlineClients.length}
+                  />
                 </div>
               )}
             </Spin>

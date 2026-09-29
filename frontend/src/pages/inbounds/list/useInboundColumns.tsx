@@ -128,9 +128,18 @@ export function useInboundColumns({
         title: t('pages.inbounds.enable'),
         key: 'enable',
         align: 'center',
-        width: 80,
+        width: 110,
         render: (_, record) => (
-          <Switch checked={record.enable} onChange={(next) => onSwitchEnable(record, next)} />
+          <div className="inb-switch-cell">
+            <Switch
+              size="small"
+              checked={record.enable}
+              onChange={(next) => onSwitchEnable(record, next)}
+            />
+            <span className={`inb-switch-label ${record.enable ? 'is-armed' : 'is-off'}`}>
+              {record.enable ? 'ARMED' : 'OFF'}
+            </span>
+          </div>
         ),
       },
     ];
@@ -202,8 +211,9 @@ export function useInboundColumns({
         dataIndex: 'port',
         key: 'port',
         align: 'center',
-        width: 80,
+        width: 100,
         sorter: (a, b) => a.port - b.port,
+        render: (port: number) => <span className="inb-port-cyber">:{port}</span>,
       },
       {
         title: t('pages.inbounds.protocol'),
@@ -213,69 +223,69 @@ export function useInboundColumns({
         sorter: (a, b) => compareText(a.protocol, b.protocol),
         render: (_, record) => {
           const tags: ReactElement[] = [
-            <Tag key="p" color="purple">
-              {record.protocol}
-            </Tag>,
+            <span key="p" className="inb-proto-cyber inb-proto-main">
+              {record.protocol.toUpperCase()}
+            </span>,
           ];
           if (record.isWireguard || record.isAmneziawg || record.isHysteria || record.isTuic) {
             tags.push(
-              <Tag key="n" color="green">
+              <span key="n" className="inb-proto-cyber inb-proto-transport">
                 UDP
-              </Tag>,
+              </span>,
             );
           } else if (record.isSS) {
             const stream = readStreamHints(record.streamSettings);
             tags.push(
-              <Tag key="n" color="green">
+              <span key="n" className="inb-proto-cyber inb-proto-transport">
                 {shadowsocksNetworkLabel(record.settings)}
-              </Tag>,
+              </span>,
             );
             if (stream.isTls)
               tags.push(
-                <Tag key="tls" color="blue">
+                <span key="tls" className="inb-proto-cyber inb-proto-sec">
                   TLS
-                </Tag>,
+                </span>,
               );
           } else if (record.isTunnel) {
             tags.push(
-              <Tag key="n" color="green">
+              <span key="n" className="inb-proto-cyber inb-proto-transport">
                 {tunnelNetworkLabel(record.settings)}
-              </Tag>,
+              </span>,
             );
           } else if (record.isMixed) {
             tags.push(
-              <Tag key="n" color="green">
+              <span key="n" className="inb-proto-cyber inb-proto-transport">
                 {mixedNetworkLabel(record.settings)}
-              </Tag>,
+              </span>,
             );
           } else if (record.isVMess || record.isVLess || record.isTrojan) {
             const stream = readStreamHints(record.streamSettings);
             tags.push(
-              <Tag key="n" color="green">
-                {networkLabel(stream.network)}
-              </Tag>,
+              <span key="n" className="inb-proto-cyber inb-proto-transport">
+                {networkLabel(stream.network).toUpperCase()}
+              </span>,
             );
             const l4 = networkL4(stream.network);
             if (l4)
               tags.push(
-                <Tag key="l4" color="green">
-                  {l4}
-                </Tag>,
+                <span key="l4" className="inb-proto-cyber inb-proto-transport">
+                  {l4.toUpperCase()}
+                </span>,
               );
             if (stream.isTls)
               tags.push(
-                <Tag key="tls" color="blue">
+                <span key="tls" className="inb-proto-cyber inb-proto-sec">
                   TLS
-                </Tag>,
+                </span>,
               );
             if (stream.isReality)
               tags.push(
-                <Tag key="reality" color="blue">
-                  Reality
-                </Tag>,
+                <span key="reality" className="inb-proto-cyber inb-proto-sec">
+                  REALITY
+                </span>,
               );
           }
-          return <div className="protocol-tags">{tags}</div>;
+          return <div className="inb-protocol-group">{tags}</div>;
         },
       },
       {

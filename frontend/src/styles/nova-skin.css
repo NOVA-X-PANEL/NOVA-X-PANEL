@@ -238,7 +238,11 @@ body.light {
   )
   .ant-table-tbody
   > tr.ant-table-row:hover
-  > td,
+  > td {
+  background: rgba(37, 99, 255, 0.09) !important;
+  background-image: none !important;
+}
+
 :is(
     .index-page,
     .clients-page,
@@ -255,7 +259,8 @@ body.light {
   .ant-table-tbody
   > tr.ant-table-row-selected
   > td {
-  background: linear-gradient(90deg, rgba(23, 107, 255, 0.14), rgba(113, 52, 240, 0.07)) !important;
+  background: rgba(37, 99, 255, 0.14) !important;
+  background-image: none !important;
 }
 
 :is(
@@ -1944,7 +1949,8 @@ body.dark .ant-command-palette,
 }
 
 :is(.clients-page, .nc-page) .ant-table-tbody tr.nc-row-accent:hover > td {
-  background-color: color-mix(in srgb, var(--row-accent, var(--nc-blue)) 6%, transparent);
+  background-color: color-mix(in srgb, var(--row-accent, var(--nc-blue)) 6%, transparent) !important;
+  background-image: none !important;
 }
 
 /* status pills in the panel's own palette rather than antd's defaults */

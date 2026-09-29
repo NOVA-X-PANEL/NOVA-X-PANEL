@@ -558,3 +558,12 @@
 .clients-page .ant-table-tbody .ant-space {
   flex-wrap: nowrap;
 }
+
+/* Ensure completely uniform row background on hover without cell gradient banding */
+.clients-page .ant-table-tbody > tr:hover > td,
+.clients-page .ant-table-tbody > tr.ant-table-row:hover > td,
+.clients-page .ant-table-tbody > tr.ant-table-row-hover > td,
+:is(.clients-page, .nc-page) .ant-table-tbody tr.nc-row-accent:hover > td {
+  background-image: none !important;
+  background-color: rgba(37, 99, 255, 0.09) !important;
+}

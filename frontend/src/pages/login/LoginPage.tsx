@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ConfigProvider, Menu, Popover, Spin, message } from 'antd';
 import {
@@ -106,6 +106,9 @@ export default function LoginPage() {
   const [totpCode, setTotpCode] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [lang, setLang] = useState<string>(() => LanguageManager.getLanguage());
+
+  const passwordInputRef = useRef<HTMLInputElement>(null);
+  const twoFactorInputRef = useRef<HTMLInputElement>(null);
 
   // The panel is RTL for Persian; the layout uses logical properties so the
   // same markup mirrors correctly for LTR languages.
@@ -321,6 +324,12 @@ export default function LoginPage() {
                       name="username"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          passwordInputRef.current?.focus();
+                        }
+                      }}
                       autoComplete="username"
                       placeholder={t('username')}
                       autoFocus
@@ -335,10 +344,17 @@ export default function LoginPage() {
                   <span className={`nx-input${errors.password ? ' nx-input--error' : ''}`}>
                     <LockOutlined className="nx-input__icon" />
                     <input
+                      ref={passwordInputRef}
                       name="password"
                       type={showPassword ? 'text' : 'password'}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && twoFactorEnable) {
+                          e.preventDefault();
+                          twoFactorInputRef.current?.focus();
+                        }
+                      }}
                       autoComplete="current-password"
                       placeholder={t('password')}
                       aria-invalid={!!errors.password}
@@ -366,6 +382,7 @@ export default function LoginPage() {
                     <span className={`nx-input${errors.twoFactorCode ? ' nx-input--error' : ''}`}>
                       <KeyOutlined className="nx-input__icon" />
                       <input
+                        ref={twoFactorInputRef}
                         name="twoFactorCode"
                         value={totpCode}
                         onChange={(e) => setTotpCode(e.target.value)}

@@ -378,12 +378,12 @@
 
 body.dark .ant-drawer-content,
 body.dark .ant-drawer-body {
-  background-color: #15161a;
+  background-color: #07090e !important;
 }
 
 html[data-theme='ultra-dark'] body.dark .ant-drawer-content,
 html[data-theme='ultra-dark'] body.dark .ant-drawer-body {
-  background-color: #050507;
+  background-color: #07090e !important;
 }
 
 body.dark .ant-drawer-body .drawer-menu,

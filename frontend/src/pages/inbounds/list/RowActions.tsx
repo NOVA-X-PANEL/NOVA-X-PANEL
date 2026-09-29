@@ -113,10 +113,11 @@ export function buildRowActionsMenu({
 export function RowActionsCell({ record, subEnable, hasClients, onClick }: RowActionsMenuProps) {
   const { t } = useTranslation();
   return (
-    <div className="action-buttons">
+    <div className="action-buttons cyber-action-buttons">
       <Button
         type="text"
         size="small"
+        className="cyber-action-btn cyber-edit-btn"
         style={{ fontSize: 16 }}
         icon={<EditOutlined />}
         aria-label={t('edit')}
@@ -124,6 +125,7 @@ export function RowActionsCell({ record, subEnable, hasClients, onClick }: RowAc
       />
       <Dropdown
         trigger={['click']}
+        overlayClassName="cyber-action-dropdown"
         menu={{
           items: buildRowActionsMenu({ record, subEnable, t, hasClients }),
           onClick: ({ key }) => onClick(key as RowAction),
@@ -132,6 +134,7 @@ export function RowActionsCell({ record, subEnable, hasClients, onClick }: RowAc
         <Button
           type="text"
           size="small"
+          className="cyber-action-btn cyber-more-btn"
           style={{ fontSize: 16 }}
           icon={<MoreOutlined />}
           aria-label={t('more')}

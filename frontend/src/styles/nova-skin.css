@@ -313,7 +313,7 @@ body.light {
     .admin-roles-page
   )
   .ant-table-cell-fix-right {
-  background: #061a3b !important;
+  background: #0b0f19 !important;
 }
 
 /* the selection column and the row action column go quiet */
@@ -615,11 +615,11 @@ body.dark .ant-select-dropdown,
 body.dark .ant-picker-dropdown .ant-picker-panel-container,
 body.dark .ant-popover .ant-popover-inner,
 body.dark .ant-tooltip .ant-tooltip-inner {
-  border: 1px solid var(--nc-border);
-  background: linear-gradient(150deg, #071d42 0%, #061a3b 100%);
+  border: 1px solid rgba(56, 189, 248, 0.25) !important;
+  background: linear-gradient(160deg, #0b0f19 0%, #07090e 100%) !important;
   box-shadow:
-    0 24px 60px rgba(0, 0, 0, 0.55),
-    0 0 26px rgba(23, 107, 255, 0.22);
+    0 24px 60px rgba(0, 0, 0, 0.8),
+    0 0 24px rgba(34, 211, 238, 0.15) !important;
 }
 
 body.dark .ant-modal .ant-modal-content {
@@ -650,7 +650,7 @@ body.dark .ant-drawer-mask {
 body.dark .ant-dropdown-menu-item:hover,
 body.dark .ant-select-item-option-active,
 body.dark .ant-select-item-option-selected {
-  background: rgba(23, 107, 255, 0.16);
+  background: linear-gradient(90deg, rgba(34, 211, 238, 0.18) 0%, rgba(168, 85, 247, 0.15) 100%) !important;
 }
 
 body.dark .ant-select-item-option-selected {

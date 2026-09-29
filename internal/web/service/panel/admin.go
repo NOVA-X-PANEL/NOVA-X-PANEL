@@ -1,6 +1,7 @@
 package panel
 
 import (
+	"encoding/json"
 	"errors"
 	"strings"
 
@@ -28,6 +29,32 @@ type AdminPayload struct {
 	// ApiAccess lets the account mint its own API token, which then carries this
 	// account's role over the API.
 	ApiAccess *bool `json:"apiAccess" form:"apiAccess"`
+}
+
+// UnmarshalJSON accepts both camelCase and snake_case keys (e.g. data_limit, role_id, api_access).
+func (p *AdminPayload) UnmarshalJSON(data []byte) error {
+	type Alias AdminPayload
+	aux := struct {
+		*Alias
+		DataLimitSnake *int64 `json:"data_limit"`
+		RoleIdSnake    *int   `json:"role_id"`
+		ApiAccessSnake *bool  `json:"api_access"`
+	}{
+		Alias: (*Alias)(p),
+	}
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+	if aux.DataLimitSnake != nil && p.DataLimit == 0 {
+		p.DataLimit = *aux.DataLimitSnake
+	}
+	if aux.RoleIdSnake != nil && p.RoleId == 0 {
+		p.RoleId = *aux.RoleIdSnake
+	}
+	if aux.ApiAccessSnake != nil && p.ApiAccess == nil {
+		p.ApiAccess = aux.ApiAccessSnake
+	}
+	return nil
 }
 
 // AdminView is the API representation of a panel account (password omitted).
@@ -78,7 +105,7 @@ func adminUsageByOwner(db *gorm.DB) (map[int]int64, map[int]int64, error) {
 
 	var usage []adminUsageRow
 	if err := db.Table("clients AS c").
-		Select("c.owner_admin_id AS admin_id, COALESCE(SUM(COALESCE(ct.up, 0) + COALESCE(ct.down, 0)), 0) AS used_bytes, COUNT(*) AS count").
+		Select("c.owner_admin_id AS admin_id, COALESCE(SUM(COALESCE(ct.up, 0) + COALESCE(ct.down, 0)), 0) AS used_bytes, COUNT(DISTINCT c.email) AS count").
 		Joins("LEFT JOIN client_traffics AS ct ON ct.email = c.email").
 		Where("c.owner_admin_id > 0").
 		Group("c.owner_admin_id").
@@ -243,7 +270,8 @@ func (s *AdminService) Stats() (*AdminStats, error) {
 }
 
 // SyncAdminUsedBytes recomputes every account's aggregated client traffic and
-// writes it back only when it changed.
+// writes it back only when it changed. If an account has exceeded its data limit
+// and its role specifies disconnectUsersWhenLimited, it auto-disables the admin's clients.
 func (s *AdminService) SyncAdminUsedBytes() error {
 	db := database.GetDB()
 	used, _, err := adminUsageByOwner(db)
@@ -252,7 +280,7 @@ func (s *AdminService) SyncAdminUsedBytes() error {
 	}
 
 	var users []model.User
-	if err := db.Model(&model.User{}).Select("id", "used_bytes").Find(&users).Error; err != nil {
+	if err := db.Model(&model.User{}).Select("id", "used_bytes", "data_limit", "role_id").Find(&users).Error; err != nil {
 		return err
 	}
 	for _, user := range users {
@@ -260,12 +288,36 @@ func (s *AdminService) SyncAdminUsedBytes() error {
 		if next < 0 {
 			next = 0
 		}
-		if next == user.UsedBytes {
-			continue
+		if next != user.UsedBytes {
+			if err := db.Model(&model.User{}).Where("id = ?", user.Id).
+				Update("used_bytes", next).Error; err != nil {
+				return err
+			}
 		}
-		if err := db.Model(&model.User{}).Where("id = ?", user.Id).
-			Update("used_bytes", next).Error; err != nil {
-			return err
+
+		// Enforce disconnectUsersWhenLimited when data limit is reached
+		if user.DataLimit > 0 {
+			if next >= user.DataLimit && user.UsedBytes < user.DataLimit {
+				// Reached limit: check if role has disconnectUsersWhenLimited
+				var role model.AdminRole
+				if db.Where("id = ?", user.RoleId).First(&role).Error == nil {
+					if features, ok := decodeRoleJSON(role.FeaturesJSON).(map[string]any); ok {
+						if b, ok := features["disconnectUsersWhenLimited"].(bool); ok && b {
+							_, _ = s.DisableAllActiveUsers(user.Id)
+						}
+					}
+				}
+			} else if next < user.DataLimit && user.UsedBytes >= user.DataLimit {
+				// Traffic was reset / limit raised: re-activate clients
+				var role model.AdminRole
+				if db.Where("id = ?", user.RoleId).First(&role).Error == nil {
+					if features, ok := decodeRoleJSON(role.FeaturesJSON).(map[string]any); ok {
+						if b, ok := features["disconnectUsersWhenLimited"].(bool); ok && b {
+							_, _ = s.ActivateAllDisabledUsers(user.Id)
+						}
+					}
+				}
+			}
 		}
 	}
 	return nil

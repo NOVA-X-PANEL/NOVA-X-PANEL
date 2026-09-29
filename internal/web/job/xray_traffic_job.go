@@ -7,6 +7,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service/outbound"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/service/panel"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/websocket"
 	"github.com/mhsanaei/3x-ui/v3/internal/xray"
 
@@ -19,6 +20,7 @@ type XrayTrafficJob struct {
 	xrayService     service.XrayService
 	inboundService  service.InboundService
 	outboundService outbound.OutboundService
+	adminService    panel.AdminService
 }
 
 // clientStatsSnapshotMaxClients caps how many client_traffics rows the job
@@ -147,6 +149,7 @@ func (j *XrayTrafficJob) Run() {
 		}
 	}
 	j.inboundService.RefreshLocalOnlineClients(activeEmails, activeInboundTags)
+	_ = j.adminService.SyncAdminUsedBytes()
 
 	if !websocket.HasClients() {
 		return

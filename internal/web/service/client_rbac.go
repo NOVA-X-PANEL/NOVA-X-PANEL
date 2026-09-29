@@ -3,6 +3,8 @@ package service
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
@@ -852,6 +854,144 @@ func (s *ClientService) CanCreateClientForAdmin(user *model.User) bool {
 		return true
 	}
 	return permissionValueAllowedInRole(role, "users", "create")
+}
+
+// ValidateClientCreationForAdmin validates that the admin account is allowed to create
+// the given number of new clients, checking both the role's max_users limit and
+// the admin's personal dataLimit quota.
+func (s *ClientService) ValidateClientCreationForAdmin(user *model.User, count int) error {
+	if user == nil {
+		return nil
+	}
+	role, err := adminRoleForUser(user)
+	if err != nil {
+		return err
+	}
+	if role.OwnerRole {
+		return nil
+	}
+
+	// 1. Permission check
+	if !s.CanCreateClientForAdmin(user) {
+		return errors.New("permission denied: users.create is not allowed for this role")
+	}
+
+	// 2. Admin personal traffic quota check
+	if user.DataLimit > 0 && user.UsedBytes >= user.DataLimit {
+		return fmt.Errorf("admin traffic quota exhausted: used %d of %d bytes", user.UsedBytes, user.DataLimit)
+	}
+
+	// 3. Role limits check (max_users)
+	if strings.TrimSpace(role.LimitsJSON) != "" {
+		var limits map[string]any
+		if err := json.Unmarshal([]byte(role.LimitsJSON), &limits); err == nil && limits != nil {
+			var maxUsers int64 = 0
+			if raw, ok := limits["max_users"]; ok && raw != nil {
+				switch v := raw.(type) {
+				case float64:
+					if v > 0 {
+						maxUsers = int64(v)
+					}
+				case int:
+					if v > 0 {
+						maxUsers = int64(v)
+					}
+				case int64:
+					if v > 0 {
+						maxUsers = v
+					}
+				case string:
+					if s := strings.TrimSpace(v); s != "" {
+						if n, pErr := strconv.ParseInt(s, 10, 64); pErr == nil && n > 0 {
+							maxUsers = n
+						}
+					}
+				}
+			}
+
+			if maxUsers > 0 {
+				db := database.GetDB()
+				if db != nil {
+					var currentCount int64
+					if err := db.Model(&model.ClientRecord{}).
+						Where("owner_admin_id = ?", user.Id).
+						Count(&currentCount).Error; err == nil {
+						if currentCount+int64(count) > maxUsers {
+							return fmt.Errorf("client limit reached: this admin role allows at most %d clients (currently has %d)", maxUsers, currentCount)
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+// ValidateClientTrafficForAdmin validates that a client's allocated traffic limit (Total)
+// falls within the bounds configured on the admin's role (data_limit_min and data_limit_max).
+func (s *ClientService) ValidateClientTrafficForAdmin(user *model.User, totalBytes int64) error {
+	if user == nil {
+		return nil
+	}
+	role, err := adminRoleForUser(user)
+	if err != nil || role.OwnerRole {
+		return nil
+	}
+
+	if strings.TrimSpace(role.LimitsJSON) == "" {
+		return nil
+	}
+
+	var limits map[string]any
+	if err := json.Unmarshal([]byte(role.LimitsJSON), &limits); err != nil || limits == nil {
+		return nil
+	}
+
+	parseLimitInt64 := func(key string) (int64, bool) {
+		if raw, ok := limits[key]; ok && raw != nil {
+			switch v := raw.(type) {
+			case float64:
+				if v > 0 {
+					return int64(v), true
+				}
+			case int:
+				if v > 0 {
+					return int64(v), true
+				}
+			case int64:
+				if v > 0 {
+					return v, true
+				}
+			case string:
+				if s := strings.TrimSpace(v); s != "" {
+					if n, pErr := strconv.ParseInt(s, 10, 64); pErr == nil && n > 0 {
+						return n, true
+					}
+				}
+			}
+		}
+		return 0, false
+	}
+
+	// data_limit_max: maximum allowed traffic quota per client
+	if maxLimit, ok := parseLimitInt64("data_limit_max"); ok && maxLimit > 0 {
+		if totalBytes <= 0 {
+			return fmt.Errorf("unlimited traffic is not permitted: role maximum is %d bytes", maxLimit)
+		}
+		if totalBytes > maxLimit {
+			return fmt.Errorf("client traffic limit (%d bytes) exceeds role maximum of %d bytes", totalBytes, maxLimit)
+		}
+	}
+
+	// data_limit_min: minimum allowed traffic quota per client
+	if minLimit, ok := parseLimitInt64("data_limit_min"); ok && minLimit > 0 {
+		if totalBytes > 0 && totalBytes < minLimit {
+			return fmt.Errorf("client traffic limit (%d bytes) is below role minimum of %d bytes", totalBytes, minLimit)
+		}
+	}
+
+	return nil
 }
 
 // permissionValueAllowedInRole reads resource.action out of a role document.

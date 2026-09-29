@@ -400,9 +400,15 @@ func (a *ClientController) create(c *gin.Context) {
 	}
 
 	user := a.loginUser(c)
-	if user != nil && !a.clientService.CanCreateClientForAdmin(user) {
-		pureJsonMsg(c, http.StatusForbidden, false, "clients.create permission required")
-		return
+	if user != nil {
+		if err := a.clientService.ValidateClientCreationForAdmin(user, 1); err != nil {
+			pureJsonMsg(c, http.StatusForbidden, false, err.Error())
+			return
+		}
+		if err := a.clientService.ValidateClientTrafficForAdmin(user, payload.Client.TotalGB); err != nil {
+			pureJsonMsg(c, http.StatusBadRequest, false, err.Error())
+			return
+		}
 	}
 	if !a.requireInboundsInScope(c, "create", payload.InboundIds) {
 		return
@@ -446,6 +452,13 @@ func (a *ClientController) update(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
+	}
+	user := a.loginUser(c)
+	if user != nil {
+		if err := a.clientService.ValidateClientTrafficForAdmin(user, req.Client.TotalGB); err != nil {
+			pureJsonMsg(c, http.StatusBadRequest, false, err.Error())
+			return
+		}
 	}
 	inboundFilter := parseInboundIdsQuery(c.Query("inboundIds"))
 	needRestart, err := a.clientService.UpdateByEmail(&a.inboundService, email, req.Client, req.LimitHwid, inboundFilter...)
@@ -701,6 +714,19 @@ func (a *ClientController) bulkCreate(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
+	user := a.loginUser(c)
+	if user != nil {
+		if err := a.clientService.ValidateClientCreationForAdmin(user, len(payloads)); err != nil {
+			pureJsonMsg(c, http.StatusForbidden, false, err.Error())
+			return
+		}
+		for _, p := range payloads {
+			if err := a.clientService.ValidateClientTrafficForAdmin(user, p.Client.TotalGB); err != nil {
+				pureJsonMsg(c, http.StatusBadRequest, false, err.Error())
+				return
+			}
+		}
+	}
 	result, needRestart, err := a.clientService.BulkCreate(&a.inboundService, payloads)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
@@ -763,6 +789,19 @@ func (a *ClientController) importClients(c *gin.Context) {
 	if err := json.Unmarshal([]byte(req.Data), &items); err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
+	}
+	user := a.loginUser(c)
+	if user != nil {
+		if err := a.clientService.ValidateClientCreationForAdmin(user, len(items)); err != nil {
+			pureJsonMsg(c, http.StatusForbidden, false, err.Error())
+			return
+		}
+		for _, it := range items {
+			if err := a.clientService.ValidateClientTrafficForAdmin(user, it.Client.TotalGB); err != nil {
+				pureJsonMsg(c, http.StatusBadRequest, false, err.Error())
+				return
+			}
+		}
 	}
 	result, needRestart, err := a.clientService.ImportClients(&a.inboundService, items)
 	if err != nil {

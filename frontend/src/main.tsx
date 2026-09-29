@@ -7,6 +7,7 @@ import '@/styles/page-shell.css';
 import '@/styles/page-cards.css';
 import '@/styles/nova-glass.css';
 import '@/styles/nova-skin.css';
+import '@/styles/neon-halo.css';
 // The Tailwind theme and utilities, loaded ONCE for the whole app.
 //
 // This must be here and not in a page. The ported pg-ui screens are the only

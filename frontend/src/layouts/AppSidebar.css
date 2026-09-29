@@ -410,9 +410,10 @@ body.dark .ant-drawer-body .drawer-menu .ant-menu-item-group-list {
 .sider-nav .ant-menu-item-selected,
 .sider-utility .ant-menu-item-selected,
 .drawer-menu .ant-menu-item-selected {
-  background: linear-gradient(90deg, rgba(14, 165, 233, 0.2), rgba(99, 102, 241, 0.25)) !important;
+  background: linear-gradient(90deg, rgba(34, 211, 238, 0.18) 0%, rgba(168, 85, 247, 0.22) 100%) !important;
   border-left: 3px solid #22d3ee !important;
-  box-shadow: inset 0 0 12px rgba(14, 165, 233, 0.15) !important;
+  border-inline-start: 3px solid #22d3ee !important;
+  box-shadow: inset 0 0 16px rgba(34, 211, 238, 0.15), 0 0 14px rgba(34, 211, 238, 0.22) !important;
 }
 
 .sider-nav .ant-menu-item-selected .anticon,
@@ -426,6 +427,13 @@ body.dark .ant-drawer-body .drawer-menu .ant-menu-item-group-list {
   -webkit-text-fill-color: currentColor !important;
 }
 
+.sider-nav .ant-menu-item-selected .anticon,
+.sider-utility .ant-menu-item-selected .anticon,
+.drawer-menu .ant-menu-item-selected .anticon {
+  color: #22d3ee !important;
+  filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.85)) !important;
+}
+
 .sider-nav .ant-menu-item-active:not(.ant-menu-item-selected),
 .sider-utility .ant-menu-item-active:not(.ant-menu-item-selected),
 .drawer-menu .ant-menu-item-active:not(.ant-menu-item-selected),
@@ -435,7 +443,9 @@ body.dark .ant-drawer-body .drawer-menu .ant-menu-item-group-list {
 .sider-nav .ant-menu-submenu-title:hover,
 .sider-utility .ant-menu-submenu-title:hover,
 .drawer-menu .ant-menu-submenu-title:hover {
-  background-color: color-mix(in srgb, var(--nv-accent, #c08a63) 12%, transparent) !important;
+  background-color: rgba(34, 211, 238, 0.08) !important;
+  border-left: 3px solid rgba(56, 189, 248, 0.35) !important;
+  border-inline-start: 3px solid rgba(56, 189, 248, 0.35) !important;
 }
 
 .sider-nav .ant-menu-item:not(.ant-menu-item-selected):hover .ant-menu-title-content,
@@ -446,7 +456,7 @@ body.dark .ant-drawer-body .drawer-menu .ant-menu-item-group-list {
 .drawer-menu .ant-menu-submenu-title:hover .ant-menu-title-content {
   background-image: none !important;
   -webkit-text-fill-color: currentColor !important;
-  color: var(--nv-accent, #c08a63) !important;
+  color: #f1f5f9 !important;
 }
 
 .sider-nav .ant-menu-item:not(.ant-menu-item-selected):hover .anticon,
@@ -455,8 +465,8 @@ body.dark .ant-drawer-body .drawer-menu .ant-menu-item-group-list {
 .sider-nav .ant-menu-submenu-title:hover .anticon,
 .sider-utility .ant-menu-submenu-title:hover .anticon,
 .drawer-menu .ant-menu-submenu-title:hover .anticon {
-  color: var(--nv-accent, #c08a63) !important;
-  filter: none !important;
+  color: #38bdf8 !important;
+  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.6)) !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -493,19 +503,22 @@ body.dark .ant-drawer-body .drawer-menu .ant-menu-item-group-list {
 }
 
 .sider-brand .brand-text {
-  font-size: 17px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
+  font-family: 'Rajdhani', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-size: 17px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.12em !important;
   background: none;
   -webkit-text-fill-color: currentColor;
-  color: var(--ant-color-text);
+  color: #ffffff !important;
+  text-shadow: 0 0 12px rgba(56, 189, 248, 0.4) !important;
 }
 
 .sider-brand .brand-sub {
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.3em;
-  color: var(--ant-color-text-tertiary);
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.25em !important;
+  color: #22d3ee !important;
 }
 
 /* — nav — */
@@ -518,6 +531,16 @@ body.dark .ant-drawer-body .drawer-menu .ant-menu-item-group-list {
   margin-block: 4px;
   border-radius: 10px;
   font-size: 14px;
+  color: #94a3b8 !important;
+  border-left: 3px solid transparent;
+  border-inline-start: 3px solid transparent;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sider-nav .ant-menu-item .anticon,
+.sider-nav .ant-menu-submenu-title .anticon,
+.sider-utility .ant-menu-item .anticon {
+  color: #64748b !important;
 }
 
 .sider-nav .ant-menu,
@@ -531,9 +554,10 @@ body.dark .ant-drawer-body .drawer-menu .ant-menu-item-group-list {
 .sider-status {
   margin: 0 12px 10px;
   padding: 11px 12px;
-  border: 1px solid var(--nc-border, var(--ant-color-border-secondary));
+  border: 1px solid rgba(56, 189, 248, 0.2) !important;
   border-radius: 10px;
-  background: color-mix(in srgb, var(--nc-blue, #2563ff) 10%, transparent);
+  background: linear-gradient(135deg, rgba(11, 15, 25, 0.9) 0%, rgba(15, 23, 42, 0.8) 100%) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4) !important;
 }
 
 .sider-status-row {
@@ -546,21 +570,25 @@ body.dark .ant-drawer-body .drawer-menu .ant-menu-item-group-list {
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  background: var(--nc-teal, #13d6b0);
-  box-shadow: 0 0 10px var(--nc-teal, #13d6b0);
+  background: #10b981 !important;
+  box-shadow: 0 0 10px #10b981, 0 0 18px rgba(16, 185, 129, 0.5) !important;
   flex: none;
 }
 
 .sider-status-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--nc-teal, #13d6b0);
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  color: #34d399 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
 }
 
 .sider-status-sub {
   margin-top: 4px;
-  font-size: 11px;
-  color: var(--ant-color-text-secondary);
+  font-size: 10px !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  color: #64748b !important;
 }
 
 /* — mountain artwork — */
@@ -605,7 +633,8 @@ body.dark .ant-drawer-body .drawer-menu .ant-menu-item-group-list {
 }
 
 .sider-footer {
-  border-top: 1px solid var(--nc-divider, var(--ant-color-border-secondary));
+  border-top: 1px solid rgba(56, 189, 248, 0.12) !important;
+  background: rgba(7, 9, 14, 0.95) !important;
 }
 
 /* The brand mark is the reference's neon tile: a gradient rounded square with a
@@ -621,8 +650,9 @@ body.dark .ant-drawer-body .drawer-menu .ant-menu-item-group-list {
   font-weight: 900;
   line-height: 1;
   color: #fff;
-  background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%) !important;
-  box-shadow: 0 0 20px rgba(14, 165, 233, 0.5) !important;
+  background: linear-gradient(135deg, #0ea5e9 0%, #a855f7 100%) !important;
+  border: 1px solid rgba(56, 189, 248, 0.5) !important;
+  box-shadow: 0 0 20px rgba(14, 165, 233, 0.5), inset 0 0 8px rgba(255, 255, 255, 0.25) !important;
 }
 
 .ant-layout-sider-collapsed .brand-mark {
@@ -676,6 +706,27 @@ body.dark .ant-drawer-body .drawer-menu .ant-menu-item-group-list {
 
 .sider-footer .sider-version {
   align-self: flex-start;
+  background: rgba(168, 85, 247, 0.12) !important;
+  border: 1px solid rgba(168, 85, 247, 0.35) !important;
+  color: #c084fc !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 10.5px !important;
+  font-weight: 600 !important;
+  padding: 3px 8px !important;
+  border-radius: 6px !important;
+  letter-spacing: 0.05em !important;
+}
+
+.sider-tools button,
+.sider-tools a {
+  color: #94a3b8 !important;
+  transition: all 0.2s ease !important;
+}
+
+.sider-tools button:hover,
+.sider-tools a:hover {
+  color: #22d3ee !important;
+  filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.75)) !important;
 }
 
 /* the status card gets tighter so the menu keeps the difference */

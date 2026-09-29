@@ -9,11 +9,13 @@
 
 /* One glow behind every page, so no screen is a flat black rectangle. */
 body.dark {
-  background-color: #030b1d;
+  background-color: #07090e;
   background-image:
-    radial-gradient(900px 520px at 88% -8%, rgba(23, 107, 255, 0.16), transparent 62%),
-    radial-gradient(760px 520px at 4% 4%, rgba(113, 52, 240, 0.14), transparent 64%),
-    radial-gradient(700px 620px at 55% 112%, rgba(0, 201, 168, 0.08), transparent 62%);
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(120, 50, 220, 0.16), transparent),
+    radial-gradient(circle at 10% 20%, rgba(34, 211, 238, 0.05), transparent 40%),
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
   background-attachment: fixed;
 }
 
@@ -50,23 +52,24 @@ body.light {
    panels are white. Each theme now carries its own. */
 
 body.dark {
-  --nc-card: #061a3b;
-  --nc-card-2: #071d42;
-  --nc-border: #123675;
-  --nc-divider: #0e2a56;
-  --nc-field: #0a214d;
-  --nc-text: #e7f1ff;
-  --nc-text-2: #b7cbea;
-  --nv-card: #071c3f;
-  --nv-border: #123675;
-  --nv-shadow: 0 12px 30px rgba(0, 0, 0, 0.38);
-  --nv-accent: #176bff;
-  --nv-blue: #176bff;
-  --nv-violet: #7134f0;
-  --nv-cyan: #00b9ff;
-  --nv-teal: #00c9a8;
-  --nv-grad: linear-gradient(135deg, #08224c 0%, #061a3b 100%);
-  --nv-topbar-bg: #061633;
+  --nc-card: rgba(15, 20, 32, 0.85);
+  --nc-card-2: rgba(22, 29, 46, 0.95);
+  --nc-border: rgba(56, 189, 248, 0.18);
+  --nc-divider: rgba(255, 255, 255, 0.08);
+  --nc-field: rgba(11, 14, 23, 0.85);
+  --nc-text: #f1f5f9;
+  --nc-text-2: #94a3b8;
+  --nc-text-3: #64748b;
+  --nv-card: rgba(15, 20, 32, 0.85);
+  --nv-border: rgba(56, 189, 248, 0.18);
+  --nv-shadow: 0 12px 35px rgba(0, 0, 0, 0.5);
+  --nv-accent: #22d3ee;
+  --nv-blue: #0ea5e9;
+  --nv-violet: #a855f7;
+  --nv-cyan: #22d3ee;
+  --nv-teal: #10b981;
+  --nv-grad: linear-gradient(135deg, rgba(15, 20, 32, 0.9) 0%, rgba(22, 29, 46, 0.95) 100%);
+  --nv-topbar-bg: #07090e;
 }
 
 /* Light surfaces, mirroring the light palette nova-glass.css sets on the page
@@ -1363,13 +1366,21 @@ body.dark {
 /* the sidebar becomes solid */
 
 .ant-sidebar > .ant-layout-sider {
-  background: var(--nc-card) !important;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
+  background: #07090e !important;
+  border-right: 1px solid rgba(56, 189, 248, 0.15) !important;
+  border-inline-end: 1px solid rgba(56, 189, 248, 0.15) !important;
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4) !important;
 }
 
 body.dark .ant-sidebar > .ant-layout-sider {
-  background: linear-gradient(180deg, #061536 0%, #041027 100%) !important;
+  background: #07090e !important;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px) !important;
+  background-size: 40px 40px !important;
+  border-right: 1px solid rgba(56, 189, 248, 0.15) !important;
+  border-inline-end: 1px solid rgba(56, 189, 248, 0.15) !important;
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4) !important;
 }
 
 :is(
@@ -1387,7 +1398,14 @@ body.dark .ant-sidebar > .ant-layout-sider {
   ).is-dark
   .ant-sidebar
   > .ant-layout-sider {
-  background: linear-gradient(180deg, #061536 0%, #041027 100%) !important;
+  background: #07090e !important;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px) !important;
+  background-size: 40px 40px !important;
+  border-right: 1px solid rgba(56, 189, 248, 0.15) !important;
+  border-inline-end: 1px solid rgba(56, 189, 248, 0.15) !important;
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4) !important;
 }
 
 /* menu items and labels read clearly */
@@ -1395,23 +1413,28 @@ body.dark .ant-sidebar > .ant-layout-sider {
 .sider-nav .ant-menu-item,
 .sider-nav .ant-menu-submenu-title,
 .sider-utility .ant-menu-item {
-  color: var(--nc-text-2);
+  color: var(--nc-text-2) !important;
   font-weight: 500;
 }
 
 .sider-nav .ant-menu-item .anticon,
 .sider-nav .ant-menu-submenu-title .anticon,
 .sider-utility .ant-menu-item .anticon {
-  color: var(--nc-text-3);
+  color: var(--nc-text-3) !important;
 }
 
 .sider-nav .ant-menu-item-selected {
+  background: linear-gradient(90deg, rgba(34, 211, 238, 0.18) 0%, rgba(168, 85, 247, 0.22) 100%) !important;
+  border-left: 3px solid #22d3ee !important;
+  border-inline-start: 3px solid #22d3ee !important;
+  box-shadow: inset 0 0 16px rgba(34, 211, 238, 0.15), 0 0 14px rgba(34, 211, 238, 0.22) !important;
   color: #fff !important;
   font-weight: 700 !important;
 }
 
 .sider-nav .ant-menu-item-selected .anticon {
-  color: #fff !important;
+  color: #22d3ee !important;
+  filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.85)) !important;
 }
 
 .nx-topbar .ant-menu-horizontal > .ant-menu-item:not(.ant-menu-item-selected) {
@@ -1745,12 +1768,15 @@ body.dark .ant-command-palette,
 /* ---- 4. the sidebar: opaque, with a solid status card ---- */
 
 .ant-sidebar .sider-status {
-  background: color-mix(in srgb, var(--nc-blue) 12%, var(--nc-card)) !important;
+  background: linear-gradient(135deg, rgba(11, 15, 25, 0.85) 0%, rgba(15, 23, 42, 0.75) 100%) !important;
+  border: 1px solid rgba(56, 189, 248, 0.2) !important;
 }
 
 .ant-sidebar .sider-nav .ant-menu-item:not(.ant-menu-item-selected):hover,
 .ant-sidebar .sider-utility .ant-menu-item:not(.ant-menu-item-selected):hover {
-  background-color: color-mix(in srgb, var(--nc-blue) 18%, var(--nc-card)) !important;
+  background-color: rgba(34, 211, 238, 0.08) !important;
+  border-left: 3px solid rgba(56, 189, 248, 0.35) !important;
+  border-inline-start: 3px solid rgba(56, 189, 248, 0.35) !important;
 }
 
 /* ---- 5. login: solid card and fields, no glass ---- */

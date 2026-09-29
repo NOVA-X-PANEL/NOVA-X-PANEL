@@ -563,15 +563,27 @@ body.light .sidebar-command-trigger:hover {
 }
 
 body.dark .sidebar-command-trigger {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: #8c8c8c;
+  background: rgba(15, 20, 32, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  color: #94a3b8;
+  border-radius: 8px;
 }
 
 body.dark .sidebar-command-trigger:hover {
-  background: rgba(255, 255, 255, 0.09);
-  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(22, 29, 46, 0.95);
+  border-color: #22d3ee;
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.22);
   color: #ffffff;
+}
+
+body.dark .sidebar-command-trigger .sidebar-command-icon {
+  color: #22d3ee;
+}
+
+body.dark .sidebar-command-trigger .sidebar-command-kbd {
+  background: rgba(34, 211, 238, 0.12);
+  border: 1px solid rgba(34, 211, 238, 0.35);
+  color: #22d3ee;
 }
 
 .sidebar-command-trigger .sidebar-command-icon {

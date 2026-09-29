@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { Card, theme } from 'antd';
 
-import { RadialGauge, Sparkline } from '@/components/viz';
+import { ArcTachometer, Sparkline } from '@/components/viz';
 import { USAGE_WARN_PERCENT } from '@/models/status';
 import { mean, peak } from './useOverviewHistory';
 import { NOVA_BLUE, NOVA_VIOLET } from './novaTheme';
@@ -17,6 +17,8 @@ interface VitalTileProps {
   footRight: string;
   data: number[];
   isMobile: boolean;
+  gradientFrom?: string;
+  gradientTo?: string;
 }
 
 export default function VitalTile({
@@ -29,6 +31,8 @@ export default function VitalTile({
   footRight,
   data,
   isMobile,
+  gradientFrom,
+  gradientTo,
 }: VitalTileProps) {
   const { token } = theme.useToken();
   const meanColor = token.colorTextTertiary;
@@ -38,11 +42,9 @@ export default function VitalTile({
     [data, meanColor],
   );
 
-  // The Nova violet→blue reads as "nominal"; once a resource runs warm the ring
-  // takes the panel's own warning/critical colour so the signal stays honest.
   const stressed = percent >= USAGE_WARN_PERCENT;
-  const from = stressed ? statusColor : NOVA_VIOLET;
-  const to = stressed ? statusColor : NOVA_BLUE;
+  const from = stressed ? statusColor : (gradientFrom ?? NOVA_VIOLET);
+  const to = stressed ? statusColor : (gradientTo ?? NOVA_BLUE);
 
   return (
     <Card hoverable className="ov-tile" styles={{ body: { padding: 0 } }}>
@@ -52,22 +54,22 @@ export default function VitalTile({
       </div>
 
       <div className="ov-tile-gauge">
-        <RadialGauge
+        <ArcTachometer
           value={percent}
-          size={isMobile ? 132 : 152}
+          width={isMobile ? 152 : 180}
+          height={isMobile ? 96 : 110}
           thickness={isMobile ? 9 : 11}
           from={from}
           to={to}
           ariaLabel={`${label} ${percent.toFixed(1)}%`}
+          subtext={detail}
         >
           <span className="ov-gauge-value">
             <span className="ov-gauge-number">{percent.toFixed(1)}</span>
             <span className="ov-gauge-unit">%</span>
           </span>
-        </RadialGauge>
+        </ArcTachometer>
       </div>
-
-      <div className="ov-tile-detail">{detail}</div>
 
       <div className="ov-tile-foot">
         <span>{footLeft}</span>
@@ -77,13 +79,13 @@ export default function VitalTile({
       <div className="ov-tile-chart">
         <Sparkline
           data={data}
-          height={isMobile ? 44 : 54}
+          height={isMobile ? 40 : 48}
           strokeWidth={1.5}
-          fillOpacity={0.3}
+          fillOpacity={0.25}
           showGrid={false}
           showMarker={false}
           valueMax={peak(data) > 0 ? null : 100}
-          stroke={statusColor}
+          stroke={to}
           referenceLines={referenceLines}
           yFormatter={(v) => `${v.toFixed(0)}%`}
           name1={label}

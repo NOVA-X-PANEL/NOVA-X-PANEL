@@ -177,6 +177,10 @@ load_xui_env() {
 }
 
 install_base() {
+    if [[ "${XUI_IN_DOCKER}" == "true" ]] || [[ -f /.dockerenv ]]; then
+        echo -e "${green}Running in Docker container, skipping dependency package installation...${plain}"
+        return 0
+    fi
     echo -e "${green}Updating and install dependency packages...${plain}"
     case "${release}" in
         ubuntu | debian | armbian)
@@ -989,6 +993,78 @@ require_repo_files() {
     done
 }
 
+update_docker() {
+    local tag_version="$1"
+    echo -e "${green}Running Docker container update for ${tag_version}...${plain}"
+
+    local tmp_dir
+    tmp_dir=$(mktemp -d /tmp/x-ui-update.XXXXXX)
+    if [[ ! -d "${tmp_dir}" ]]; then
+        _fail "ERROR: Failed to create temporary update directory."
+    fi
+
+    local archive="${tmp_dir}/x-ui-linux-$(arch).tar.gz"
+    echo -e "${green}Downloading release archive for $(arch)...${plain}"
+    ${curl_bin} -fLRo "${archive}" "https://github.com/NOVA-X-PANEL/NOVA-X-PANEL/releases/download/${tag_version}/x-ui-linux-$(arch).tar.gz" 2>/dev/null
+    if [[ $? -ne 0 || ! -s "${archive}" ]]; then
+        rm -rf "${tmp_dir}"
+        _fail "ERROR: Failed to download x-ui archive for Docker. Please verify server internet access."
+    fi
+
+    local sidecar_code
+    sidecar_code=$(${curl_bin} -sL --retry 3 --retry-delay 3 --connect-timeout 15 --max-time 60 -o "${archive}.sha256" -w '%{http_code}' "https://github.com/NOVA-X-PANEL/NOVA-X-PANEL/releases/download/${tag_version}/x-ui-linux-$(arch).tar.gz.sha256" 2>/dev/null)
+    if [[ "${sidecar_code}" == "200" ]]; then
+        local expected_sha256 actual_sha256
+        expected_sha256=$(awk 'NR == 1 {print $1}' "${archive}.sha256")
+        actual_sha256=$(sha256sum "${archive}" | awk '{print $1}')
+        if [[ ! "${expected_sha256}" =~ ^[0-9a-f]{64}$ || "${expected_sha256}" != "${actual_sha256}" ]]; then
+            rm -rf "${tmp_dir}"
+            _fail "ERROR: Checksum mismatch for $(basename "${archive}"): expected ${expected_sha256}, got ${actual_sha256}"
+        fi
+        echo -e "${green}Checksum verified: ${actual_sha256}${plain}"
+    fi
+
+    echo -e "${green}Extracting update archive...${plain}"
+    tar -zxvf "${archive}" -C "${tmp_dir}" >/dev/null 2>&1
+    if [[ $? -ne 0 || ! -f "${tmp_dir}/x-ui/x-ui" ]]; then
+        rm -rf "${tmp_dir}"
+        _fail "ERROR: Failed to extract x-ui archive or missing x-ui binary."
+    fi
+
+    echo -e "${green}Installing new components into /app...${plain}"
+    mkdir -p /app/bin
+    if [ -d "${tmp_dir}/x-ui/bin" ]; then
+        cp -rf "${tmp_dir}/x-ui/bin/"* /app/bin/
+        chmod +x /app/bin/* 2>/dev/null || true
+    fi
+
+    if [ -f "${tmp_dir}/x-ui/x-ui.sh" ]; then
+        cp -f "${tmp_dir}/x-ui/x-ui.sh" /usr/bin/x-ui
+        chmod +x /usr/bin/x-ui
+    fi
+
+    # Atomically replace x-ui binary so running process is not corrupted
+    cp -f "${tmp_dir}/x-ui/x-ui" /app/x-ui.new
+    chmod +x /app/x-ui.new
+    mv -f /app/x-ui.new /app/x-ui
+
+    rm -rf "${tmp_dir}"
+    echo -e "${green}NOVA X PANEL ${tag_version} installed successfully in Docker container.${plain}"
+
+    # Explicitly write success status before terminating so the web UI polling detects completion
+    _write_update_status "success" "0"
+
+    # Schedule container restart after 3 seconds:
+    # Web server responds to the immediate getUpdateStatus poll with {state: 'success'},
+    # then Docker automatically restarts the container with the new binary.
+    (
+        sleep 3
+        kill -TERM 1 2>/dev/null || kill -9 1 2>/dev/null
+    ) &
+
+    exit 0
+}
+
 update_x-ui() {
     cd ${xui_folder%/x-ui}/
 
@@ -1015,6 +1091,16 @@ update_x-ui() {
         fi
     fi
     echo -e "Got x-ui latest version: ${tag_version}, beginning the installation..."
+
+    running_in_docker="false"
+    if [[ -f /.dockerenv ]] || [[ "${XUI_IN_DOCKER}" == "true" ]]; then
+        running_in_docker="true"
+    fi
+
+    if [[ "${running_in_docker}" == "true" ]]; then
+        update_docker "${tag_version}"
+        return 0
+    fi
     # x-ui.sh, x-ui.rc and the unit files must come from the same release as
     # the binary; only the rolling dev build tracks main.
     script_ref="${tag_version}"

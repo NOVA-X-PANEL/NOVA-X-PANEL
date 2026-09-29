@@ -44,6 +44,7 @@ export function ClientsHero({ total, online }: ClientsHeroProps) {
         <TeamOutlined />
       </span>
       <div className="nc-hero-text">
+        <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: '#38bdf8', letterSpacing: 1, textTransform: 'uppercase' }}>// GATEWAY // CLIENT_REGISTRY // AUTH_TOKENS</div>
         <div className="nc-hero-title">{t('menu.clients')}</div>
         {/*
           A `.nc-hero-sub` used to sit here rendering `menu.clients` as well — the

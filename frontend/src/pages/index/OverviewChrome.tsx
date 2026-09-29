@@ -62,6 +62,7 @@ export function OverviewHero({ panelVersion }: OverviewHeroProps) {
         <SmileOutlined />
       </span>
       <div className="nc-hero-text">
+        <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: '#38bdf8', letterSpacing: 1, textTransform: 'uppercase' }}>// CORE // SYSTEM_OVERVIEW // TELEMETRY</div>
         <div className="nc-hero-title">{t('menu.dashboard')}</div>
         <div className="nc-hero-sub">{t('pages.index.systemHistoryTitle')}</div>
       </div>

@@ -65,20 +65,23 @@
   .admins-page,
   .admin-roles-page
 ).is-dark {
-  --nc-card: #061633;
-  --nc-card-2: #0a2147;
-  --nc-border: rgba(51, 112, 215, 0.35);
-  --nc-divider: rgba(70, 109, 170, 0.22);
-  --nc-field: #0a2047;
-  --nc-text: #f3f7ff;
-  --nc-text-2: #a6bbdc;
-  --nc-shadow: 0 12px 35px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(100, 160, 255, 0.05);
-  --bg-page: #030b1d;
-  --bg-card: #061633;
+  --nc-card: rgba(15, 20, 32, 0.85);
+  --nc-card-2: rgba(22, 29, 46, 0.95);
+  --nc-border: rgba(56, 189, 248, 0.18);
+  --nc-divider: rgba(255, 255, 255, 0.08);
+  --nc-field: rgba(11, 14, 23, 0.85);
+  --nc-text: #f1f5f9;
+  --nc-text-2: #94a3b8;
+  --nc-shadow: 0 12px 35px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --bg-page: #07090e;
+  --bg-card: rgba(15, 20, 32, 0.85);
+  background-color: #07090e;
   background-image:
-    radial-gradient(900px 520px at 88% -6%, rgba(37, 99, 255, 0.2), transparent 62%),
-    radial-gradient(760px 520px at 6% 8%, rgba(113, 64, 255, 0.16), transparent 64%),
-    radial-gradient(700px 620px at 55% 110%, rgba(19, 214, 176, 0.1), transparent 62%);
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(120, 50, 220, 0.16), transparent),
+    radial-gradient(circle at 10% 20%, rgba(34, 211, 238, 0.05), transparent 40%),
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
   background-attachment: fixed;
 }
 
@@ -332,10 +335,13 @@
     .admin-roles-page
   )
   .ant-btn-primary:not(:disabled) {
-  border: 1px solid color-mix(in srgb, var(--nc-blue) 85%, transparent);
-  background: var(--nc-grad);
-  color: var(--nc-on-accent);
-  box-shadow: 0 0 18px rgba(36, 85, 255, 0.4);
+  border: none !important;
+  background: linear-gradient(135deg, #0ea5e9, #8b5cf6) !important;
+  color: #fff !important;
+  box-shadow: 0 0 18px rgba(14, 165, 233, 0.4) !important;
+  font-family: 'Rajdhani', sans-serif !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.5px !important;
 }
 
 :is(
@@ -352,10 +358,29 @@
     .admin-roles-page
   )
   .ant-btn-primary:not(:disabled):hover {
-  background: var(--nc-grad);
-  color: var(--nc-on-accent);
-  filter: brightness(1.08);
-  box-shadow: 0 0 26px rgba(36, 85, 255, 0.55);
+  background: linear-gradient(135deg, #0ea5e9, #8b5cf6) !important;
+  color: #fff !important;
+  filter: brightness(1.1) !important;
+  box-shadow: 0 0 28px rgba(168, 85, 247, 0.6) !important;
+  transform: translateY(-1px);
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-switch.ant-switch-checked {
+  background: linear-gradient(90deg, #10b981, #059669) !important;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.4) !important;
 }
 
 :is(
@@ -502,15 +527,14 @@
   .ant-table-thead
   > tr
   > th {
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--nc-blue) 16%, transparent),
-    transparent
-  );
-  border-bottom: 1px solid var(--nc-border);
-  color: var(--nc-text-2);
-  font-size: 11.5px;
+  background: rgba(11, 14, 23, 0.95) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #94a3b8 !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 11px !important;
   font-weight: 700;
+  text-transform: uppercase !important;
+  letter-spacing: 0.8px !important;
 }
 
 :is(
@@ -529,7 +553,8 @@
   .ant-table-tbody
   > tr
   > td {
-  border-bottom: 1px solid var(--nc-divider);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
+  transition: background 0.15s;
 }
 
 :is(
@@ -548,8 +573,27 @@
   .ant-table-tbody
   > tr.ant-table-row:hover
   > td {
-  background: rgba(37, 99, 255, 0.09);
+  background: rgba(30, 41, 69, 0.45) !important;
   background-image: none !important;
+}
+
+:is(
+    .index-page,
+    .clients-page,
+    .inbounds-page,
+    .xray-page,
+    .settings-page,
+    .nodes-page,
+    .groups-page,
+    .api-docs-page,
+    .hosts-page,
+    .admins-page,
+    .admin-roles-page
+  )
+  .ant-table-tbody
+  > tr.ant-table-row:hover
+  > td:first-child {
+  border-left: 3px solid #c084fc !important;
 }
 
 :is(
@@ -927,47 +971,59 @@ body.dark .pg-admin-page {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
   overflow: hidden;
-  padding: 16px 20px;
-  border: 1px solid var(--nc-border);
-  border-radius: var(--nc-radius);
-  background:
-    radial-gradient(520px 180px at 88% 0%, rgba(113, 64, 255, 0.28), transparent 70%),
-    radial-gradient(420px 160px at 12% 120%, rgba(0, 191, 255, 0.18), transparent 70%),
-    linear-gradient(135deg, var(--nc-card-2) 0%, var(--nc-card) 100%);
-  box-shadow: var(--nc-shadow);
+  padding: 18px 24px;
+  border: 1px solid rgba(99, 102, 241, 0.25) !important;
+  border-radius: 14px !important;
+  background: linear-gradient(135deg, rgba(17, 24, 43, 0.85) 0%, rgba(11, 15, 28, 0.95) 100%) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+}
+
+.nc-hero::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #22d3ee, #c084fc, transparent);
+  z-index: 2;
 }
 
 .nc-hero-icon {
   display: inline-grid;
   place-items: center;
-  width: 46px;
-  height: 46px;
+  width: 48px;
+  height: 48px;
   flex: none;
   border-radius: 12px;
-  font-size: 19px;
-  color: #fff;
-  background: linear-gradient(140deg, var(--nc-violet), var(--nc-blue));
-  box-shadow: 0 0 18px rgba(37, 99, 255, 0.5);
+  font-size: 22px;
+  color: #22d3ee;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(168, 85, 247, 0.25)) !important;
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  box-shadow: 0 0 16px rgba(168, 85, 247, 0.3) !important;
 }
 
 .nc-hero-title {
-  font-size: 20px;
-  font-weight: 800;
-  color: var(--nc-text);
+  font-family: 'Rajdhani', sans-serif !important;
+  font-size: 22px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.8px !important;
+  color: #fff !important;
 }
 
 .nc-hero-sub {
   margin-top: 2px;
-  font-size: 12.5px;
-  color: var(--nc-text-2);
+  font-size: 12px;
+  color: #38bdf8 !important;
+  font-family: 'JetBrains Mono', monospace !important;
 }
 
 .nc-hero-metric {
   margin-inline-start: auto;
   padding-inline-start: 18px;
-  border-inline-start: 1px solid var(--nc-divider);
+  border-inline-start: 1px solid rgba(255, 255, 255, 0.08) !important;
   text-align: end;
 }
 
@@ -978,10 +1034,11 @@ body.dark .pg-admin-page {
 }
 
 .nc-hero-metric-value {
-  font-size: 30px;
-  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 28px !important;
+  font-weight: 800 !important;
   line-height: 1.1;
-  color: var(--nc-text);
+  color: #22d3ee !important;
 }
 
 /* — icon-tile stat cards — */
@@ -999,21 +1056,35 @@ body.dark .pg-admin-page {
 }
 
 .nc-stat {
-  padding: 14px 16px;
-  border: 1px solid var(--nc-border);
-  border-radius: var(--nc-radius);
-  background: linear-gradient(135deg, var(--nc-card-2) 0%, var(--nc-card) 100%);
-  box-shadow: var(--nc-shadow);
+  padding: 16px 18px !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 12px !important;
+  background: rgba(15, 20, 32, 0.85) !important;
+  backdrop-filter: blur(16px);
+  position: relative !important;
+  overflow: hidden !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
   transition:
     transform 0.2s ease,
     box-shadow 0.25s ease,
     border-color 0.2s ease;
 }
 
+.nc-stat::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #22d3ee, transparent);
+}
+
 .nc-stat:hover {
   transform: translateY(-2px);
-  border-color: color-mix(in srgb, var(--nc-blue) 70%, transparent);
-  box-shadow: var(--nc-shadow), var(--nc-glow);
+  border-color: rgba(168, 85, 247, 0.4) !important;
+  box-shadow: 0 0 25px rgba(168, 85, 247, 0.25) !important;
+  background: rgba(22, 29, 46, 0.95) !important;
 }
 
 .nc-stat-icon {
@@ -1049,15 +1120,19 @@ body.dark .pg-admin-page {
 .nc-stat-label {
   margin-top: 10px;
   font-size: 11.5px;
-  color: var(--nc-text-2);
+  letter-spacing: 0.05em;
+  color: #94a3b8 !important;
+  text-transform: uppercase;
+  font-family: 'JetBrains Mono', monospace;
 }
 
 .nc-stat-value {
   margin-top: 2px;
-  font-size: 26px;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 24px !important;
   font-weight: 800;
   line-height: 1.15;
-  color: var(--nc-text);
+  color: #fff !important;
 }
 
 .nc-stat-foot {

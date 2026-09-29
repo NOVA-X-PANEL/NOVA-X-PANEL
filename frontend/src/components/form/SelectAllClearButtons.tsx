@@ -26,7 +26,7 @@ export default function SelectAllClearButtons<T extends string | number = number
   const allSelected = options.length > 0 && optionValues.every((v) => value.includes(v));
 
   return (
-    <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
       <Button
         size="small"
         disabled={allSelected}

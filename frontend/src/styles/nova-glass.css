@@ -2244,4 +2244,140 @@ body.dark .advanced-panel__title {
   letter-spacing: 0.5px !important;
 }
 
+/* ==========================================================================
+   NOVA-X-PANEL — Direction-Safe Arrow, Chevron & Label Placement Engineering
+   ========================================================================== */
+
+/* 1. Select & Dropdown Arrows */
+body.dark .ant-select .ant-select-arrow {
+  color: #38bdf8 !important;
+  font-size: 11px !important;
+  top: 50% !important;
+  margin-top: 0 !important;
+  transform: translateY(-50%) !important;
+  inset-inline-end: 12px !important;
+  inset-inline-start: auto !important;
+  pointer-events: none !important;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s ease !important;
+}
+
+body.dark .ant-select-open .ant-select-arrow {
+  transform: translateY(-50%) rotate(180deg) !important;
+  color: #22d3ee !important;
+}
+
+/* 2. Number Input Stepper Arrows */
+body.dark .ant-input-number .ant-input-number-handler-wrap {
+  background: rgba(15, 23, 42, 0.9) !important;
+  border-inline-start: 1px solid rgba(56, 189, 248, 0.2) !important;
+  border-radius: 0 8px 8px 0 !important;
+  width: 22px !important;
+  opacity: 0.8 !important;
+  transition: opacity 0.2s ease !important;
+}
+
+[dir="rtl"] body.dark .ant-input-number .ant-input-number-handler-wrap {
+  border-radius: 8px 0 0 8px !important;
+}
+
+body.dark .ant-input-number:hover .ant-input-number-handler-wrap {
+  opacity: 1 !important;
+}
+
+body.dark .ant-input-number-handler-up-inner,
+body.dark .ant-input-number-handler-down-inner {
+  color: #38bdf8 !important;
+  font-size: 10px !important;
+  transition: color 0.2s ease, transform 0.15s ease !important;
+}
+
+body.dark .ant-input-number-handler:hover .ant-input-number-handler-up-inner {
+  color: #22d3ee !important;
+  transform: translateY(-1px) !important;
+}
+
+body.dark .ant-input-number-handler:hover .ant-input-number-handler-down-inner {
+  color: #22d3ee !important;
+  transform: translateY(1px) !important;
+}
+
+/* 3. Datepicker / Timepicker Suffix Arrows & Icons */
+body.dark .ant-picker .ant-picker-suffix {
+  color: #38bdf8 !important;
+  margin-inline-start: 8px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  font-size: 13px !important;
+}
+
+/* 4. Collapse / Accordion Arrows */
+body.dark .ant-collapse > .ant-collapse-item > .ant-collapse-header .ant-collapse-arrow {
+  color: #38bdf8 !important;
+  font-size: 11px !important;
+  vertical-align: middle !important;
+  transition: transform 0.24s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s ease !important;
+}
+
+body.dark .ant-collapse > .ant-collapse-item > .ant-collapse-header:hover .ant-collapse-arrow {
+  color: #22d3ee !important;
+}
+
+/* 5. Tooltip & Help Icons Near Labels */
+body.dark .ant-form-item-label > label {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  flex-wrap: nowrap !important;
+  gap: 4px !important;
+  width: auto !important;
+}
+
+body.dark .ant-form-item-label > label .ant-form-item-tooltip,
+body.dark .ant-form-item-label > label .anticon-question-circle,
+body.dark .ant-form-item-tooltip {
+  margin-inline-start: 4px !important;
+  margin-inline-end: 0 !important;
+  color: #38bdf8 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  vertical-align: middle !important;
+  flex-shrink: 0 !important;
+}
+
+body.dark .ant-form-item-tooltip:hover,
+body.dark .anticon-question-circle:hover {
+  color: #22d3ee !important;
+  filter: drop-shadow(0 0 6px #22d3ee) !important;
+}
+
+/* 6. Form Item Row Alignment & Spacing */
+.ant-modal-body .ant-form-item {
+  margin-bottom: 16px !important;
+}
+
+.ant-modal-body .ant-form-item-label {
+  padding-bottom: 4px !important;
+}
+
+/* 7. Pagination Prev / Next Arrows */
+body.dark .ant-pagination .ant-pagination-prev .ant-pagination-item-link,
+body.dark .ant-pagination .ant-pagination-next .ant-pagination-item-link {
+  background: rgba(11, 15, 25, 0.8) !important;
+  border: 1px solid rgba(56, 189, 248, 0.22) !important;
+  border-radius: 8px !important;
+  color: #38bdf8 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s ease !important;
+}
+
+body.dark .ant-pagination .ant-pagination-prev:hover .ant-pagination-item-link,
+body.dark .ant-pagination .ant-pagination-next:hover .ant-pagination-item-link {
+  border-color: #22d3ee !important;
+  color: #22d3ee !important;
+  box-shadow: 0 0 10px rgba(34, 211, 238, 0.3) !important;
+}
+
+
 

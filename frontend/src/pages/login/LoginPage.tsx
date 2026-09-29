@@ -404,7 +404,7 @@ export default function LoginPage() {
                 <button type="submit" className="nx-submit" disabled={submitting}>
                   {submitting && <span className="nx-submit__spinner" aria-hidden="true" />}
                   <span>{t('login')}</span>
-                  <span aria-hidden="true">←</span>
+                  <span aria-hidden="true" className="nx-submit__arrow">→</span>
                 </button>
 
                 <div className="nx-form__meta">

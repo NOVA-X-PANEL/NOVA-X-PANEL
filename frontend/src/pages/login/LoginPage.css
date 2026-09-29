@@ -498,6 +498,25 @@
   box-shadow: none;
 }
 
+.nx-submit__arrow {
+  display: inline-block;
+  font-size: 16px;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+
+[dir="rtl"] .nx-submit__arrow {
+  transform: rotate(180deg);
+}
+
+.nx-submit:hover:not(:disabled) .nx-submit__arrow {
+  transform: translateX(4px);
+}
+
+[dir="rtl"] .nx-submit:hover:not(:disabled) .nx-submit__arrow {
+  transform: rotate(180deg) translateX(4px);
+}
+
 .nx-submit__spinner {
   width: 16px;
   height: 16px;

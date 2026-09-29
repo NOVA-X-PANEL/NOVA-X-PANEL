@@ -957,7 +957,7 @@ export default function ClientFormModal({
                       </Row>
 
                       <Row gutter={16}>
-                        <Col xs={24} md={12}>
+                        <Col xs={24} sm={16} md={16}>
                           {delayedStart ? (
                             <FormField
                               name="delayedDays"
@@ -977,19 +977,24 @@ export default function ClientFormModal({
                             </Form.Item>
                           )}
                         </Col>
-                        <Col xs={12} md={6}>
+                        <Col xs={24} sm={8} md={8}>
                           <Form.Item label={t('pages.clients.delayedStart')}>
-                            <Switch
-                              checked={delayedStart}
-                              onChange={(v) => {
-                                methods.setValue('delayedStart', v);
-                                if (v) methods.setValue('expiryDate', 0);
-                                else methods.setValue('delayedDays', 0);
-                              }}
-                            />
+                            <div style={{ display: 'flex', alignItems: 'center', height: 32 }}>
+                              <Switch
+                                checked={delayedStart}
+                                onChange={(v) => {
+                                  methods.setValue('delayedStart', v);
+                                  if (v) methods.setValue('expiryDate', 0);
+                                  else methods.setValue('delayedDays', 0);
+                                }}
+                              />
+                            </div>
                           </Form.Item>
                         </Col>
-                        <Col xs={12} md={6}>
+                      </Row>
+
+                      <Row gutter={16}>
+                        <Col xs={24} sm={8} md={8}>
                           <FormField
                             name="reset"
                             label={t('pages.clients.renewDays')}
@@ -999,7 +1004,7 @@ export default function ClientFormModal({
                             <InputNumber min={0} style={{ width: '100%' }} />
                           </FormField>
                         </Col>
-                        <Col xs={12} md={6}>
+                        <Col xs={24} sm={8} md={8}>
                           <FormField
                             name="resetDay"
                             label={t('pages.clients.renewOnDay')}
@@ -1009,7 +1014,7 @@ export default function ClientFormModal({
                             <InputNumber min={0} max={31} style={{ width: '100%' }} />
                           </FormField>
                         </Col>
-                        <Col xs={12} md={6}>
+                        <Col xs={24} sm={8} md={8}>
                           <FormField
                             name="resetMax"
                             label={t('pages.clients.renewMax')}
@@ -1019,7 +1024,10 @@ export default function ClientFormModal({
                             <InputNumber min={0} style={{ width: '100%' }} />
                           </FormField>
                         </Col>
-                        <Col xs={12} md={6}>
+                      </Row>
+
+                      <Row gutter={16}>
+                        <Col xs={24} sm={trafficReset === 'monthly' ? 12 : 24} md={trafficReset === 'monthly' ? 12 : 24}>
                           <FormField
                             name="trafficReset"
                             label={t('pages.inbounds.periodicTrafficResetTitle')}
@@ -1033,7 +1041,7 @@ export default function ClientFormModal({
                           </FormField>
                         </Col>
                         {trafficReset === 'monthly' && (
-                          <Col xs={12} md={6}>
+                          <Col xs={24} sm={12} md={12}>
                             <FormField
                               name="trafficResetDay"
                               label={t('pages.inbounds.periodicTrafficResetDay')}
@@ -1095,12 +1103,19 @@ export default function ClientFormModal({
                         </Row>
                       )}
 
-                      <Form.Item label={t('pages.clients.attachedInbounds')} required={!isEdit}>
-                        <SelectAllClearButtons
-                          options={inboundOptions}
-                          value={inboundIds}
-                          onChange={(v) => methods.setValue('inboundIds', v)}
-                        />
+                      <Form.Item
+                        label={
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                            <span>{t('pages.clients.attachedInbounds')}</span>
+                            <SelectAllClearButtons
+                              options={inboundOptions}
+                              value={inboundIds}
+                              onChange={(v) => methods.setValue('inboundIds', v)}
+                            />
+                          </div>
+                        }
+                        required={!isEdit}
+                      >
                         <Select
                           mode="multiple"
                           value={inboundIds}
@@ -1119,14 +1134,21 @@ export default function ClientFormModal({
                         />
                       </Form.Item>
 
-                      <Form.Item>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 12, marginBottom: 8 }}>
                         <Switch
                           aria-label={t('enable')}
                           checked={enable}
                           onChange={(v) => methods.setValue('enable', v)}
                         />
-                        <span style={{ marginLeft: 8 }}>{t('enable')}</span>
-                      </Form.Item>
+                        <span style={{
+                          color: enable ? '#34d399' : '#94a3b8',
+                          fontWeight: 700,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          fontSize: 13,
+                        }}>
+                          {t('enable')}
+                        </span>
+                      </div>
                     </>
                   ),
                 },

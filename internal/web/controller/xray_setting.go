@@ -64,14 +64,14 @@ func (a *XraySettingController) initRouter(g *gin.RouterGroup) {
 	g.POST("/geodata/validate", a.geodataValidate)
 
 	// Outbound subscription (remote outbound lists)
-	g.GET("/outbound-subs", a.listOutboundSubs)
-	g.POST("/outbound-subs", a.createOutboundSub)
-	g.POST("/outbound-subs/:id/refresh", a.refreshOutboundSub)
-	g.POST("/outbound-subs/:id/move", a.moveOutboundSub)
-	g.POST("/outbound-subs/:id", a.updateOutboundSub)
-	g.DELETE("/outbound-subs/:id", a.deleteOutboundSub)
-	g.POST("/outbound-subs/:id/del", a.deleteOutboundSub) // POST alias for clients that can't send DELETE
-	g.POST("/outbound-subs/parse", a.parseOutboundSubURL) // preview without saving
+	g.GET("/outbound-subs", requirePanelPermission("cores", "read"), a.listOutboundSubs)
+	g.POST("/outbound-subs", requirePanelPermission("cores", "update"), a.createOutboundSub)
+	g.POST("/outbound-subs/:id/refresh", requirePanelPermission("cores", "update"), a.refreshOutboundSub)
+	g.POST("/outbound-subs/:id/move", requirePanelPermission("cores", "update"), a.moveOutboundSub)
+	g.POST("/outbound-subs/:id", requirePanelPermission("cores", "update"), a.updateOutboundSub)
+	g.DELETE("/outbound-subs/:id", requirePanelPermission("cores", "update"), a.deleteOutboundSub)
+	g.POST("/outbound-subs/:id/del", requirePanelPermission("cores", "update"), a.deleteOutboundSub) // POST alias for clients that can't send DELETE
+	g.POST("/outbound-subs/parse", requirePanelPermission("cores", "read"), a.parseOutboundSubURL) // preview without saving
 }
 
 // getXraySetting retrieves the Xray configuration template, inbound tags, and outbound test URL.

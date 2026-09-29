@@ -165,6 +165,10 @@ func (a *InboundController) getInbound(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "get"), err)
 		return
 	}
+	if !a.inboundScope(c).Allows(id) {
+		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.obtain"), common.NewError("access denied"))
+		return
+	}
 	inbound, err := a.inboundService.GetInboundDetail(id)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.obtain"), err)
@@ -209,6 +213,10 @@ func (a *InboundController) delInbound(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.inboundDeleteSuccess"), err)
 		return
 	}
+	if !a.inboundScope(c).Allows(id) {
+		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.inboundDeleteSuccess"), common.NewError("access denied"))
+		return
+	}
 	needRestart, err := a.inboundService.DelInbound(id)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
@@ -235,6 +243,13 @@ func (a *InboundController) bulkDelInbounds(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
+	scope := a.inboundScope(c)
+	for _, id := range req.Ids {
+		if !scope.Allows(id) {
+			jsonMsg(c, I18nWeb(c, "somethingWentWrong"), common.NewError("access denied"))
+			return
+		}
+	}
 	result, needRestart, err := a.inboundService.DelInbounds(req.Ids)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
@@ -254,6 +269,10 @@ func (a *InboundController) updateInbound(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.inboundUpdateSuccess"), err)
+		return
+	}
+	if !a.inboundScope(c).Allows(id) {
+		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.inboundUpdateSuccess"), common.NewError("access denied"))
 		return
 	}
 	inbound := &model.Inbound{
@@ -291,6 +310,10 @@ func (a *InboundController) setInboundSubSortIndex(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.inboundUpdateSuccess"), err)
 		return
 	}
+	if !a.inboundScope(c).Allows(id) {
+		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.inboundUpdateSuccess"), common.NewError("access denied"))
+		return
+	}
 	type form struct {
 		SubSortIndex int `json:"subSortIndex" form:"subSortIndex" binding:"required"`
 	}
@@ -311,6 +334,10 @@ func (a *InboundController) setInboundEnable(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.inboundUpdateSuccess"), err)
+		return
+	}
+	if !a.inboundScope(c).Allows(id) {
+		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.inboundUpdateSuccess"), common.NewError("access denied"))
 		return
 	}
 	type form struct {
@@ -344,6 +371,10 @@ func (a *InboundController) resetInboundTraffic(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.inboundUpdateSuccess"), err)
 		return
 	}
+	if !a.inboundScope(c).Allows(id) {
+		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.inboundUpdateSuccess"), common.NewError("access denied"))
+		return
+	}
 
 	err = a.inboundService.ResetInboundTraffic(id)
 	if err != nil {
@@ -364,6 +395,10 @@ func (a *InboundController) delAllInboundClients(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return
+	}
+	if !a.inboundScope(c).Allows(id) {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), common.NewError("access denied"))
 		return
 	}
 	emails, err := a.inboundService.EmailsByInbound(id)

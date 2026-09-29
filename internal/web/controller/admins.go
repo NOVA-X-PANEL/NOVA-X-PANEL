@@ -178,17 +178,29 @@ func (a *AdminController) current(c *gin.Context) {
 	if !ok {
 		return
 	}
+	var overrides any
+	if strings.TrimSpace(user.PermissionOverridesJSON) != "" {
+		_ = json.Unmarshal([]byte(user.PermissionOverridesJSON), &overrides)
+	}
+
 	jsonObj(c, gin.H{
-		"id":          user.Id,
-		"username":    user.Username,
-		"status":      user.Status,
-		"roleId":      user.RoleId,
-		"role_id":     user.RoleId,
-		"permissions": role.PermissionsJSON,
-		"limits":      role.LimitsJSON,
-		"features":    role.FeaturesJSON,
-		"access":      role.AccessJSON,
-		"isOwner":     role.OwnerRole,
+		"id":                   user.Id,
+		"username":             user.Username,
+		"status":               user.Status,
+		"roleId":               user.RoleId,
+		"role_id":              user.RoleId,
+		"dataLimit":            user.DataLimit,
+		"data_limit":           user.DataLimit,
+		"usedBytes":            user.UsedBytes,
+		"used_bytes":           user.UsedBytes,
+		"used_traffic":         user.UsedBytes,
+		"permissionOverrides":  overrides,
+		"permission_overrides": overrides,
+		"permissions":          role.PermissionsJSON,
+		"limits":               role.LimitsJSON,
+		"features":             role.FeaturesJSON,
+		"access":               role.AccessJSON,
+		"isOwner":              role.OwnerRole,
 		// Lets the shell decide whether to offer the account its own API page; the
 		// owner always may.
 		"apiAccess":  user.ApiAccess || role.OwnerRole,

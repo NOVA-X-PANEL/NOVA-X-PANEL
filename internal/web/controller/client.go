@@ -409,6 +409,9 @@ func (a *ClientController) create(c *gin.Context) {
 			jsonMsg(c, err.Error(), err)
 			return
 		}
+		if payload.Client.OwnerAdminId == 0 && user.RoleId != 0 {
+			payload.Client.OwnerAdminId = int64(user.Id)
+		}
 	}
 	if !a.requireInboundsInScope(c, "create", payload.InboundIds) {
 		return
@@ -458,6 +461,9 @@ func (a *ClientController) update(c *gin.Context) {
 		if err := a.clientService.ValidateClientTrafficForAdmin(user, req.Client.TotalGB); err != nil {
 			jsonMsg(c, err.Error(), err)
 			return
+		}
+		if user.RoleId != 0 {
+			req.Client.OwnerAdminId = int64(user.Id)
 		}
 	}
 	inboundFilter := parseInboundIdsQuery(c.Query("inboundIds"))
@@ -589,6 +595,13 @@ func (a *ClientController) bulkAdjust(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
+	user := a.loginUser(c)
+	if user != nil && req.AddBytes > 0 {
+		if err := a.clientService.ValidateClientTrafficForAdmin(user, req.AddBytes); err != nil {
+			jsonMsg(c, err.Error(), err)
+			return
+		}
+	}
 	req.Emails = a.scopeEmails(c, req.Emails, "update")
 	result, needRestart, err := a.clientService.BulkAdjust(&a.inboundService, req.Emails, req.AddDays, req.AddBytes, req.Flow, req.LimitHwid, req.AdTag)
 	if err != nil {
@@ -646,6 +659,9 @@ func (a *ClientController) bulkDetach(c *gin.Context) {
 		return
 	}
 	req.Emails = a.scopeEmails(c, req.Emails, "update")
+	if !a.requireInboundsInScope(c, "update", req.InboundIds) {
+		return
+	}
 	result, needRestart, err := a.clientService.BulkDetach(&a.inboundService, req.Emails, req.InboundIds)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
@@ -727,6 +743,14 @@ func (a *ClientController) bulkCreate(c *gin.Context) {
 			}
 		}
 	}
+	for i := range payloads {
+		if !a.requireInboundsInScope(c, "create", payloads[i].InboundIds) {
+			return
+		}
+		if user != nil && (user.RoleId != 0 || payloads[i].Client.OwnerAdminId == 0) {
+			payloads[i].Client.OwnerAdminId = int64(user.Id)
+		}
+	}
 	result, needRestart, err := a.clientService.BulkCreate(&a.inboundService, payloads)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
@@ -801,6 +825,14 @@ func (a *ClientController) importClients(c *gin.Context) {
 				jsonMsg(c, err.Error(), err)
 				return
 			}
+		}
+	}
+	for i := range items {
+		if !a.requireInboundsInScope(c, "create", items[i].InboundIds) {
+			return
+		}
+		if user != nil && (user.RoleId != 0 || items[i].Client.OwnerAdminId == 0) {
+			items[i].Client.OwnerAdminId = int64(user.Id)
 		}
 	}
 	result, needRestart, err := a.clientService.ImportClients(&a.inboundService, items)
@@ -1051,6 +1083,9 @@ func (a *ClientController) detach(c *gin.Context) {
 	var body attachDetachBody
 	if err := c.ShouldBindJSON(&body); err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return
+	}
+	if !a.requireInboundsInScope(c, "update", body.InboundIds) {
 		return
 	}
 	needRestart, err := a.clientService.DetachByEmailMany(&a.inboundService, email, body.InboundIds)

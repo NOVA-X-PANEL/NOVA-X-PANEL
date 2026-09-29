@@ -14,6 +14,24 @@ type GroupController struct {
 	xrayService   service.XrayService
 }
 
+func (a *GroupController) groupAllowed(c *gin.Context, group string) bool {
+	_, role, ok := loginActiveAdminRole(c)
+	if !ok || role == nil || role.OwnerRole {
+		return true
+	}
+	restrict, allowAll, allowed := service.RoleGroupAccessScope(role)
+	if !restrict || allowAll {
+		return true
+	}
+	g := strings.TrimSpace(group)
+	for _, it := range allowed {
+		if strings.EqualFold(it, g) {
+			return true
+		}
+	}
+	return false
+}
+
 func NewGroupController(g *gin.RouterGroup) *GroupController {
 	a := &GroupController{}
 	a.initRouter(g)
@@ -37,11 +55,32 @@ func (a *GroupController) list(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
+	_, role, ok := loginActiveAdminRole(c)
+	if ok && role != nil && !role.OwnerRole {
+		restrict, allowAll, allowed := service.RoleGroupAccessScope(role)
+		if restrict && !allowAll {
+			allowedMap := make(map[string]bool, len(allowed))
+			for _, it := range allowed {
+				allowedMap[strings.ToLower(strings.TrimSpace(it))] = true
+			}
+			filtered := make([]model.ClientGroupRow, 0, len(rows))
+			for _, r := range rows {
+				if allowedMap[strings.ToLower(strings.TrimSpace(r.Name))] {
+					filtered = append(filtered, r)
+				}
+			}
+			rows = filtered
+		}
+	}
 	jsonObj(c, rows, nil)
 }
 
 func (a *GroupController) emails(c *gin.Context) {
 	name := c.Param("name")
+	if !a.groupAllowed(c, name) {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), common.NewError("access denied for group"))
+		return
+	}
 	emails, err := a.clientService.EmailsByGroup(name)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
@@ -79,6 +118,10 @@ func (a *GroupController) rename(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
+	if !a.groupAllowed(c, body.OldName) || !a.groupAllowed(c, body.NewName) {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), common.NewError("access denied for group"))
+		return
+	}
 	affected, err := a.clientService.RenameGroup(body.OldName, body.NewName)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
@@ -99,6 +142,10 @@ func (a *GroupController) delete(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
+	if !a.groupAllowed(c, body.Name) {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), common.NewError("access denied for group"))
+		return
+	}
 	affected, err := a.clientService.DeleteGroup(body.Name)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
@@ -117,6 +164,10 @@ func (a *GroupController) resetTraffic(c *gin.Context) {
 	var body groupResetTrafficBody
 	if err := c.ShouldBindJSON(&body); err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return
+	}
+	if !a.groupAllowed(c, body.Name) {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), common.NewError("access denied for group"))
 		return
 	}
 	if err := a.clientService.ResetGroupTraffic(body.Name); err != nil {
@@ -140,6 +191,10 @@ func (a *GroupController) bulkAdd(c *gin.Context) {
 	}
 	if strings.TrimSpace(req.Group) == "" {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), common.NewError("group name is required"))
+		return
+	}
+	if !a.groupAllowed(c, req.Group) {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), common.NewError("access denied for group"))
 		return
 	}
 	affected, err := a.clientService.AddToGroup(req.Emails, req.Group)

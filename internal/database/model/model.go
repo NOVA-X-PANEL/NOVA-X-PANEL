@@ -54,6 +54,10 @@ type User struct {
 	DataLimit int64 `json:"dataLimit" gorm:"column:data_limit;default:0"`
 	UsedBytes int64 `json:"usedBytes" gorm:"column:used_bytes;default:0"`
 
+	// PermissionOverridesJSON stores per-account limit overrides (e.g. max_users,
+	// data_limit_max, etc.) that take precedence over the role's default limits.
+	PermissionOverridesJSON string `json:"permissionOverrides" gorm:"column:permission_overrides;type:text"`
+
 	// ApiAccess lets this account mint its own API token. The token carries the
 	// account's role, so whatever the role may do in the panel, the token may do
 	// over the API — and nothing more. The owner always has it.
@@ -937,8 +941,10 @@ type Client struct {
 	// Per-client traffic reset cycle, independent of the inbound's own (#5497).
 	TrafficReset    string `json:"trafficReset,omitempty" form:"trafficReset" validate:"omitempty,oneof=never hourly daily weekly monthly"`
 	TrafficResetDay int    `json:"trafficResetDay,omitempty" form:"trafficResetDay" validate:"omitempty,gte=1,lte=31"`
-	CreatedAt       int64  `json:"created_at,omitempty"` // Creation timestamp
-	UpdatedAt       int64  `json:"updated_at,omitempty"` // Last update timestamp
+	// OwnerAdminId binds this client to the panel admin (model.User) that created it.
+	OwnerAdminId int64 `json:"ownerAdminId,omitempty" form:"ownerAdminId"`
+	CreatedAt    int64 `json:"created_at,omitempty"` // Creation timestamp
+	UpdatedAt    int64 `json:"updated_at,omitempty"` // Last update timestamp
 }
 
 type ClientRecord struct {
@@ -1170,6 +1176,7 @@ func nonZeroKeepAlive(seconds int) *int {
 func (c *Client) ToRecord() *ClientRecord {
 	rec := &ClientRecord{
 		Email:           c.Email,
+		OwnerAdminId:    c.OwnerAdminId,
 		SubID:           c.SubID,
 		UUID:            c.ID,
 		Password:        c.Password,
@@ -1229,6 +1236,7 @@ func (r *ClientRecord) ToClient() *Client {
 	c := &Client{
 		ID:              r.UUID,
 		Email:           r.Email,
+		OwnerAdminId:    r.OwnerAdminId,
 		SubID:           r.SubID,
 		Password:        r.Password,
 		Auth:            r.Auth,

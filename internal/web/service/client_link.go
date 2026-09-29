@@ -74,6 +74,9 @@ func applyClientRecordMerge(row *model.ClientRecord, incoming *model.ClientRecor
 	if incoming.TrafficResetDay > 0 {
 		row.TrafficResetDay = incoming.TrafficResetDay
 	}
+	if incoming.OwnerAdminId > 0 {
+		row.OwnerAdminId = incoming.OwnerAdminId
+	}
 	if incoming.CreatedAt > 0 && (row.CreatedAt == 0 || incoming.CreatedAt < row.CreatedAt) {
 		row.CreatedAt = incoming.CreatedAt
 	}

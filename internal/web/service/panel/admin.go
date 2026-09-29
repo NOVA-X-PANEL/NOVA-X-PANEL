@@ -21,11 +21,12 @@ type AdminService struct{}
 
 // AdminPayload is the create/update body for a panel account.
 type AdminPayload struct {
-	Username  string `json:"username" form:"username"`
-	Password  string `json:"password" form:"password"`
-	RoleId    int    `json:"roleId" form:"roleId"`
-	Status    string `json:"status" form:"status"`
-	DataLimit int64  `json:"dataLimit" form:"dataLimit"`
+	Username            string          `json:"username" form:"username"`
+	Password            string          `json:"password" form:"password"`
+	RoleId              int             `json:"roleId" form:"roleId"`
+	Status              string          `json:"status" form:"status"`
+	DataLimit           int64           `json:"dataLimit" form:"dataLimit"`
+	PermissionOverrides json.RawMessage `json:"permissionOverrides"`
 	// ApiAccess lets the account mint its own API token, which then carries this
 	// account's role over the API.
 	ApiAccess *bool `json:"apiAccess" form:"apiAccess"`
@@ -36,9 +37,10 @@ func (p *AdminPayload) UnmarshalJSON(data []byte) error {
 	type Alias AdminPayload
 	aux := struct {
 		*Alias
-		DataLimitSnake *int64 `json:"data_limit"`
-		RoleIdSnake    *int   `json:"role_id"`
-		ApiAccessSnake *bool  `json:"api_access"`
+		DataLimitSnake           *int64           `json:"data_limit"`
+		RoleIdSnake              *int             `json:"role_id"`
+		ApiAccessSnake           *bool            `json:"api_access"`
+		PermissionOverridesSnake *json.RawMessage `json:"permission_overrides"`
 	}{
 		Alias: (*Alias)(p),
 	}
@@ -54,26 +56,30 @@ func (p *AdminPayload) UnmarshalJSON(data []byte) error {
 	if aux.ApiAccessSnake != nil && p.ApiAccess == nil {
 		p.ApiAccess = aux.ApiAccessSnake
 	}
+	if aux.PermissionOverridesSnake != nil && len(p.PermissionOverrides) == 0 {
+		p.PermissionOverrides = *aux.PermissionOverridesSnake
+	}
 	return nil
 }
 
 // AdminView is the API representation of a panel account (password omitted).
 type AdminView struct {
-	Id         int    `json:"id"`
-	Username   string `json:"username"`
-	RoleId     int    `json:"roleId"`
-	RoleName   string `json:"roleName"`
-	RoleSlug   string `json:"roleSlug"`
-	OwnerRole  bool   `json:"ownerRole"`
-	Status     string `json:"status"`
-	IsSelf     bool   `json:"isSelf"`
-	DataLimit  int64  `json:"dataLimit"`
-	UsedBytes  int64  `json:"usedBytes"`
-	TotalUsers int64  `json:"totalUsers"`
-	Limited    bool   `json:"limited"`
-	ApiAccess  bool   `json:"apiAccess"`
-	CreatedAt  int64  `json:"createdAt"`
-	UpdatedAt  int64  `json:"updatedAt"`
+	Id                  int    `json:"id"`
+	Username            string `json:"username"`
+	RoleId              int    `json:"roleId"`
+	RoleName            string `json:"roleName"`
+	RoleSlug            string `json:"roleSlug"`
+	OwnerRole           bool   `json:"ownerRole"`
+	Status              string `json:"status"`
+	IsSelf              bool   `json:"isSelf"`
+	DataLimit           int64  `json:"dataLimit"`
+	UsedBytes           int64  `json:"usedBytes"`
+	TotalUsers          int64  `json:"totalUsers"`
+	Limited             bool   `json:"limited"`
+	ApiAccess           bool   `json:"apiAccess"`
+	PermissionOverrides any    `json:"permission_overrides,omitempty"`
+	CreatedAt           int64  `json:"createdAt"`
+	UpdatedAt           int64  `json:"updatedAt"`
 }
 
 // AdminStats summarises panel accounts for the admins page.
@@ -172,6 +178,12 @@ func adminToView(user *model.User, role *model.AdminRole, selfID int, usedBytes,
 		view.RoleName = role.Name
 		view.RoleSlug = role.Slug
 		view.OwnerRole = role.OwnerRole
+	}
+	if strings.TrimSpace(user.PermissionOverridesJSON) != "" {
+		var overrides any
+		if err := json.Unmarshal([]byte(user.PermissionOverridesJSON), &overrides); err == nil && overrides != nil {
+			view.PermissionOverrides = overrides
+		}
 	}
 	return view
 }
@@ -364,13 +376,19 @@ func (s *AdminService) Create(payload AdminPayload) (*AdminView, error) {
 		return nil, err
 	}
 
+	var overridesJSON string
+	if len(payload.PermissionOverrides) > 0 && string(payload.PermissionOverrides) != "null" {
+		overridesJSON = string(payload.PermissionOverrides)
+	}
+
 	user := &model.User{
-		Username:  username,
-		Password:  hashed,
-		RoleId:    payload.RoleId,
-		Status:    status,
-		DataLimit: payload.DataLimit,
-		ApiAccess: payload.ApiAccess != nil && *payload.ApiAccess,
+		Username:                username,
+		Password:                hashed,
+		RoleId:                  payload.RoleId,
+		Status:                  status,
+		DataLimit:               payload.DataLimit,
+		PermissionOverridesJSON: overridesJSON,
+		ApiAccess:               payload.ApiAccess != nil && *payload.ApiAccess,
 	}
 	if err := db.Create(user).Error; err != nil {
 		return nil, err
@@ -415,6 +433,14 @@ func (s *AdminService) Update(id int, payload AdminPayload) (*AdminView, error) 
 
 	if payload.DataLimit != user.DataLimit {
 		updates["data_limit"] = payload.DataLimit
+	}
+
+	if payload.PermissionOverrides != nil {
+		if len(payload.PermissionOverrides) == 0 || string(payload.PermissionOverrides) == "null" || string(payload.PermissionOverrides) == "{}" {
+			updates["permission_overrides"] = ""
+		} else {
+			updates["permission_overrides"] = string(payload.PermissionOverrides)
+		}
 	}
 
 	if payload.ApiAccess != nil && *payload.ApiAccess != user.ApiAccess {

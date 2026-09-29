@@ -475,8 +475,8 @@ func roleAccessIntSlice(v any) []int {
 	return out
 }
 
-// roleGroupAccessScope resolves the group restriction of a role's access doc.
-func roleGroupAccessScope(role *model.AdminRole) (restrict bool, allowAll bool, groups []string) {
+// RoleGroupAccessScope resolves the group restriction of a role's access doc.
+func RoleGroupAccessScope(role *model.AdminRole) (restrict bool, allowAll bool, groups []string) {
 	if role == nil {
 		return true, false, nil
 	}
@@ -553,7 +553,7 @@ func ClientAccessScopeForAdmin(user *model.User, permission string) ClientAccess
 		return ClientAccessScope{Mode: ClientAccessNone, RestrictGroups: true}
 	}
 
-	restrictGroups, allowAllGroups, allowedGroups := roleGroupAccessScope(role)
+	restrictGroups, allowAllGroups, allowedGroups := RoleGroupAccessScope(role)
 	restrictInbounds, allowAllInbounds, allowedInboundIDs := roleInboundAccessScope(role)
 
 	if role.OwnerRole {
@@ -613,6 +613,19 @@ type InboundAccessScope struct {
 	IDs []int
 	// LegacyUserID filters by the inbound's owner when no role document applies.
 	LegacyUserID int
+}
+
+// Allows reports whether the inbound id is allowed within this access scope.
+func (s InboundAccessScope) Allows(inboundID int) bool {
+	if s.All {
+		return true
+	}
+	for _, id := range s.IDs {
+		if id == inboundID {
+			return true
+		}
+	}
+	return false
 }
 
 // InboundAccessScopeForAdmin resolves the inbound listing scope for one account.
@@ -881,9 +894,17 @@ func (s *ClientService) ValidateClientCreationForAdmin(user *model.User, count i
 		return fmt.Errorf("admin traffic quota exhausted: used %s of %s", formatBytes(user.UsedBytes), formatBytes(user.DataLimit))
 	}
 
-	// 3. Find max_users from role limits
+	// 3. Find max_users from permission overrides first, then role limits
 	var maxUsers int64 = 0
-	if strings.TrimSpace(role.LimitsJSON) != "" {
+	if strings.TrimSpace(user.PermissionOverridesJSON) != "" {
+		var ov map[string]any
+		if err := json.Unmarshal([]byte(user.PermissionOverridesJSON), &ov); err == nil && ov != nil {
+			if n, ok := parseLimitInt64(ov["max_users"]); ok && n > 0 {
+				maxUsers = n
+			}
+		}
+	}
+	if maxUsers == 0 && strings.TrimSpace(role.LimitsJSON) != "" {
 		var rl map[string]any
 		if err := json.Unmarshal([]byte(role.LimitsJSON), &rl); err == nil && rl != nil {
 			if n, ok := parseLimitInt64(rl["max_users"]); ok && n > 0 {
@@ -965,8 +986,16 @@ func (s *ClientService) ValidateClientTrafficForAdmin(user *model.User, totalByt
 		return fmt.Errorf("admin traffic quota exhausted: used %s of %s", formatBytes(user.UsedBytes), formatBytes(user.DataLimit))
 	}
 
-	// Extract limits from role limits
+	// Extract limits from permission overrides first, then role limits
 	findLimit := func(key string) (int64, bool) {
+		if strings.TrimSpace(user.PermissionOverridesJSON) != "" {
+			var ov map[string]any
+			if err := json.Unmarshal([]byte(user.PermissionOverridesJSON), &ov); err == nil && ov != nil {
+				if n, ok := parseLimitInt64(ov[key]); ok && n > 0 {
+					return n, true
+				}
+			}
+		}
 		if strings.TrimSpace(role.LimitsJSON) != "" {
 			var rl map[string]any
 			if err := json.Unmarshal([]byte(role.LimitsJSON), &rl); err == nil && rl != nil {

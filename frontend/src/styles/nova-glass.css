@@ -2379,5 +2379,291 @@ body.dark .ant-pagination .ant-pagination-next:hover .ant-pagination-item-link {
   box-shadow: 0 0 10px rgba(34, 211, 238, 0.3) !important;
 }
 
+/* ==========================================================================
+   8. CLIENTS TABLE REDESIGN (ACTIONS TOOLBAR & CYBER SWITCH)
+   ========================================================================== */
+
+.nx-client-action-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  background: rgba(11, 15, 25, 0.75);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 8px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.nx-row-btn {
+  width: 26px !important;
+  height: 26px !important;
+  min-width: 26px !important;
+  padding: 0 !important;
+  border-radius: 6px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 14px !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.nx-row-btn:hover {
+  transform: translateY(-1px);
+}
+
+/* QR Button */
+.nx-btn-qr {
+  color: #38bdf8 !important;
+}
+.nx-btn-qr:hover {
+  color: #fff !important;
+  background: rgba(34, 211, 238, 0.2) !important;
+  border-color: #22d3ee !important;
+  box-shadow: 0 0 10px rgba(34, 211, 238, 0.5) !important;
+}
+
+/* Info Button */
+.nx-btn-info {
+  color: #818cf8 !important;
+}
+.nx-btn-info:hover {
+  color: #fff !important;
+  background: rgba(129, 140, 248, 0.2) !important;
+  border-color: #818cf8 !important;
+  box-shadow: 0 0 10px rgba(129, 140, 248, 0.5) !important;
+}
+
+/* Reset Traffic Button */
+.nx-btn-reset {
+  color: #fbbf24 !important;
+}
+.nx-btn-reset:hover {
+  color: #fff !important;
+  background: rgba(251, 191, 36, 0.2) !important;
+  border-color: #fbbf24 !important;
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.5) !important;
+}
+
+/* Edit Button */
+.nx-btn-edit {
+  color: #c084fc !important;
+}
+.nx-btn-edit:hover {
+  color: #fff !important;
+  background: rgba(192, 132, 252, 0.2) !important;
+  border-color: #c084fc !important;
+  box-shadow: 0 0 10px rgba(192, 132, 252, 0.5) !important;
+}
+
+/* Delete Button */
+.nx-btn-delete {
+  color: #f87171 !important;
+}
+.nx-btn-delete:hover {
+  color: #fff !important;
+  background: rgba(239, 68, 68, 0.25) !important;
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.6) !important;
+}
+
+/* Cyber Neon Switch in Clients Table */
+.nx-switch-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clients-page .ant-switch.nx-client-switch,
+.ant-switch.nx-client-switch {
+  background: #1e293b !important;
+  border: 1px solid rgba(100, 116, 139, 0.4) !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.clients-page .ant-switch.nx-client-switch.ant-switch-checked,
+.ant-switch.nx-client-switch.ant-switch-checked {
+  background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%) !important;
+  border-color: #10b981 !important;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.55), 0 0 4px rgba(6, 182, 212, 0.4) !important;
+}
+
+.clients-page .ant-switch.nx-client-switch .ant-switch-handle::before,
+.ant-switch.nx-client-switch .ant-switch-handle::before {
+  background: #ffffff !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* ==========================================================================
+   9. REUSABLE CYBER BUTTONS (REFRESH, KEBAB 3-DOTS, TRASH/DELETE)
+   ========================================================================== */
+
+.nx-btn-ghost-cyber {
+  border: 1px solid rgba(56, 189, 248, 0.25) !important;
+  background: rgba(15, 23, 42, 0.65) !important;
+  color: #38bdf8 !important;
+  border-radius: 8px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+.nx-btn-ghost-cyber:hover {
+  background: rgba(34, 211, 238, 0.18) !important;
+  border-color: #22d3ee !important;
+  color: #fff !important;
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.45) !important;
+  transform: translateY(-1px);
+}
+
+.nx-btn-kebab-cyber {
+  border: 1px solid rgba(168, 85, 247, 0.25) !important;
+  background: rgba(15, 23, 42, 0.6) !important;
+  color: #c084fc !important;
+  border-radius: 8px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+.nx-btn-kebab-cyber:hover {
+  background: rgba(168, 85, 247, 0.22) !important;
+  border-color: #a855f7 !important;
+  color: #fff !important;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.5) !important;
+  transform: translateY(-1px);
+}
+
+.nx-btn-danger-cyber {
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+  background: rgba(15, 23, 42, 0.6) !important;
+  color: #f87171 !important;
+  border-radius: 8px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+.nx-btn-danger-cyber:hover {
+  background: rgba(239, 68, 68, 0.22) !important;
+  border-color: #ef4444 !important;
+  color: #fff !important;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.5) !important;
+  transform: translateY(-1px);
+}
+
+/* Dialog Close Button & Copy Button */
+.dark [role="dialog"] button:has(> svg.lucide-x),
+.dark [data-radix-portal] button:has(> svg.lucide-x) {
+  background: rgba(15, 23, 42, 0.7) !important;
+  border: 1px solid rgba(56, 189, 248, 0.25) !important;
+  color: #94a3b8 !important;
+  border-radius: 8px !important;
+  width: 28px !important;
+  height: 28px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s ease !important;
+}
+
+.dark [role="dialog"] button:has(> svg.lucide-x):hover,
+.dark [data-radix-portal] button:has(> svg.lucide-x):hover {
+  background: rgba(239, 68, 68, 0.22) !important;
+  border-color: #ef4444 !important;
+  color: #fff !important;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.5) !important;
+  transform: scale(1.05);
+}
+
+.dark button:has(> svg.lucide-copy) {
+  border: 1px solid rgba(56, 189, 248, 0.25) !important;
+  background: rgba(15, 23, 42, 0.65) !important;
+  color: #38bdf8 !important;
+  border-radius: 6px !important;
+  transition: all 0.2s ease !important;
+}
+
+.dark button:has(> svg.lucide-copy):hover {
+  background: rgba(34, 211, 238, 0.2) !important;
+  border-color: #22d3ee !important;
+  color: #fff !important;
+  box-shadow: 0 0 10px rgba(34, 211, 238, 0.45) !important;
+}
+
+/* ==========================================================================
+   10. ADMIN ROLES - CREATE ROLE ACCORDION SECTIONS
+   ========================================================================== */
+
+.dark [data-radix-accordion-item] {
+  background: rgba(11, 15, 25, 0.8) !important;
+  border: 1px solid rgba(56, 189, 248, 0.22) !important;
+  border-radius: 10px !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  overflow: hidden !important;
+}
+
+.dark [data-radix-accordion-item]:hover {
+  border-color: rgba(56, 189, 248, 0.45) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 15px rgba(34, 211, 238, 0.1) !important;
+}
+
+.dark [data-radix-accordion-item][data-state="open"] {
+  border-color: rgba(34, 211, 238, 0.55) !important;
+  background: rgba(11, 15, 25, 0.95) !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(34, 211, 238, 0.18) !important;
+}
+
+.dark [data-radix-accordion-item] [data-radix-accordion-trigger] {
+  padding: 14px 16px !important;
+  font-weight: 600 !important;
+  color: #e2e8f0 !important;
+}
+
+.dark [data-radix-accordion-item][data-state="open"] [data-radix-accordion-trigger] {
+  color: #22d3ee !important;
+  text-shadow: 0 0 10px rgba(34, 211, 238, 0.4) !important;
+}
+
+.dark [data-radix-accordion-item] [data-radix-accordion-trigger] svg {
+  color: #38bdf8 !important;
+  transition: transform 0.25s ease !important;
+}
+
+.dark [data-radix-accordion-item] [data-radix-accordion-content] {
+  padding: 12px 16px 16px !important;
+  background: rgba(7, 9, 14, 0.6) !important;
+  border-top: 1px solid rgba(56, 189, 248, 0.15) !important;
+}
+
+.dark [data-radix-accordion-item] [data-radix-accordion-content] .border {
+  border-color: rgba(56, 189, 248, 0.18) !important;
+  background: rgba(15, 23, 42, 0.5) !important;
+  border-radius: 8px !important;
+}
+
+/* Inbounds Client Count Centered Tags */
+.client-count-tag {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 6px !important;
+  border: 1px solid rgba(56, 189, 248, 0.25) !important;
+  background: rgba(15, 23, 42, 0.65) !important;
+  color: #38bdf8 !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  transition: all 0.2s ease !important;
+}
+.client-count-tag:hover {
+  border-color: #22d3ee !important;
+  color: #fff !important;
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.4) !important;
+}
+
+
 
 

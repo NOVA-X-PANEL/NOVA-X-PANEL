@@ -30,11 +30,12 @@
 
 .arc-tacho-sub {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
+  font-size: 10px;
+  letter-spacing: -0.02em;
   color: var(--ov-label, #94a3b8);
   margin-top: 2px;
   white-space: nowrap;
-  max-width: 90%;
+  max-width: 96%;
   overflow: hidden;
   text-overflow: ellipsis;
 }

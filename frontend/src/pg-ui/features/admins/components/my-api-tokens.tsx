@@ -173,6 +173,7 @@ export default function MyApiTokens() {
             <Button
               variant="ghost"
               size="icon"
+              className="nx-btn-ghost-cyber h-8 w-8"
               onClick={refresh}
               disabled={tokens.isFetching}
               aria-label={t('refresh', { defaultValue: 'Refresh' })}
@@ -227,6 +228,7 @@ export default function MyApiTokens() {
                       <Button
                         variant="ghost"
                         size="icon"
+                        className="nx-btn-danger-cyber h-8 w-8"
                         onClick={() => deleteMutation.mutate(row.id)}
                         aria-label={t('delete', { defaultValue: 'Delete' })}
                       >

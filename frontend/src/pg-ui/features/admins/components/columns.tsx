@@ -205,7 +205,7 @@ export const setupColumns = ({
         <div className="flex items-center justify-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button type="button" variant="ghost" size="icon">
+              <Button type="button" variant="ghost" size="icon" className="nx-btn-kebab-cyber h-8 w-8">
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>

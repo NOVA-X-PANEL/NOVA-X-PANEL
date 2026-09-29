@@ -62,7 +62,7 @@ export function Filters<T extends BaseFilters>({ filters, onFilterChange, handle
   const dir = useDirDetection()
   const [search, setSearch] = useState(filters.username || '')
   const onFilterChangeRef = useRef(onFilterChange)
-  const compactActionButtonClass = 'relative flex h-9 w-9 items-center justify-center rounded-lg border'
+  const compactActionButtonClass = 'relative flex h-9 w-9 items-center justify-center rounded-lg border border-cyan-500/20 bg-slate-900/60 text-cyan-400 hover:bg-cyan-500/15 hover:border-cyan-400 hover:text-white transition-all shadow-sm'
 
   // Keep the ref in sync with the prop
   onFilterChangeRef.current = onFilterChange
@@ -134,8 +134,8 @@ export function Filters<T extends BaseFilters>({ filters, onFilterChange, handle
         )}
       </div>
 
-      {handleSort && (
-        <div className="flex h-full flex-shrink-0 items-center gap-1">
+      <div className="flex h-full flex-shrink-0 items-center gap-2">
+        {handleSort && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button type="button" size="icon-md" variant="ghost" className={compactActionButtonClass} aria-label={t('sortOptions', { defaultValue: 'Sort Options' })}>
@@ -163,12 +163,10 @@ export function Filters<T extends BaseFilters>({ filters, onFilterChange, handle
               })}
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
-      )}
+        )}
 
-      {/* Refresh Button */}
-      <div className="flex h-full flex-shrink-0 items-center gap-0">
-        <Button type="button" size="icon-md" onClick={handleRefreshClick} variant="ghost" className={compactActionButtonClass}>
+        {/* Refresh Button */}
+        <Button type="button" size="icon-md" onClick={handleRefreshClick} variant="ghost" className={compactActionButtonClass} aria-label={t('refresh', { defaultValue: 'Refresh' })}>
           <RefreshCw className="h-4 w-4" />
         </Button>
       </div>

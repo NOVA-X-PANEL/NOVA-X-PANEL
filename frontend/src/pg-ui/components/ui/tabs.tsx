@@ -7,7 +7,7 @@ import { cn } from '@/pg-ui/lib/utils';
 const Tabs = TabsPrimitive.Root
 
 const TabsList = React.forwardRef<React.ElementRef<typeof TabsPrimitive.List>, React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>>(({ className, ...props }, ref) => (
-  <TabsPrimitive.List ref={ref} className={cn('bg-muted text-muted-foreground inline-flex h-10 items-center justify-center rounded-md p-1', className)} {...props} />
+  <TabsPrimitive.List ref={ref} className={cn('bg-muted/60 text-muted-foreground inline-flex h-10 items-center justify-start rounded-lg p-1 gap-2 border border-border/50', className)} {...props} />
 ))
 TabsList.displayName = TabsPrimitive.List.displayName
 

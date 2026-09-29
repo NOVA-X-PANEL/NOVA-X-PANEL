@@ -38,12 +38,12 @@ export const ClientRowActions = memo(function ClientRowActions({
 }: ClientRowActionsProps) {
   const { t } = useTranslation();
   return (
-    <Space size={4}>
+    <div className="nx-client-action-bar">
       <Tooltip title={t('pages.clients.qrCode')}>
         <Button
           size="small"
           type="text"
-          style={ICON_BUTTON_STYLE}
+          className="nx-row-btn nx-btn-qr"
           icon={<QrcodeOutlined />}
           aria-label={t('pages.clients.qrCode')}
           onClick={() => onShowQr(email)}
@@ -53,7 +53,7 @@ export const ClientRowActions = memo(function ClientRowActions({
         <Button
           size="small"
           type="text"
-          style={ICON_BUTTON_STYLE}
+          className="nx-row-btn nx-btn-info"
           icon={<InfoCircleOutlined />}
           aria-label={t('pages.clients.clientInfo')}
           onClick={() => onShowInfo(email)}
@@ -63,7 +63,7 @@ export const ClientRowActions = memo(function ClientRowActions({
         <Button
           size="small"
           type="text"
-          style={ICON_BUTTON_STYLE}
+          className="nx-row-btn nx-btn-reset"
           icon={<RetweetOutlined />}
           aria-label={t('pages.inbounds.resetTraffic')}
           onClick={() => onResetTraffic(email)}
@@ -73,7 +73,7 @@ export const ClientRowActions = memo(function ClientRowActions({
         <Button
           size="small"
           type="text"
-          style={ICON_BUTTON_STYLE}
+          className="nx-row-btn nx-btn-edit"
           icon={<EditOutlined />}
           aria-label={t('edit')}
           onClick={() => onEdit(email)}
@@ -83,14 +83,13 @@ export const ClientRowActions = memo(function ClientRowActions({
         <Button
           size="small"
           type="text"
-          danger
-          style={ICON_BUTTON_STYLE}
+          className="nx-row-btn nx-btn-delete"
           icon={<DeleteOutlined />}
           aria-label={t('delete')}
           onClick={() => onDelete(email)}
         />
       </Tooltip>
-    </Space>
+    </div>
   );
 });
 

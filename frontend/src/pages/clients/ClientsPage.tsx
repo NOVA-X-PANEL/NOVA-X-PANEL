@@ -1108,14 +1108,18 @@ export default function ClientsPage() {
       {
         title: t('pages.clients.enabled'),
         key: 'enable',
-        width: 62,
+        width: 72,
+        align: 'center',
         render: (_v, record) => (
-          <Switch
-            checked={!!record.enable}
-            size="small"
-            loading={togglingEmail === record.email}
-            onChange={(next) => onToggleEnable(record, next)}
-          />
+          <div className="nx-switch-wrap">
+            <Switch
+              className="nx-client-switch"
+              checked={!!record.enable}
+              size="small"
+              loading={togglingEmail === record.email}
+              onChange={(next) => onToggleEnable(record, next)}
+            />
+          </div>
         ),
       },
       {

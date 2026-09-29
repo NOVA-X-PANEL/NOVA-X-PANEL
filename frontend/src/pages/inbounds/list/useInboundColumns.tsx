@@ -291,19 +291,19 @@ export function useInboundColumns({
       {
         title: t('clients'),
         key: 'clients',
-        align: 'left',
+        align: 'center',
         width: 200,
         sorter: (a, b) => clientTotal(a) - clientTotal(b),
         render: (_, record) => {
           const cc = clientCount[record.id] || fallbackClientCount(record);
           if (!cc) return null;
           return (
-            <>
+            <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, flexWrap: 'wrap' }}>
               <Tag
                 className="client-count-tag"
-                style={{ margin: 0, marginRight: 4, padding: '0 2px' }}
+                style={{ margin: 0, padding: '2px 8px', display: 'inline-flex', alignItems: 'center', gap: 4 }}
               >
-                <TeamOutlined /> {cc.clients}
+                <TeamOutlined /> <span>{cc.clients}</span>
               </Tag>
               {cc.active.length > 0 ? (
                 <Popover
@@ -392,7 +392,7 @@ export function useInboundColumns({
                   </Tag>
                 </Popover>
               )}
-            </>
+            </div>
           );
         },
       },

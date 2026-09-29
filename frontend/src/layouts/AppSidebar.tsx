@@ -423,30 +423,7 @@ export default function AppSidebar() {
             )}
           </div>
         </div>
-        <Tooltip
-          title={
-            railCollapsed ? t('commandPalette.title') || 'Command Palette (Ctrl + K)' : undefined
-          }
-          placement="right"
-        >
-          <button
-            type="button"
-            className={`sidebar-command-trigger${railCollapsed ? ' collapsed' : ''}`}
-            onClick={openCommandPalette}
-            aria-label={t('commandPalette.title') || 'Command Palette (Ctrl + K)'}
-          >
-            <span className="sidebar-command-left">
-              <SearchOutlined className="sidebar-command-icon" />
-              <span className="sidebar-command-text">
-                {t('commandPalette.search') || 'Search...'}
-              </span>
-            </span>
-            <span className="sidebar-command-kbd">
-              <span className="kbd-cmd">{SHORTCUT_MODIFIER}</span>
-              <span className="kbd-key">K</span>
-            </span>
-          </button>
-        </Tooltip>
+        {/* Search removed per user request */}
         <Menu
           theme={currentTheme}
           mode="inline"
@@ -542,25 +519,7 @@ export default function AppSidebar() {
             </button>
           </div>
         </div>
-        <button
-          type="button"
-          className="sidebar-command-trigger"
-          onClick={() => {
-            setDrawerOpen(false);
-            openCommandPalette();
-          }}
-          aria-label={t('commandPalette.title') || 'Command Palette (Ctrl + K)'}
-          style={{ margin: '8px 12px 4px', width: 'calc(100% - 24px)' }}
-        >
-          <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <SearchOutlined className="sidebar-command-icon" />
-            <span>{t('commandPalette.search') || 'Search...'}</span>
-          </span>
-          <span className="sidebar-command-kbd">
-            <span className="kbd-cmd">{SHORTCUT_MODIFIER}</span>
-            <span className="kbd-key">K</span>
-          </span>
-        </button>
+        {/* Search removed per user request */}
         <Menu
           theme={currentTheme}
           mode="inline"

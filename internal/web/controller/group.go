@@ -3,7 +3,6 @@ package controller
 import (
 	"strings"
 
-	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 
@@ -64,7 +63,7 @@ func (a *GroupController) list(c *gin.Context) {
 			for _, it := range allowed {
 				allowedMap[strings.ToLower(strings.TrimSpace(it))] = true
 			}
-			filtered := make([]model.ClientGroupRow, 0, len(rows))
+			filtered := rows[:0]
 			for _, r := range rows {
 				if allowedMap[strings.ToLower(strings.TrimSpace(r.Name))] {
 					filtered = append(filtered, r)

@@ -50,6 +50,7 @@ import { clearAdminCache, useAdmin } from '@/pg-ui/hooks/use-admin';
 import { canAccessRoute } from '@/pg-ui/utils/rbac';
 import NeonLandscape from '@/components/NeonLandscape';
 import { useStatusQuery } from '@/api/queries/useStatusQuery';
+import { preloadRoute } from '@/utils/routePreload';
 import './AppSidebar.css';
 
 const DONATE_URL = 'https://donate.sanaei.dev/';
@@ -279,27 +280,37 @@ export default function AppSidebar() {
         key: '/settings#general',
         icon: <SettingOutlined />,
         label: t('pages.settings.panelSettings'),
+        onMouseEnter: () => preloadRoute('/settings'),
       },
       {
         key: '/settings#security',
         icon: <SafetyOutlined />,
         label: t('pages.settings.securitySettings'),
+        onMouseEnter: () => preloadRoute('/settings'),
       },
       {
         key: '/settings#telegram',
         icon: <MessageOutlined />,
         label: t('pages.settings.TGBotSettings'),
+        onMouseEnter: () => preloadRoute('/settings'),
       },
-      { key: '/settings#email', icon: <MailOutlined />, label: t('pages.settings.emailSettings') },
+      {
+        key: '/settings#email',
+        icon: <MailOutlined />,
+        label: t('pages.settings.emailSettings'),
+        onMouseEnter: () => preloadRoute('/settings'),
+      },
       {
         key: '/settings#discord',
         icon: <DiscordOutlined />,
         label: t('pages.settings.discordSettings'),
+        onMouseEnter: () => preloadRoute('/settings'),
       },
       {
         key: '/settings#subscription',
         icon: <CloudServerOutlined />,
         label: t('pages.settings.subSettings'),
+        onMouseEnter: () => preloadRoute('/settings'),
       },
     ];
     if (showSubFormats) {
@@ -307,6 +318,7 @@ export default function AppSidebar() {
         key: '/settings#subscription-formats',
         icon: <CodeOutlined />,
         label: t('menu.subFormats'),
+        onMouseEnter: () => preloadRoute('/settings'),
       });
     }
     if (showSubBalancers) {
@@ -314,6 +326,7 @@ export default function AppSidebar() {
         key: '/settings#subscription-balancers',
         icon: <ApartmentOutlined />,
         label: t('pages.settings.subBalancers.menu'),
+        onMouseEnter: () => preloadRoute('/settings'),
       });
     }
     return children;
@@ -321,10 +334,30 @@ export default function AppSidebar() {
 
   const xrayChildren = useMemo<NonNullable<MenuProps['items']>>(
     () => [
-      { key: '/xray#basic', icon: <SettingOutlined />, label: t('pages.xray.basicTemplate') },
-      { key: '/xray#balancer', icon: <ClusterOutlined />, label: t('pages.xray.Balancers') },
-      { key: '/xray#dns', icon: <DatabaseOutlined />, label: 'DNS' },
-      { key: '/xray#advanced', icon: <CodeOutlined />, label: t('pages.xray.advancedTemplate') },
+      {
+        key: '/xray#basic',
+        icon: <SettingOutlined />,
+        label: t('pages.xray.basicTemplate'),
+        onMouseEnter: () => preloadRoute('/xray'),
+      },
+      {
+        key: '/xray#balancer',
+        icon: <ClusterOutlined />,
+        label: t('pages.xray.Balancers'),
+        onMouseEnter: () => preloadRoute('/xray'),
+      },
+      {
+        key: '/xray#dns',
+        icon: <DatabaseOutlined />,
+        label: 'DNS',
+        onMouseEnter: () => preloadRoute('/xray'),
+      },
+      {
+        key: '/xray#advanced',
+        icon: <CodeOutlined />,
+        label: t('pages.xray.advancedTemplate'),
+        onMouseEnter: () => preloadRoute('/xray'),
+      },
     ],
     [t],
   );
@@ -350,12 +383,30 @@ export default function AppSidebar() {
       items.map((tab) => {
         const Icon = iconByName[tab.icon];
         if (tab.key === '/settings') {
-          return { key: tab.key, icon: <Icon />, label: tab.title, children: settingsChildren };
+          return {
+            key: tab.key,
+            icon: <Icon />,
+            label: tab.title,
+            children: settingsChildren,
+            onMouseEnter: () => preloadRoute(tab.key),
+          };
         }
         if (tab.key === '/xray') {
-          return { key: tab.key, icon: <Icon />, label: tab.title, children: xrayChildren };
+          return {
+            key: tab.key,
+            icon: <Icon />,
+            label: tab.title,
+            children: xrayChildren,
+            onMouseEnter: () => preloadRoute(tab.key),
+          };
         }
-        return { key: tab.key, icon: <Icon />, label: tab.title, title: '' };
+        return {
+          key: tab.key,
+          icon: <Icon />,
+          label: tab.title,
+          title: '',
+          onMouseEnter: () => preloadRoute(tab.key),
+        };
       }),
     [settingsChildren, xrayChildren],
   );

@@ -30,6 +30,7 @@ func (a *HashemController) initRouter(g *gin.RouterGroup) {
 	g.POST("/watchdog", a.watchdog)
 	g.POST("/sync-inbounds", a.syncInbounds)
 	g.POST("/install", a.install)
+	g.POST("/remove", a.remove)
 }
 
 func (a *HashemController) status(c *gin.Context) {
@@ -84,6 +85,11 @@ func (a *HashemController) syncInbounds(c *gin.Context) {
 func (a *HashemController) install(c *gin.Context) {
 	out, err := a.hashemService.Install()
 	jsonObj(c, out, err)
+}
+
+func (a *HashemController) remove(c *gin.Context) {
+	err := a.hashemService.Remove()
+	jsonMsg(c, "tunnel removed", err)
 }
 
 func (a *HashemController) setupSSH(c *gin.Context) {

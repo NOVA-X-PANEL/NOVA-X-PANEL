@@ -2523,7 +2523,8 @@
         "watchdogSuccess": "تنظیمات واچ‌داگ ذخیره شد",
         "syncSuccess": "تعداد {count} پورت اینباند با تانل سینک شد",
         "setupSuccess": "کانفیگ تانل با موفقیت اعمال شد",
-        "installSuccess": "هسته تانل هاشم با موفقیت نصب شد"
+        "installSuccess": "هسته تانل هاشم با موفقیت نصب شد",
+        "removeSuccess": "تانل با موفقیت حذف و پاکسازی شد"
       },
       "tabSSHAuto": "اتصال خودکار با SSH",
       "tabOneLiner": "دستور تک‌خطی سرور ایران",
@@ -2542,7 +2543,15 @@
       "oneLinerModalDesc": "کافیست دستور زیر را کپی کرده و در ترمینال سرور ایران اجرا نمایید:",
       "copyCommand": "کپی دستور",
       "commandCopied": "دستور با موفقیت در کلیپ‌بورد کپی شد",
-      "sshConnecting": "در حال برقراری اتصال SSH به سرور ایران و نصب تانل..."
+      "sshConnecting": "در حال برقراری اتصال SSH به سرور ایران و نصب تانل...",
+      "statusConnecting": "در حال اتصال به سرور ایران...",
+      "statusDisconnected": "قطع ارتباط",
+      "frpRunning": "فعال و متصل",
+      "frpConnecting": "در حال تلاش برای اتصال...",
+      "frpStopped": "متوقف شده",
+      "btnRemoveTunnel": "حذف تانل",
+      "removeConfirmTitle": "آیا از حذف کامل تانل اطمینان دارید؟",
+      "removeConfirmDesc": "تمامی سرویس‌ها و اینترفیس‌های تانل از سرور خارج پاکسازی خواهند شد."
     }
   },
   "tgbot": {

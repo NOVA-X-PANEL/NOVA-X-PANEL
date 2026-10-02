@@ -15,6 +15,7 @@ import {
   Layout,
   message,
   Modal,
+  Popconfirm,
   Radio,
   Row,
   Select,
@@ -30,6 +31,7 @@ import {
   CheckCircleOutlined,
   CodeOutlined,
   CopyOutlined,
+  DeleteOutlined,
   DownloadOutlined,
   GatewayOutlined,
   NodeIndexOutlined,
@@ -70,6 +72,8 @@ export default function HashemPage() {
     isGeneratingOneLiner,
     install,
     isInstalling,
+    removeTunnel,
+    isRemovingTunnel,
   } = useHashemMutations();
 
   const [setupModalOpen, setSetupModalOpen] = useState(false);
@@ -79,6 +83,15 @@ export default function HashemPage() {
   const [sshForm] = Form.useForm();
   const [oneLinerForm] = Form.useForm();
   const [form] = Form.useForm<HashemSetupPayload>();
+
+  const handleRemove = async () => {
+    try {
+      await removeTunnel();
+      refetch();
+    } catch {
+      // toast shown by mutation
+    }
+  };
 
   const handleCarrierChange = async (carrier: string) => {
     await setCarrier(carrier);
@@ -150,7 +163,7 @@ export default function HashemPage() {
     return classes.join(' ');
   }, [isDark, isUltra]);
 
-  const isHealthy = status.running && status.frpStatus === 'active';
+  const isHealthy = status.running && status.frpStatus === 'active' && status.pingMs > 0;
 
   return (
     <ConfigProvider theme={antdThemeConfig}>
@@ -167,10 +180,14 @@ export default function HashemPage() {
                   <span className="hashem-hero-title-text">{t('pages.hashem.title')}</span>
                   {status.installed ? (
                     <Tag
-                      color={isHealthy ? 'success' : 'warning'}
+                      color={isHealthy ? 'success' : status.frpStatus === 'connecting' ? 'warning' : 'error'}
                       style={{ marginLeft: 8, fontSize: 13, padding: '2px 10px', borderRadius: 12 }}
                     >
-                      {isHealthy ? t('pages.hashem.statusHealthy') : t('pages.hashem.statusDegraded')}
+                      {isHealthy
+                        ? t('pages.hashem.statusHealthy')
+                        : status.frpStatus === 'connecting'
+                          ? t('pages.hashem.statusConnecting')
+                          : t('pages.hashem.statusDisconnected')}
                     </Tag>
                   ) : (
                     <Tag color="error" style={{ marginLeft: 8, borderRadius: 12 }}>
@@ -200,6 +217,18 @@ export default function HashemPage() {
                     <Button icon={<SwapOutlined />} onClick={handleRestart} loading={isRestarting}>
                       {t('pages.hashem.restartBtn')}
                     </Button>
+                    <Popconfirm
+                      title={t('pages.hashem.removeConfirmTitle')}
+                      description={t('pages.hashem.removeConfirmDesc')}
+                      onConfirm={handleRemove}
+                      okText={t('pages.hashem.btnRemoveTunnel')}
+                      cancelText={t('cancel')}
+                      okButtonProps={{ danger: true, loading: isRemovingTunnel }}
+                    >
+                      <Button danger icon={<DeleteOutlined />} loading={isRemovingTunnel}>
+                        {t('pages.hashem.btnRemoveTunnel')}
+                      </Button>
+                    </Popconfirm>
                   </>
                 )}
                 <Button
@@ -355,10 +384,30 @@ export default function HashemPage() {
                   >
                     <div style={{ marginBottom: 14 }}>
                       <Badge
-                        status={status.frpStatus === 'active' ? 'success' : 'error'}
+                        status={
+                          status.frpStatus === 'active'
+                            ? 'success'
+                            : status.frpStatus === 'connecting'
+                              ? 'warning'
+                              : 'error'
+                        }
                         text={
-                          <Text strong style={{ color: status.frpStatus === 'active' ? '#a855f7' : '#ff4d4f' }}>
-                            {status.frpStatus === 'active' ? t('pages.hashem.frpActive') : t('pages.hashem.frpInactive')}
+                          <Text
+                            strong
+                            style={{
+                              color:
+                                status.frpStatus === 'active'
+                                  ? '#52c41a'
+                                  : status.frpStatus === 'connecting'
+                                    ? '#faad14'
+                                    : '#ff4d4f',
+                            }}
+                          >
+                            {status.frpStatus === 'active'
+                              ? t('pages.hashem.frpRunning')
+                              : status.frpStatus === 'connecting'
+                                ? t('pages.hashem.frpConnecting')
+                                : t('pages.hashem.frpStopped')}
                           </Text>
                         }
                       />

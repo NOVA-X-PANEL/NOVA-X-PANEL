@@ -2523,7 +2523,8 @@
         "watchdogSuccess": "Watchdog setting updated",
         "syncSuccess": "Successfully synced {count} inbound ports to tunnel",
         "setupSuccess": "Tunnel configuration applied successfully",
-        "installSuccess": "Hashem Tunnel core installed successfully"
+        "installSuccess": "Hashem Tunnel core installed successfully",
+        "removeSuccess": "Tunnel successfully removed"
       },
       "tabSSHAuto": "Automatic SSH Setup",
       "tabOneLiner": "Iran Server One-Liner",
@@ -2542,7 +2543,15 @@
       "oneLinerModalDesc": "Copy and run the following command in your Iran server terminal:",
       "copyCommand": "Copy Command",
       "commandCopied": "Command copied to clipboard successfully",
-      "sshConnecting": "Connecting to Iran server via SSH and setting up tunnel..."
+      "sshConnecting": "Connecting to Iran server via SSH and setting up tunnel...",
+      "statusConnecting": "Connecting to Iran server...",
+      "statusDisconnected": "Disconnected",
+      "frpRunning": "Active & Connected",
+      "frpConnecting": "Connecting...",
+      "frpStopped": "Stopped",
+      "btnRemoveTunnel": "Remove Tunnel",
+      "removeConfirmTitle": "Are you sure you want to remove the tunnel?",
+      "removeConfirmDesc": "All tunnel interfaces, services, and configurations will be completely removed."
     }
   },
   "tgbot": {

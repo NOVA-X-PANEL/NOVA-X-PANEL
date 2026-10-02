@@ -166,6 +166,19 @@ export function useHashemMutations() {
     onError: (err: Error) => message.error(err.message),
   });
 
+  const removeMutation = useMutation({
+    mutationFn: async () => {
+      const res = await HttpUtil.post('/panel/api/hashem/remove');
+      if (!res?.success) throw new Error(res?.msg || 'Remove failed');
+      return res;
+    },
+    onSuccess: () => {
+      message.success(t('pages.hashem.toasts.removeSuccess'));
+      invalidate();
+    },
+    onError: (err: Error) => message.error(err.message),
+  });
+
   return {
     setCarrier: setCarrierMutation.mutateAsync,
     isSettingCarrier: setCarrierMutation.isPending,
@@ -183,5 +196,7 @@ export function useHashemMutations() {
     isGeneratingOneLiner: generateOneLinerMutation.isPending,
     install: installMutation.mutateAsync,
     isInstalling: installMutation.isPending,
+    removeTunnel: removeMutation.mutateAsync,
+    isRemovingTunnel: removeMutation.isPending,
   };
 }

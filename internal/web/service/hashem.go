@@ -157,12 +157,21 @@ func (s *HashemService) GetStatus() (*HashemStatus, error) {
 	token := ""
 	if _, err := os.Stat(frpcTomlPath); err == nil {
 		status.Role = "foreign"
-		status.FrpStatus = s.checkServiceStatus("frpc")
 		token = s.parseFrpConfig(frpcTomlPath, status)
+		baseStatus := s.checkServiceStatus("frpc")
+		if baseStatus == "active" {
+			if s.isFrpConnected(status.RemoteGreIP, status.FrpPort) {
+				status.FrpStatus = "active"
+			} else {
+				status.FrpStatus = "connecting"
+			}
+		} else {
+			status.FrpStatus = baseStatus
+		}
 	} else if _, err := os.Stat(frpsTomlPath); err == nil {
 		status.Role = "iran"
-		status.FrpStatus = s.checkServiceStatus("frps")
 		token = s.parseFrpConfig(frpsTomlPath, status)
+		status.FrpStatus = s.checkServiceStatus("frps")
 	} else {
 		status.Role = "none"
 	}
@@ -170,7 +179,7 @@ func (s *HashemService) GetStatus() (*HashemStatus, error) {
 	s.parseGreInterface(status)
 
 	if status.RemoteGreIP != "" {
-		status.PingMs = s.measurePing(status.RemoteGreIP, "gre-tunnel")
+		status.PingMs = s.measurePing(status.RemoteGreIP, "gre-tunnel", status.FrpPort)
 	}
 
 	if status.Role == "foreign" && status.RemotePubIP != "" && status.FrpPort > 0 && token != "" {
@@ -282,11 +291,41 @@ func (s *HashemService) checkServiceStatus(svc string) string {
 	return st
 }
 
-func (s *HashemService) measurePing(ip, dev string) float64 {
+func (s *HashemService) isFrpConnected(peerGre string, port int) bool {
+	if peerGre == "" && port <= 0 {
+		return false
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	filter := ""
+	if peerGre != "" && port > 0 {
+		filter = fmt.Sprintf("dst %s or dport = :%d", peerGre, port)
+	} else if peerGre != "" {
+		filter = fmt.Sprintf("dst %s", peerGre)
+	} else {
+		filter = fmt.Sprintf("dport = :%d", port)
+	}
+
+	cmd := exec.CommandContext(ctx, "bash", "-c", fmt.Sprintf("ss -t state established '%s' 2>/dev/null", filter))
+	out, err := cmd.Output()
+	if err == nil {
+		lines := strings.Split(strings.TrimSpace(string(out)), "\n")
+		return len(lines) > 1
+	}
+	return false
+}
+
+func (s *HashemService) measurePing(ip, dev string, frpPort int) float64 {
 	// 1. Try reading real-time TCP RTT directly from active FRP tunnel socket in kernel
 	ctx1, cancel1 := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel1()
-	cmd := exec.CommandContext(ctx1, "bash", "-c", "ss -tin '( dport = :30000:60000 or sport = :30000:60000 )' 2>/dev/null | grep -oP '(minrtt|rtt):\\K[0-9.]+' | head -n 1")
+
+	filter := fmt.Sprintf("dst %s", ip)
+	if frpPort > 0 {
+		filter = fmt.Sprintf("dst %s or dport = :%d", ip, frpPort)
+	}
+	cmd := exec.CommandContext(ctx1, "bash", "-c", fmt.Sprintf("ss -tin state established '%s' 2>/dev/null | grep -oP '(minrtt|rtt):\\K[0-9.]+' | head -n 1", filter))
 	if out, err := cmd.Output(); err == nil {
 		str := strings.TrimSpace(string(out))
 		if val, err := strconv.ParseFloat(str, 64); err == nil && val > 0 {
@@ -709,4 +748,36 @@ WantedBy=multi-user.target
 		FrpPort:         frpPort,
 		Token:           token,
 	}, nil
+}
+
+func (s *HashemService) Remove() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+
+	// 1. Stop and disable FRP services
+	_ = exec.CommandContext(ctx, "systemctl", "stop", "frpc").Run()
+	_ = exec.CommandContext(ctx, "systemctl", "disable", "frpc").Run()
+	_ = exec.CommandContext(ctx, "systemctl", "stop", "frps").Run()
+	_ = exec.CommandContext(ctx, "systemctl", "disable", "frps").Run()
+	_ = os.Remove("/etc/systemd/system/frpc.service")
+	_ = os.Remove("/etc/systemd/system/frps.service")
+	_ = os.RemoveAll("/etc/frp")
+
+	// 2. Delete GRE tunnel interface
+	_ = exec.CommandContext(ctx, "ip", "link", "set", "gre-tunnel", "down").Run()
+	_ = exec.CommandContext(ctx, "ip", "link", "del", "gre-tunnel").Run()
+
+	// 3. Remove FoU listeners
+	_ = exec.CommandContext(ctx, "ip", "fou", "del", "port", "443").Run()
+	_ = exec.CommandContext(ctx, "ip", "fou", "del", "port", "19998").Run()
+	_ = exec.CommandContext(ctx, "ip", "fou", "del", "port", "55555").Run()
+
+	// 4. Remove gre-panel config directory
+	_ = os.RemoveAll("/etc/gre-panel")
+
+	// 5. Reload systemd daemon
+	_ = exec.CommandContext(ctx, "systemctl", "daemon-reload").Run()
+
+	logger.Info("Hashem tunnel removed completely from host")
+	return nil
 }

@@ -23,6 +23,8 @@ func NewHashemController(g *gin.RouterGroup) *HashemController {
 func (a *HashemController) initRouter(g *gin.RouterGroup) {
 	g.GET("/status", a.status)
 	g.POST("/setup", a.setup)
+	g.POST("/setup-ssh", a.setupSSH)
+	g.POST("/generate-oneliner", a.generateOneLiner)
 	g.POST("/carrier", a.carrier)
 	g.POST("/restart", a.restart)
 	g.POST("/watchdog", a.watchdog)
@@ -82,4 +84,24 @@ func (a *HashemController) syncInbounds(c *gin.Context) {
 func (a *HashemController) install(c *gin.Context) {
 	out, err := a.hashemService.Install()
 	jsonObj(c, out, err)
+}
+
+func (a *HashemController) setupSSH(c *gin.Context) {
+	var form service.HashemSSHSetupForm
+	if err := c.ShouldBindJSON(&form); err != nil {
+		jsonMsg(c, "داده‌های اتصال SSH نامعتبر است", err)
+		return
+	}
+	res, err := a.hashemService.SetupSSH(form)
+	jsonObj(c, res, err)
+}
+
+func (a *HashemController) generateOneLiner(c *gin.Context) {
+	var form service.HashemOneLinerForm
+	if err := c.ShouldBindJSON(&form); err != nil {
+		jsonMsg(c, "داده‌های تولید دستور نامعتبر است", err)
+		return
+	}
+	res, err := a.hashemService.GenerateOneLiner(form)
+	jsonObj(c, res, err)
 }

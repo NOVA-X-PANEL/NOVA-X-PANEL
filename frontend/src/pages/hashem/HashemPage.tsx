@@ -13,6 +13,7 @@ import {
   Input,
   InputNumber,
   Layout,
+  message,
   Modal,
   Radio,
   Row,
@@ -20,16 +21,21 @@ import {
   Space,
   Spin,
   Switch,
+  Tabs,
   Tag,
   Typography,
 } from 'antd';
 import {
+  ApiOutlined,
   CheckCircleOutlined,
+  CodeOutlined,
+  CopyOutlined,
   DownloadOutlined,
   GatewayOutlined,
   NodeIndexOutlined,
   ReloadOutlined,
   SendOutlined,
+  SettingOutlined,
   SwapOutlined,
   SyncOutlined,
   ThunderboltOutlined,
@@ -58,11 +64,20 @@ export default function HashemPage() {
     isSyncingInbounds,
     setup,
     isSettingUp,
+    setupSSH,
+    isSettingUpSSH,
+    generateOneLiner,
+    isGeneratingOneLiner,
     install,
     isInstalling,
   } = useHashemMutations();
 
   const [setupModalOpen, setSetupModalOpen] = useState(false);
+  const [setupTab, setSetupTab] = useState<'ssh' | 'oneliner' | 'advanced'>('ssh');
+  const [generatedCmd, setGeneratedCmd] = useState<string | null>(null);
+
+  const [sshForm] = Form.useForm();
+  const [oneLinerForm] = Form.useForm();
   const [form] = Form.useForm<HashemSetupPayload>();
 
   const handleCarrierChange = async (carrier: string) => {
@@ -83,6 +98,43 @@ export default function HashemPage() {
 
   const handleInstall = async () => {
     await install();
+  };
+
+  const handleSSHSubmit = async (values: any) => {
+    try {
+      await setupSSH({
+        iranIp: values.iranIp,
+        sshPort: values.sshPort || 22,
+        sshUser: values.sshUser || 'root',
+        sshPassword: values.sshPassword,
+        ports: values.ports || status.ports?.join(', ') || '8080',
+        carrier: 'fou:443',
+      });
+      setSetupModalOpen(false);
+      sshForm.resetFields();
+    } catch {
+      // toast shown by mutation
+    }
+  };
+
+  const handleOneLinerSubmit = async (values: any) => {
+    try {
+      const res = await generateOneLiner({
+        iranIp: values.iranIp,
+        ports: values.ports || status.ports?.join(', ') || '8080',
+        carrier: 'fou:443',
+      });
+      if (res?.oneLinerCommand) {
+        setGeneratedCmd(res.oneLinerCommand);
+      }
+    } catch {
+      // toast shown by mutation
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    message.success(t('pages.hashem.commandCopied'));
   };
 
   const handleSetupSubmit = async (values: HashemSetupPayload) => {
@@ -422,76 +474,271 @@ export default function HashemPage() {
 
         {/* Setup Tunnel Modal */}
         <Modal
-          title={t('pages.hashem.setupModalTitle')}
+          title={
+            <Space>
+              <ThunderboltOutlined style={{ color: '#00f2fe' }} />
+              <span>{t('pages.hashem.setupModalTitle')}</span>
+            </Space>
+          }
           open={setupModalOpen}
-          onCancel={() => setSetupModalOpen(false)}
+          onCancel={() => {
+            setSetupModalOpen(false);
+            setGeneratedCmd(null);
+          }}
           footer={null}
           destroyOnClose
+          width={640}
           wrapClassName="hashem-modal"
         >
-          <Form
-            form={form}
-            layout="vertical"
-            initialValues={{
-              role: 'foreign',
-              carrier: 'fou:443',
-              frpPort: 36067,
-              ports: status.ports?.join(', ') || '443, 8080, 2053',
-            }}
-            onFinish={handleSetupSubmit}
-          >
-            <Form.Item name="role" label={t('pages.hashem.serverRole')} rules={[{ required: true }]}>
-              <Radio.Group buttonStyle="solid">
-                <Radio.Button value="foreign">{t('pages.hashem.roleForeign')}</Radio.Button>
-                <Radio.Button value="iran">{t('pages.hashem.roleIran')}</Radio.Button>
-              </Radio.Group>
-            </Form.Item>
+          <Tabs
+            activeKey={setupTab}
+            onChange={(k) => setSetupTab(k as any)}
+            items={[
+              {
+                key: 'ssh',
+                label: (
+                  <Space>
+                    <ApiOutlined />
+                    <span>{t('pages.hashem.tabSSHAuto')}</span>
+                  </Space>
+                ),
+                children: (
+                  <Form
+                    form={sshForm}
+                    layout="vertical"
+                    initialValues={{
+                      sshPort: 22,
+                      sshUser: 'root',
+                      ports: status.ports?.join(', ') || '8080',
+                    }}
+                    onFinish={handleSSHSubmit}
+                    style={{ marginTop: 12 }}
+                  >
+                    <Alert
+                      type="info"
+                      showIcon
+                      message="راه‌اندازی کاملاً خودکار تانل با اتصال SSH"
+                      description="با وارد کردن آی‌پی و رمز عبور سرور ایران، پنل مستقیماً از طریق SSH به سرور ایران متصل شده و تمامی مراحل نصب و کانفیگ تانل را به صورت خودکار انجام می‌دهد."
+                      style={{ marginBottom: 16 }}
+                    />
 
-            <Form.Item
-              name="remotePub"
-              label={t('pages.hashem.peerPublicIp')}
-              rules={[{ required: true, message: t('pages.hashem.remotePubRequired') }]}
-            >
-              <Input placeholder="e.g. 77.237.90.175 or 94.183.210.29" />
-            </Form.Item>
+                    <Form.Item
+                      name="iranIp"
+                      label={t('pages.hashem.iranIpLabel')}
+                      rules={[{ required: true, message: t('pages.hashem.iranIpRequired') }]}
+                    >
+                      <Input placeholder="مثلاً 94.183.210.29" />
+                    </Form.Item>
 
-            <Form.Item name="localPub" label={t('pages.hashem.thisServerPublicIp')}>
-              <Input placeholder="Auto-detected if blank" />
-            </Form.Item>
+                    <Row gutter={16}>
+                      <Col span={14}>
+                        <Form.Item
+                          name="sshPassword"
+                          label={t('pages.hashem.sshPasswordLabel')}
+                          rules={[{ required: true, message: t('pages.hashem.sshPasswordRequired') }]}
+                        >
+                          <Input.Password placeholder="Password..." />
+                        </Form.Item>
+                      </Col>
+                      <Col span={5}>
+                        <Form.Item name="sshPort" label={t('pages.hashem.sshPortLabel')}>
+                          <InputNumber style={{ width: '100%' }} min={1} max={65535} />
+                        </Form.Item>
+                      </Col>
+                      <Col span={5}>
+                        <Form.Item name="sshUser" label={t('pages.hashem.sshUserLabel')}>
+                          <Input />
+                        </Form.Item>
+                      </Col>
+                    </Row>
 
-            <Form.Item name="frpPort" label={t('pages.hashem.frpPortLabel')}>
-              <InputNumber style={{ width: '100%' }} min={1000} max={65535} />
-            </Form.Item>
+                    <Form.Item
+                      name="ports"
+                      label={t('pages.hashem.portsToTunnel')}
+                      extra={t('pages.hashem.portsToTunnelExtra')}
+                    >
+                      <Input placeholder="8080" />
+                    </Form.Item>
 
-            <Form.Item name="carrier" label={t('pages.hashem.carrierModeLabel')}>
-              <Select
-                options={[
-                  { label: 'FoU:443 (Recommended for bypassing filtering)', value: 'fou:443' },
-                  { label: 'Direct GRE (Raw IP proto 47)', value: 'direct' },
-                  { label: 'WSS:8443 (WebSocket TLS)', value: 'wss:8443' },
-                ]}
-              />
-            </Form.Item>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 24 }}>
+                      <Button onClick={() => setSetupModalOpen(false)}>{t('cancel')}</Button>
+                      <Button
+                        type="primary"
+                        htmlType="submit"
+                        loading={isSettingUpSSH}
+                        className="hashem-btn-setup"
+                        icon={<ApiOutlined />}
+                      >
+                        {isSettingUpSSH ? t('pages.hashem.sshConnecting') : t('pages.hashem.autoSetupBtn')}
+                      </Button>
+                    </div>
+                  </Form>
+                ),
+              },
+              {
+                key: 'oneliner',
+                label: (
+                  <Space>
+                    <CodeOutlined />
+                    <span>{t('pages.hashem.tabOneLiner')}</span>
+                  </Space>
+                ),
+                children: (
+                  <Form
+                    form={oneLinerForm}
+                    layout="vertical"
+                    initialValues={{
+                      ports: status.ports?.join(', ') || '8080',
+                    }}
+                    onFinish={handleOneLinerSubmit}
+                    style={{ marginTop: 12 }}
+                  >
+                    <Alert
+                      type="info"
+                      showIcon
+                      message="دستور تک‌خطی سرور ایران"
+                      description="اگر مایل به ارائه پسورد SSH نیستید، کافیست آی‌پی ایران و پورت‌ها را مشخص کنید. پنل خارج آماده شده و یک دستور تک‌خطی به شما تحویل می‌دهد تا در ترمینال ایران اجرا کنید."
+                      style={{ marginBottom: 16 }}
+                    />
 
-            <Form.Item name="ports" label={t('pages.hashem.portsLabel')} extra={t('pages.hashem.portsExtra')}>
-              <Input placeholder="443, 8080, 2053" />
-            </Form.Item>
+                    <Form.Item
+                      name="iranIp"
+                      label={t('pages.hashem.iranIpLabel')}
+                      rules={[{ required: true, message: t('pages.hashem.iranIpRequired') }]}
+                    >
+                      <Input placeholder="مثلاً 94.183.210.29" />
+                    </Form.Item>
 
-            <Form.Item
-              name="bundle"
-              label={t('pages.hashem.bundleImportLabel')}
-              extra={t('pages.hashem.bundleImportExtra')}
-            >
-              <Input placeholder="hsh1_..." />
-            </Form.Item>
+                    <Form.Item
+                      name="ports"
+                      label={t('pages.hashem.portsToTunnel')}
+                      extra={t('pages.hashem.portsToTunnelExtra')}
+                    >
+                      <Input placeholder="8080" />
+                    </Form.Item>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 24 }}>
-              <Button onClick={() => setSetupModalOpen(false)}>{t('cancel')}</Button>
-              <Button type="primary" htmlType="submit" loading={isSettingUp} className="hashem-btn-setup">
-                {t('pages.hashem.applyTunnelBtn')}
-              </Button>
-            </div>
-          </Form>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
+                      <Button
+                        type="primary"
+                        htmlType="submit"
+                        loading={isGeneratingOneLiner}
+                        className="hashem-btn-setup"
+                        icon={<CodeOutlined />}
+                      >
+                        {t('pages.hashem.generatingOneLinerBtn')}
+                      </Button>
+                    </div>
+
+                    {generatedCmd && (
+                      <div style={{ marginTop: 20 }}>
+                        <Text strong style={{ color: '#00f2fe' }}>
+                          {t('pages.hashem.oneLinerModalDesc')}
+                        </Text>
+                        <div
+                          style={{
+                            marginTop: 8,
+                            padding: 12,
+                            background: 'rgba(0, 0, 0, 0.4)',
+                            border: '1px solid rgba(0, 242, 254, 0.3)',
+                            borderRadius: 8,
+                            wordBreak: 'break-all',
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: '#00f2fe',
+                          }}
+                        >
+                          {generatedCmd}
+                        </div>
+                        <Button
+                          type="primary"
+                          icon={<CopyOutlined />}
+                          style={{ marginTop: 12, width: '100%' }}
+                          onClick={() => copyToClipboard(generatedCmd)}
+                        >
+                          {t('pages.hashem.copyCommand')}
+                        </Button>
+                      </div>
+                    )}
+                  </Form>
+                ),
+              },
+              {
+                key: 'advanced',
+                label: (
+                  <Space>
+                    <SettingOutlined />
+                    <span>{t('pages.hashem.tabAdvanced')}</span>
+                  </Space>
+                ),
+                children: (
+                  <Form
+                    form={form}
+                    layout="vertical"
+                    initialValues={{
+                      role: 'foreign',
+                      carrier: 'fou:443',
+                      frpPort: 36067,
+                      ports: status.ports?.join(', ') || '8080',
+                    }}
+                    onFinish={handleSetupSubmit}
+                    style={{ marginTop: 12 }}
+                  >
+                    <Form.Item name="role" label={t('pages.hashem.serverRole')} rules={[{ required: true }]}>
+                      <Radio.Group buttonStyle="solid">
+                        <Radio.Button value="foreign">{t('pages.hashem.roleForeign')}</Radio.Button>
+                        <Radio.Button value="iran">{t('pages.hashem.roleIran')}</Radio.Button>
+                      </Radio.Group>
+                    </Form.Item>
+
+                    <Form.Item
+                      name="remotePub"
+                      label={t('pages.hashem.peerPublicIp')}
+                      rules={[{ required: true, message: t('pages.hashem.remotePubRequired') }]}
+                    >
+                      <Input placeholder="e.g. 94.183.210.29" />
+                    </Form.Item>
+
+                    <Form.Item name="localPub" label={t('pages.hashem.thisServerPublicIp')}>
+                      <Input placeholder="Auto-detected if blank" />
+                    </Form.Item>
+
+                    <Form.Item name="frpPort" label={t('pages.hashem.frpPortLabel')}>
+                      <InputNumber style={{ width: '100%' }} min={1000} max={65535} />
+                    </Form.Item>
+
+                    <Form.Item name="carrier" label={t('pages.hashem.carrierModeLabel')}>
+                      <Select
+                        options={[
+                          { label: 'FoU:443 (Recommended for bypassing filtering)', value: 'fou:443' },
+                          { label: 'Direct GRE (Raw IP proto 47)', value: 'direct' },
+                          { label: 'WSS:8443 (WebSocket TLS)', value: 'wss:8443' },
+                        ]}
+                      />
+                    </Form.Item>
+
+                    <Form.Item name="ports" label={t('pages.hashem.portsLabel')} extra={t('pages.hashem.portsExtra')}>
+                      <Input placeholder="8080" />
+                    </Form.Item>
+
+                    <Form.Item
+                      name="bundle"
+                      label={t('pages.hashem.bundleImportLabel')}
+                      extra={t('pages.hashem.bundleImportExtra')}
+                    >
+                      <Input placeholder="hsh1_..." />
+                    </Form.Item>
+
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 24 }}>
+                      <Button onClick={() => setSetupModalOpen(false)}>{t('cancel')}</Button>
+                      <Button type="primary" htmlType="submit" loading={isSettingUp} className="hashem-btn-setup">
+                        {t('pages.hashem.applyTunnelBtn')}
+                      </Button>
+                    </div>
+                  </Form>
+                ),
+              },
+            ]}
+          />
         </Modal>
       </Layout>
     </ConfigProvider>

@@ -6,14 +6,47 @@ import { HttpUtil } from '@/utils';
 import { keys } from '@/api/queryKeys';
 
 export interface HashemSetupPayload {
-  role: 'foreign' | 'iran';
+  role?: string;
   localPub?: string;
-  remotePub?: string;
+  remotePub: string;
   frpPort?: number;
   token?: string;
   ports?: string;
   carrier?: string;
   bundle?: string;
+}
+
+export interface HashemSSHSetupPayload {
+  iranIp: string;
+  sshPort?: number;
+  sshUser?: string;
+  sshPassword: string;
+  ports?: string;
+  carrier?: string;
+}
+
+export interface HashemSSHSetupResult {
+  success: boolean;
+  message: string;
+  iranIp: string;
+  foreignIp: string;
+  ports: string;
+  log: string;
+}
+
+export interface HashemOneLinerPayload {
+  iranIp: string;
+  ports?: string;
+  carrier?: string;
+}
+
+export interface HashemOneLinerResult {
+  oneLinerCommand: string;
+  foreignIp: string;
+  iranIp: string;
+  ports: string;
+  frpPort: number;
+  token: string;
 }
 
 export function useHashemMutations() {
@@ -87,6 +120,31 @@ export function useHashemMutations() {
     onError: (err: Error) => message.error(err.message),
   });
 
+  const setupSSHMutation = useMutation({
+    mutationFn: async (payload: HashemSSHSetupPayload) => {
+      const res = await HttpUtil.post<HashemSSHSetupResult>('/panel/api/hashem/setup-ssh', payload);
+      if (!res?.success) throw new Error(res?.msg || 'SSH Setup failed');
+      return res.obj;
+    },
+    onSuccess: (data) => {
+      message.success(data?.message || t('pages.hashem.toasts.setupSuccess'));
+      invalidate();
+    },
+    onError: (err: Error) => message.error(err.message),
+  });
+
+  const generateOneLinerMutation = useMutation({
+    mutationFn: async (payload: HashemOneLinerPayload) => {
+      const res = await HttpUtil.post<HashemOneLinerResult>('/panel/api/hashem/generate-oneliner', payload);
+      if (!res?.success) throw new Error(res?.msg || 'Generating one-liner failed');
+      return res.obj;
+    },
+    onSuccess: () => {
+      invalidate();
+    },
+    onError: (err: Error) => message.error(err.message),
+  });
+
   const installMutation = useMutation({
     mutationFn: async () => {
       const res = await HttpUtil.post<string>('/panel/api/hashem/install');
@@ -111,6 +169,10 @@ export function useHashemMutations() {
     isSyncingInbounds: syncInboundsMutation.isPending,
     setup: setupMutation.mutateAsync,
     isSettingUp: setupMutation.isPending,
+    setupSSH: setupSSHMutation.mutateAsync,
+    isSettingUpSSH: setupSSHMutation.isPending,
+    generateOneLiner: generateOneLinerMutation.mutateAsync,
+    isGeneratingOneLiner: generateOneLinerMutation.isPending,
     install: installMutation.mutateAsync,
     isInstalling: installMutation.isPending,
   };

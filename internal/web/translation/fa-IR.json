@@ -2524,7 +2524,25 @@
         "syncSuccess": "تعداد {count} پورت اینباند با تانل سینک شد",
         "setupSuccess": "کانفیگ تانل با موفقیت اعمال شد",
         "installSuccess": "هسته تانل هاشم با موفقیت نصب شد"
-      }
+      },
+      "tabSSHAuto": "اتصال خودکار با SSH",
+      "tabOneLiner": "دستور تک‌خطی سرور ایران",
+      "tabAdvanced": "تنظیمات پیشرفته",
+      "iranIpLabel": "آدرس آی‌پی سرور ایران",
+      "iranIpRequired": "وارد کردن آی‌پی سرور ایران الزامی است",
+      "sshPortLabel": "پورت SSH سرور ایران",
+      "sshUserLabel": "نام کاربری SSH",
+      "sshPasswordLabel": "رمز عبور سرور ایران (Root Password)",
+      "sshPasswordRequired": "وارد کردن رمز سرور ایران الزامی است",
+      "portsToTunnel": "پورت‌های مورد نظر برای تانل",
+      "portsToTunnelExtra": "پورت‌هایی که می‌خواهید ترافیکشان به این سرور تانل شود (مثل 8080)",
+      "autoSetupBtn": "اتصال و راه‌اندازی خودکار تانل",
+      "generatingOneLinerBtn": "تولید دستور تک‌خطی",
+      "oneLinerModalTitle": "دستور تک‌خطی سرور ایران",
+      "oneLinerModalDesc": "کافیست دستور زیر را کپی کرده و در ترمینال سرور ایران اجرا نمایید:",
+      "copyCommand": "کپی دستور",
+      "commandCopied": "دستور با موفقیت در کلیپ‌بورد کپی شد",
+      "sshConnecting": "در حال برقراری اتصال SSH به سرور ایران و نصب تانل..."
     }
   },
   "tgbot": {

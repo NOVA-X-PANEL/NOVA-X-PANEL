@@ -3,8 +3,11 @@ package service
 import (
 	"bufio"
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"net"
 	"os"
 	"os/exec"
 	"regexp"
@@ -13,6 +16,7 @@ import (
 	"time"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"golang.org/x/crypto/ssh"
 )
 
 const (
@@ -72,6 +76,39 @@ type HashemSetupForm struct {
 	Ports     string `json:"ports"`
 	Carrier   string `json:"carrier"`
 	Bundle    string `json:"bundle"`
+}
+
+type HashemSSHSetupForm struct {
+	IranIP      string `json:"iranIp"`
+	SSHPort     int    `json:"sshPort"`
+	SSHUser     string `json:"sshUser"`
+	SSHPassword string `json:"sshPassword"`
+	Ports       string `json:"ports"`
+	Carrier     string `json:"carrier"`
+}
+
+type HashemSSHSetupResult struct {
+	Success   bool   `json:"success"`
+	Message   string `json:"message"`
+	IranIP    string `json:"iranIp"`
+	ForeignIP string `json:"foreignIp"`
+	Ports     string `json:"ports"`
+	Log       string `json:"log"`
+}
+
+type HashemOneLinerForm struct {
+	IranIP  string `json:"iranIp"`
+	Ports   string `json:"ports"`
+	Carrier string `json:"carrier"`
+}
+
+type HashemOneLinerResult struct {
+	OneLinerCommand string `json:"oneLinerCommand"`
+	ForeignIP       string `json:"foreignIp"`
+	IranIP          string `json:"iranIp"`
+	Ports           string `json:"ports"`
+	FrpPort         int    `json:"frpPort"`
+	Token           string `json:"token"`
 }
 
 type HashemService struct {
@@ -400,4 +437,223 @@ func (s *HashemService) Install() (string, error) {
 		return string(out), fmt.Errorf("install failed: %s", string(out))
 	}
 	return string(out), nil
+}
+
+func (s *HashemService) getForeignPubIP() string {
+	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "curl", "-sSL", "--max-time", "3", "https://api.ipify.org")
+	if out, err := cmd.Output(); err == nil {
+		ip := strings.TrimSpace(string(out))
+		if len(ip) >= 7 && len(ip) <= 15 {
+			return ip
+		}
+	}
+
+	cmd = exec.CommandContext(ctx, "bash", "-c", "ip route get 1.1.1.1 2>/dev/null | awk '/src/ {for (i=1; i<=NF; i++) if ($i==\"src\") {print $(i+1); exit}}'")
+	if out, err := cmd.Output(); err == nil {
+		ip := strings.TrimSpace(string(out))
+		if len(ip) >= 7 && len(ip) <= 15 {
+			return ip
+		}
+	}
+
+	return ""
+}
+
+func (s *HashemService) resolveTunnelPorts(portsStr string) string {
+	cleaned := strings.TrimSpace(portsStr)
+	if cleaned != "" {
+		return cleaned
+	}
+
+	inbounds, err := s.inboundService.GetInboundsForScope(InboundAccessScope{All: true})
+	if err == nil && len(inbounds) > 0 {
+		var pstrs []string
+		for _, in := range inbounds {
+			if in.Enable && in.Port > 0 {
+				pstrs = append(pstrs, strconv.Itoa(in.Port))
+			}
+		}
+		if len(pstrs) > 0 {
+			return strings.Join(pstrs, ", ")
+		}
+	}
+
+	return "8080"
+}
+
+func (s *HashemService) genFRPPortAndToken() (int, string) {
+	var b [2]byte
+	_, _ = rand.Read(b[:])
+	port := 35000 + int(b[0])<<8 + int(b[1])
+	if port > 58000 {
+		port = 35000 + (port % 23000)
+	}
+
+	var tb [16]byte
+	_, _ = rand.Read(tb[:])
+	token := hex.EncodeToString(tb[:])
+
+	return port, token
+}
+
+func (s *HashemService) SetupSSH(form HashemSSHSetupForm) (*HashemSSHSetupResult, error) {
+	if strings.TrimSpace(form.IranIP) == "" {
+		return nil, fmt.Errorf("آدرس آی‌پی سرور ایران الزامی است")
+	}
+	if strings.TrimSpace(form.SSHPassword) == "" {
+		return nil, fmt.Errorf("رمز عبور سرور ایران الزامی است")
+	}
+
+	sshPort := form.SSHPort
+	if sshPort <= 0 {
+		sshPort = 22
+	}
+	sshUser := strings.TrimSpace(form.SSHUser)
+	if sshUser == "" {
+		sshUser = "root"
+	}
+	carrier := strings.TrimSpace(form.Carrier)
+	if carrier == "" {
+		carrier = "fou:443"
+	}
+
+	foreignIP := s.getForeignPubIP()
+	if foreignIP == "" {
+		return nil, fmt.Errorf("امکان تشخیص خودکار آی‌پی سرور خارج وجود ندارد")
+	}
+
+	iranIP := strings.TrimSpace(form.IranIP)
+	ports := s.resolveTunnelPorts(form.Ports)
+	frpPort, token := s.genFRPPortAndToken()
+
+	sshConfig := &ssh.ClientConfig{
+		User: sshUser,
+		Auth: []ssh.AuthMethod{
+			ssh.Password(form.SSHPassword),
+		},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		Timeout:         20 * time.Second,
+	}
+
+	addr := net.JoinHostPort(iranIP, strconv.Itoa(sshPort))
+	client, err := ssh.Dial("tcp", addr, sshConfig)
+	if err != nil {
+		return nil, fmt.Errorf("خطا در اتصال SSH به سرور ایران (%s): %v", addr, err)
+	}
+	defer client.Close()
+
+	iranCmd := fmt.Sprintf(
+		"curl -sL https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /usr/local/bin/hashem && "+
+			"chmod +x /usr/local/bin/hashem && "+
+			"/usr/local/bin/hashem setup-iran --local-pub %s --remote-pub %s --frp-port %d --token %s --force && "+
+			"/usr/local/bin/hashem carrier set %s",
+		iranIP, foreignIP, frpPort, token, carrier,
+	)
+
+	session, err := client.NewSession()
+	if err != nil {
+		return nil, fmt.Errorf("خطا در ایجاد نشست SSH روی سرور ایران: %v", err)
+	}
+	defer session.Close()
+
+	iranOut, err := session.CombinedOutput(iranCmd)
+	if err != nil {
+		return nil, fmt.Errorf("اجرای تانل روی سرور ایران با خطا مواجه شد: %v\nخروجی: %s", err, string(iranOut))
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	cmdForeign := exec.CommandContext(ctx, hashemBinPath, "setup-foreign",
+		"--local-pub", foreignIP,
+		"--remote-pub", iranIP,
+		"--frp-port", strconv.Itoa(frpPort),
+		"--token", token,
+		"--ports", ports,
+		"--force",
+	)
+	fOut, _ := cmdForeign.CombinedOutput()
+
+	cmdCarrier := exec.CommandContext(ctx, hashemBinPath, "carrier", "set", carrier)
+	_ = cmdCarrier.Run()
+
+	if data, err := os.ReadFile(frpcTomlPath); err == nil {
+		sData := string(data)
+		if !strings.Contains(sData, "transport.poolCount") {
+			sData = strings.Replace(sData, "transport.tcpMux = true", "transport.tcpMux = true\ntransport.poolCount = 10", 1)
+			_ = os.WriteFile(frpcTomlPath, []byte(sData), 0644)
+		}
+	}
+	_ = exec.Command("systemctl", "restart", "frpc").Run()
+
+	return &HashemSSHSetupResult{
+		Success:   true,
+		Message:   "تانل با موفقیت از طریق SSH روی سرور ایران و خارج پیاده‌سازی شد.",
+		IranIP:    iranIP,
+		ForeignIP: foreignIP,
+		Ports:     ports,
+		Log:       fmt.Sprintf("Iran Setup:\n%s\n\nForeign Setup:\n%s", string(iranOut), string(fOut)),
+	}, nil
+}
+
+func (s *HashemService) GenerateOneLiner(form HashemOneLinerForm) (*HashemOneLinerResult, error) {
+	if strings.TrimSpace(form.IranIP) == "" {
+		return nil, fmt.Errorf("آدرس آی‌پی سرور ایران الزامی است")
+	}
+
+	carrier := strings.TrimSpace(form.Carrier)
+	if carrier == "" {
+		carrier = "fou:443"
+	}
+
+	foreignIP := s.getForeignPubIP()
+	if foreignIP == "" {
+		return nil, fmt.Errorf("امکان تشخیص خودکار آی‌پی سرور خارج وجود ندارد")
+	}
+
+	iranIP := strings.TrimSpace(form.IranIP)
+	ports := s.resolveTunnelPorts(form.Ports)
+	frpPort, token := s.genFRPPortAndToken()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	cmdForeign := exec.CommandContext(ctx, hashemBinPath, "setup-foreign",
+		"--local-pub", foreignIP,
+		"--remote-pub", iranIP,
+		"--frp-port", strconv.Itoa(frpPort),
+		"--token", token,
+		"--ports", ports,
+		"--force",
+	)
+	_ = cmdForeign.Run()
+
+	cmdCarrier := exec.CommandContext(ctx, hashemBinPath, "carrier", "set", carrier)
+	_ = cmdCarrier.Run()
+
+	if data, err := os.ReadFile(frpcTomlPath); err == nil {
+		sData := string(data)
+		if !strings.Contains(sData, "transport.poolCount") {
+			sData = strings.Replace(sData, "transport.tcpMux = true", "transport.tcpMux = true\ntransport.poolCount = 10", 1)
+			_ = os.WriteFile(frpcTomlPath, []byte(sData), 0644)
+		}
+	}
+	_ = exec.Command("systemctl", "restart", "frpc").Run()
+
+	oneLiner := fmt.Sprintf(
+		"curl -sL https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh | bash -s -- setup-iran --local-pub %s --remote-pub %s --frp-port %d --token %s --force && hashem carrier set %s",
+		iranIP, foreignIP, frpPort, token, carrier,
+	)
+
+	return &HashemOneLinerResult{
+		OneLinerCommand: oneLiner,
+		ForeignIP:       foreignIP,
+		IranIP:          iranIP,
+		Ports:           ports,
+		FrpPort:         frpPort,
+		Token:           token,
+	}, nil
 }

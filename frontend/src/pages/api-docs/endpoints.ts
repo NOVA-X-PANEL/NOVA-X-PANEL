@@ -2946,6 +2946,18 @@ export const sections: readonly Section[] = [
       },
       {
         method: 'POST',
+        path: '/panel/api/hashem/setup-ssh',
+        summary: 'Direct SSH automatic setup: connect to Iran server via SSH and establish end-to-end Hashem tunnel.',
+        body: '{\n  "iranIp": "94.183.210.29",\n  "sshPort": 22,\n  "sshUser": "root",\n  "sshPassword": "secret",\n  "ports": "8080"\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/hashem/generate-oneliner',
+        summary: 'Generate a one-liner command to be run on Iran server to establish Hashem tunnel.',
+        body: '{\n  "iranIp": "94.183.210.29",\n  "ports": "8080"\n}',
+      },
+      {
+        method: 'POST',
         path: '/panel/api/hashem/install',
         summary: 'Install Hashem tunnel core engine on server.',
       },

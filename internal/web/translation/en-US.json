@@ -2524,7 +2524,25 @@
         "syncSuccess": "Successfully synced {count} inbound ports to tunnel",
         "setupSuccess": "Tunnel configuration applied successfully",
         "installSuccess": "Hashem Tunnel core installed successfully"
-      }
+      },
+      "tabSSHAuto": "Automatic SSH Setup",
+      "tabOneLiner": "Iran Server One-Liner",
+      "tabAdvanced": "Advanced Manual Setup",
+      "iranIpLabel": "Iran Server IP Address",
+      "iranIpRequired": "Iran Server IP is required",
+      "sshPortLabel": "Iran Server SSH Port",
+      "sshUserLabel": "SSH Username",
+      "sshPasswordLabel": "Iran Server Root Password",
+      "sshPasswordRequired": "Iran Server password is required",
+      "portsToTunnel": "Ports to Tunnel",
+      "portsToTunnelExtra": "Inbound ports to forward through tunnel (e.g. 8080)",
+      "autoSetupBtn": "Connect and Setup Tunnel Automatically",
+      "generatingOneLinerBtn": "Generate One-Liner Command",
+      "oneLinerModalTitle": "Iran Server One-Liner Command",
+      "oneLinerModalDesc": "Copy and run the following command in your Iran server terminal:",
+      "copyCommand": "Copy Command",
+      "commandCopied": "Command copied to clipboard successfully",
+      "sshConnecting": "Connecting to Iran server via SSH and setting up tunnel..."
     }
   },
   "tgbot": {

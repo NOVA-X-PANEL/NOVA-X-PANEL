@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net"
 	"os"
 	"os/exec"
 	"regexp"
@@ -134,7 +133,7 @@ func (s *HashemService) GetStatus() (*HashemStatus, error) {
 	s.parseGreInterface(status)
 
 	if status.RemoteGreIP != "" {
-		status.PingMs = s.measurePing(status.RemoteGreIP, status.FrpPort)
+		status.PingMs = s.measurePing(status.RemoteGreIP, "gre-tunnel")
 	}
 
 	if status.Role == "foreign" && status.RemotePubIP != "" && status.FrpPort > 0 && token != "" {
@@ -238,25 +237,18 @@ func (s *HashemService) checkServiceStatus(svc string) string {
 	return strings.TrimSpace(string(out))
 }
 
-func (s *HashemService) measurePing(ip string, frpPort int) float64 {
+func (s *HashemService) measurePing(ip, dev string) float64 {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	// 1. Try TCP handshake to FRP control port on peer GRE IP (measures true active tunnel RTT)
-	if frpPort > 0 && ip != "" {
-		start := time.Now()
-		var d net.Dialer
-		d.Timeout = 1 * time.Second
-		conn, err := d.DialContext(ctx, "tcp", net.JoinHostPort(ip, strconv.Itoa(frpPort)))
-		if err == nil {
-			conn.Close()
-			rtt := float64(time.Since(start).Microseconds()) / 1000.0
-			return rtt
-		}
+	var args []string
+	if dev != "" {
+		args = []string{"-I", dev, "-c", "2", "-W", "1", ip}
+	} else {
+		args = []string{"-c", "2", "-W", "1", ip}
 	}
 
-	// 2. Fall back to ICMP ping bound to gre-tunnel
-	out, err := exec.CommandContext(ctx, "ping", "-I", "gre-tunnel", "-c", "2", "-W", "1", ip).CombinedOutput()
+	out, err := exec.CommandContext(ctx, "ping", args...).CombinedOutput()
 	if err != nil {
 		out, err = exec.CommandContext(ctx, "ping", "-c", "1", "-W", "1", ip).CombinedOutput()
 		if err != nil {

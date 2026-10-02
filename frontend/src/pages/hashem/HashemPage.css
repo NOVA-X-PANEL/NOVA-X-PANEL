@@ -1,0 +1,143 @@
+/* NOVA X PANEL — Hashem Tunnel "Neon Glass" Theme */
+
+.hashem-page {
+  min-height: 100vh;
+}
+
+.hashem-page .content-area {
+  padding: 24px;
+}
+
+@media (max-width: 768px) {
+  .hashem-page .content-area {
+    padding: 12px;
+    padding-top: 64px;
+  }
+}
+
+.hashem-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  border: 1px solid var(--nc-border, rgba(56, 189, 248, 0.22));
+  border-radius: 14px;
+  background: var(--nc-card, rgba(15, 20, 32, 0.85));
+  box-shadow: var(--nc-shadow, 0 8px 32px rgba(0, 0, 0, 0.4));
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+}
+
+.hashem-hero-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 !important;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.hashem-hero-title-text {
+  background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hashem-card {
+  border: 1px solid var(--nc-border, rgba(56, 189, 248, 0.22)) !important;
+  border-radius: 14px !important;
+  background: var(--nc-card, rgba(15, 20, 32, 0.85)) !important;
+  box-shadow: var(--nc-shadow, 0 8px 24px rgba(0, 0, 0, 0.3)) !important;
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hashem-card:hover {
+  border-color: rgba(0, 242, 254, 0.45) !important;
+  box-shadow: 0 12px 30px rgba(0, 242, 254, 0.15) !important;
+}
+
+.hashem-card .ant-card-head {
+  border-bottom: 1px solid var(--nc-divider, rgba(255, 255, 255, 0.08)) !important;
+  padding: 0 18px;
+}
+
+.hashem-card .ant-card-body {
+  padding: 18px;
+}
+
+.hashem-code-snippet {
+  background: rgba(8, 12, 22, 0.95);
+  border: 1px solid rgba(0, 242, 254, 0.3);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 13px;
+  color: #00f2fe;
+  word-break: break-all;
+  position: relative;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+.hashem-code-snippet .ant-typography-copy {
+  color: #38bdf8 !important;
+}
+
+.hashem-alert {
+  background: rgba(14, 23, 42, 0.85) !important;
+  border: 1px solid rgba(56, 189, 248, 0.35) !important;
+  border-radius: 10px !important;
+  color: #e2e8f0 !important;
+}
+
+.hashem-alert .ant-alert-message {
+  color: #38bdf8 !important;
+  font-weight: 600;
+}
+
+.hashem-alert .ant-alert-description {
+  color: #94a3b8 !important;
+}
+
+.hashem-btn-sync {
+  background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%) !important;
+  border: none !important;
+  box-shadow: 0 0 15px rgba(0, 198, 255, 0.4);
+  color: #ffffff !important;
+}
+
+.hashem-btn-sync:hover {
+  box-shadow: 0 0 22px rgba(0, 198, 255, 0.7) !important;
+}
+
+.hashem-btn-setup {
+  background: linear-gradient(135deg, #f857a6 0%, #ff5858 100%) !important;
+  border: none !important;
+  box-shadow: 0 0 15px rgba(248, 87, 166, 0.4);
+  color: #ffffff !important;
+}
+
+.hashem-btn-setup:hover {
+  box-shadow: 0 0 22px rgba(248, 87, 166, 0.7) !important;
+}
+
+.hashem-desc-table {
+  background: transparent !important;
+}
+
+.hashem-desc-table .ant-descriptions-item-label {
+  background: rgba(15, 23, 42, 0.6) !important;
+  color: #94a3b8 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.hashem-desc-table .ant-descriptions-item-content {
+  background: rgba(8, 12, 22, 0.6) !important;
+  color: #f1f5f9 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}

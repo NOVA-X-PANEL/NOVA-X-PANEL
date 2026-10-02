@@ -79,27 +79,27 @@ type HashemSetupForm struct {
 }
 
 type HashemSSHSetupForm struct {
-	IranIP      string `json:"iranIp"`
-	SSHPort     int    `json:"sshPort"`
-	SSHUser     string `json:"sshUser"`
-	SSHPassword string `json:"sshPassword"`
-	Ports       string `json:"ports"`
-	Carrier     string `json:"carrier"`
+	IranIP      string `json:"iranIp" form:"iranIp"`
+	SSHPort     int    `json:"sshPort" form:"sshPort"`
+	SSHUser     string `json:"sshUser" form:"sshUser"`
+	SSHPassword string `json:"sshPassword" form:"sshPassword"`
+	Ports       string `json:"ports" form:"ports"`
+	Carrier     string `json:"carrier" form:"carrier"`
 }
 
 type HashemSSHSetupResult struct {
-	Success   bool   `json:"success"`
-	Message   string `json:"message"`
-	IranIP    string `json:"iranIp"`
-	ForeignIP string `json:"foreignIp"`
-	Ports     string `json:"ports"`
-	Log       string `json:"log"`
+	Success   bool   `json:"success" form:"success"`
+	Message   string `json:"message" form:"message"`
+	IranIP    string `json:"iranIp" form:"iranIp"`
+	ForeignIP string `json:"foreignIp" form:"foreignIp"`
+	Ports     string `json:"ports" form:"ports"`
+	Log       string `json:"log" form:"log"`
 }
 
 type HashemOneLinerForm struct {
-	IranIP  string `json:"iranIp"`
-	Ports   string `json:"ports"`
-	Carrier string `json:"carrier"`
+	IranIP  string `json:"iranIp" form:"iranIp"`
+	Ports   string `json:"ports" form:"ports"`
+	Carrier string `json:"carrier" form:"carrier"`
 }
 
 type HashemOneLinerResult struct {

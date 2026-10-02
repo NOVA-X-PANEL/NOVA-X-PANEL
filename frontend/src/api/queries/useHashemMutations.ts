@@ -122,7 +122,11 @@ export function useHashemMutations() {
 
   const setupSSHMutation = useMutation({
     mutationFn: async (payload: HashemSSHSetupPayload) => {
-      const res = await HttpUtil.post<HashemSSHSetupResult>('/panel/api/hashem/setup-ssh', payload);
+      const res = await HttpUtil.post<HashemSSHSetupResult>(
+        '/panel/api/hashem/setup-ssh',
+        payload,
+        { headers: { 'Content-Type': 'application/json' } },
+      );
       if (!res?.success) throw new Error(res?.msg || 'SSH Setup failed');
       return res.obj;
     },
@@ -135,7 +139,11 @@ export function useHashemMutations() {
 
   const generateOneLinerMutation = useMutation({
     mutationFn: async (payload: HashemOneLinerPayload) => {
-      const res = await HttpUtil.post<HashemOneLinerResult>('/panel/api/hashem/generate-oneliner', payload);
+      const res = await HttpUtil.post<HashemOneLinerResult>(
+        '/panel/api/hashem/generate-oneliner',
+        payload,
+        { headers: { 'Content-Type': 'application/json' } },
+      );
       if (!res?.success) throw new Error(res?.msg || 'Generating one-liner failed');
       return res.obj;
     },

@@ -88,7 +88,7 @@ func (a *HashemController) install(c *gin.Context) {
 
 func (a *HashemController) setupSSH(c *gin.Context) {
 	var form service.HashemSSHSetupForm
-	if err := c.ShouldBindJSON(&form); err != nil {
+	if err := c.ShouldBind(&form); err != nil {
 		jsonMsg(c, "داده‌های اتصال SSH نامعتبر است", err)
 		return
 	}
@@ -98,7 +98,7 @@ func (a *HashemController) setupSSH(c *gin.Context) {
 
 func (a *HashemController) generateOneLiner(c *gin.Context) {
 	var form service.HashemOneLinerForm
-	if err := c.ShouldBindJSON(&form); err != nil {
+	if err := c.ShouldBind(&form); err != nil {
 		jsonMsg(c, "داده‌های تولید دستور نامعتبر است", err)
 		return
 	}

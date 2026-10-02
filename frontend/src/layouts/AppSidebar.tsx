@@ -37,6 +37,7 @@ import {
   SwapOutlined,
   TagsOutlined,
   TeamOutlined,
+  ThunderboltOutlined,
   ToolOutlined,
   KeyOutlined,
 } from '@ant-design/icons';
@@ -74,6 +75,7 @@ type IconName =
   | 'setting'
   | 'tool'
   | 'cluster'
+  | 'hashem'
   | 'admins'
   | 'roles'
   | 'hosts'
@@ -91,6 +93,7 @@ const iconByName: Record<IconName, ComponentType> = {
   setting: SettingOutlined,
   tool: ToolOutlined,
   cluster: ClusterOutlined,
+  hashem: ThunderboltOutlined,
   admins: UserSwitchOutlined,
   roles: SafetyCertificateOutlined,
   hosts: GlobalOutlined,
@@ -245,6 +248,7 @@ export default function AppSidebar() {
       { key: '/clients', icon: 'team', title: t('menu.clients') },
       { key: '/groups', icon: 'groups', title: t('menu.groups') },
       { key: '/nodes', icon: 'cluster', title: t('menu.nodes') },
+      { key: '/hashem', icon: 'hashem', title: t('menu.hashem') },
       { key: '/admins', icon: 'admins', title: t('menu.admins') },
       // Shown only when the account may hold an API token; canAccessRoute gates it.
       { key: '/my-api', icon: 'apikey', title: t('menu.myApi') },

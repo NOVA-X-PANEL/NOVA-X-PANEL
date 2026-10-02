@@ -237,6 +237,10 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 	adminRoles := api.Group("/admin-roles")
 	NewAdminRoleController(adminRoles)
 
+	// Hashem Tunnel (NOVA X PANEL)
+	hashem := api.Group("/hashem")
+	NewHashemController(hashem)
+
 	// Extra routes
 	api.POST("/backuptotgbot", a.BackuptoTgbot)
 }

@@ -1352,6 +1352,10 @@
       },
       "ApiToken": {
         "properties": {
+          "adminId": {
+            "description": "AdminId binds the token to a panel account. 0 is a legacy panel-wide token\n(settings page): it carries full authority, which is what node-sync and\nexisting integrations rely on. Any other value makes the token act as that\naccount, so every permission check applies exactly as it does for a browser\nsession — an admin's own token can never exceed that admin's role.",
+            "type": "integer"
+          },
           "createdAt": {
             "format": "int64",
             "type": "integer"
@@ -1378,6 +1382,7 @@
           }
         },
         "required": [
+          "adminId",
           "createdAt",
           "enabled",
           "expiresAt",
@@ -1390,6 +1395,16 @@
       },
       "ApiTokenView": {
         "properties": {
+          "adminId": {
+            "description": "AdminId is the account this token acts as; 0 is a panel-wide token.",
+            "example": 0,
+            "type": "integer"
+          },
+          "adminName": {
+            "description": "AdminName is filled for the admin-facing list.",
+            "example": "operator",
+            "type": "string"
+          },
           "createdAt": {
             "example": 1736000000,
             "format": "int64",
@@ -1422,6 +1437,7 @@
           }
         },
         "required": [
+          "adminId",
           "createdAt",
           "enabled",
           "expiresAt",
@@ -1722,6 +1738,11 @@
           "limitIp": {
             "type": "integer"
           },
+          "ownerAdminId": {
+            "description": "OwnerAdminId binds this client to the panel admin (model.User) that\ncreated it. 0 means the client is owned by the owner role / unassigned\n(NOVA X PANEL RBAC: non-owner admins only see clients they own).",
+            "format": "int64",
+            "type": "integer"
+          },
           "password": {
             "type": "string"
           },
@@ -1791,6 +1812,7 @@
           "keepAlive",
           "limitHwid",
           "limitIp",
+          "ownerAdminId",
           "password",
           "preSharedKey",
           "privateKey",
@@ -4317,19 +4339,55 @@
       "User": {
         "description": "User represents a user account in the 3x-ui panel.",
         "properties": {
+          "apiAccess": {
+            "description": "ApiAccess lets this account mint its own API token. The token carries the\naccount's role, so whatever the role may do in the panel, the token may do\nover the API — and nothing more. The owner always has it.",
+            "type": "boolean"
+          },
+          "createdAt": {
+            "description": "CreatedAt/UpdatedAt are populated for RBAC admin management views.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "dataLimit": {
+            "description": "DataLimit caps the traffic the clients owned by this account may use;\n0 means unlimited. UsedBytes is the aggregate traffic of those clients,\nrefreshed on every admin-stats read. An account over its limit is\n\"limited\" and can be blocked/disconnected per its role's feature flags.",
+            "format": "int64",
+            "type": "integer"
+          },
           "id": {
             "type": "integer"
           },
           "password": {
             "type": "string"
           },
+          "roleId": {
+            "description": "RBAC (NOVA X PANEL): each panel account is bound to one AdminRole.",
+            "type": "integer"
+          },
+          "status": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "usedBytes": {
+            "format": "int64",
+            "type": "integer"
+          },
           "username": {
             "type": "string"
           }
         },
         "required": [
+          "apiAccess",
+          "createdAt",
+          "dataLimit",
           "id",
           "password",
+          "roleId",
+          "status",
+          "updatedAt",
+          "usedBytes",
           "username"
         ],
         "type": "object"
@@ -4410,6 +4468,14 @@
       "description": "Panel configuration and user credentials. All endpoints live under /panel/api/setting and require a logged-in session or Bearer token."
     },
     {
+      "name": "Admins",
+      "description": "Manage panel administrator accounts and their assigned roles (RBAC). Requires a browser session — Bearer API tokens are rejected. Access follows the <code>admins</code> role permissions; the owner account cannot be deleted, disabled, or demoted."
+    },
+    {
+      "name": "Admin Roles",
+      "description": "Manage RBAC roles. Each role carries four JSON documents: permissions, limits, features, and access. Built-in roles (owner, administrator, operator) keep their identity; the owner role is read-only; roles assigned to administrators cannot be deleted."
+    },
+    {
       "name": "API Tokens",
       "description": "Manage scoped Bearer tokens for programmatic auth. Tokens grant admin, monitor, or node-sync access, may expire, and are stored as SHA-256 hashes. The plaintext is returned only once at creation."
     },
@@ -4424,6 +4490,10 @@
     {
       "name": "Subscription Server",
       "description": "A separate HTTP/HTTPS server that serves proxy subscription links (standard, JSON, and Clash) to clients. The server listens on its own port (default 2096) and is configured in Settings → Subscription. Fresh panels generate random path prefixes for each format; all paths remain configurable. Every subscription endpoint sets response headers for client apps to read traffic/expiry info."
+    },
+    {
+      "name": "Hashem Tunnel",
+      "description": "Hashem Layer-3 GRE and FRP reverse tunnel management. Controls carrier mode (Direct GRE, FoU:443, WSS), watchdog, and port forwarding synchronization."
     },
     {
       "name": "WebSocket",
@@ -12576,6 +12646,1032 @@
         }
       }
     },
+    "/panel/api/admins/current": {
+      "get": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "Return the logged-in administrator together with the decoded role document.",
+        "operationId": "get_panel_api_admins_current",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "id": 1,
+                    "username": "admin",
+                    "status": "active",
+                    "roleId": 1,
+                    "isOwner": true,
+                    "role": {
+                      "id": 1,
+                      "name": "owner",
+                      "slug": "owner",
+                      "is_owner": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admins/list": {
+      "get": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "List every panel administrator with the resolved role name and status.",
+        "operationId": "get_panel_api_admins_list",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    {
+                      "id": 1,
+                      "username": "admin",
+                      "roleId": 1,
+                      "roleName": "owner",
+                      "roleSlug": "owner",
+                      "ownerRole": true,
+                      "status": "active",
+                      "isSelf": true
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admins/stats": {
+      "get": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "Return totals for administrators: total, active, and disabled.",
+        "operationId": "get_panel_api_admins_stats",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "totalAdmins": 2,
+                    "activeAdmins": 2,
+                    "disabledAdmins": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admins/get/{id}": {
+      "get": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "Fetch a single administrator by numeric ID.",
+        "operationId": "get_panel_api_admins_get_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Administrator ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admins/add": {
+      "post": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "Create a new administrator bound to the given role.",
+        "operationId": "post_panel_api_admins_add",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "username": "operator1",
+                "password": "secret",
+                "roleId": 3,
+                "status": "active"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admins/update/{id}": {
+      "post": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "Update an administrator. The owner account cannot change role or be disabled.",
+        "operationId": "post_panel_api_admins_update_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Administrator ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "username": "operator1",
+                "password": "newsecret",
+                "roleId": 3,
+                "status": "active"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admins/del/{id}": {
+      "post": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "Delete an administrator. The owner account and your own account are protected.",
+        "operationId": "post_panel_api_admins_del_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Administrator ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admins/enable/{id}": {
+      "post": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "Enable an administrator account.",
+        "operationId": "post_panel_api_admins_enable_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Administrator ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admins/disable/{id}": {
+      "post": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "Disable an administrator account. The owner account cannot be disabled.",
+        "operationId": "post_panel_api_admins_disable_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Administrator ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admins/resetUsage/{id}": {
+      "post": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "Reset the traffic of every client owned by this administrator and clear its usage counter.",
+        "operationId": "post_panel_api_admins_resetUsage_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Administrator ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admins/users/disableActive/{id}": {
+      "post": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "Disable every enabled client owned by this administrator.",
+        "operationId": "post_panel_api_admins_users_disableActive_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Administrator ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admins/users/activateDisabled/{id}": {
+      "post": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "Enable every disabled client owned by this administrator.",
+        "operationId": "post_panel_api_admins_users_activateDisabled_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Administrator ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admins/users/removeAll/{id}": {
+      "post": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "Delete every client owned by this administrator.",
+        "operationId": "post_panel_api_admins_users_removeAll_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Administrator ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admins/apiTokens": {
+      "get": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "List the caller's own API tokens.",
+        "operationId": "get_panel_api_admins_apiTokens",
+        "description": "Self-service: returns only the tokens bound to the calling account. Requires the account to have API access (set by the owner) or to hold the owner role.",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admins/apiTokens/create": {
+      "post": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "Mint an API token for the caller's own account.",
+        "operationId": "post_panel_api_admins_apiTokens_create",
+        "description": "The token acts as the calling account: every request it makes is checked against that account's role, so it can never do more than the account can in the panel. The plaintext is returned once and only its hash is stored. At most 10 tokens per account.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Unique token name, 64 characters or fewer."
+                  },
+                  "expiresAt": {
+                    "type": "integer",
+                    "default": 0,
+                    "description": "Unix-ms expiry. 0 means the token never expires."
+                  }
+                },
+                "required": [
+                  "name"
+                ]
+              },
+              "example": {
+                "name": "ci-deploy",
+                "expiresAt": 0
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admins/apiTokens/delete/{id}": {
+      "post": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "Revoke one of the caller's own API tokens.",
+        "operationId": "post_panel_api_admins_apiTokens_delete_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "API token ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admins/apiTokens/setEnabled/{id}": {
+      "post": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "Enable or disable one of the caller's own API tokens.",
+        "operationId": "post_panel_api_admins_apiTokens_setEnabled_id",
+        "description": "A disabled token is rejected immediately; re-enabling restores it. Disabling the account disables its tokens too.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "API token ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "enabled": {
+                    "type": "boolean",
+                    "description": "Desired state."
+                  }
+                },
+                "required": [
+                  "enabled"
+                ]
+              },
+              "example": {
+                "enabled": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admin-roles/list": {
+      "get": {
+        "tags": [
+          "Admin Roles"
+        ],
+        "summary": "List every role with decoded permissions, limits, features, access, and admin count.",
+        "operationId": "get_panel_api_admin_roles_list",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    {
+                      "id": 1,
+                      "name": "owner",
+                      "slug": "owner",
+                      "builtIn": true,
+                      "ownerRole": true,
+                      "adminCount": 1
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admin-roles/get/{id}": {
+      "get": {
+        "tags": [
+          "Admin Roles"
+        ],
+        "summary": "Fetch one role by numeric ID.",
+        "operationId": "get_panel_api_admin_roles_get_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Role ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admin-roles/add": {
+      "post": {
+        "tags": [
+          "Admin Roles"
+        ],
+        "summary": "Create a custom role. The slug is derived from the role name; defaults follow the Operator preset.",
+        "operationId": "post_panel_api_admin_roles_add",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "name": "Reseller",
+                "permissions": {},
+                "limits": {},
+                "features": {},
+                "access": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admin-roles/update/{id}": {
+      "post": {
+        "tags": [
+          "Admin Roles"
+        ],
+        "summary": "Update a non-owner role. Built-in roles keep their protected identity.",
+        "operationId": "post_panel_api_admin_roles_update_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Role ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "name": "Reseller",
+                "permissions": {},
+                "limits": {},
+                "features": {},
+                "access": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admin-roles/duplicate/{id}": {
+      "post": {
+        "tags": [
+          "Admin Roles"
+        ],
+        "summary": "Duplicate an existing role into a new custom role copy.",
+        "operationId": "post_panel_api_admin_roles_duplicate_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Role ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admin-roles/del/{id}": {
+      "post": {
+        "tags": [
+          "Admin Roles"
+        ],
+        "summary": "Delete a custom role. Owner, built-in, and assigned roles are protected.",
+        "operationId": "post_panel_api_admin_roles_del_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Role ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/panel/api/setting/apiTokens": {
       "get": {
         "tags": [
@@ -12678,6 +13774,8 @@
                 "example": {
                   "success": true,
                   "obj": {
+                    "adminId": 0,
+                    "adminName": "operator",
                     "createdAt": 1736000000,
                     "enabled": true,
                     "expiresAt": 0,
@@ -15047,6 +16145,259 @@
           },
           "500": {
             "description": "Subscription generation failed."
+          }
+        }
+      }
+    },
+    "/panel/api/hashem/status": {
+      "get": {
+        "tags": [
+          "Hashem Tunnel"
+        ],
+        "summary": "Get current status of Hashem tunnel, carrier mode, FRP reverse service, and ping latency.",
+        "operationId": "get_panel_api_hashem_status",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/hashem/setup": {
+      "post": {
+        "tags": [
+          "Hashem Tunnel"
+        ],
+        "summary": "Configure and start Hashem tunnel using parameters or bundle string.",
+        "operationId": "post_panel_api_hashem_setup",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "role": "foreign",
+                "localPub": "1.2.3.4",
+                "remotePub": "5.6.7.8",
+                "frpPort": 36067,
+                "ports": "443, 8080"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/hashem/carrier": {
+      "post": {
+        "tags": [
+          "Hashem Tunnel"
+        ],
+        "summary": "Switch active carrier mode (direct, fou:443, wss:8443, auto, next).",
+        "operationId": "post_panel_api_hashem_carrier",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "carrier": "fou:443"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/hashem/restart": {
+      "post": {
+        "tags": [
+          "Hashem Tunnel"
+        ],
+        "summary": "Restart Hashem carrier and FRP services.",
+        "operationId": "post_panel_api_hashem_restart",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/hashem/watchdog": {
+      "post": {
+        "tags": [
+          "Hashem Tunnel"
+        ],
+        "summary": "Enable or disable Hashem tunnel watchdog.",
+        "operationId": "post_panel_api_hashem_watchdog",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "enabled": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/hashem/sync-inbounds": {
+      "post": {
+        "tags": [
+          "Hashem Tunnel"
+        ],
+        "summary": "Synchronize active Xray panel inbound ports to Hashem tunnel FRP forwarding.",
+        "operationId": "post_panel_api_hashem_sync_inbounds",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/hashem/install": {
+      "post": {
+        "tags": [
+          "Hashem Tunnel"
+        ],
+        "summary": "Install Hashem tunnel core engine on server.",
+        "operationId": "post_panel_api_hashem_install",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
           }
         }
       }

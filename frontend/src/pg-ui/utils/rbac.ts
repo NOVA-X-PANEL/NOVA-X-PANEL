@@ -57,6 +57,7 @@ const ROUTE_PERMISSIONS: Record<string, RoutePermission[]> = {
   ],
   '/groups': [{ resource: 'groups', action: 'read' }],
   '/nodes': [{ resource: 'nodes', action: 'read' }],
+  '/hashem': [{ resource: 'system', action: 'read' }],
   '/admins': [{ resource: 'admins', action: 'read' }],
   // Reachable by any account the owner granted API access to. It is gated on
   // that flag rather than a resource permission below, because the point of the

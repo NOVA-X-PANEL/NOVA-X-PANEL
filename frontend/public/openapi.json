@@ -4492,6 +4492,10 @@
       "description": "A separate HTTP/HTTPS server that serves proxy subscription links (standard, JSON, and Clash) to clients. The server listens on its own port (default 2096) and is configured in Settings → Subscription. Fresh panels generate random path prefixes for each format; all paths remain configurable. Every subscription endpoint sets response headers for client apps to read traffic/expiry info."
     },
     {
+      "name": "Hashem Tunnel",
+      "description": "Hashem Layer-3 GRE and FRP reverse tunnel management. Controls carrier mode (Direct GRE, FoU:443, WSS), watchdog, and port forwarding synchronization."
+    },
+    {
       "name": "WebSocket",
       "description": "Real-time status updates via WebSocket. Connect once at <code>ws://<panel>/ws</code> to receive a stream of JSON messages without polling. Requires an authenticated session cookie (Bearer token auth is not supported). Each message has a <code>type</code> field that identifies the payload shape."
     }
@@ -16141,6 +16145,259 @@
           },
           "500": {
             "description": "Subscription generation failed."
+          }
+        }
+      }
+    },
+    "/panel/api/hashem/status": {
+      "get": {
+        "tags": [
+          "Hashem Tunnel"
+        ],
+        "summary": "Get current status of Hashem tunnel, carrier mode, FRP reverse service, and ping latency.",
+        "operationId": "get_panel_api_hashem_status",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/hashem/setup": {
+      "post": {
+        "tags": [
+          "Hashem Tunnel"
+        ],
+        "summary": "Configure and start Hashem tunnel using parameters or bundle string.",
+        "operationId": "post_panel_api_hashem_setup",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "role": "foreign",
+                "localPub": "1.2.3.4",
+                "remotePub": "5.6.7.8",
+                "frpPort": 36067,
+                "ports": "443, 8080"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/hashem/carrier": {
+      "post": {
+        "tags": [
+          "Hashem Tunnel"
+        ],
+        "summary": "Switch active carrier mode (direct, fou:443, wss:8443, auto, next).",
+        "operationId": "post_panel_api_hashem_carrier",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "carrier": "fou:443"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/hashem/restart": {
+      "post": {
+        "tags": [
+          "Hashem Tunnel"
+        ],
+        "summary": "Restart Hashem carrier and FRP services.",
+        "operationId": "post_panel_api_hashem_restart",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/hashem/watchdog": {
+      "post": {
+        "tags": [
+          "Hashem Tunnel"
+        ],
+        "summary": "Enable or disable Hashem tunnel watchdog.",
+        "operationId": "post_panel_api_hashem_watchdog",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "enabled": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/hashem/sync-inbounds": {
+      "post": {
+        "tags": [
+          "Hashem Tunnel"
+        ],
+        "summary": "Synchronize active Xray panel inbound ports to Hashem tunnel FRP forwarding.",
+        "operationId": "post_panel_api_hashem_sync_inbounds",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/hashem/install": {
+      "post": {
+        "tags": [
+          "Hashem Tunnel"
+        ],
+        "summary": "Install Hashem tunnel core engine on server.",
+        "operationId": "post_panel_api_hashem_install",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
           }
         }
       }

@@ -2906,6 +2906,53 @@ export const sections: readonly Section[] = [
   },
 
   {
+    id: 'hashem',
+    title: 'Hashem Tunnel',
+    description:
+      'Hashem Layer-3 GRE and FRP reverse tunnel management. Controls carrier mode (Direct GRE, FoU:443, WSS), watchdog, and port forwarding synchronization.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/hashem/status',
+        summary: 'Get current status of Hashem tunnel, carrier mode, FRP reverse service, and ping latency.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/hashem/setup',
+        summary: 'Configure and start Hashem tunnel using parameters or bundle string.',
+        body: '{\n  "role": "foreign",\n  "localPub": "1.2.3.4",\n  "remotePub": "5.6.7.8",\n  "frpPort": 36067,\n  "ports": "443, 8080"\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/hashem/carrier',
+        summary: 'Switch active carrier mode (direct, fou:443, wss:8443, auto, next).',
+        body: '{\n  "carrier": "fou:443"\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/hashem/restart',
+        summary: 'Restart Hashem carrier and FRP services.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/hashem/watchdog',
+        summary: 'Enable or disable Hashem tunnel watchdog.',
+        body: '{\n  "enabled": true\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/hashem/sync-inbounds',
+        summary: 'Synchronize active Xray panel inbound ports to Hashem tunnel FRP forwarding.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/hashem/install',
+        summary: 'Install Hashem tunnel core engine on server.',
+      },
+    ],
+  },
+
+  {
     id: 'websocket',
     title: 'WebSocket',
     description:

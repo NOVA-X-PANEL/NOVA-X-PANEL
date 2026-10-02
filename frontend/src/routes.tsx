@@ -10,6 +10,7 @@ const InboundsPage = lazy(() => import('@/pages/inbounds/InboundsPage'));
 const ClientsPage = lazy(() => import('@/pages/clients/ClientsPage'));
 const GroupsPage = lazy(() => import('@/pages/groups/GroupsPage'));
 const NodesPage = lazy(() => import('@/pages/nodes/NodesPage'));
+const HashemPage = lazy(() => import('@/pages/hashem/HashemPage'));
 const AdminsPage = lazy(() => import('@/pages/admins/AdminsPage'));
 const AdminRolesPage = lazy(() => import('@/pages/admin-roles/AdminRolesPage'));
 const HostsPage = lazy(() => import('@/pages/hosts/HostsPage'));
@@ -53,6 +54,7 @@ const routes: RouteObject[] = [
       { path: 'clients', element: withSuspense(<ClientsPage />) },
       { path: 'groups', element: withSuspense(<GroupsPage />) },
       { path: 'nodes', element: withSuspense(<NodesPage />) },
+      { path: 'hashem', element: withSuspense(<HashemPage />) },
       { path: 'admins', element: withSuspense(<AdminsPage />) },
       { path: 'my-api', element: withSuspense(<MyApiPage />) },
       { path: 'admin-roles', element: withSuspense(<AdminRolesPage />) },

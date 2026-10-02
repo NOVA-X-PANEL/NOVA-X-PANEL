@@ -3,6 +3,9 @@ export const keys = {
     status: () => ['server', 'status'] as const,
     fail2banStatus: () => ['server', 'fail2banStatus'] as const,
   },
+  hashem: {
+    status: () => ['hashem', 'status'] as const,
+  },
   nodes: {
     root: () => ['nodes'] as const,
     list: () => ['nodes', 'list'] as const,

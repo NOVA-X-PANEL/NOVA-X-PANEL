@@ -268,15 +268,35 @@ func (s *HashemService) checkServiceStatus(svc string) string {
 	defer cancel()
 
 	out, err := exec.CommandContext(ctx, "systemctl", "is-active", svc).Output()
-	if err != nil {
+	st := strings.TrimSpace(string(out))
+	if err != nil || (st != "active" && st != "activating") {
+		if svc == "frpc" {
+			go func() {
+				c, cl := context.WithTimeout(context.Background(), 3*time.Second)
+				defer cl()
+				_ = exec.CommandContext(c, "systemctl", "restart", svc).Run()
+			}()
+		}
 		return "inactive"
 	}
-	return strings.TrimSpace(string(out))
+	return st
 }
 
 func (s *HashemService) measurePing(ip, dev string) float64 {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
+	// 1. Try reading real-time TCP RTT directly from active FRP tunnel socket in kernel
+	ctx1, cancel1 := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel1()
+	cmd := exec.CommandContext(ctx1, "bash", "-c", "ss -tin '( dport = :30000:60000 or sport = :30000:60000 )' 2>/dev/null | grep -oP '(minrtt|rtt):\\K[0-9.]+' | head -n 1")
+	if out, err := cmd.Output(); err == nil {
+		str := strings.TrimSpace(string(out))
+		if val, err := strconv.ParseFloat(str, 64); err == nil && val > 0 {
+			return val
+		}
+	}
+
+	// 2. Fallback to ICMP ping bound to device
+	ctx2, cancel2 := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel2()
 
 	var args []string
 	if dev != "" {
@@ -285,18 +305,13 @@ func (s *HashemService) measurePing(ip, dev string) float64 {
 		args = []string{"-c", "2", "-W", "1", ip}
 	}
 
-	out, err := exec.CommandContext(ctx, "ping", args...).CombinedOutput()
-	if err != nil {
-		out, err = exec.CommandContext(ctx, "ping", "-c", "1", "-W", "1", ip).CombinedOutput()
-		if err != nil {
-			return -1
+	out, err := exec.CommandContext(ctx2, "ping", args...).CombinedOutput()
+	if err == nil {
+		reTime := regexp.MustCompile(`time=([0-9.]+)\s*ms`)
+		if m := reTime.FindStringSubmatch(string(out)); len(m) == 2 {
+			val, _ := strconv.ParseFloat(m[1], 64)
+			return val
 		}
-	}
-
-	reTime := regexp.MustCompile(`time=([0-9.]+)\s*ms`)
-	if m := reTime.FindStringSubmatch(string(out)); len(m) == 2 {
-		val, _ := strconv.ParseFloat(m[1], 64)
-		return val
 	}
 	return -1
 }
@@ -541,15 +556,17 @@ func (s *HashemService) SetupSSH(form HashemSSHSetupForm) (*HashemSSHSetupResult
 	addr := net.JoinHostPort(iranIP, strconv.Itoa(sshPort))
 	client, err := ssh.Dial("tcp", addr, sshConfig)
 	if err != nil {
+		if strings.Contains(err.Error(), "timeout") || strings.Contains(err.Error(), "timed out") {
+			return nil, fmt.Errorf("اتصال SSH به پورت %d سرور ایران با تایم‌اوت مواجه شد. به دلیل مسدود بودن پورت‌های SSH از خارج توسط دیتاسنترهای ایران، لطفاً از تب دوم «دستور تک‌خطی سرور ایران» استفاده فرمایید.", sshPort)
+		}
 		return nil, fmt.Errorf("خطا در اتصال SSH به سرور ایران (%s): %v", addr, err)
 	}
 	defer client.Close()
 
 	iranCmd := fmt.Sprintf(
-		"curl -sL https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /usr/local/bin/hashem && "+
-			"chmod +x /usr/local/bin/hashem && "+
-			"/usr/local/bin/hashem setup-iran --local-pub %s --remote-pub %s --frp-port %d --token %s --force && "+
-			"/usr/local/bin/hashem carrier set %s",
+		"curl -sL https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /tmp/hashem.sh && "+
+			"bash /tmp/hashem.sh setup-iran --local-pub %s --remote-pub %s --frp-port %d --token %s --force && "+
+			"bash /tmp/hashem.sh carrier mode %s && rm -f /tmp/hashem.sh",
 		iranIP, foreignIP, frpPort, token, carrier,
 	)
 
@@ -577,7 +594,7 @@ func (s *HashemService) SetupSSH(form HashemSSHSetupForm) (*HashemSSHSetupResult
 	)
 	fOut, _ := cmdForeign.CombinedOutput()
 
-	cmdCarrier := exec.CommandContext(ctx, hashemBinPath, "carrier", "set", carrier)
+	cmdCarrier := exec.CommandContext(ctx, hashemBinPath, "carrier", "mode", carrier)
 	_ = cmdCarrier.Run()
 
 	if data, err := os.ReadFile(frpcTomlPath); err == nil {
@@ -587,6 +604,24 @@ func (s *HashemService) SetupSSH(form HashemSSHSetupForm) (*HashemSSHSetupResult
 			_ = os.WriteFile(frpcTomlPath, []byte(sData), 0644)
 		}
 	}
+
+	fixFrpcService := `[Unit]
+Description=FRP Client Reverse Service
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=root
+Restart=always
+RestartSec=3s
+ExecStart=/usr/local/bin/frpc -c /etc/frp/frpc.toml
+
+[Install]
+WantedBy=multi-user.target
+`
+	_ = os.WriteFile("/etc/systemd/system/frpc.service", []byte(fixFrpcService), 0644)
+	_ = exec.Command("systemctl", "daemon-reload").Run()
 	_ = exec.Command("systemctl", "restart", "frpc").Run()
 
 	return &HashemSSHSetupResult{
@@ -631,7 +666,7 @@ func (s *HashemService) GenerateOneLiner(form HashemOneLinerForm) (*HashemOneLin
 	)
 	_ = cmdForeign.Run()
 
-	cmdCarrier := exec.CommandContext(ctx, hashemBinPath, "carrier", "set", carrier)
+	cmdCarrier := exec.CommandContext(ctx, hashemBinPath, "carrier", "mode", carrier)
 	_ = cmdCarrier.Run()
 
 	if data, err := os.ReadFile(frpcTomlPath); err == nil {
@@ -641,10 +676,28 @@ func (s *HashemService) GenerateOneLiner(form HashemOneLinerForm) (*HashemOneLin
 			_ = os.WriteFile(frpcTomlPath, []byte(sData), 0644)
 		}
 	}
+
+	fixFrpcService := `[Unit]
+Description=FRP Client Reverse Service
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=root
+Restart=always
+RestartSec=3s
+ExecStart=/usr/local/bin/frpc -c /etc/frp/frpc.toml
+
+[Install]
+WantedBy=multi-user.target
+`
+	_ = os.WriteFile("/etc/systemd/system/frpc.service", []byte(fixFrpcService), 0644)
+	_ = exec.Command("systemctl", "daemon-reload").Run()
 	_ = exec.Command("systemctl", "restart", "frpc").Run()
 
 	oneLiner := fmt.Sprintf(
-		"curl -sL https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh | bash -s -- setup-iran --local-pub %s --remote-pub %s --frp-port %d --token %s --force && hashem carrier set %s",
+		"curl -sL https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /tmp/hashem.sh && bash /tmp/hashem.sh setup-iran --local-pub %s --remote-pub %s --frp-port %d --token %s --force && bash /tmp/hashem.sh carrier mode %s && rm -f /tmp/hashem.sh",
 		iranIP, foreignIP, frpPort, token, carrier,
 	)
 

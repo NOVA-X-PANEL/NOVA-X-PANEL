@@ -150,7 +150,7 @@ export default function HashemPage() {
     return classes.join(' ');
   }, [isDark, isUltra]);
 
-  const isHealthy = status.running && status.frpStatus === 'active' && status.pingMs >= 0;
+  const isHealthy = status.running && status.frpStatus === 'active';
 
   return (
     <ConfigProvider theme={antdThemeConfig}>
@@ -327,6 +327,10 @@ export default function HashemPage() {
                           }}
                         >
                           {status.pingMs.toFixed(1)} <span style={{ fontSize: 14 }}>ms</span>
+                        </Title>
+                      ) : isHealthy ? (
+                        <Title level={3} style={{ margin: 0, color: '#52c41a', textShadow: '0 0 10px rgba(82, 196, 26, 0.4)' }}>
+                          {t('pages.hashem.frpRunning')}
                         </Title>
                       ) : (
                         <Title level={3} style={{ margin: 0, color: '#ff4d4f' }}>
@@ -518,7 +522,7 @@ export default function HashemPage() {
                       type="info"
                       showIcon
                       message="راه‌اندازی کاملاً خودکار تانل با اتصال SSH"
-                      description="با وارد کردن آی‌پی و رمز عبور سرور ایران، پنل مستقیماً از طریق SSH به سرور ایران متصل شده و تمامی مراحل نصب و کانفیگ تانل را به صورت خودکار انجام می‌دهد."
+                      description="با وارد کردن آی‌پی و رمز عبور سرور ایران، پنل مستقیماً از طریق SSH به سرور ایران متصل می‌شود. (نکته: در صورتی که دیتاسنتر ایران دسترسی مستقیم پورت ۲۲ را مسدود کرده باشد و تایم‌اوت دریافت کردید، لطفاً از تب دوم «دستور تک‌خطی سرور ایران» استفاده فرمایید.)"
                       style={{ marginBottom: 16 }}
                     />
 

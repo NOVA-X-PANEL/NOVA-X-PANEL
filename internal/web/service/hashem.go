@@ -340,17 +340,6 @@ func (s *HashemService) isFrpConnected(peerGre string, port int) bool {
 		return false
 	}
 
-	// 1. Actively verify that the remote peer FRP port is listening and reachable via TCP
-	if peerGre != "" {
-		target := net.JoinHostPort(peerGre, strconv.Itoa(port))
-		conn, err := net.DialTimeout("tcp", target, 1200*time.Millisecond)
-		if err != nil {
-			return false
-		}
-		_ = conn.Close()
-	}
-
-	// 2. Verify established sockets exist for this port
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
@@ -373,15 +362,15 @@ func (s *HashemService) measurePing(ip, dev string, frpPort int) float64 {
 		return -1
 	}
 
-	// 1. Real active ICMP ping directly to peer GRE IP
-	ctx1, cancel1 := context.WithTimeout(context.Background(), 2*time.Second)
+	// 1. Real active ICMP ping directly to peer GRE IP (1 probe, 1s timeout)
+	ctx1, cancel1 := context.WithTimeout(context.Background(), 1200*time.Millisecond)
 	defer cancel1()
 
 	var args []string
 	if dev != "" {
-		args = []string{"-c", "2", "-W", "1", "-I", dev, ip}
+		args = []string{"-c", "1", "-W", "1", "-I", dev, ip}
 	} else {
-		args = []string{"-c", "2", "-W", "1", ip}
+		args = []string{"-c", "1", "-W", "1", ip}
 	}
 
 	out, err := exec.CommandContext(ctx1, "ping", args...).CombinedOutput()
@@ -394,11 +383,11 @@ func (s *HashemService) measurePing(ip, dev string, frpPort int) float64 {
 		}
 	}
 
-	// 2. If ICMP ping failed or dropped, fallback to active live TCP SYN probe
+	// 2. Quick fallback TCP SYN probe (500ms timeout)
 	if frpPort > 0 {
 		target := net.JoinHostPort(ip, strconv.Itoa(frpPort))
 		start := time.Now()
-		conn, err := net.DialTimeout("tcp", target, 1200*time.Millisecond)
+		conn, err := net.DialTimeout("tcp", target, 500*time.Millisecond)
 		if err == nil {
 			_ = conn.Close()
 			latency := float64(time.Since(start).Microseconds()) / 1000.0

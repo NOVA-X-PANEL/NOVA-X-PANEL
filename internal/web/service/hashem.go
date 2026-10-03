@@ -677,7 +677,7 @@ func (s *HashemService) SetupSSH(form HashemSSHSetupForm) (*HashemSSHSetupResult
 		}
 	}
 
-	// 2. Run setup-iran with noninteractive apt and resilient mirror fallback
+	peerJsonCmd, optimizeCmd, _ := buildIranSetupCommands(iranIP, foreignIP, frpPort, token, carrier, ports)
 	iranCmd := fmt.Sprintf(
 		"export DEBIAN_FRONTEND=noninteractive; "+
 			"if [ ! -s /tmp/hashem.sh ]; then "+
@@ -687,8 +687,9 @@ func (s *HashemService) SetupSSH(form HashemSSHSetupForm) (*HashemSSHSetupResult
 			"  chmod +x /tmp/hashem.sh; "+
 			"fi; "+
 			"bash /tmp/hashem.sh setup-iran --local-pub %s --remote-pub %s --frp-port %d --token %s --force && "+
-			"bash /tmp/hashem.sh carrier mode %s",
-		iranIP, foreignIP, frpPort, token, carrier,
+			"bash /tmp/hashem.sh carrier mode %s && "+
+			"%s && %s; rm -f /tmp/hashem.sh",
+		iranIP, foreignIP, frpPort, token, carrier, peerJsonCmd, optimizeCmd,
 	)
 
 	session, err := client.NewSession()
@@ -718,12 +719,30 @@ func (s *HashemService) SetupSSH(form HashemSSHSetupForm) (*HashemSSHSetupResult
 	cmdCarrier := exec.CommandContext(ctx, hashemBinPath, "carrier", "mode", carrier)
 	_ = cmdCarrier.Run()
 
+	s.optimizeForeignNetwork(ports)
+
+	return &HashemSSHSetupResult{
+		Success:   true,
+		Message:   "تانل با موفقیت از طریق SSH روی سرور ایران و خارج پیاده‌سازی شد.",
+		IranIP:    iranIP,
+		ForeignIP: foreignIP,
+		Ports:     ports,
+		Log:       fmt.Sprintf("Iran Setup:\n%s\n\nForeign Setup:\n%s", string(iranOut), string(fOut)),
+	}, nil
+}
+
+func (s *HashemService) optimizeForeignNetwork(ports string) {
 	if data, err := os.ReadFile(frpcTomlPath); err == nil {
 		sData := string(data)
-		if !strings.Contains(sData, "transport.poolCount") {
-			sData = strings.Replace(sData, "transport.tcpMux = true", "transport.tcpMux = true\ntransport.poolCount = 10", 1)
-			_ = os.WriteFile(frpcTomlPath, []byte(sData), 0644)
+		if strings.Contains(sData, "transport.poolCount") {
+			re := regexp.MustCompile(`transport\.poolCount\s*=\s*\d+`)
+			sData = re.ReplaceAllString(sData, "transport.poolCount = 20")
+		} else {
+			sData = strings.Replace(sData, "transport.tcpMux = true", "transport.tcpMux = true\ntransport.poolCount = 20", 1)
 		}
+		reUdp := regexp.MustCompile(`(?s)\[\[proxies\]\]\s*\nname\s*=\s*"udp_[^"]+"\s*\ntype\s*=\s*"udp"[^\[]*`)
+		sData = reUdp.ReplaceAllString(sData, "")
+		_ = os.WriteFile(frpcTomlPath, []byte(sData), 0644)
 	}
 
 	fixFrpcService := `[Unit]
@@ -745,14 +764,47 @@ WantedBy=multi-user.target
 	_ = exec.Command("systemctl", "daemon-reload").Run()
 	_ = exec.Command("systemctl", "restart", "frpc").Run()
 
-	return &HashemSSHSetupResult{
-		Success:   true,
-		Message:   "تانل با موفقیت از طریق SSH روی سرور ایران و خارج پیاده‌سازی شد.",
-		IranIP:    iranIP,
-		ForeignIP: foreignIP,
-		Ports:     ports,
-		Log:       fmt.Sprintf("Iran Setup:\n%s\n\nForeign Setup:\n%s", string(iranOut), string(fOut)),
-	}, nil
+	_ = exec.Command("ip", "link", "set", "dev", "gre-tunnel", "mtu", "1220").Run()
+	_ = exec.Command("iptables", "-t", "mangle", "-C", "POSTROUTING", "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--set-mss", "1140").Run()
+	_ = exec.Command("iptables", "-t", "mangle", "-A", "POSTROUTING", "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--set-mss", "1140").Run()
+	_ = exec.Command("iptables", "-t", "mangle", "-C", "FORWARD", "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--set-mss", "1140").Run()
+	_ = exec.Command("iptables", "-t", "mangle", "-A", "FORWARD", "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--set-mss", "1140").Run()
+	_ = exec.Command("ethtool", "-K", "gre-tunnel", "tso", "off", "gso", "off", "gro", "off").Run()
+	_ = exec.Command("ethtool", "-K", "eth0", "tso", "off", "gso", "off", "gro", "off").Run()
+	_ = exec.Command(hashemBinPath, "optimize").Run()
+}
+
+func buildIranSetupCommands(iranIP, foreignIP string, frpPort int, token, carrier, ports string) (string, string, string) {
+	var portList []string
+	for _, p := range strings.Split(ports, ",") {
+		p = strings.TrimSpace(p)
+		if _, err := strconv.Atoi(p); err == nil {
+			portList = append(portList, p)
+		}
+	}
+	portsJson := strings.Join(portList, ", ")
+	if portsJson == "" {
+		portsJson = "8080"
+	}
+
+	peerJsonCmd := fmt.Sprintf(
+		`python3 -c 'import json, os; p="/etc/gre-panel/peers.json"; os.makedirs(os.path.dirname(p), exist_ok=True); json.dump({"peers": [{"id": 1, "name": "German-Nova", "peer_pub": "%s", "peer_gre": "10.10.10.1", "ports": [%s], "frp_port": %d, "legacy": True}]}, open(p, "w"), indent=2)' 2>/dev/null && systemctl restart gre-panel 2>/dev/null || true`,
+		foreignIP, portsJson, frpPort,
+	)
+
+	optimizeCmd := "ip link set dev gre-tunnel mtu 1220 2>/dev/null || true; " +
+		"iptables -t mangle -C POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1140 2>/dev/null || iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1140 2>/dev/null || true; " +
+		"iptables -t mangle -C FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1140 2>/dev/null || iptables -t mangle -A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1140 2>/dev/null || true; " +
+		"ethtool -K eth0 tso off gso off gro off 2>/dev/null || true; " +
+		"ethtool -K gre-tunnel tso off gso off gro off 2>/dev/null || true; " +
+		"bash /tmp/hashem.sh optimize 2>/dev/null || true"
+
+	oneLiner := fmt.Sprintf(
+		"curl -fsSL https://fastly.jsdelivr.net/gh/pdnczone/hashem-panel/hashem.sh -o /tmp/hashem.sh 2>/dev/null || curl -fsSL https://ghproxy.net/https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /tmp/hashem.sh 2>/dev/null || curl -sL https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /tmp/hashem.sh; bash /tmp/hashem.sh setup-iran --local-pub %s --remote-pub %s --frp-port %d --token %s --force && bash /tmp/hashem.sh carrier mode %s && %s && %s && rm -f /tmp/hashem.sh",
+		iranIP, foreignIP, frpPort, token, carrier, peerJsonCmd, optimizeCmd,
+	)
+
+	return peerJsonCmd, optimizeCmd, oneLiner
 }
 
 func (s *HashemService) GenerateOneLiner(form HashemOneLinerForm) (*HashemOneLinerResult, error) {
@@ -790,37 +842,9 @@ func (s *HashemService) GenerateOneLiner(form HashemOneLinerForm) (*HashemOneLin
 	cmdCarrier := exec.CommandContext(ctx, hashemBinPath, "carrier", "mode", carrier)
 	_ = cmdCarrier.Run()
 
-	if data, err := os.ReadFile(frpcTomlPath); err == nil {
-		sData := string(data)
-		if !strings.Contains(sData, "transport.poolCount") {
-			sData = strings.Replace(sData, "transport.tcpMux = true", "transport.tcpMux = true\ntransport.poolCount = 10", 1)
-			_ = os.WriteFile(frpcTomlPath, []byte(sData), 0644)
-		}
-	}
+	s.optimizeForeignNetwork(ports)
 
-	fixFrpcService := `[Unit]
-Description=FRP Client Reverse Service
-After=network.target
-StartLimitIntervalSec=0
-
-[Service]
-Type=simple
-User=root
-Restart=always
-RestartSec=3s
-ExecStart=/usr/local/bin/frpc -c /etc/frp/frpc.toml
-
-[Install]
-WantedBy=multi-user.target
-`
-	_ = os.WriteFile("/etc/systemd/system/frpc.service", []byte(fixFrpcService), 0644)
-	_ = exec.Command("systemctl", "daemon-reload").Run()
-	_ = exec.Command("systemctl", "restart", "frpc").Run()
-
-	oneLiner := fmt.Sprintf(
-		"curl -fsSL https://fastly.jsdelivr.net/gh/pdnczone/hashem-panel/hashem.sh -o /tmp/hashem.sh 2>/dev/null || curl -fsSL https://ghproxy.net/https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /tmp/hashem.sh 2>/dev/null || curl -sL https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /tmp/hashem.sh; bash /tmp/hashem.sh setup-iran --local-pub %s --remote-pub %s --frp-port %d --token %s --force && bash /tmp/hashem.sh carrier mode %s && rm -f /tmp/hashem.sh",
-		iranIP, foreignIP, frpPort, token, carrier,
-	)
+	_, _, oneLiner := buildIranSetupCommands(iranIP, foreignIP, frpPort, token, carrier, ports)
 
 	return &HashemOneLinerResult{
 		OneLinerCommand: oneLiner,

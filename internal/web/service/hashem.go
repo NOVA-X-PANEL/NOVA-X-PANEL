@@ -2,6 +2,7 @@ package service
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"crypto/rand"
 	"encoding/hex"
@@ -632,25 +633,61 @@ func (s *HashemService) SetupSSH(form HashemSSHSetupForm) (*HashemSSHSetupResult
 		User: sshUser,
 		Auth: []ssh.AuthMethod{
 			ssh.Password(form.SSHPassword),
+			ssh.KeyboardInteractive(func(user, instruction string, questions []string, echos []bool) ([]string, error) {
+				answers := make([]string, len(questions))
+				for i := range answers {
+					answers[i] = form.SSHPassword
+				}
+				return answers, nil
+			}),
 		},
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-		Timeout:         20 * time.Second,
+		Timeout:         25 * time.Second,
 	}
 
 	addr := net.JoinHostPort(iranIP, strconv.Itoa(sshPort))
 	client, err := ssh.Dial("tcp", addr, sshConfig)
 	if err != nil {
-		if strings.Contains(err.Error(), "timeout") || strings.Contains(err.Error(), "timed out") {
-			return nil, fmt.Errorf("اتصال SSH به پورت %d سرور ایران با تایم‌اوت مواجه شد. به دلیل مسدود بودن پورت‌های SSH از خارج توسط دیتاسنترهای ایران، لطفاً از تب دوم «دستور تک‌خطی سرور ایران» استفاده فرمایید.", sshPort)
+		errStr := err.Error()
+		if strings.Contains(errStr, "timeout") || strings.Contains(errStr, "timed out") || strings.Contains(errStr, "i/o timeout") {
+			return nil, fmt.Errorf("اتصال SSH به پورت %d سرور ایران تایم‌اوت شد. به دلیل مسدود بودن پیش‌فرض پورت ۲۲ توسط اکثر دیتاسنترهای ایران، لطفاً پورت SSH سرور ایران را تغییر دهید یا از تب «دستور تک‌خطی» استفاده فرمایید.", sshPort)
+		}
+		if strings.Contains(errStr, "unable to authenticate") || strings.Contains(errStr, "auth failed") {
+			return nil, fmt.Errorf("احراز هویت SSH ناموفق بود. نام کاربری (%s) یا رمز عبور وارد شده برای سرور ایران نادرست است.", sshUser)
+		}
+		if strings.Contains(errStr, "connection refused") {
+			return nil, fmt.Errorf("اتصال به سرور ایران رد شد (Connection Refused). لطفاً بررسی کنید سرویس SSH روی پورت %d فعال باشد.", sshPort)
 		}
 		return nil, fmt.Errorf("خطا در اتصال SSH به سرور ایران (%s): %v", addr, err)
 	}
 	defer client.Close()
 
+	// 1. Read local hashem.sh to transfer directly over SSH, bypassing Iranian GitHub blocks
+	scriptContent, _ := os.ReadFile(hashemScriptPath)
+	if len(scriptContent) == 0 {
+		scriptContent, _ = os.ReadFile(hashemBinPath)
+	}
+
+	if len(scriptContent) > 0 {
+		uploadSession, uErr := client.NewSession()
+		if uErr == nil {
+			uploadSession.Stdin = bytes.NewReader(scriptContent)
+			_ = uploadSession.Run("cat > /tmp/hashem.sh && chmod +x /tmp/hashem.sh && cp -f /tmp/hashem.sh /usr/local/bin/hashem 2>/dev/null || true")
+			uploadSession.Close()
+		}
+	}
+
+	// 2. Run setup-iran with noninteractive apt and resilient mirror fallback
 	iranCmd := fmt.Sprintf(
-		"curl -sL https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /tmp/hashem.sh && "+
+		"export DEBIAN_FRONTEND=noninteractive; "+
+			"if [ ! -s /tmp/hashem.sh ]; then "+
+			"  curl -fsSL https://fastly.jsdelivr.net/gh/pdnczone/hashem-panel/hashem.sh -o /tmp/hashem.sh 2>/dev/null || "+
+			"  curl -fsSL https://ghproxy.net/https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /tmp/hashem.sh 2>/dev/null || "+
+			"  curl -sL https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /tmp/hashem.sh; "+
+			"  chmod +x /tmp/hashem.sh; "+
+			"fi; "+
 			"bash /tmp/hashem.sh setup-iran --local-pub %s --remote-pub %s --frp-port %d --token %s --force && "+
-			"bash /tmp/hashem.sh carrier mode %s && rm -f /tmp/hashem.sh",
+			"bash /tmp/hashem.sh carrier mode %s",
 		iranIP, foreignIP, frpPort, token, carrier,
 	)
 
@@ -665,7 +702,7 @@ func (s *HashemService) SetupSSH(form HashemSSHSetupForm) (*HashemSSHSetupResult
 		return nil, fmt.Errorf("اجرای تانل روی سرور ایران با خطا مواجه شد: %v\nخروجی: %s", err, string(iranOut))
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
 	cmdForeign := exec.CommandContext(ctx, hashemBinPath, "setup-foreign",
@@ -781,7 +818,7 @@ WantedBy=multi-user.target
 	_ = exec.Command("systemctl", "restart", "frpc").Run()
 
 	oneLiner := fmt.Sprintf(
-		"curl -sL https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /tmp/hashem.sh && bash /tmp/hashem.sh setup-iran --local-pub %s --remote-pub %s --frp-port %d --token %s --force && bash /tmp/hashem.sh carrier mode %s && rm -f /tmp/hashem.sh",
+		"curl -fsSL https://fastly.jsdelivr.net/gh/pdnczone/hashem-panel/hashem.sh -o /tmp/hashem.sh 2>/dev/null || curl -fsSL https://ghproxy.net/https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /tmp/hashem.sh 2>/dev/null || curl -sL https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /tmp/hashem.sh; bash /tmp/hashem.sh setup-iran --local-pub %s --remote-pub %s --frp-port %d --token %s --force && bash /tmp/hashem.sh carrier mode %s && rm -f /tmp/hashem.sh",
 		iranIP, foreignIP, frpPort, token, carrier,
 	)
 

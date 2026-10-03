@@ -292,13 +292,13 @@ export default function HashemPage() {
                       <div>
                         <Text type="secondary">{t('pages.hashem.localGreIp')}: </Text>
                         <Text code style={{ background: 'rgba(0,0,0,0.4)', borderColor: 'rgba(56,189,248,0.2)' }}>
-                          {status.localGreIP || '-'}
+                          {(status as any).localGreIp || (status as any).localGreIP || '-'}
                         </Text>
                       </div>
                       <div>
                         <Text type="secondary">{t('pages.hashem.peerGreIp')}: </Text>
                         <Text code style={{ background: 'rgba(0,0,0,0.4)', borderColor: 'rgba(56,189,248,0.2)' }}>
-                          {status.remoteGreIP || '-'}
+                          {(status as any).remoteGreIp || (status as any).remoteGreIP || '-'}
                         </Text>
                       </div>
                     </div>
@@ -367,7 +367,7 @@ export default function HashemPage() {
                         </Title>
                       )}
                     </div>
-                    <Text type="secondary">{t('pages.hashem.testedAgainst', { ip: status.remoteGreIP || 'Peer' })}</Text>
+                    <Text type="secondary">{t('pages.hashem.testedAgainst', { ip: (status as any).remoteGreIp || (status as any).remoteGreIP || 'Peer' })}</Text>
                   </Card>
                 </Col>
 
@@ -499,12 +499,12 @@ export default function HashemPage() {
                       </Descriptions.Item>
                       <Descriptions.Item label={t('pages.hashem.localPublicIp')}>
                         <Text code style={{ background: 'rgba(0,0,0,0.4)', borderColor: 'rgba(56,189,248,0.2)' }}>
-                          {status.localPubIP || '-'}
+                          {(status as any).localPubIp || (status as any).localPubIP || '-'}
                         </Text>
                       </Descriptions.Item>
                       <Descriptions.Item label={t('pages.hashem.remotePublicIp')}>
                         <Text code style={{ background: 'rgba(0,0,0,0.4)', borderColor: 'rgba(56,189,248,0.2)' }}>
-                          {status.remotePubIP || '-'}
+                          {(status as any).remotePubIp || (status as any).remotePubIP || '-'}
                         </Text>
                       </Descriptions.Item>
                     </Descriptions>

@@ -67,6 +67,25 @@ type HashemStatus struct {
 	SetupCommand    string   `json:"setupCommand"`
 }
 
+func (s HashemStatus) MarshalJSON() ([]byte, error) {
+	type Alias HashemStatus
+	return json.Marshal(&struct {
+		Alias
+		LocalGreIP  string `json:"localGreIP"`
+		RemoteGreIP string `json:"remoteGreIP"`
+		PeerGreIP   string `json:"peerGreIP"`
+		LocalPubIP  string `json:"localPubIP"`
+		RemotePubIP string `json:"remotePubIP"`
+	}{
+		Alias:       Alias(s),
+		LocalGreIP:  s.LocalGreIP,
+		RemoteGreIP: s.RemoteGreIP,
+		PeerGreIP:   s.RemoteGreIP,
+		LocalPubIP:  s.LocalPubIP,
+		RemotePubIP: s.RemotePubIP,
+	})
+}
+
 type HashemSetupForm struct {
 	Role      string `json:"role"`
 	LocalPub  string `json:"localPub"`
@@ -154,13 +173,35 @@ func (s *HashemService) GetStatus() (*HashemStatus, error) {
 		}
 	}
 
+	s.parseGreInterface(status)
+
 	token := ""
 	if _, err := os.Stat(frpcTomlPath); err == nil {
 		status.Role = "foreign"
 		token = s.parseFrpConfig(frpcTomlPath, status)
+	} else if _, err := os.Stat(frpsTomlPath); err == nil {
+		status.Role = "iran"
+		token = s.parseFrpConfig(frpsTomlPath, status)
+	} else {
+		status.Role = "none"
+	}
+
+	if status.RemoteGreIP != "" {
+		status.PingMs = s.measurePing(status.RemoteGreIP, "gre-tunnel", status.FrpPort)
+		if status.PingMs <= 0 {
+			status.Running = false
+		}
+	} else {
+		status.PingMs = -1
+		if !status.Installed {
+			status.Running = false
+		}
+	}
+
+	if status.Role == "foreign" {
 		baseStatus := s.checkServiceStatus("frpc")
 		if baseStatus == "active" {
-			if s.isFrpConnected(status.RemoteGreIP, status.FrpPort) {
+			if status.PingMs > 0 && s.isFrpConnected(status.RemoteGreIP, status.FrpPort) {
 				status.FrpStatus = "active"
 			} else {
 				status.FrpStatus = "connecting"
@@ -168,18 +209,17 @@ func (s *HashemService) GetStatus() (*HashemStatus, error) {
 		} else {
 			status.FrpStatus = baseStatus
 		}
-	} else if _, err := os.Stat(frpsTomlPath); err == nil {
-		status.Role = "iran"
-		token = s.parseFrpConfig(frpsTomlPath, status)
-		status.FrpStatus = s.checkServiceStatus("frps")
-	} else {
-		status.Role = "none"
-	}
-
-	s.parseGreInterface(status)
-
-	if status.RemoteGreIP != "" {
-		status.PingMs = s.measurePing(status.RemoteGreIP, "gre-tunnel", status.FrpPort)
+	} else if status.Role == "iran" {
+		baseStatus := s.checkServiceStatus("frps")
+		if baseStatus == "active" {
+			if status.PingMs > 0 && s.isFrpConnected(status.RemoteGreIP, status.FrpPort) {
+				status.FrpStatus = "active"
+			} else {
+				status.FrpStatus = "connecting"
+			}
+		} else {
+			status.FrpStatus = baseStatus
+		}
 	}
 
 	if status.Role == "foreign" && status.RemotePubIP != "" && status.FrpPort > 0 && token != "" {
@@ -261,10 +301,14 @@ func (s *HashemService) parseGreInterface(status *HashemStatus) {
 		status.RemotePubIP = m[2]
 	}
 
-	reInet := regexp.MustCompile(`inet\s+([0-9.]+)/[0-9]+.*scope global gre-tunnel`)
+	reInet := regexp.MustCompile(`inet\s+([0-9.]+)/[0-9]+`)
 	if m := reInet.FindStringSubmatch(output); len(m) == 2 {
 		status.LocalGreIP = m[1]
-		if status.LocalGreIP == "10.10.10.1" {
+		if strings.HasSuffix(status.LocalGreIP, ".1") {
+			status.RemoteGreIP = strings.TrimSuffix(status.LocalGreIP, ".1") + ".2"
+		} else if strings.HasSuffix(status.LocalGreIP, ".2") {
+			status.RemoteGreIP = strings.TrimSuffix(status.LocalGreIP, ".2") + ".1"
+		} else if status.LocalGreIP == "10.10.10.1" {
 			status.RemoteGreIP = "10.10.10.2"
 		} else if status.LocalGreIP == "10.10.10.2" {
 			status.RemoteGreIP = "10.10.10.1"
@@ -292,19 +336,27 @@ func (s *HashemService) checkServiceStatus(svc string) string {
 }
 
 func (s *HashemService) isFrpConnected(peerGre string, port int) bool {
-	if peerGre == "" && port <= 0 {
+	if port <= 0 {
 		return false
 	}
+
+	// 1. Actively verify that the remote peer FRP port is listening and reachable via TCP
+	if peerGre != "" {
+		target := net.JoinHostPort(peerGre, strconv.Itoa(port))
+		conn, err := net.DialTimeout("tcp", target, 1200*time.Millisecond)
+		if err != nil {
+			return false
+		}
+		_ = conn.Close()
+	}
+
+	// 2. Verify established sockets exist for this port
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	filter := ""
-	if peerGre != "" && port > 0 {
-		filter = fmt.Sprintf("dst %s or dport = :%d", peerGre, port)
-	} else if peerGre != "" {
-		filter = fmt.Sprintf("dst %s", peerGre)
-	} else {
-		filter = fmt.Sprintf("dport = :%d", port)
+	filter := fmt.Sprintf("dport = :%d", port)
+	if peerGre != "" {
+		filter = fmt.Sprintf("dst %s and dport = :%d", peerGre, port)
 	}
 
 	cmd := exec.CommandContext(ctx, "bash", "-c", fmt.Sprintf("ss -t state established '%s' 2>/dev/null", filter))
@@ -317,41 +369,45 @@ func (s *HashemService) isFrpConnected(peerGre string, port int) bool {
 }
 
 func (s *HashemService) measurePing(ip, dev string, frpPort int) float64 {
-	// 1. Try reading real-time TCP RTT directly from active FRP tunnel socket in kernel
-	ctx1, cancel1 := context.WithTimeout(context.Background(), 1*time.Second)
+	if ip == "" {
+		return -1
+	}
+
+	// 1. Real active ICMP ping directly to peer GRE IP
+	ctx1, cancel1 := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel1()
-
-	filter := fmt.Sprintf("dst %s", ip)
-	if frpPort > 0 {
-		filter = fmt.Sprintf("dst %s or dport = :%d", ip, frpPort)
-	}
-	cmd := exec.CommandContext(ctx1, "bash", "-c", fmt.Sprintf("ss -tin state established '%s' 2>/dev/null | grep -oP '(minrtt|rtt):\\K[0-9.]+' | head -n 1", filter))
-	if out, err := cmd.Output(); err == nil {
-		str := strings.TrimSpace(string(out))
-		if val, err := strconv.ParseFloat(str, 64); err == nil && val > 0 {
-			return val
-		}
-	}
-
-	// 2. Fallback to ICMP ping bound to device
-	ctx2, cancel2 := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel2()
 
 	var args []string
 	if dev != "" {
-		args = []string{"-I", dev, "-c", "2", "-W", "1", ip}
+		args = []string{"-c", "2", "-W", "1", "-I", dev, ip}
 	} else {
 		args = []string{"-c", "2", "-W", "1", ip}
 	}
 
-	out, err := exec.CommandContext(ctx2, "ping", args...).CombinedOutput()
+	out, err := exec.CommandContext(ctx1, "ping", args...).CombinedOutput()
 	if err == nil {
 		reTime := regexp.MustCompile(`time=([0-9.]+)\s*ms`)
 		if m := reTime.FindStringSubmatch(string(out)); len(m) == 2 {
-			val, _ := strconv.ParseFloat(m[1], 64)
-			return val
+			if val, err := strconv.ParseFloat(m[1], 64); err == nil && val > 0 {
+				return val
+			}
 		}
 	}
+
+	// 2. If ICMP ping failed or dropped, fallback to active live TCP SYN probe
+	if frpPort > 0 {
+		target := net.JoinHostPort(ip, strconv.Itoa(frpPort))
+		start := time.Now()
+		conn, err := net.DialTimeout("tcp", target, 1200*time.Millisecond)
+		if err == nil {
+			_ = conn.Close()
+			latency := float64(time.Since(start).Microseconds()) / 1000.0
+			if latency > 0 {
+				return latency
+			}
+		}
+	}
+
 	return -1
 }
 

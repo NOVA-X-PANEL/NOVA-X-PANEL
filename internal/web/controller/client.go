@@ -251,6 +251,16 @@ func (a *ClientController) list(c *gin.Context) {
 	jsonObj(c, rows, nil)
 }
 
+func (a *ClientController) renewalPreview(c *gin.Context) {
+	var request service.ClientRenewalPreviewRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		jsonObj(c, nil, err)
+		return
+	}
+	preview, err := a.clientService.PreviewRenewal(request, &a.settingService)
+	jsonObj(c, preview, err)
+}
+
 func (a *ClientController) listPaged(c *gin.Context) {
 	var params service.ClientPageParams
 	if err := c.ShouldBindQuery(&params); err != nil {

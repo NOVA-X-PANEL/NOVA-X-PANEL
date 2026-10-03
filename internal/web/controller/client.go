@@ -81,6 +81,7 @@ func (a *ClientController) initRouter(g *gin.RouterGroup) {
 	g.POST("/happLink/:id", clientsRead, a.generateHappLink)
 
 	g.POST("/add", clientsCreate, a.create)
+	g.POST("/renewalPreview", clientsRead, a.renewalPreview)
 	g.POST("/update/:email", clientsUpdate, a.update)
 	g.POST("/del/:email", clientsDelete, a.delete)
 	g.POST("/:email/attach", clientsUpdate, a.attach)
@@ -836,16 +837,20 @@ func (a *ClientController) importClients(c *gin.Context) {
 		}
 	}
 	result, needRestart, err := a.clientService.ImportClients(&a.inboundService, items)
+	// Flagged before the error check: a failed traffic restore still leaves the
+	// clients created before it committed, and those need the restart and refresh.
+	if needRestart {
+		a.xrayService.SetToNeedRestart()
+	}
+	if needRestart || result.Created > 0 || err == nil {
+		notifyClientsChanged()
+	}
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
 	a.stampOwnerForPayloads(c, items)
 	jsonObj(c, result, nil)
-	if needRestart {
-		a.xrayService.SetToNeedRestart()
-	}
-	notifyClientsChanged()
 }
 
 func (a *ClientController) delOrphans(c *gin.Context) {

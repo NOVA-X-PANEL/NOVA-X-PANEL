@@ -788,8 +788,8 @@ func buildIranSetupCommands(iranIP, foreignIP string, frpPort int, token, carrie
 	}
 
 	peerJsonCmd := fmt.Sprintf(
-		`python3 -c 'import json, os; p="/etc/gre-panel/peers.json"; os.makedirs(os.path.dirname(p), exist_ok=True); json.dump({"peers": [{"id": 1, "name": "German-Nova", "peer_pub": "%s", "peer_gre": "10.10.10.1", "ports": [%s], "frp_port": %d, "legacy": True}]}, open(p, "w"), indent=2)' 2>/dev/null && systemctl restart gre-panel 2>/dev/null || true`,
-		foreignIP, portsJson, frpPort,
+		`python3 -c 'import json, os; p="/etc/gre-panel/peers.json"; os.makedirs(os.path.dirname(p), exist_ok=True); json.dump({"peers": [{"id": 1, "name": "German-Nova", "local_pub": "%s", "remote_pub": "%s", "peer_pub": "%s", "local_gre": "10.10.10.2", "peer_gre": "10.10.10.1", "ports": [%s], "frp_port": %d, "gre_if": "gre-tunnel", "frps_svc": "frps", "legacy": True}]}, open(p, "w"), indent=2)' 2>/dev/null && systemctl restart gre-panel 2>/dev/null || true`,
+		iranIP, foreignIP, foreignIP, portsJson, frpPort,
 	)
 
 	optimizeCmd := "ip link set dev gre-tunnel mtu 1220 2>/dev/null || true; " +

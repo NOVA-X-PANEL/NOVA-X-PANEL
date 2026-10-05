@@ -21,16 +21,16 @@ func NewHashemController(g *gin.RouterGroup) *HashemController {
 }
 
 func (a *HashemController) initRouter(g *gin.RouterGroup) {
-	g.GET("/status", a.status)
-	g.POST("/setup", a.setup)
-	g.POST("/setup-ssh", a.setupSSH)
-	g.POST("/generate-oneliner", a.generateOneLiner)
-	g.POST("/carrier", a.carrier)
-	g.POST("/restart", a.restart)
-	g.POST("/watchdog", a.watchdog)
-	g.POST("/sync-inbounds", a.syncInbounds)
-	g.POST("/install", a.install)
-	g.POST("/remove", a.remove)
+	g.GET("/status", requireOwnerRole(), a.status)
+	g.POST("/setup", requireOwnerRole(), a.setup)
+	g.POST("/setup-ssh", requireOwnerRole(), a.setupSSH)
+	g.POST("/generate-oneliner", requireOwnerRole(), a.generateOneLiner)
+	g.POST("/carrier", requireOwnerRole(), a.carrier)
+	g.POST("/restart", requireOwnerRole(), a.restart)
+	g.POST("/watchdog", requireOwnerRole(), a.watchdog)
+	g.POST("/sync-inbounds", requireOwnerRole(), a.syncInbounds)
+	g.POST("/install", requireOwnerRole(), a.install)
+	g.POST("/remove", requireOwnerRole(), a.remove)
 }
 
 func (a *HashemController) status(c *gin.Context) {

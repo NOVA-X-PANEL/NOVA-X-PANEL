@@ -20,11 +20,11 @@ type SubBalancerController struct {
 func NewSubBalancerController(g *gin.RouterGroup) *SubBalancerController {
 	a := &SubBalancerController{}
 	g = g.Group("/sub-balancers")
-	g.GET("", a.list)
-	g.POST("", a.create)
-	g.POST("/:id", a.update)
-	g.DELETE("/:id", a.del)
-	g.POST("/:id/del", a.del)
+	g.GET("", requirePanelPermission("inbounds", "view"), a.list)
+	g.POST("", requirePanelPermission("inbounds", "create"), a.create)
+	g.POST("/:id", requirePanelPermission("inbounds", "update"), a.update)
+	g.DELETE("/:id", requirePanelPermission("inbounds", "delete"), a.del)
+	g.POST("/:id/del", requirePanelPermission("inbounds", "delete"), a.del)
 	return a
 }
 

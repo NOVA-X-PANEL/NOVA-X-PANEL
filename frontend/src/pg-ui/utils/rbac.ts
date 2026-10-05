@@ -231,6 +231,7 @@ function routeKey(pathname: string) {
   if (path.startsWith('/my-api')) return '/my-api'
   if (path.startsWith('/admins')) return '/admins'
   if (path.startsWith('/hosts')) return '/hosts'
+  if (path.startsWith('/hashem')) return '/hashem'
   return path
 }
 

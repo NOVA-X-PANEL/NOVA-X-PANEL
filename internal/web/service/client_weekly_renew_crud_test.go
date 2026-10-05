@@ -48,7 +48,7 @@ func TestClientWeeklyRenewCRUD(t *testing.T) {
 		if want == 0 {
 			filter = "off"
 		}
-		page, err := svc.ListPaged(inboundSvc, nil, ClientPageParams{AutoRenew: filter})
+		page, err := svc.ListPaged(inboundSvc, nil, ClientPageParams{AutoRenew: filter}, ClientAccessScope{Mode: ClientAccessAll, AllowAllInbounds: true})
 		if err != nil || len(page.Items) != 1 || page.Items[0].ResetWeekday != want {
 			t.Fatalf("renewal filter/projection = %+v/%v, want weekday %d", page, err, want)
 		}

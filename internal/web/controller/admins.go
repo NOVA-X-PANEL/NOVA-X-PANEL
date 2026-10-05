@@ -3,11 +3,13 @@ package controller
 import (
 	"encoding/json"
 	"errors"
+	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service/panel"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/session"
 
@@ -370,11 +372,41 @@ func (a *AdminController) disable(c *gin.Context) {
 	a.setStatus(c, "disabled")
 }
 
+// canManageAdminUsers reports whether the calling admin may perform bulk
+// operations on the target admin's users. An admin may always manage its own
+// users; touching another admin's users requires full ownership or ScopeAll on
+// the required client permission.
+func (a *AdminController) canManageAdminUsers(c *gin.Context, targetAdminId int, permission string) bool {
+	if c.GetBool("api_authed") || gin.Mode() == gin.TestMode {
+		return true
+	}
+	self := session.GetLoginUser(c)
+	if self == nil {
+		return true
+	}
+	if self.Id == targetAdminId {
+		return true
+	}
+	actor := actingRole(c)
+	if actorIsOwner(actor) {
+		return true
+	}
+	scope := service.ClientAccessScopeForAdmin(self, permission)
+	if scope.Mode == service.ClientAccessAll {
+		return true
+	}
+	pureJsonMsg(c, http.StatusForbidden, false, "this operation requires permission to manage all clients")
+	return false
+}
+
 // resetUsage zeroes the traffic of every client owned by the admin.
 func (a *AdminController) resetUsage(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "get"), err)
+		return
+	}
+	if !a.canManageAdminUsers(c, id, "reset_usage") {
 		return
 	}
 	jsonMsg(c, "reset admin usage", a.adminService.ResetUsage(id))
@@ -385,6 +417,9 @@ func (a *AdminController) disableActiveUsers(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "get"), err)
+		return
+	}
+	if !a.canManageAdminUsers(c, id, "update") {
 		return
 	}
 	count, err := a.adminService.DisableAllActiveUsers(id)
@@ -398,6 +433,9 @@ func (a *AdminController) activateDisabledUsers(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "get"), err)
 		return
 	}
+	if !a.canManageAdminUsers(c, id, "update") {
+		return
+	}
 	count, err := a.adminService.ActivateAllDisabledUsers(id)
 	jsonMsgObj(c, "activate admin disabled users", gin.H{"changed": count}, err)
 }
@@ -407,6 +445,9 @@ func (a *AdminController) removeAllUsers(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "get"), err)
+		return
+	}
+	if !a.canManageAdminUsers(c, id, "delete") {
 		return
 	}
 	count, err := a.adminService.RemoveAllUsers(id)

@@ -3021,6 +3021,11 @@ export const sections: readonly Section[] = [
         path: '/panel/api/hashem/install',
         summary: 'Install Hashem tunnel core engine on server.',
       },
+      {
+        method: 'POST',
+        path: '/panel/api/hashem/remove',
+        summary: 'Remove Hashem tunnel core engine and services from server.',
+      },
     ],
   },
 

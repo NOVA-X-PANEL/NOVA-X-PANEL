@@ -242,7 +242,7 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 	NewHashemController(hashem)
 
 	// Extra routes
-	api.POST("/backuptotgbot", a.BackuptoTgbot)
+	api.POST("/backuptotgbot", requireOwnerRole(), a.BackuptoTgbot)
 }
 
 // BackuptoTgbot sends a backup of the panel data to Telegram bot admins.

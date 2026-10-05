@@ -89,19 +89,19 @@
 }
 
 .hashem-alert {
-  background: rgba(14, 23, 42, 0.85) !important;
-  border: 1px solid rgba(56, 189, 248, 0.35) !important;
+  background: var(--nc-card-2, rgba(14, 23, 42, 0.85)) !important;
+  border: 1px solid var(--nc-border, rgba(56, 189, 248, 0.35)) !important;
   border-radius: 10px !important;
-  color: #e2e8f0 !important;
+  color: var(--nc-text, #e2e8f0) !important;
 }
 
 .hashem-alert .ant-alert-message {
-  color: #38bdf8 !important;
+  color: var(--nv-accent, #38bdf8) !important;
   font-weight: 600;
 }
 
 .hashem-alert .ant-alert-description {
-  color: #94a3b8 !important;
+  color: var(--nc-text-2, #94a3b8) !important;
 }
 
 .hashem-btn-sync {
@@ -131,13 +131,13 @@
 }
 
 .hashem-desc-table .ant-descriptions-item-label {
-  background: rgba(15, 23, 42, 0.6) !important;
-  color: #94a3b8 !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
+  background: var(--nc-card-2, rgba(15, 23, 42, 0.6)) !important;
+  color: var(--nc-text-2, #94a3b8) !important;
+  border-color: var(--nc-divider, rgba(255, 255, 255, 0.08)) !important;
 }
 
 .hashem-desc-table .ant-descriptions-item-content {
-  background: rgba(8, 12, 22, 0.6) !important;
-  color: #f1f5f9 !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
+  background: var(--nc-field, rgba(8, 12, 22, 0.6)) !important;
+  color: var(--nc-text, #f1f5f9) !important;
+  border-color: var(--nc-divider, rgba(255, 255, 255, 0.08)) !important;
 }

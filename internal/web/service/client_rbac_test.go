@@ -206,13 +206,13 @@ func TestApplyClientAccessScopeFiltersByInbound(t *testing.T) {
 func TestRoleAccessScopeDefaults(t *testing.T) {
 	// A non-owner role with an empty access document keeps full group access.
 	empty := &model.AdminRole{AccessJSON: "{}"}
-	_, allowAll, groups := roleGroupAccessScope(empty)
+	_, allowAll, groups := RoleGroupAccessScope(empty)
 	if !allowAll || len(groups) != 0 {
 		t.Errorf("empty access doc should allow all groups, got allowAll=%v groups=%v", allowAll, groups)
 	}
 
 	restricted := &model.AdminRole{AccessJSON: `{"allowAllGroups":false,"allowedGroups":["VIP"," Free "]}`}
-	_, allowAll, groups = roleGroupAccessScope(restricted)
+	_, allowAll, groups = RoleGroupAccessScope(restricted)
 	if allowAll {
 		t.Error("restricted role must not allow all groups")
 	}

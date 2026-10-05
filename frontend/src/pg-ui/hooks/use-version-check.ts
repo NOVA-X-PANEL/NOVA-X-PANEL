@@ -19,7 +19,7 @@ interface UseVersionCheckOptions {
   enabled?: boolean
 }
 
-const GITHUB_API_URL = 'https://api.github.com/repos/PasarGuard/panel/releases/latest'
+const GITHUB_API_URL = 'https://api.github.com/repos/NOVA-X-PANEL/NOVA-X-PANEL/releases/latest'
 const CACHE_KEY = 'pg_release'
 const CACHE_DURATION = 10 * 60 * 1000
 

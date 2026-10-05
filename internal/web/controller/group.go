@@ -39,8 +39,12 @@ func NewGroupController(g *gin.RouterGroup) *GroupController {
 }
 
 func (a *GroupController) initRouter(g *gin.RouterGroup) {
-	g.GET("/groups", requirePanelPermission("groups", "view"), a.list)
-	g.GET("/groups/:name/emails", requirePanelPermission("groups", "view"), a.emails)
+	groupsRead := requireAnyPanelPermission(
+		panelPermissionRequirement{Section: "groups", Permission: "view"},
+		panelPermissionRequirement{Section: "groups", Permission: "viewSimple"},
+	)
+	g.GET("/groups", groupsRead, a.list)
+	g.GET("/groups/:name/emails", groupsRead, a.emails)
 	g.POST("/groups/create", requirePanelPermission("groups", "create"), a.create)
 	g.POST("/groups/rename", requirePanelPermission("groups", "update"), a.rename)
 	g.POST("/groups/delete", requirePanelPermission("groups", "delete"), a.delete)

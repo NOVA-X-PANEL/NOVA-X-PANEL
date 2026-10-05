@@ -3,6 +3,7 @@ package controller
 import (
 	"encoding/json"
 	"net"
+	"net/http"
 	"strconv"
 	"strings"
 
@@ -427,6 +428,10 @@ func (a *InboundController) delAllInboundClients(c *gin.Context) {
 
 // resetAllTraffics resets all traffic counters across all inbounds.
 func (a *InboundController) resetAllTraffics(c *gin.Context) {
+	if !a.inboundScope(c).All {
+		pureJsonMsg(c, http.StatusForbidden, false, "this operation requires access to every inbound")
+		return
+	}
 	err := a.inboundService.ResetAllTraffics()
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)

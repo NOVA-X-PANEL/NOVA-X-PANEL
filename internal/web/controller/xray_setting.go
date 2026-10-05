@@ -71,7 +71,7 @@ func (a *XraySettingController) initRouter(g *gin.RouterGroup) {
 	g.POST("/outbound-subs/:id", requirePanelPermission("cores", "update"), a.updateOutboundSub)
 	g.DELETE("/outbound-subs/:id", requirePanelPermission("cores", "update"), a.deleteOutboundSub)
 	g.POST("/outbound-subs/:id/del", requirePanelPermission("cores", "update"), a.deleteOutboundSub) // POST alias for clients that can't send DELETE
-	g.POST("/outbound-subs/parse", requirePanelPermission("cores", "read"), a.parseOutboundSubURL) // preview without saving
+	g.POST("/outbound-subs/parse", requirePanelPermission("cores", "read"), a.parseOutboundSubURL)   // preview without saving
 }
 
 // getXraySetting retrieves the Xray configuration template, inbound tags, and outbound test URL.

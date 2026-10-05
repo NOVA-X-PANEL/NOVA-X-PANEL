@@ -74,7 +74,7 @@ func (a *SettingController) initRouter(g *gin.RouterGroup) {
 	g.POST("/factoryDefaults", requirePanelAccount(), a.getFactoryDefaults)
 	g.POST("/update", requirePanelPermission("settings", "update"), a.updateSetting)
 	g.POST("/validateRegex", requirePanelPermission("settings", "view"), a.validateRegex)
-	g.POST("/updateUser", a.updateUser)
+	g.POST("/updateUser", requirePanelAccount(), a.updateUser)
 	g.POST("/restartPanel", requirePanelPermission("settings", "update"), a.restartPanel)
 	g.GET("/getDefaultJsonConfig", requirePanelAccount(), a.getDefaultXrayConfig)
 	// Owner-only: these mint panel-wide tokens, which carry full authority
@@ -206,6 +206,10 @@ func (a *SettingController) updateUser(c *gin.Context) {
 		return
 	}
 	user := session.GetLoginUser(c)
+	if user == nil {
+		pureJsonMsg(c, http.StatusUnauthorized, false, "login required")
+		return
+	}
 	if user.Username != form.OldUsername || !crypto.CheckPasswordHash(user.Password, form.OldPassword) {
 		jsonMsg(c, I18nWeb(c, "pages.settings.toasts.modifyUserError"), errors.New(I18nWeb(c, "pages.settings.toasts.originalUserPassIncorrect")))
 		return

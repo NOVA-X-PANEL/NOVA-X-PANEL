@@ -64,8 +64,9 @@ func (a *ServerController) initRouter(g *gin.RouterGroup) {
 	g.GET("/getNewmldsa65", a.getNewmldsa65)
 	g.GET("/getNewmlkem768", a.getNewmlkem768)
 	g.GET("/getNewVlessEnc", a.getNewVlessEnc)
-	g.GET("/clientIps", a.getClientIps)
+	g.GET("/clientIps", requirePanelPermission("inbounds", "view"), a.getClientIps)
 	g.GET("/fail2banStatus", a.getFail2banStatus)
+
 
 	g.POST("/stopXrayService", requirePanelPermission("cores", "update"), a.stopXrayService)
 	g.POST("/restartXrayService", requirePanelPermission("cores", "update"), a.restartXrayService)
@@ -81,9 +82,9 @@ func (a *ServerController) initRouter(g *gin.RouterGroup) {
 	g.POST("/getNewEchCert", a.getNewEchCert)
 	g.POST("/getCertHash", a.getCertHash)
 	g.POST("/getRemoteCertHash", a.getRemoteCertHash)
-	g.POST("/scanRealityTarget", a.scanRealityTarget)
-	g.POST("/scanRealityTargets", a.scanRealityTargets)
-	g.POST("/clientIps", a.setClientIps)
+	g.POST("/scanRealityTarget", requirePanelPermission("inbounds", "view"), a.scanRealityTarget)
+	g.POST("/scanRealityTargets", requirePanelPermission("inbounds", "view"), a.scanRealityTargets)
+	g.POST("/clientIps", requirePanelPermission("inbounds", "update"), a.setClientIps)
 }
 
 // startTask registers the @2s ticker that refreshes server status, samples

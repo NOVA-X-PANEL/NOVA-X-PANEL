@@ -249,17 +249,17 @@ func operatorPermissions() map[string]any {
 
 func defaultRoleLimits() map[string]any {
 	return map[string]any{
-		"max_users":             nil,
-		"data_limit_min":        nil,
-		"data_limit_max":        nil,
-		"expire_days_min":       nil,
-		"expire_days_max":       nil,
-		"download_mbps_min":     nil,
-		"download_mbps_max":     nil,
-		"upload_mbps_min":       nil,
-		"upload_mbps_max":       nil,
-		"minOnHoldTimeoutDays":  nil,
-		"maxOnHoldTimeoutDays":  nil,
+		"max_users":            nil,
+		"data_limit_min":       nil,
+		"data_limit_max":       nil,
+		"expire_days_min":      nil,
+		"expire_days_max":      nil,
+		"download_mbps_min":    nil,
+		"download_mbps_max":    nil,
+		"upload_mbps_min":      nil,
+		"upload_mbps_max":      nil,
+		"minOnHoldTimeoutDays": nil,
+		"maxOnHoldTimeoutDays": nil,
 	}
 }
 

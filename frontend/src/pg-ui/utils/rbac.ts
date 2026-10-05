@@ -55,20 +55,35 @@ const ROUTE_PERMISSIONS: Record<string, RoutePermission[]> = {
     { resource: 'users', action: 'read' },
     { resource: 'users', action: 'read_simple' },
   ],
-  '/groups': [{ resource: 'groups', action: 'read' }],
-  '/nodes': [{ resource: 'nodes', action: 'read' }],
+  '/groups': [
+    { resource: 'groups', action: 'read' },
+    { resource: 'groups', action: 'read_simple' },
+  ],
+  '/nodes': [
+    { resource: 'nodes', action: 'read' },
+    { resource: 'nodes', action: 'read_simple' },
+  ],
   '/hashem': [{ resource: 'system', action: 'read' }],
-  '/admins': [{ resource: 'admins', action: 'read' }],
+  '/admins': [
+    { resource: 'admins', action: 'read' },
+    { resource: 'admins', action: 'read_simple' },
+  ],
   // Reachable by any account the owner granted API access to. It is gated on
   // that flag rather than a resource permission below, because the point of the
   // page is a limited admin managing its own token without needing admins.read —
   // which is exactly the permission an operator does not have.
   '/my-api': [],
-  '/admin-roles': [{ resource: 'admin_roles', action: 'read' }],
+  '/admin-roles': [
+    { resource: 'admin_roles', action: 'read' },
+    { resource: 'admin_roles', action: 'read_simple' },
+  ],
   '/outbound': [{ resource: 'outbounds', action: 'read' }],
   '/routing': [{ resource: 'routing', action: 'read' }],
   '/settings': [{ resource: 'settings', action: 'read' }],
-  '/xray': [{ resource: 'cores', action: 'read' }],
+  '/xray': [
+    { resource: 'cores', action: 'read' },
+    { resource: 'cores', action: 'read_simple' },
+  ],
   '/hosts': [{ resource: 'hosts', action: 'read' }],
 }
 
@@ -239,6 +254,7 @@ export function canAccessRoute(admin: unknown, pathname: string): boolean {
   const key = routeKey(pathname)
   if (key === '/api-docs') return true
   if (key === '/my-api') return hasApiAccess(admin)
+  if (key === '/hashem') return isOwner(admin)
   const requirements = ROUTE_PERMISSIONS[key]
   if (!requirements) return true
   return requirements.some(req => hasPermission(admin, req.resource, req.action))

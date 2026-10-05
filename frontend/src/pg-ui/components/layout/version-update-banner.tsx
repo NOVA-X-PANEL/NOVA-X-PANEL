@@ -121,7 +121,7 @@ export function VersionUpdateBanner() {
 
   if (!isOwnerAdmin || isLoading || !hasUpdate || !isVisible || !latestVersion || !normalizedVersion) return null
 
-  const releaseLink = releaseUrl || 'https://github.com/PasarGuard/panel/releases/latest'
+  const releaseLink = releaseUrl || 'https://github.com/NOVA-X-PANEL/NOVA-X-PANEL/releases/latest'
 
   return (
     <div

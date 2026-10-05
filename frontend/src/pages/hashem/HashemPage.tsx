@@ -33,8 +33,10 @@ import {
   CopyOutlined,
   DeleteOutlined,
   DownloadOutlined,
+  EditOutlined,
   GatewayOutlined,
   NodeIndexOutlined,
+  PlusOutlined,
   ReloadOutlined,
   SendOutlined,
   SettingOutlined,
@@ -64,6 +66,8 @@ export default function HashemPage() {
     isSettingWatchdog,
     syncInbounds,
     isSyncingInbounds,
+    editPorts,
+    isEditingPorts,
     setup,
     isSettingUp,
     setupSSH,
@@ -79,6 +83,10 @@ export default function HashemPage() {
   const [setupModalOpen, setSetupModalOpen] = useState(false);
   const [setupTab, setSetupTab] = useState<'ssh' | 'oneliner' | 'advanced'>('ssh');
   const [generatedCmd, setGeneratedCmd] = useState<string | null>(null);
+
+  const [editPortsModalOpen, setEditPortsModalOpen] = useState(false);
+  const [portChips, setPortChips] = useState<number[]>([]);
+  const [newPortInput, setNewPortInput] = useState<number | null>(null);
 
   const [sshForm] = Form.useForm();
   const [oneLinerForm] = Form.useForm();
@@ -103,6 +111,47 @@ export default function HashemPage() {
 
   const handleSyncInbounds = async () => {
     await syncInbounds();
+  };
+
+  const handleOpenEditPorts = () => {
+    setPortChips(status.ports ? [...status.ports] : []);
+    setNewPortInput(null);
+    setEditPortsModalOpen(true);
+  };
+
+  const handleAddPortChip = () => {
+    if (!newPortInput || newPortInput < 1 || newPortInput > 65535) {
+      message.warning(t('pages.hashem.portMustBeValid', { defaultValue: 'شماره پورت باید بین ۱ تا ۶۵۵۳۵ باشد' }));
+      return;
+    }
+    if (portChips.includes(newPortInput)) {
+      message.warning(t('pages.hashem.portAlreadyExists', { defaultValue: 'این پورت قبلاً در لیست وجود دارد' }));
+      return;
+    }
+    setPortChips([...portChips, newPortInput].sort((a, b) => a - b));
+    setNewPortInput(null);
+  };
+
+  const handleRemovePortChip = (portToRemove: number) => {
+    if (portChips.length <= 1) {
+      message.warning(t('pages.hashem.atLeastOnePortRequired', { defaultValue: 'حداقل یک پورت باید در لیست باقی بماند' }));
+      return;
+    }
+    setPortChips(portChips.filter((p: number) => p !== portToRemove));
+  };
+
+  const handleSavePorts = async () => {
+    if (portChips.length === 0) {
+      message.warning(t('pages.hashem.atLeastOnePortRequired', { defaultValue: 'حداقل یک پورت باید در لیست باقی بماند' }));
+      return;
+    }
+    try {
+      await editPorts(portChips);
+      setEditPortsModalOpen(false);
+      refetch();
+    } catch {
+      // toast shown by mutation
+    }
   };
 
   const handleRestart = async () => {
@@ -465,9 +514,21 @@ export default function HashemPage() {
                     <Divider style={{ borderColor: 'rgba(255,255,255,0.08)' }} />
 
                     <div>
-                      <Text strong style={{ color: 'var(--nc-text, #f1f5f9)' }}>
-                        {t('pages.hashem.forwardedPortsList')}:{' '}
-                      </Text>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Text strong style={{ color: 'var(--nc-text, #f1f5f9)' }}>
+                          {t('pages.hashem.forwardedPortsList')}:{' '}
+                        </Text>
+                        <Button
+                          size="small"
+                          type="primary"
+                          ghost
+                          icon={<EditOutlined />}
+                          onClick={handleOpenEditPorts}
+                          style={{ borderRadius: 6, fontSize: 12 }}
+                        >
+                          {t('pages.hashem.editPortsBtn', { defaultValue: 'ویرایش پورت‌ها' })}
+                        </Button>
+                      </div>
                       <div style={{ marginTop: 10 }}>
                         {status.ports && status.ports.length > 0 ? (
                           status.ports.map((p) => (
@@ -792,6 +853,108 @@ export default function HashemPage() {
               },
             ]}
           />
+        </Modal>
+
+        <Modal
+          title={
+            <Space>
+              <EditOutlined style={{ color: '#38bdf8' }} />
+              <span>{t('pages.hashem.editPortsModalTitle', { defaultValue: 'ویرایش پورت‌های فوروارد شده تانل' })}</span>
+            </Space>
+          }
+          open={editPortsModalOpen}
+          onCancel={() => setEditPortsModalOpen(false)}
+          footer={[
+            <Button key="cancel" onClick={() => setEditPortsModalOpen(false)}>
+              {t('cancel', { defaultValue: 'انصراف' })}
+            </Button>,
+            <Button
+              key="save"
+              type="primary"
+              loading={isEditingPorts}
+              onClick={handleSavePorts}
+              style={{
+                background: 'linear-gradient(135deg, #0284c7, #2563eb)',
+                borderColor: '#38bdf8',
+              }}
+            >
+              {t('pages.hashem.saveAndApply', { defaultValue: 'ذخیره و اعمال آنی' })}
+            </Button>,
+          ]}
+          className="hashem-modal"
+        >
+          <Paragraph style={{ color: 'var(--nc-subtext, #94a3b8)', fontSize: 13, marginBottom: 16 }}>
+            {t('pages.hashem.editPortsDesc', {
+              defaultValue: 'پورت‌های فوروارد شده را بدون قطعی تانل به صورت آنی اضافه، حذف یا ذخیره کنید.',
+            })}
+          </Paragraph>
+
+          <div style={{ marginBottom: 16 }}>
+            <Text strong style={{ display: 'block', marginBottom: 8, color: 'var(--nc-text, #f1f5f9)' }}>
+              {t('pages.hashem.forwardedPortsList', { defaultValue: 'پورت‌های فعلی' })}:
+            </Text>
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 8,
+                padding: 12,
+                background: 'rgba(0, 0, 0, 0.25)',
+                borderRadius: 8,
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                minHeight: 46,
+                alignItems: 'center',
+              }}
+            >
+              {portChips.map((p: number) => (
+                <Tag
+                  key={p}
+                  closable
+                  onClose={(e: any) => {
+                    e.preventDefault();
+                    handleRemovePortChip(p);
+                  }}
+                  color="cyan"
+                  style={{ fontSize: 13, padding: '4px 10px', borderRadius: 6 }}
+                >
+                  Port {p}
+                </Tag>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+            <div style={{ flex: 1 }}>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  marginBottom: 6,
+                  color: 'var(--nc-subtext, #94a3b8)',
+                }}
+              >
+                {t('pages.hashem.addPortLabel', { defaultValue: 'افزودن پورت جدید' })}:
+              </label>
+              <InputNumber
+                min={1}
+                max={65535}
+                value={newPortInput}
+                onChange={(val: number | null) => setNewPortInput(val)}
+                onPressEnter={handleAddPortChip}
+                placeholder={t('pages.hashem.enterPortPlaceholder', { defaultValue: 'مثال: 8080' })}
+                style={{ width: '100%' }}
+              />
+            </div>
+            <Button
+              icon={<PlusOutlined />}
+              onClick={handleAddPortChip}
+              type="dashed"
+              style={{ borderColor: 'rgba(56, 189, 248, 0.4)' }}
+            >
+              {t('pages.hashem.addPortBtn', { defaultValue: 'افزودن' })}
+            </Button>
+          </div>
         </Modal>
       </Layout>
     </ConfigProvider>

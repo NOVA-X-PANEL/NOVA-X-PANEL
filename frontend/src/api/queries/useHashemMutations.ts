@@ -107,6 +107,19 @@ export function useHashemMutations() {
     onError: (err: Error) => message.error(err.message),
   });
 
+  const editPortsMutation = useMutation({
+    mutationFn: async (ports: number[]) => {
+      const res = await HttpUtil.post('/panel/api/hashem/edit-ports', { ports });
+      if (!res?.success) throw new Error(res?.msg || 'Failed to update ports');
+      return res;
+    },
+    onSuccess: () => {
+      message.success(t('pages.hashem.toasts.editPortsSuccess', { defaultValue: 'پورت‌های تانل با موفقیت به‌روزرسانی شدند' }));
+      invalidate();
+    },
+    onError: (err: Error) => message.error(err.message),
+  });
+
   const setupMutation = useMutation({
     mutationFn: async (payload: HashemSetupPayload) => {
       const res = await HttpUtil.post<string>('/panel/api/hashem/setup', payload);
@@ -188,6 +201,8 @@ export function useHashemMutations() {
     isSettingWatchdog: setWatchdogMutation.isPending,
     syncInbounds: syncInboundsMutation.mutateAsync,
     isSyncingInbounds: syncInboundsMutation.isPending,
+    editPorts: editPortsMutation.mutateAsync,
+    isEditingPorts: editPortsMutation.isPending,
     setup: setupMutation.mutateAsync,
     isSettingUp: setupMutation.isPending,
     setupSSH: setupSSHMutation.mutateAsync,

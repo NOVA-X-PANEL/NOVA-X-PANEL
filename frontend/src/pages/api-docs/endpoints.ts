@@ -3006,6 +3006,12 @@ export const sections: readonly Section[] = [
       },
       {
         method: 'POST',
+        path: '/panel/api/hashem/edit-ports',
+        summary: 'Dynamically update forwarded ports in Hashem tunnel without dropping or restarting the tunnel.',
+        body: '{\n  "ports": [443, 2083]\n}',
+      },
+      {
+        method: 'POST',
         path: '/panel/api/hashem/setup-ssh',
         summary: 'Direct SSH automatic setup: connect to Iran server via SSH and establish end-to-end Hashem tunnel.',
         body: '{\n  "iranIp": "94.183.210.29",\n  "sshPort": 22,\n  "sshUser": "root",\n  "sshPassword": "secret",\n  "ports": "8080"\n}',

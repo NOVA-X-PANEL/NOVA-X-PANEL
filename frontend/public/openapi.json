@@ -16974,6 +16974,52 @@
         }
       }
     },
+    "/panel/api/hashem/edit-ports": {
+      "post": {
+        "tags": [
+          "Hashem Tunnel"
+        ],
+        "summary": "Dynamically update forwarded ports in Hashem tunnel without dropping or restarting the tunnel.",
+        "operationId": "post_panel_api_hashem_edit_ports",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "ports": [
+                  443,
+                  2083
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/panel/api/hashem/setup-ssh": {
       "post": {
         "tags": [

@@ -7,11 +7,13 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"os"
 	"os/exec"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -187,9 +189,15 @@ func (s *HashemService) GetStatus() (*HashemStatus, error) {
 		status.Role = "none"
 	}
 
+	frpConn := false
+	if status.RemoteGreIP != "" && status.FrpPort > 0 {
+		frpConn = s.isFrpConnected(status.RemoteGreIP, status.FrpPort)
+	}
+
 	if status.RemoteGreIP != "" {
 		status.PingMs = s.measurePing(status.RemoteGreIP, "gre-tunnel", status.FrpPort)
-		if status.PingMs <= 0 {
+		// Upstream Hashem fix: treat ICMP-filtered ping as WARN not FAIL when frp is active/connected
+		if status.PingMs <= 0 && !frpConn {
 			status.Running = false
 		}
 	} else {
@@ -202,7 +210,7 @@ func (s *HashemService) GetStatus() (*HashemStatus, error) {
 	if status.Role == "foreign" {
 		baseStatus := s.checkServiceStatus("frpc")
 		if baseStatus == "active" {
-			if status.PingMs > 0 && s.isFrpConnected(status.RemoteGreIP, status.FrpPort) {
+			if status.PingMs > 0 || frpConn {
 				status.FrpStatus = "active"
 			} else {
 				status.FrpStatus = "connecting"
@@ -213,7 +221,7 @@ func (s *HashemService) GetStatus() (*HashemStatus, error) {
 	} else if status.Role == "iran" {
 		baseStatus := s.checkServiceStatus("frps")
 		if baseStatus == "active" {
-			if status.PingMs > 0 && s.isFrpConnected(status.RemoteGreIP, status.FrpPort) {
+			if status.PingMs > 0 || frpConn {
 				status.FrpStatus = "active"
 			} else {
 				status.FrpStatus = "connecting"
@@ -499,39 +507,163 @@ func (s *HashemService) SyncInbounds() ([]int, error) {
 	}
 
 	status, err := s.GetStatus()
-	if err != nil || status.Role != "foreign" {
-		return nil, fmt.Errorf("hashem tunnel not configured as foreign client")
+	if err != nil || (!status.Installed) {
+		return nil, fmt.Errorf("hashem tunnel not configured")
 	}
 
-	var portStrs []string
+	// Dynamic zero-downtime port sync via EditPorts
+	if err := s.EditPorts(ports); err == nil {
+		return ports, nil
+	}
+
+	// Fallback to setup-foreign if toml direct edit was not applicable
+	if status.Role == "foreign" && status.LocalPubIP != "" && status.RemotePubIP != "" && status.FrpPort > 0 {
+		var portStrs []string
+		for _, p := range ports {
+			portStrs = append(portStrs, strconv.Itoa(p))
+		}
+		portsArg := strings.Join(portStrs, ", ")
+
+		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+		defer cancel()
+
+		cmd := exec.CommandContext(ctx, hashemBinPath, "setup-foreign",
+			"--local-pub", status.LocalPubIP,
+			"--remote-pub", status.RemotePubIP,
+			"--frp-port", strconv.Itoa(status.FrpPort),
+			"--ports", portsArg,
+			"--force",
+		)
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			return nil, fmt.Errorf("sync failed: %s", string(out))
+		}
+		return ports, nil
+	}
+
+	return nil, fmt.Errorf("hashem tunnel not configured as foreign client")
+}
+
+// EditPorts dynamically updates forwarded ports in frpc/frps without dropping the tunnel.
+func (s *HashemService) EditPorts(ports []int) error {
+	if len(ports) == 0 {
+		return errors.New("ports list is empty")
+	}
+
+	portMap := make(map[int]bool)
+	var cleanPorts []int
 	for _, p := range ports {
+		if p < 1 || p > 65535 {
+			return fmt.Errorf("invalid port %d", p)
+		}
+		if !portMap[p] {
+			portMap[p] = true
+			cleanPorts = append(cleanPorts, p)
+		}
+	}
+	sort.Ints(cleanPorts)
+
+	// 1. Try hashem CLI edit-peer-ports if available
+	var portStrs []string
+	for _, p := range cleanPorts {
 		portStrs = append(portStrs, strconv.Itoa(p))
 	}
-	portsArg := strings.Join(portStrs, ", ")
+	portsArg := strings.Join(portStrs, ",")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
-
-	cmd := exec.CommandContext(ctx, hashemBinPath, "setup-foreign",
-		"--local-pub", status.LocalPubIP,
-		"--remote-pub", status.RemotePubIP,
-		"--frp-port", strconv.Itoa(status.FrpPort),
-		"--ports", portsArg,
-		"--force",
-	)
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return nil, fmt.Errorf("sync failed: %s", string(out))
+	if _, err := os.Stat(hashemBinPath); err == nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		cmd := exec.CommandContext(ctx, hashemBinPath, "edit-peer-ports", "--id", "1", "--ports", portsArg)
+		cmd.Env = append(os.Environ(), "GRE_SKIP_PANEL=1")
+		if _, err := cmd.CombinedOutput(); err == nil {
+			return nil
+		}
 	}
 
-	return ports, nil
+	// 2. Direct edit: update peers.json + rewrite toml + reload frp
+	editedAny := false
+
+	peersPath := "/etc/gre-panel/peers.json"
+	if data, err := os.ReadFile(peersPath); err == nil {
+		var doc struct {
+			Peers []map[string]any `json:"peers"`
+		}
+		if err := json.Unmarshal(data, &doc); err == nil && len(doc.Peers) > 0 {
+			for i := range doc.Peers {
+				doc.Peers[i]["ports"] = cleanPorts
+			}
+			if outData, err := json.MarshalIndent(doc, "", "  "); err == nil {
+				_ = os.WriteFile(peersPath, append(outData, '\n'), 0644)
+				editedAny = true
+			}
+		}
+	}
+
+	// Foreign client toml (/etc/frp/frpc.toml)
+	if rawToml, err := os.ReadFile(frpcTomlPath); err == nil {
+		updated := rewriteTomlPorts(string(rawToml), cleanPorts)
+		if err := os.WriteFile(frpcTomlPath, []byte(updated), 0644); err == nil {
+			exec.Command("systemctl", "reload-or-restart", "frpc").CombinedOutput()
+			editedAny = true
+		}
+	}
+
+	// Server toml (/etc/frp/frps.toml)
+	if rawToml, err := os.ReadFile(frpsTomlPath); err == nil {
+		if strings.Contains(string(rawToml), "[[proxies]]") {
+			updated := rewriteTomlPorts(string(rawToml), cleanPorts)
+			_ = os.WriteFile(frpsTomlPath, []byte(updated), 0644)
+		}
+		exec.Command("systemctl", "reload-or-restart", "frps").CombinedOutput()
+		editedAny = true
+	}
+
+	// Allow UFW ports if active
+	if out, err := exec.Command("ufw", "status").CombinedOutput(); err == nil && strings.Contains(string(out), "Status: active") {
+		for _, p := range cleanPorts {
+			exec.Command("ufw", "allow", fmt.Sprintf("%d/tcp", p)).CombinedOutput()
+			exec.Command("ufw", "allow", fmt.Sprintf("%d/udp", p)).CombinedOutput()
+		}
+	}
+
+	if !editedAny {
+		return errors.New("neither frpc.toml nor frps.toml could be found or updated")
+	}
+
+	return nil
+}
+
+// rewriteTomlPorts rebuilds the [[proxies]] sections of an frps/frpc TOML file
+// with the new port list, preserving configuration headers intact.
+func rewriteTomlPorts(src string, ports []int) string {
+	var header strings.Builder
+	inProxy := false
+	for _, line := range strings.Split(src, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "[[proxies]]") {
+			inProxy = true
+			continue
+		}
+		if strings.HasPrefix(trimmed, "[") && !strings.HasPrefix(trimmed, "[[proxies]]") {
+			inProxy = false
+		}
+		if !inProxy {
+			header.WriteString(line)
+			header.WriteByte('\n')
+		}
+	}
+	result := strings.TrimRight(header.String(), "\n") + "\n"
+	for _, port := range ports {
+		result += fmt.Sprintf("\n[[proxies]]\nname = \"tcp_%d\"\ntype = \"tcp\"\nlocalIP = \"127.0.0.1\"\nlocalPort = %d\nremotePort = %d\n\n[[proxies]]\nname = \"udp_%d\"\ntype = \"udp\"\nlocalIP = \"127.0.0.1\"\nlocalPort = %d\nremotePort = %d\n", port, port, port, port, port, port)
+	}
+	return result
 }
 
 func (s *HashemService) Install() (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, "bash", "-c", "curl -sL https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh | bash")
+	cmd := exec.CommandContext(ctx, "bash", "-c", "curl -sL --max-time 15 https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh | bash || curl -sL --max-time 15 https://ghfast.top/https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh | bash")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return string(out), fmt.Errorf("install failed: %s", string(out))

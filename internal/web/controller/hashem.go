@@ -29,6 +29,7 @@ func (a *HashemController) initRouter(g *gin.RouterGroup) {
 	g.POST("/restart", requireOwnerRole(), a.restart)
 	g.POST("/watchdog", requireOwnerRole(), a.watchdog)
 	g.POST("/sync-inbounds", requireOwnerRole(), a.syncInbounds)
+	g.POST("/edit-ports", requireOwnerRole(), a.editPorts)
 	g.POST("/install", requireOwnerRole(), a.install)
 	g.POST("/remove", requireOwnerRole(), a.remove)
 }
@@ -80,6 +81,22 @@ func (a *HashemController) watchdog(c *gin.Context) {
 func (a *HashemController) syncInbounds(c *gin.Context) {
 	ports, err := a.hashemService.SyncInbounds()
 	jsonObj(c, ports, err)
+}
+
+func (a *HashemController) editPorts(c *gin.Context) {
+	var form struct {
+		Ports []int `json:"ports"`
+	}
+	if err := c.ShouldBindJSON(&form); err != nil {
+		jsonMsg(c, "invalid edit-ports payload", err)
+		return
+	}
+	if len(form.Ports) == 0 {
+		jsonMsg(c, "ports list cannot be empty", errors.New("empty ports"))
+		return
+	}
+	err := a.hashemService.EditPorts(form.Ports)
+	jsonMsg(c, "hashem ports updated", err)
 }
 
 func (a *HashemController) install(c *gin.Context) {

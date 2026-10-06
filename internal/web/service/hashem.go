@@ -1117,6 +1117,8 @@ func (s *HashemService) AutoCreateMatchingInbounds(portsStr string, host string)
 						stream["wsSettings"] = wsSettings
 						if b, err := json.Marshal(stream); err == nil {
 							existing.StreamSettings = string(b)
+							existing.ShareAddrStrategy = "custom"
+							existing.ShareAddr = host
 							_, _, _ = s.inboundService.UpdateInbound(existing)
 							createdAny = true
 						}
@@ -1177,7 +1179,8 @@ func (s *HashemService) AutoCreateMatchingInbounds(portsStr string, host string)
 			Settings:          string(settingsBytes),
 			StreamSettings:    string(streamBytes),
 			Sniffing:          string(sniffingBytes),
-			ShareAddrStrategy: "listen",
+			ShareAddrStrategy: "custom",
+			ShareAddr:         host,
 		}
 
 		addedInbound, _, err := s.inboundService.AddInbound(newInbound)

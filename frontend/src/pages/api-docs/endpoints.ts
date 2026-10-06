@@ -3012,6 +3012,12 @@ export const sections: readonly Section[] = [
       },
       {
         method: 'POST',
+        path: '/panel/api/hashem/auto-create-inbound',
+        summary: 'Automatically create matching VLESS-WS inbounds for forwarded tunnel ports with host and path configured.',
+        body: '{\n  "ports": "8080",\n  "host": "pro.ksmrx2.ir"\n}',
+      },
+      {
+        method: 'POST',
         path: '/panel/api/hashem/setup-ssh',
         summary: 'Direct SSH automatic setup: connect to Iran server via SSH and establish end-to-end Hashem tunnel.',
         body: '{\n  "iranIp": "94.183.210.29",\n  "sshPort": 22,\n  "sshUser": "root",\n  "sshPassword": "secret",\n  "ports": "8080"\n}',

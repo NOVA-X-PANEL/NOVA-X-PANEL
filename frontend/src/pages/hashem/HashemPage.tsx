@@ -5,6 +5,7 @@ import {
   Badge,
   Button,
   Card,
+  Checkbox,
   Col,
   ConfigProvider,
   Descriptions,
@@ -85,6 +86,8 @@ export default function HashemPage() {
     isRunningBenchmark,
     setAutoPilot,
     isSettingAutoPilot,
+    autoCreateInbound,
+    isAutoCreatingInbound,
   } = useHashemMutations();
 
   const [setupModalOpen, setSetupModalOpen] = useState(false);
@@ -186,6 +189,8 @@ export default function HashemPage() {
         sshPassword: values.sshPassword,
         ports: values.ports || status.ports?.join(', ') || '8080',
         carrier: values.carrier || 'fou:443',
+        autoCreateInbound: values.autoCreateInbound ?? true,
+        inboundHost: values.inboundHost || values.iranIp,
       });
       setSetupModalOpen(false);
       sshForm.resetFields();
@@ -204,6 +209,8 @@ export default function HashemPage() {
         iranIp: values.iranIp,
         ports: values.ports || status.ports?.join(', ') || '8080',
         carrier: values.carrier || 'fou:443',
+        autoCreateInbound: values.autoCreateInbound ?? true,
+        inboundHost: values.inboundHost || values.iranIp,
       });
       if (res?.oneLinerCommand) {
         setGeneratedCmd(res.oneLinerCommand);
@@ -219,7 +226,11 @@ export default function HashemPage() {
   };
 
   const handleSetupSubmit = async (values: HashemSetupPayload) => {
-    await setup(values);
+    await setup({
+      ...values,
+      autoCreateInbound: (values as any).autoCreateInbound ?? true,
+      inboundHost: (values as any).inboundHost || values.remotePub,
+    });
     setSetupModalOpen(false);
     form.resetFields();
   };
@@ -231,11 +242,11 @@ export default function HashemPage() {
     return classes.join(' ');
   }, [isDark, isUltra]);
 
-  const isHealthy =
-    status.running &&
-    ((status.engine === 'backhaul' && status.backhaulStatus === 'active') ||
-      (status.engine !== 'backhaul' && status.frpStatus === 'active')) &&
-    status.pingMs > 0;
+  const isEngineBackhaul = status.engine === 'backhaul' || status.engine === 'gre-backhaul';
+  const engineStatus = isEngineBackhaul ? status.backhaulStatus : status.frpStatus;
+
+  const isHealthy = status.running && engineStatus === 'active' && status.pingMs > 0;
+  const isConnecting = engineStatus === 'connecting';
 
   return (
     <ConfigProvider theme={antdThemeConfig}>
@@ -252,12 +263,12 @@ export default function HashemPage() {
                   <span className="hashem-hero-title-text">{t('pages.hashem.title')}</span>
                   {status.installed ? (
                     <Tag
-                      color={isHealthy ? 'success' : status.frpStatus === 'connecting' ? 'warning' : 'error'}
+                      color={isHealthy ? 'success' : isConnecting ? 'warning' : 'error'}
                       style={{ marginLeft: 8, fontSize: 13, padding: '2px 10px', borderRadius: 12 }}
                     >
                       {isHealthy
                         ? t('pages.hashem.statusHealthy')
-                        : status.frpStatus === 'connecting'
+                        : isConnecting
                           ? t('pages.hashem.statusConnecting')
                           : t('pages.hashem.statusDisconnected')}
                     </Tag>
@@ -455,7 +466,7 @@ export default function HashemPage() {
                           <SendOutlined style={{ color: '#a855f7' }} />
                         )}
                         <span>
-                          {status.engine === 'backhaul'
+                          {isEngineBackhaul
                             ? t('pages.hashem.cardBackhaulTitle', { defaultValue: 'تانل Backhaul' })
                             : t('pages.hashem.cardFrpTitle')}
                         </span>
@@ -465,9 +476,9 @@ export default function HashemPage() {
                     <div style={{ marginBottom: 14 }}>
                       <Badge
                         status={
-                          (status.engine === 'backhaul' ? status.backhaulStatus : status.frpStatus) === 'active'
+                          engineStatus === 'active'
                             ? 'success'
-                            : (status.engine === 'backhaul' ? status.backhaulStatus : status.frpStatus) === 'connecting'
+                            : engineStatus === 'connecting'
                               ? 'warning'
                               : 'error'
                         }
@@ -476,17 +487,17 @@ export default function HashemPage() {
                             strong
                             style={{
                               color:
-                                (status.engine === 'backhaul' ? status.backhaulStatus : status.frpStatus) === 'active'
+                                engineStatus === 'active'
                                   ? '#52c41a'
-                                  : (status.engine === 'backhaul' ? status.backhaulStatus : status.frpStatus) === 'connecting'
+                                  : engineStatus === 'connecting'
                                     ? '#faad14'
                                     : '#ff4d4f',
                             }}
                           >
-                            {(status.engine === 'backhaul' ? status.backhaulStatus : status.frpStatus) === 'active'
+                            {engineStatus === 'active'
                               ? t('pages.hashem.frpRunning')
-                              : (status.engine === 'backhaul' ? status.backhaulStatus : status.frpStatus) === 'connecting'
-                                ? t('pages.hashem.frpConnecting')
+                              : engineStatus === 'connecting'
+                                ? t('pages.hashem.frpConnecting', { defaultValue: 'در حال برقراری اتصال...' })
                                 : t('pages.hashem.frpStopped')}
                           </Text>
                         }
@@ -716,16 +727,33 @@ export default function HashemPage() {
                         <Text strong style={{ color: 'var(--nc-text, #f1f5f9)' }}>
                           {t('pages.hashem.forwardedPortsList')}:{' '}
                         </Text>
-                        <Button
-                          size="small"
-                          type="primary"
-                          ghost
-                          icon={<EditOutlined />}
-                          onClick={handleOpenEditPorts}
-                          style={{ borderRadius: 6, fontSize: 12 }}
-                        >
-                          {t('pages.hashem.editPortsBtn', { defaultValue: 'ویرایش پورت‌ها' })}
-                        </Button>
+                        <Space>
+                          <Button
+                            size="small"
+                            type="dashed"
+                            icon={<ThunderboltOutlined />}
+                            onClick={() =>
+                              autoCreateInbound({
+                                ports: status.ports?.join(', '),
+                                host: status.remotePubIP,
+                              })
+                            }
+                            loading={isAutoCreatingInbound}
+                            style={{ borderRadius: 6, fontSize: 12, borderColor: '#00f2fe', color: '#00f2fe' }}
+                          >
+                            {t('pages.hashem.autoCreateInboundBtn', { defaultValue: '⚡ ساخت اینباند VLESS-WS' })}
+                          </Button>
+                          <Button
+                            size="small"
+                            type="primary"
+                            ghost
+                            icon={<EditOutlined />}
+                            onClick={handleOpenEditPorts}
+                            style={{ borderRadius: 6, fontSize: 12 }}
+                          >
+                            {t('pages.hashem.editPortsBtn', { defaultValue: 'ویرایش پورت‌ها' })}
+                          </Button>
+                        </Space>
                       </div>
                       <div style={{ marginTop: 10 }}>
                         {status.ports && status.ports.length > 0 ? (
@@ -913,6 +941,29 @@ export default function HashemPage() {
                       <Input placeholder="8080" />
                     </Form.Item>
 
+                    <Form.Item
+                      name="autoCreateInbound"
+                      valuePropName="checked"
+                      initialValue={true}
+                      extra={t('pages.hashem.autoCreateInboundExtra', {
+                        defaultValue: 'با فعال بودن این گزینه، همزمان با اجرای تانل یک اینباند VLESS-WS متناظر با پورت انتخابی (مشابه اینباند ۸۰۸۰) با تنظیم خودکار هاست ساخته می‌شود.',
+                      })}
+                    >
+                      <Checkbox style={{ color: '#38bdf8', fontWeight: 600 }}>
+                        ⚡ {t('pages.hashem.autoCreateInboundLabel', { defaultValue: 'ساخت خودکار اینباند VLESS-WS متناظر با پورت تانل' })}
+                      </Checkbox>
+                    </Form.Item>
+
+                    <Form.Item
+                      name="inboundHost"
+                      label={t('pages.hashem.inboundHostLabel', { defaultValue: 'هاست هدر وب‌سوکت (WS Host Header)' })}
+                      extra={t('pages.hashem.inboundHostExtra', {
+                        defaultValue: 'آدرس هاست یا دامنه‌ای که در هدر وب‌سوکت اینباند ست می‌شود (مثلاً pro.ksmrx2.ir یا آی‌پی سرور ایران). در صورت خالی ماندن، آی‌پی سرور ایران درج می‌شود.',
+                      })}
+                    >
+                      <Input placeholder="pro.ksmrx2.ir" />
+                    </Form.Item>
+
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 24 }}>
                       <Button onClick={() => setSetupModalOpen(false)}>{t('cancel')}</Button>
                       <Button
@@ -1009,6 +1060,29 @@ export default function HashemPage() {
                       extra={t('pages.hashem.portsToTunnelExtra')}
                     >
                       <Input placeholder="8080" />
+                    </Form.Item>
+
+                    <Form.Item
+                      name="autoCreateInbound"
+                      valuePropName="checked"
+                      initialValue={true}
+                      extra={t('pages.hashem.autoCreateInboundExtra', {
+                        defaultValue: 'با فعال بودن این گزینه، همزمان با اجرای تانل یک اینباند VLESS-WS متناظر با پورت انتخابی (مشابه اینباند ۸۰۸۰) با تنظیم خودکار هاست ساخته می‌شود.',
+                      })}
+                    >
+                      <Checkbox style={{ color: '#38bdf8', fontWeight: 600 }}>
+                        ⚡ {t('pages.hashem.autoCreateInboundLabel', { defaultValue: 'ساخت خودکار اینباند VLESS-WS متناظر با پورت تانل' })}
+                      </Checkbox>
+                    </Form.Item>
+
+                    <Form.Item
+                      name="inboundHost"
+                      label={t('pages.hashem.inboundHostLabel', { defaultValue: 'هاست هدر وب‌سوکت (WS Host Header)' })}
+                      extra={t('pages.hashem.inboundHostExtra', {
+                        defaultValue: 'آدرس هاست یا دامنه‌ای که در هدر وب‌سوکت اینباند ست می‌شود (مثلاً pro.ksmrx2.ir یا آی‌پی سرور ایران). در صورت خالی ماندن، آی‌پی سرور ایران درج می‌شود.',
+                      })}
+                    >
+                      <Input placeholder="pro.ksmrx2.ir" />
                     </Form.Item>
 
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
@@ -1153,6 +1227,29 @@ export default function HashemPage() {
 
                     <Form.Item name="ports" label={t('pages.hashem.portsLabel')} extra={t('pages.hashem.portsExtra')}>
                       <Input placeholder="8080" />
+                    </Form.Item>
+
+                    <Form.Item
+                      name="autoCreateInbound"
+                      valuePropName="checked"
+                      initialValue={true}
+                      extra={t('pages.hashem.autoCreateInboundExtra', {
+                        defaultValue: 'با فعال بودن این گزینه، همزمان با اجرای تانل یک اینباند VLESS-WS متناظر با پورت انتخابی (مشابه اینباند ۸۰۸۰) با تنظیم خودکار هاست ساخته می‌شود.',
+                      })}
+                    >
+                      <Checkbox style={{ color: '#38bdf8', fontWeight: 600 }}>
+                        ⚡ {t('pages.hashem.autoCreateInboundLabel', { defaultValue: 'ساخت خودکار اینباند VLESS-WS متناظر با پورت تانل' })}
+                      </Checkbox>
+                    </Form.Item>
+
+                    <Form.Item
+                      name="inboundHost"
+                      label={t('pages.hashem.inboundHostLabel', { defaultValue: 'هاست هدر وب‌سوکت (WS Host Header)' })}
+                      extra={t('pages.hashem.inboundHostExtra', {
+                        defaultValue: 'آدرس هاست یا دامنه‌ای که در هدر وب‌سوکت اینباند ست می‌شود (مثلاً pro.ksmrx2.ir یا آی‌پی سرور ایران). در صورت خالی ماندن، آی‌پی سرور ایران درج می‌شود.',
+                      })}
+                    >
+                      <Input placeholder="pro.ksmrx2.ir" />
                     </Form.Item>
 
                     <Form.Item

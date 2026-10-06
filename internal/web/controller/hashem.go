@@ -30,6 +30,7 @@ func (a *HashemController) initRouter(g *gin.RouterGroup) {
 	g.POST("/watchdog", requireOwnerRole(), a.watchdog)
 	g.POST("/sync-inbounds", requireOwnerRole(), a.syncInbounds)
 	g.POST("/edit-ports", requireOwnerRole(), a.editPorts)
+	g.POST("/auto-create-inbound", requireOwnerRole(), a.autoCreateInbound)
 	g.POST("/install", requireOwnerRole(), a.install)
 	g.POST("/remove", requireOwnerRole(), a.remove)
 	g.GET("/benchmark", requireOwnerRole(), a.benchmark)
@@ -100,6 +101,19 @@ func (a *HashemController) editPorts(c *gin.Context) {
 	}
 	err := a.hashemService.EditPorts(form.Ports)
 	jsonMsg(c, "hashem ports updated", err)
+}
+
+func (a *HashemController) autoCreateInbound(c *gin.Context) {
+	var form struct {
+		Ports string `json:"ports"`
+		Host  string `json:"host"`
+	}
+	if err := c.ShouldBindJSON(&form); err != nil {
+		jsonMsg(c, "invalid auto-create-inbound payload", err)
+		return
+	}
+	err := a.hashemService.AutoCreateMatchingInbounds(form.Ports, form.Host)
+	jsonMsg(c, "matching inbounds created successfully", err)
 }
 
 func (a *HashemController) install(c *gin.Context) {

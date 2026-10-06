@@ -17020,6 +17020,50 @@
         }
       }
     },
+    "/panel/api/hashem/auto-create-inbound": {
+      "post": {
+        "tags": [
+          "Hashem Tunnel"
+        ],
+        "summary": "Automatically create matching VLESS-WS inbounds for forwarded tunnel ports with host and path configured.",
+        "operationId": "post_panel_api_hashem_auto_create_inbound",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "ports": "8080",
+                "host": "pro.ksmrx2.ir"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/panel/api/hashem/setup-ssh": {
       "post": {
         "tags": [

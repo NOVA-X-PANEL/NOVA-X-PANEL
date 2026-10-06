@@ -19,6 +19,8 @@ export interface HashemSetupPayload {
   ports?: string;
   carrier?: string;
   bundle?: string;
+  autoCreateInbound?: boolean;
+  inboundHost?: string;
 }
 
 export interface HashemSSHSetupPayload {
@@ -32,6 +34,8 @@ export interface HashemSSHSetupPayload {
   sshPassword: string;
   ports?: string;
   carrier?: string;
+  autoCreateInbound?: boolean;
+  inboundHost?: string;
 }
 
 export interface HashemSSHSetupResult {
@@ -51,6 +55,8 @@ export interface HashemOneLinerPayload {
   iranIp: string;
   ports?: string;
   carrier?: string;
+  autoCreateInbound?: boolean;
+  inboundHost?: string;
 }
 
 export interface HashemOneLinerResult {
@@ -234,6 +240,17 @@ export function useHashemMutations() {
     onError: (err: Error) => message.error(err.message),
   });
 
+  const autoCreateInboundMutation = useMutation({
+    mutationFn: async (payload: { ports?: string; host?: string }) => {
+      return HttpUtil.post('/panel/api/hashem/auto-create-inbound', payload);
+    },
+    onSuccess: () => {
+      message.success(t('pages.hashem.toasts.inboundCreated', { defaultValue: 'اینباندهای متناظر با موفقیت ساخته شدند.' }));
+      invalidate();
+    },
+    onError: (err: Error) => message.error(err.message),
+  });
+
   return {
     setCarrier: setCarrierMutation.mutateAsync,
     isSettingCarrier: setCarrierMutation.isPending,
@@ -259,5 +276,7 @@ export function useHashemMutations() {
     isRunningBenchmark: runBenchmarkMutation.isPending,
     setAutoPilot: setAutoPilotMutation.mutateAsync,
     isSettingAutoPilot: setAutoPilotMutation.isPending,
+    autoCreateInbound: autoCreateInboundMutation.mutateAsync,
+    isAutoCreatingInbound: autoCreateInboundMutation.isPending,
   };
 }

@@ -88,3 +88,14 @@ func TestCalculateScore(t *testing.T) {
 		t.Errorf("expected critical for low score, got %s", st2)
 	}
 }
+
+func TestParsePorts(t *testing.T) {
+	svc := &HashemService{}
+	ports := svc.parsePorts("8080, 8443, 2053, 8080, abc, 70000, 0, -5")
+	if len(ports) != 3 {
+		t.Fatalf("expected 3 valid ports, got %d (%v)", len(ports), ports)
+	}
+	if ports[0] != 8080 || ports[1] != 8443 || ports[2] != 2053 {
+		t.Errorf("unexpected parsed ports: %v", ports)
+	}
+}

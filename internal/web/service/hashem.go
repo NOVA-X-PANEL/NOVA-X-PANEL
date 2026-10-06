@@ -20,6 +20,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
+	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"golang.org/x/crypto/ssh"
 )
@@ -107,6 +109,7 @@ type HashemStatus struct {
 	LocalGreIP      string           `json:"localGreIp"`
 	RemoteGreIP     string           `json:"remoteGreIp"`
 	FrpStatus       string           `json:"frpStatus"`
+	BackhaulStatus  string           `json:"backhaulStatus"`
 	FrpPort         int              `json:"frpPort"`
 	PingMs          float64          `json:"pingMs"`
 	Ports           []int            `json:"ports"`
@@ -115,6 +118,7 @@ type HashemStatus struct {
 	Benchmark       *BenchmarkReport `json:"benchmark,omitempty"`
 	Bundle          string           `json:"bundle"`
 	SetupCommand    string           `json:"setupCommand"`
+	BackhaulToken   string           `json:"backhaulToken,omitempty"`
 }
 
 func (s HashemStatus) MarshalJSON() ([]byte, error) {
@@ -137,31 +141,35 @@ func (s HashemStatus) MarshalJSON() ([]byte, error) {
 }
 
 type HashemSetupForm struct {
-	Role         string `json:"role"`
-	Engine       string `json:"engine"`
-	Transport    string `json:"transport"`
-	BackhaulPort int    `json:"backhaulPort"`
-	Snappy       bool   `json:"snappy"`
-	LocalPub     string `json:"localPub"`
-	RemotePub    string `json:"remotePub"`
-	FrpPort      int    `json:"frpPort"`
-	Token        string `json:"token"`
-	Ports        string `json:"ports"`
-	Carrier      string `json:"carrier"`
-	Bundle       string `json:"bundle"`
+	Role              string `json:"role"`
+	Engine            string `json:"engine"`
+	Transport         string `json:"transport"`
+	BackhaulPort      int    `json:"backhaulPort"`
+	Snappy            bool   `json:"snappy"`
+	LocalPub          string `json:"localPub"`
+	RemotePub         string `json:"remotePub"`
+	FrpPort           int    `json:"frpPort"`
+	Token             string `json:"token"`
+	Ports             string `json:"ports"`
+	Carrier           string `json:"carrier"`
+	Bundle            string `json:"bundle"`
+	AutoCreateInbound bool   `json:"autoCreateInbound"`
+	InboundHost       string `json:"inboundHost"`
 }
 
 type HashemSSHSetupForm struct {
-	Engine       string `json:"engine" form:"engine"`
-	Transport    string `json:"transport" form:"transport"`
-	BackhaulPort int    `json:"backhaulPort" form:"backhaulPort"`
-	Snappy       bool   `json:"snappy" form:"snappy"`
-	IranIP       string `json:"iranIp" form:"iranIp"`
-	SSHPort      int    `json:"sshPort" form:"sshPort"`
-	SSHUser      string `json:"sshUser" form:"sshUser"`
-	SSHPassword  string `json:"sshPassword" form:"sshPassword"`
-	Ports        string `json:"ports" form:"ports"`
-	Carrier      string `json:"carrier" form:"carrier"`
+	Engine            string `json:"engine" form:"engine"`
+	Transport         string `json:"transport" form:"transport"`
+	BackhaulPort      int    `json:"backhaulPort" form:"backhaulPort"`
+	Snappy            bool   `json:"snappy" form:"snappy"`
+	IranIP            string `json:"iranIp" form:"iranIp"`
+	SSHPort           int    `json:"sshPort" form:"sshPort"`
+	SSHUser           string `json:"sshUser" form:"sshUser"`
+	SSHPassword       string `json:"sshPassword" form:"sshPassword"`
+	Ports             string `json:"ports" form:"ports"`
+	Carrier           string `json:"carrier" form:"carrier"`
+	AutoCreateInbound bool   `json:"autoCreateInbound" form:"autoCreateInbound"`
+	InboundHost       string `json:"inboundHost" form:"inboundHost"`
 }
 
 type HashemSSHSetupResult struct {
@@ -174,13 +182,15 @@ type HashemSSHSetupResult struct {
 }
 
 type HashemOneLinerForm struct {
-	Engine       string `json:"engine" form:"engine"`
-	Transport    string `json:"transport" form:"transport"`
-	BackhaulPort int    `json:"backhaulPort" form:"backhaulPort"`
-	Snappy       bool   `json:"snappy" form:"snappy"`
-	IranIP       string `json:"iranIp" form:"iranIp"`
-	Ports        string `json:"ports" form:"ports"`
-	Carrier      string `json:"carrier" form:"carrier"`
+	Engine            string `json:"engine" form:"engine"`
+	Transport         string `json:"transport" form:"transport"`
+	BackhaulPort      int    `json:"backhaulPort" form:"backhaulPort"`
+	Snappy            bool   `json:"snappy" form:"snappy"`
+	IranIP            string `json:"iranIp" form:"iranIp"`
+	Ports             string `json:"ports" form:"ports"`
+	Carrier           string `json:"carrier" form:"carrier"`
+	AutoCreateInbound bool   `json:"autoCreateInbound" form:"autoCreateInbound"`
+	InboundHost       string `json:"inboundHost" form:"inboundHost"`
 }
 
 type HashemOneLinerResult struct {
@@ -197,6 +207,7 @@ type HashemOneLinerResult struct {
 
 type HashemService struct {
 	inboundService InboundService
+	xrayService    XrayService
 }
 
 func (s *HashemService) IsInstalled() bool {
@@ -313,17 +324,27 @@ func (s *HashemService) GetStatus() (*HashemStatus, error) {
 			status.Role = "foreign"
 			s.parseBackhaulConfig(backhaulClientTomlPath, status)
 			if bhClientActive {
+				status.BackhaulStatus = "active"
 				status.FrpStatus = "active"
 				status.Running = true
+			} else {
+				status.BackhaulStatus = s.checkServiceStatus("backhaul-client")
 			}
 		} else if bhServerActive || bhServerExists {
 			status.Role = "iran"
 			s.parseBackhaulConfig(backhaulServerTomlPath, status)
 			if bhServerActive {
+				status.BackhaulStatus = "active"
 				status.FrpStatus = "active"
 				status.Running = true
+			} else {
+				status.BackhaulStatus = s.checkServiceStatus("backhaul-server")
 			}
 		}
+	}
+
+	if token == "" && status.BackhaulToken != "" {
+		token = status.BackhaulToken
 	}
 
 	// AutoPilot & Benchmark report
@@ -333,27 +354,40 @@ func (s *HashemService) GetStatus() (*HashemStatus, error) {
 	}
 
 	if status.Role == "foreign" && status.RemotePubIP != "" && token != "" {
+		if len(status.Ports) == 0 {
+			if inbounds, err := s.inboundService.GetInboundsForScope(InboundAccessScope{All: true}); err == nil {
+				for _, in := range inbounds {
+					if in.Enable && in.Port > 0 {
+						status.Ports = append(status.Ports, in.Port)
+					}
+				}
+				sort.Ints(status.Ports)
+			}
+		}
+
 		portsStr := ""
+		rawPortsStr := ""
 		if len(status.Ports) > 0 {
 			var pstrs []string
 			for _, p := range status.Ports {
 				pstrs = append(pstrs, strconv.Itoa(p))
 			}
 			portsStr = strings.Join(pstrs, "-")
+			rawPortsStr = strings.Join(pstrs, ",")
 		}
 		if status.Engine == "backhaul" {
 			status.Bundle = fmt.Sprintf("bh1_%s_%d_%s_%s_%s",
 				status.RemotePubIP, status.BackhaulPort, status.Transport, token, portsStr)
 			status.SetupCommand = fmt.Sprintf(
-				"curl -sL https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh | bash -s -- setup-backhaul-iran --local-pub %s --remote-pub %s --port %d --transport %s --token %s",
-				status.RemotePubIP, status.LocalPubIP, status.BackhaulPort, status.Transport, token,
+				"curl -sL https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh | bash -s -- setup-backhaul-iran --local-pub %s --remote-pub %s --port %d --transport %s --token %s --ports \"%s\"",
+				status.RemotePubIP, status.LocalPubIP, status.BackhaulPort, status.Transport, token, rawPortsStr,
 			)
 		} else if status.Engine == "gre-backhaul" {
 			status.Bundle = fmt.Sprintf("gh1_%s_%d_%s_%s_%s_%s_%s",
 				status.RemotePubIP, status.BackhaulPort, status.RemoteGreIP, status.LocalGreIP, status.Transport, token, portsStr)
 			status.SetupCommand = fmt.Sprintf(
-				"curl -sL https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh | bash -s -- setup-gre-backhaul-iran --local-pub %s --remote-pub %s --port %d --transport %s --token %s",
-				status.RemotePubIP, status.LocalPubIP, status.BackhaulPort, status.Transport, token,
+				"curl -sL https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh | bash -s -- setup-gre-backhaul-iran --local-pub %s --remote-pub %s --port %d --transport %s --token %s --ports \"%s\"",
+				status.RemotePubIP, status.LocalPubIP, status.BackhaulPort, status.Transport, token, rawPortsStr,
 			)
 		} else {
 			status.Bundle = fmt.Sprintf("hsh1_%s_%d_%s_%s_%s_%s",
@@ -457,6 +491,12 @@ func (s *HashemService) parseBackhaulConfig(path string, status *HashemStatus) {
 				}
 			}
 		}
+		if strings.HasPrefix(line, "token") {
+			parts := strings.SplitN(line, "=", 2)
+			if len(parts) == 2 {
+				status.BackhaulToken = strings.Trim(strings.TrimSpace(parts[1]), `"`)
+			}
+		}
 		if strings.HasPrefix(line, "snappy") {
 			parts := strings.SplitN(line, "=", 2)
 			if len(parts) == 2 {
@@ -467,7 +507,7 @@ func (s *HashemService) parseBackhaulConfig(path string, status *HashemStatus) {
 			inPorts = true
 		}
 		if inPorts {
-			re := regexp.MustCompile(`"(\d+)"`)
+			re := regexp.MustCompile(`"(\d+)(?:[=:-].*?)?"`)
 			matches := re.FindAllStringSubmatch(line, -1)
 			for _, m := range matches {
 				if len(m) > 1 {
@@ -726,6 +766,15 @@ func (s *HashemService) Setup(form HashemSetupForm) (string, error) {
 		logger.Warningf("hashem setup failed: %v, out: %s", err, string(out))
 		return string(out), fmt.Errorf("setup failed: %s", string(out))
 	}
+
+	if form.AutoCreateInbound && (form.Role == "" || form.Role == "foreign") {
+		inHost := strings.TrimSpace(form.InboundHost)
+		if inHost == "" {
+			inHost = form.RemotePub
+		}
+		_ = s.AutoCreateMatchingInbounds(form.Ports, inHost)
+	}
+
 	return string(out), nil
 }
 
@@ -1002,6 +1051,141 @@ func (s *HashemService) genFRPPortAndToken() (int, string) {
 	return port, token
 }
 
+func (s *HashemService) parsePorts(portsStr string) []int {
+	var result []int
+	seen := make(map[int]bool)
+	for _, p := range strings.Split(portsStr, ",") {
+		p = strings.TrimSpace(p)
+		if port, err := strconv.Atoi(p); err == nil && port > 0 && port <= 65535 {
+			if !seen[port] {
+				seen[port] = true
+				result = append(result, port)
+			}
+		}
+	}
+	return result
+}
+
+func (s *HashemService) AutoCreateMatchingInbounds(portsStr string, host string) error {
+	ports := s.parsePorts(portsStr)
+	if len(ports) == 0 {
+		return nil
+	}
+
+	host = strings.TrimSpace(host)
+	if host == "" {
+		host = s.getForeignPubIP()
+	}
+
+	existingInbounds, _ := s.inboundService.GetInboundsForScope(InboundAccessScope{All: true})
+	existingMap := make(map[int]*model.Inbound)
+	var templateClients []model.Client
+
+	for _, ib := range existingInbounds {
+		existingMap[ib.Port] = ib
+		if len(templateClients) == 0 && ib.Protocol == model.VLESS {
+			if cls, err := s.inboundService.GetClients(ib); err == nil && len(cls) > 0 {
+				templateClients = cls
+			}
+		}
+	}
+
+	createdAny := false
+
+	for _, port := range ports {
+		if existing, exists := existingMap[port]; exists {
+			if existing.Protocol == model.VLESS {
+				var stream map[string]any
+				if err := json.Unmarshal([]byte(existing.StreamSettings), &stream); err == nil && stream != nil {
+					if stream["network"] == "ws" {
+						wsSettings, ok := stream["wsSettings"].(map[string]any)
+						if !ok || wsSettings == nil {
+							wsSettings = make(map[string]any)
+						}
+						wsSettings["host"] = host
+						if _, ok := wsSettings["path"]; !ok || wsSettings["path"] == "" {
+							wsSettings["path"] = "/@DARK_VVPN"
+						}
+						stream["wsSettings"] = wsSettings
+						if b, err := json.Marshal(stream); err == nil {
+							existing.StreamSettings = string(b)
+							_, _, _ = s.inboundService.UpdateInbound(existing)
+							createdAny = true
+						}
+					}
+				}
+			}
+			continue
+		}
+
+		clientsToUse := templateClients
+		if len(clientsToUse) == 0 {
+			now := time.Now().Unix() * 1000
+			clientsToUse = []model.Client{
+				{
+					ID:        uuid.NewString(),
+					Email:     fmt.Sprintf("dark_vip_%d", port),
+					SubID:     uuid.NewString(),
+					Enable:    true,
+					CreatedAt: now,
+					UpdatedAt: now,
+				},
+			}
+		}
+
+		settingsMap := map[string]any{
+			"clients":    clientsToUse,
+			"decryption": "none",
+			"fallbacks":  []any{},
+		}
+		settingsBytes, _ := json.Marshal(settingsMap)
+
+		streamMap := map[string]any{
+			"network":  "ws",
+			"security": "none",
+			"wsSettings": map[string]any{
+				"acceptProxyProtocol": false,
+				"path":                "/@DARK_VVPN",
+				"host":                host,
+				"headers":             map[string]any{},
+				"heartbeatPeriod":     0,
+			},
+		}
+		streamBytes, _ := json.Marshal(streamMap)
+
+		sniffingMap := map[string]any{
+			"enabled": false,
+		}
+		sniffingBytes, _ := json.Marshal(sniffingMap)
+
+		newInbound := &model.Inbound{
+			Enable:            true,
+			Protocol:          model.VLESS,
+			Port:              port,
+			Tag:               fmt.Sprintf("in-%d-tcp", port),
+			Remark:            "⚡️┃𝑫𝑨𝑹𝑲_𝑽𝑽𝑷𝑵┃",
+			Listen:            "",
+			Settings:          string(settingsBytes),
+			StreamSettings:    string(streamBytes),
+			Sniffing:          string(sniffingBytes),
+			ShareAddrStrategy: "listen",
+		}
+
+		_, _, err := s.inboundService.AddInbound(newInbound)
+		if err == nil {
+			createdAny = true
+		} else {
+			logger.Warningf("AutoCreateMatchingInbounds failed for port %d: %v", port, err)
+		}
+	}
+
+	if createdAny {
+		_ = s.xrayService.RestartXray(false)
+	}
+
+	return nil
+}
+
 func (s *HashemService) SetupSSH(form HashemSSHSetupForm) (*HashemSSHSetupResult, error) {
 	if strings.TrimSpace(form.IranIP) == "" {
 		return nil, fmt.Errorf("آدرس آی‌پی سرور ایران الزامی است")
@@ -1118,8 +1302,8 @@ func (s *HashemService) SetupSSH(form HashemSSHSetupForm) (*HashemSSHSetupResult
 				"fi; "+
 				"bash /tmp/hashem.sh setup-gre-backhaul-iran --local-pub %s --remote-pub %s --port %d --transport %s --token %s --ports \"%s\" --force && "+
 				"bash /tmp/hashem.sh carrier mode %s && "+
-				"%s && %s; rm -f /tmp/hashem.sh",
-			iranIP, foreignIP, bhPort, transport, token, ports, carrier, peerJsonCmd, optimizeCmd,
+				"%s; rm -f /tmp/hashem.sh",
+			iranIP, foreignIP, bhPort, transport, token, ports, carrier, optimizeCmd,
 		)
 	} else {
 		iranCmd = fmt.Sprintf(
@@ -1186,6 +1370,14 @@ func (s *HashemService) SetupSSH(form HashemSSHSetupForm) (*HashemSSHSetupResult
 		cmdCarrier := exec.CommandContext(ctx, hashemBinPath, "carrier", "mode", carrier)
 		_ = cmdCarrier.Run()
 		s.optimizeForeignNetwork(ports)
+	}
+
+	if form.AutoCreateInbound {
+		inHost := strings.TrimSpace(form.InboundHost)
+		if inHost == "" {
+			inHost = iranIP
+		}
+		_ = s.AutoCreateMatchingInbounds(ports, inHost)
 	}
 
 	return &HashemSSHSetupResult{
@@ -1274,8 +1466,8 @@ func buildIranSetupCommands(iranIP, foreignIP string, frpPort, bhPort int, token
 		)
 	} else if engine == "gre-backhaul" {
 		oneLiner = fmt.Sprintf(
-			"curl -fsSL https://fastly.jsdelivr.net/gh/pdnczone/hashem-panel/hashem.sh -o /tmp/hashem.sh 2>/dev/null || curl -fsSL https://ghproxy.net/https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /tmp/hashem.sh 2>/dev/null || curl -sL https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /tmp/hashem.sh; bash /tmp/hashem.sh setup-gre-backhaul-iran --local-pub %s --remote-pub %s --port %d --transport %s --token %s --ports \"%s\" --force && bash /tmp/hashem.sh carrier mode %s && %s && %s && rm -f /tmp/hashem.sh",
-			iranIP, foreignIP, bhPort, transport, token, ports, carrier, peerJsonCmd, optimizeCmd,
+			"curl -fsSL https://fastly.jsdelivr.net/gh/pdnczone/hashem-panel/hashem.sh -o /tmp/hashem.sh 2>/dev/null || curl -fsSL https://ghproxy.net/https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /tmp/hashem.sh 2>/dev/null || curl -sL https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /tmp/hashem.sh; bash /tmp/hashem.sh setup-gre-backhaul-iran --local-pub %s --remote-pub %s --port %d --transport %s --token %s --ports \"%s\" --force && bash /tmp/hashem.sh carrier mode %s && %s && rm -f /tmp/hashem.sh",
+			iranIP, foreignIP, bhPort, transport, token, ports, carrier, optimizeCmd,
 		)
 	} else {
 		oneLiner = fmt.Sprintf(
@@ -1356,6 +1548,14 @@ func (s *HashemService) GenerateOneLiner(form HashemOneLinerForm) (*HashemOneLin
 		cmdCarrier := exec.CommandContext(ctx, hashemBinPath, "carrier", "mode", carrier)
 		_ = cmdCarrier.Run()
 		s.optimizeForeignNetwork(ports)
+	}
+
+	if form.AutoCreateInbound {
+		inHost := strings.TrimSpace(form.InboundHost)
+		if inHost == "" {
+			inHost = iranIP
+		}
+		_ = s.AutoCreateMatchingInbounds(ports, inHost)
 	}
 
 	_, _, oneLiner := buildIranSetupCommands(iranIP, foreignIP, frpPort, bhPort, token, carrier, ports, engine, transport)
@@ -1568,15 +1768,17 @@ func (s *HashemService) RunBenchmark() (*BenchmarkReport, error) {
 	})
 
 	// Choose Best Carrier
-	bestIdx := 0
-	bestScore := -1
+	bestIdx := -1
+	bestScore := 0
 	for i, m := range metrics {
 		if m.Score > bestScore {
 			bestScore = m.Score
 			bestIdx = i
 		}
 	}
-	metrics[bestIdx].IsRecommended = true
+	if bestIdx >= 0 {
+		metrics[bestIdx].IsRecommended = true
+	}
 
 	duration := time.Since(start).Seconds()
 

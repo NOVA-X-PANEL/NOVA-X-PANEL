@@ -32,6 +32,9 @@ func (a *HashemController) initRouter(g *gin.RouterGroup) {
 	g.POST("/edit-ports", requireOwnerRole(), a.editPorts)
 	g.POST("/install", requireOwnerRole(), a.install)
 	g.POST("/remove", requireOwnerRole(), a.remove)
+	g.GET("/benchmark", requireOwnerRole(), a.benchmark)
+	g.POST("/benchmark/run", requireOwnerRole(), a.runBenchmark)
+	g.POST("/benchmark/autopilot", requireOwnerRole(), a.autoPilot)
 }
 
 func (a *HashemController) status(c *gin.Context) {
@@ -127,4 +130,33 @@ func (a *HashemController) generateOneLiner(c *gin.Context) {
 	}
 	res, err := a.hashemService.GenerateOneLiner(form)
 	jsonObj(c, res, err)
+}
+
+func (a *HashemController) benchmark(c *gin.Context) {
+	rep, err := a.hashemService.GetBenchmark()
+	if err != nil {
+		jsonMsg(c, "failed to get benchmark", err)
+		return
+	}
+	if rep == nil {
+		rep, err = a.hashemService.RunBenchmark()
+	}
+	jsonObj(c, rep, err)
+}
+
+func (a *HashemController) runBenchmark(c *gin.Context) {
+	rep, err := a.hashemService.RunBenchmark()
+	jsonObj(c, rep, err)
+}
+
+func (a *HashemController) autoPilot(c *gin.Context) {
+	var payload struct {
+		Enabled bool `json:"enabled"`
+	}
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		jsonMsg(c, "invalid autopilot payload", err)
+		return
+	}
+	err := a.hashemService.SetAutoPilot(payload.Enabled)
+	jsonMsg(c, "autopilot setting updated", err)
 }

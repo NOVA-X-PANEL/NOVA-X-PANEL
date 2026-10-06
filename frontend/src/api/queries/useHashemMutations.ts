@@ -4,9 +4,14 @@ import { useTranslation } from 'react-i18next';
 
 import { HttpUtil } from '@/utils';
 import { keys } from '@/api/queryKeys';
+import type { BenchmarkReport } from './useHashemQuery';
 
 export interface HashemSetupPayload {
   role?: string;
+  engine?: 'frp' | 'backhaul' | 'gre-backhaul';
+  transport?: 'tcpmux' | 'wssmux' | 'tcpo';
+  backhaulPort?: number;
+  snappy?: boolean;
   localPub?: string;
   remotePub: string;
   frpPort?: number;
@@ -17,6 +22,10 @@ export interface HashemSetupPayload {
 }
 
 export interface HashemSSHSetupPayload {
+  engine?: 'frp' | 'backhaul' | 'gre-backhaul';
+  transport?: 'tcpmux' | 'wssmux' | 'tcpo';
+  backhaulPort?: number;
+  snappy?: boolean;
   iranIp: string;
   sshPort?: number;
   sshUser?: string;
@@ -35,6 +44,10 @@ export interface HashemSSHSetupResult {
 }
 
 export interface HashemOneLinerPayload {
+  engine?: 'frp' | 'backhaul' | 'gre-backhaul';
+  transport?: 'tcpmux' | 'wssmux' | 'tcpo';
+  backhaulPort?: number;
+  snappy?: boolean;
   iranIp: string;
   ports?: string;
   carrier?: string;
@@ -45,7 +58,10 @@ export interface HashemOneLinerResult {
   foreignIp: string;
   iranIp: string;
   ports: string;
+  engine?: string;
+  transport?: string;
   frpPort: number;
+  backhaulPort?: number;
   token: string;
 }
 
@@ -192,6 +208,32 @@ export function useHashemMutations() {
     onError: (err: Error) => message.error(err.message),
   });
 
+  const runBenchmarkMutation = useMutation({
+    mutationFn: async () => {
+      const res = await HttpUtil.post<BenchmarkReport>('/panel/api/hashem/benchmark/run');
+      if (!res?.success) throw new Error(res?.msg || 'Benchmark failed');
+      return res.obj;
+    },
+    onSuccess: () => {
+      message.success(t('pages.hashem.toasts.benchmarkSuccess', { defaultValue: 'بنچمارک کریرها با موفقیت تکمیل شد' }));
+      invalidate();
+    },
+    onError: (err: Error) => message.error(err.message),
+  });
+
+  const setAutoPilotMutation = useMutation({
+    mutationFn: async (enabled: boolean) => {
+      const res = await HttpUtil.post('/panel/api/hashem/benchmark/autopilot', { enabled });
+      if (!res?.success) throw new Error(res?.msg || 'Failed to update autopilot');
+      return res;
+    },
+    onSuccess: () => {
+      message.success(t('pages.hashem.toasts.autoPilotSuccess', { defaultValue: 'وضعیت اتوپایلوت کریر به‌روزرسانی شد' }));
+      invalidate();
+    },
+    onError: (err: Error) => message.error(err.message),
+  });
+
   return {
     setCarrier: setCarrierMutation.mutateAsync,
     isSettingCarrier: setCarrierMutation.isPending,
@@ -213,5 +255,9 @@ export function useHashemMutations() {
     isInstalling: installMutation.isPending,
     removeTunnel: removeMutation.mutateAsync,
     isRemovingTunnel: removeMutation.isPending,
+    runBenchmark: runBenchmarkMutation.mutateAsync,
+    isRunningBenchmark: runBenchmarkMutation.isPending,
+    setAutoPilot: setAutoPilotMutation.mutateAsync,
+    isSettingAutoPilot: setAutoPilotMutation.isPending,
   };
 }

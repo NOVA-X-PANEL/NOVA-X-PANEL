@@ -2668,7 +2668,9 @@
         "syncSuccess": "تعداد {count} پورت اینباند با تانل سینک شد",
         "setupSuccess": "کانفیگ تانل با موفقیت اعمال شد",
         "installSuccess": "هسته تانل هاشم با موفقیت نصب شد",
-        "removeSuccess": "تانل با موفقیت حذف و پاکسازی شد"
+        "removeSuccess": "تانل با موفقیت حذف و پاکسازی شد",
+        "benchmarkSuccess": "بنچمارک کریرها با موفقیت تکمیل شد",
+        "autoPilotSuccess": "وضعیت اتوپایلوت کریر به‌روزرسانی شد"
       },
       "tabSSHAuto": "اتصال خودکار با SSH",
       "tabOneLiner": "دستور تک‌خطی سرور ایران",
@@ -2695,7 +2697,28 @@
       "frpStopped": "متوقف شده",
       "btnRemoveTunnel": "حذف تانل",
       "removeConfirmTitle": "آیا از حذف کامل تانل اطمینان دارید؟",
-      "removeConfirmDesc": "تمامی سرویس‌ها و اینترفیس‌های تانل از سرور خارج پاکسازی خواهند شد."
+      "removeConfirmDesc": "تمامی سرویس‌ها و اینترفیس‌های تانل از سرور خارج پاکسازی خواهند شد.",
+      "cardBackhaulTitle": "تانل Backhaul",
+      "backhaulPort": "پورت Backhaul",
+      "engineLabel": "نوع موتور تانل",
+      "transportLabel": "پروتکل انتقال",
+      "backhaulPortLabel": "پورت سرور Backhaul",
+      "benchmarkCardTitle": "تست عملکرد و بنچمارک هوشمند کریرها (Carrier Benchmark)",
+      "bestCarrier": "بهترین مسیر:",
+      "lastUpdated": "آخرین بررسی:",
+      "autoPilotLabel": "اتوپایلوت هوشمند:",
+      "runBenchmarkBtn": "اجرای بنچمارک زنده",
+      "carrierName": "کریر / مسیر",
+      "carrierType": "نوع پروتکل",
+      "avgRtt": "تاخیر (RTT)",
+      "packetLoss": "پکت لاس",
+      "jitter": "جیتر (Jitter)",
+      "score": "امتیاز کیفیت",
+      "carrierStatus": "وضعیت",
+      "action": "عملیات",
+      "switchToCarrier": "انتخاب این مسیر",
+      "active": "فعال",
+      "noBenchmarkYet": "هنوز بنچمارکی ثبت نشده است. برای ارزیابی تاخیر و پکت‌لاس تمامی کریرها، روی دکمه «اجرای بنچمارک زنده» کلیک کنید."
     }
   },
   "tgbot": {

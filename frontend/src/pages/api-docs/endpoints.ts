@@ -3032,6 +3032,22 @@ export const sections: readonly Section[] = [
         path: '/panel/api/hashem/remove',
         summary: 'Remove Hashem tunnel core engine and services from server.',
       },
+      {
+        method: 'GET',
+        path: '/panel/api/hashem/benchmark',
+        summary: 'Get latest carrier benchmark and performance report.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/hashem/benchmark/run',
+        summary: 'Execute intelligent carrier benchmark across all transport paths.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/hashem/benchmark/autopilot',
+        summary: 'Enable or disable automated carrier auto-pilot switching.',
+        body: '{\n  "enabled": true\n}',
+      },
     ],
   },
 

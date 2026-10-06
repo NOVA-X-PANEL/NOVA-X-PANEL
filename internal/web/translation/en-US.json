@@ -2668,7 +2668,9 @@
         "syncSuccess": "Successfully synced {count} inbound ports to tunnel",
         "setupSuccess": "Tunnel configuration applied successfully",
         "installSuccess": "Hashem Tunnel core installed successfully",
-        "removeSuccess": "Tunnel successfully removed"
+        "removeSuccess": "Tunnel successfully removed",
+        "benchmarkSuccess": "Carrier benchmark completed successfully",
+        "autoPilotSuccess": "Carrier auto-pilot setting updated"
       },
       "tabSSHAuto": "Automatic SSH Setup",
       "tabOneLiner": "Iran Server One-Liner",
@@ -2695,7 +2697,28 @@
       "frpStopped": "Stopped",
       "btnRemoveTunnel": "Remove Tunnel",
       "removeConfirmTitle": "Are you sure you want to remove the tunnel?",
-      "removeConfirmDesc": "All tunnel interfaces, services, and configurations will be completely removed."
+      "removeConfirmDesc": "All tunnel interfaces, services, and configurations will be completely removed.",
+      "cardBackhaulTitle": "Backhaul Tunnel",
+      "backhaulPort": "Backhaul Port",
+      "engineLabel": "Tunnel Engine",
+      "transportLabel": "Transport Protocol",
+      "backhaulPortLabel": "Backhaul Server Port",
+      "benchmarkCardTitle": "Carrier Performance Benchmark & Auto-Pilot",
+      "bestCarrier": "Best Path:",
+      "lastUpdated": "Last Checked:",
+      "autoPilotLabel": "Smart Auto-Pilot:",
+      "runBenchmarkBtn": "Run Live Benchmark",
+      "carrierName": "Carrier / Path",
+      "carrierType": "Protocol Type",
+      "avgRtt": "Latency (RTT)",
+      "packetLoss": "Packet Loss",
+      "jitter": "Jitter",
+      "score": "Quality Score",
+      "carrierStatus": "Status",
+      "action": "Action",
+      "switchToCarrier": "Switch to Path",
+      "active": "Active",
+      "noBenchmarkYet": "No benchmark report yet. Click 'Run Live Benchmark' to test latency and packet loss across all carriers."
     }
   },
   "tgbot": {

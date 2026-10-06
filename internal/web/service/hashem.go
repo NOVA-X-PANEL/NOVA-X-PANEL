@@ -21,8 +21,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/websocket"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -208,6 +210,7 @@ type HashemOneLinerResult struct {
 type HashemService struct {
 	inboundService InboundService
 	xrayService    XrayService
+	clientService  ClientService
 }
 
 func (s *HashemService) IsInstalled() bool {
@@ -1079,15 +1082,20 @@ func (s *HashemService) AutoCreateMatchingInbounds(portsStr string, host string)
 
 	existingInbounds, _ := s.inboundService.GetInboundsForScope(InboundAccessScope{All: true})
 	existingMap := make(map[int]*model.Inbound)
-	var templateClients []model.Client
 
 	for _, ib := range existingInbounds {
 		existingMap[ib.Port] = ib
-		if len(templateClients) == 0 && ib.Protocol == model.VLESS {
-			if cls, err := s.inboundService.GetClients(ib); err == nil && len(cls) > 0 {
-				templateClients = cls
-			}
-		}
+	}
+
+	// Fetch all existing client emails in the panel to attach them
+	var allClientEmails []string
+	_ = database.GetDB().Model(&model.ClientRecord{}).Where("email != ''").Pluck("email", &allClientEmails).Error
+
+	// Resolve acting user ID for newly created inbound
+	defaultUserId := 1
+	var firstUser model.User
+	if err := database.GetDB().First(&firstUser).Error; err == nil && firstUser.Id > 0 {
+		defaultUserId = firstUser.Id
 	}
 
 	createdAny := false
@@ -1115,26 +1123,26 @@ func (s *HashemService) AutoCreateMatchingInbounds(portsStr string, host string)
 					}
 				}
 			}
+			if len(allClientEmails) > 0 {
+				_, _, _ = s.clientService.BulkAttach(&s.inboundService, allClientEmails, []int{existing.Id})
+			}
 			continue
 		}
 
-		clientsToUse := templateClients
-		if len(clientsToUse) == 0 {
-			now := time.Now().Unix() * 1000
-			clientsToUse = []model.Client{
-				{
-					ID:        uuid.NewString(),
-					Email:     fmt.Sprintf("dark_vip_%d", port),
-					SubID:     uuid.NewString(),
-					Enable:    true,
-					CreatedAt: now,
-					UpdatedAt: now,
-				},
-			}
+		now := time.Now().Unix() * 1000
+		initialClients := []model.Client{
+			{
+				ID:        uuid.NewString(),
+				Email:     fmt.Sprintf("dark_vip_%d", port),
+				SubID:     uuid.NewString(),
+				Enable:    true,
+				CreatedAt: now,
+				UpdatedAt: now,
+			},
 		}
 
 		settingsMap := map[string]any{
-			"clients":    clientsToUse,
+			"clients":    initialClients,
 			"decryption": "none",
 			"fallbacks":  []any{},
 		}
@@ -1159,6 +1167,7 @@ func (s *HashemService) AutoCreateMatchingInbounds(portsStr string, host string)
 		sniffingBytes, _ := json.Marshal(sniffingMap)
 
 		newInbound := &model.Inbound{
+			UserId:            defaultUserId,
 			Enable:            true,
 			Protocol:          model.VLESS,
 			Port:              port,
@@ -1171,9 +1180,12 @@ func (s *HashemService) AutoCreateMatchingInbounds(portsStr string, host string)
 			ShareAddrStrategy: "listen",
 		}
 
-		_, _, err := s.inboundService.AddInbound(newInbound)
-		if err == nil {
+		addedInbound, _, err := s.inboundService.AddInbound(newInbound)
+		if err == nil && addedInbound != nil {
 			createdAny = true
+			if len(allClientEmails) > 0 {
+				_, _, _ = s.clientService.BulkAttach(&s.inboundService, allClientEmails, []int{addedInbound.Id})
+			}
 		} else {
 			logger.Warningf("AutoCreateMatchingInbounds failed for port %d: %v", port, err)
 		}
@@ -1181,6 +1193,8 @@ func (s *HashemService) AutoCreateMatchingInbounds(portsStr string, host string)
 
 	if createdAny {
 		_ = s.xrayService.RestartXray(false)
+		websocket.BroadcastInvalidate(websocket.MessageTypeInbounds)
+		websocket.BroadcastInvalidate(websocket.MessageTypeClients)
 	}
 
 	return nil

@@ -75,7 +75,11 @@ export function useHashemMutations() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: keys.hashem.status() });
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: keys.hashem.status() });
+    queryClient.invalidateQueries({ queryKey: keys.inbounds.root() });
+    queryClient.invalidateQueries({ queryKey: keys.clients.root() });
+  };
 
   const setCarrierMutation = useMutation({
     mutationFn: async (carrier: string) => {

@@ -1137,7 +1137,7 @@ func (s *HashemService) parsePorts(portsStr string) []int {
 	return result
 }
 
-func (s *HashemService) AutoCreateMatchingInbounds(portsStr string, host string) error {
+func (s *HashemService) AutoCreateMatchingInbounds(portsStr string, iranIP string, wsHost ...string) error {
 	if database.GetDB() == nil {
 		return nil
 	}
@@ -1147,9 +1147,14 @@ func (s *HashemService) AutoCreateMatchingInbounds(portsStr string, host string)
 		return nil
 	}
 
-	host = strings.TrimSpace(host)
-	if host == "" {
-		host = s.getForeignPubIP()
+	iranIP = strings.TrimSpace(iranIP)
+	if iranIP == "" {
+		iranIP = s.getForeignPubIP()
+	}
+
+	hostHeader := "botf.ksmrx.ir"
+	if len(wsHost) > 0 && strings.TrimSpace(wsHost[0]) != "" {
+		hostHeader = strings.TrimSpace(wsHost[0])
 	}
 
 	existingInbounds, _ := s.inboundService.GetInboundsForScope(InboundAccessScope{All: true})
@@ -1205,7 +1210,7 @@ func (s *HashemService) AutoCreateMatchingInbounds(portsStr string, host string)
 			"wsSettings": map[string]any{
 				"acceptProxyProtocol": false,
 				"path":                "/@DARK_VVPN",
-				"host":                host,
+				"host":                hostHeader,
 				"headers":             map[string]any{},
 				"heartbeatPeriod":     0,
 			},
@@ -1229,7 +1234,7 @@ func (s *HashemService) AutoCreateMatchingInbounds(portsStr string, host string)
 			StreamSettings:    string(streamBytes),
 			Sniffing:          string(sniffingBytes),
 			ShareAddrStrategy: "custom",
-			ShareAddr:         host,
+			ShareAddr:         iranIP,
 		}
 
 		addedInbound, _, err := s.inboundService.AddInbound(newInbound)
@@ -1345,7 +1350,8 @@ func (s *HashemService) SetupSSH(form HashemSSHSetupForm) (*HashemSSHSetupResult
 
 	peerJsonCmd, optimizeCmd, _ := buildIranSetupCommands(iranIP, foreignIP, frpPort, bhPort, token, carrier, ports, engine, transport)
 
-	downloadPipeSSH := "if [ ! -s /tmp/hashem.sh ]; then " +
+	downloadPipeSSH := "if [ -f /opt/frp_backup/frps ] && [ ! -s /usr/local/bin/frps ]; then cp /opt/frp_backup/frps /usr/local/bin/frps && chmod +x /usr/local/bin/frps; fi; " +
+		"if [ ! -s /tmp/hashem.sh ]; then " +
 		"curl -fsSL https://fastly.jsdelivr.net/gh/pdnczone/hashem-panel@main/hashem.sh -o /tmp/hashem.sh 2>/dev/null || " +
 		"curl -fsSL https://ghproxy.net/https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /tmp/hashem.sh 2>/dev/null || " +
 		"curl -fsSL https://gh-proxy.com/https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /tmp/hashem.sh 2>/dev/null || " +
@@ -1527,7 +1533,8 @@ func buildIranSetupCommands(iranIP, foreignIP string, frpPort, bhPort int, token
 		greIf, greIf, greIf, greIf, greIf,
 	)
 
-	downloadPipe := "curl -fsSL https://fastly.jsdelivr.net/gh/pdnczone/hashem-panel@main/hashem.sh -o /tmp/hashem.sh 2>/dev/null || " +
+	downloadPipe := "if [ -f /opt/frp_backup/frps ] && [ ! -s /usr/local/bin/frps ]; then cp /opt/frp_backup/frps /usr/local/bin/frps && chmod +x /usr/local/bin/frps; fi; " +
+		"curl -fsSL https://fastly.jsdelivr.net/gh/pdnczone/hashem-panel@main/hashem.sh -o /tmp/hashem.sh 2>/dev/null || " +
 		"curl -fsSL https://ghproxy.net/https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /tmp/hashem.sh 2>/dev/null || " +
 		"curl -fsSL https://gh-proxy.com/https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /tmp/hashem.sh 2>/dev/null || " +
 		"curl -fsSL https://ghproxy.cn/https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /tmp/hashem.sh 2>/dev/null || " +

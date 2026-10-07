@@ -1153,6 +1153,8 @@ export default function HashemPage() {
                       carrier: 'direct',
                       frpPort: 36067,
                       ports: status.ports?.join(', ') || '8080',
+                      inboundHost: 'botf.ksmrx.ir',
+                      autoCreateInbound: true,
                     }}
                     onFinish={handleSetupSubmit}
                     style={{ marginTop: 12 }}

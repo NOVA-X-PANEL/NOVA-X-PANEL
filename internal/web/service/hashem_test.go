@@ -99,3 +99,78 @@ func TestParsePorts(t *testing.T) {
 		t.Errorf("unexpected parsed ports: %v", ports)
 	}
 }
+
+func TestGetGreInterface(t *testing.T) {
+	// Default
+	if iface := getGreInterface(); iface != "gre-tunnel" {
+		t.Errorf("expected default gre-tunnel, got %s", iface)
+	}
+
+	// Environment variable override
+	t.Setenv("HASHEM_GRE_IFACE", "gre-custom0")
+	if iface := getGreInterface(); iface != "gre-custom0" {
+		t.Errorf("expected gre-custom0 from env, got %s", iface)
+	}
+}
+
+func TestBuildIranSetupCommands(t *testing.T) {
+	t.Setenv("HASHEM_GRE_IFACE", "gre-test")
+
+	// Backhaul engine
+	_, _, oneLinerBh := buildIranSetupCommands("1.1.1.1", "2.2.2.2", 48465, 3080, "secret_tok", "direct", "8080,2053", "backhaul", "tcpmux")
+	if !strings.Contains(oneLinerBh, "setup-backhaul-iran") {
+		t.Errorf("expected setup-backhaul-iran in one-liner, got %s", oneLinerBh)
+	}
+	if !strings.Contains(oneLinerBh, "fastly.jsdelivr.net") || !strings.Contains(oneLinerBh, "ghproxy.net") || !strings.Contains(oneLinerBh, "gh-proxy.com") {
+		t.Errorf("expected multi-mirror fallback chain in one-liner")
+	}
+
+	// GRE-Backhaul engine
+	_, optGreBh, oneLinerGreBh := buildIranSetupCommands("1.1.1.1", "2.2.2.2", 48465, 3080, "secret_tok", "fou:443", "8080", "gre-backhaul", "xtcpmux")
+	if !strings.Contains(oneLinerGreBh, "setup-gre-backhaul-iran") {
+		t.Errorf("expected setup-gre-backhaul-iran in one-liner, got %s", oneLinerGreBh)
+	}
+	if !strings.Contains(optGreBh, "dev gre-test mtu 1220") {
+		t.Errorf("expected optimizeCmd to use gre-test interface, got %s", optGreBh)
+	}
+
+	// FRP / Classic GRE engine
+	peerJsonCmd, optFrp, oneLinerFrp := buildIranSetupCommands("1.1.1.1", "2.2.2.2", 48465, 3080, "secret_tok", "direct", "8080", "frp", "")
+	if !strings.Contains(oneLinerFrp, "setup-iran") {
+		t.Errorf("expected setup-iran in one-liner, got %s", oneLinerFrp)
+	}
+	if !strings.Contains(peerJsonCmd, "Nova-Tunnel-") {
+		t.Errorf("expected dynamic Nova-Tunnel ID in peerJsonCmd, got %s", peerJsonCmd)
+	}
+	if !strings.Contains(peerJsonCmd, "gre-test") {
+		t.Errorf("expected peerJsonCmd to use gre-test, got %s", peerJsonCmd)
+	}
+	if !strings.Contains(optFrp, "-o gre-test") {
+		t.Errorf("expected optFrp to bind iptables to gre-test, got %s", optFrp)
+	}
+}
+
+func TestGenerateOneLinerValidation(t *testing.T) {
+	svc := &HashemService{}
+	_, err := svc.GenerateOneLiner(HashemOneLinerForm{
+		IranIP: "",
+	})
+	if err == nil {
+		t.Errorf("expected error for empty IranIP")
+	}
+
+	res, err := svc.GenerateOneLiner(HashemOneLinerForm{
+		IranIP:    "1.1.1.1",
+		Engine:    "backhaul",
+		Transport: "anytls",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if res == nil || res.OneLinerCommand == "" {
+		t.Fatalf("expected valid one-liner result")
+	}
+	if !strings.Contains(res.OneLinerCommand, "--transport anytls") {
+		t.Errorf("expected --transport anytls in one-liner, got %s", res.OneLinerCommand)
+	}
+}

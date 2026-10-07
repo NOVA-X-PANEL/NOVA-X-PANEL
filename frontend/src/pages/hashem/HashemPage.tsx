@@ -57,6 +57,16 @@ import './HashemPage.css';
 
 const { Title, Text, Paragraph } = Typography;
 
+const BACKHAUL_TRANSPORT_OPTIONS = [
+  { label: 'TCPMux (پرسرعت چندکاناله - پیشنهاد شده)', value: 'tcpmux' },
+  { label: 'X-TCPMux (نسخه ارتقایافته ضد اختلال)', value: 'xtcpmux' },
+  { label: 'AnyTLS (پوشش کامل AnyTLS ضد فیلتر)', value: 'anytls' },
+  { label: 'WSSMux (وب‌سوکت ایمن با TLS)', value: 'wssmux' },
+  { label: 'WS (وب‌سوکت استاندارد بدون TLS)', value: 'ws' },
+  { label: 'TCP / TCPO (تک کانکشن مستقیم)', value: 'tcp' },
+  { label: 'TUN (تونل لایه ۳ در سطح کارت شبکه)', value: 'tun' },
+];
+
 export default function HashemPage() {
   const { t } = useTranslation();
   const { isDark, isUltra, antdThemeConfig } = useTheme();
@@ -882,13 +892,7 @@ export default function HashemPage() {
                             label={t('pages.hashem.transportLabel', { defaultValue: 'پروتکل انتقال (Transport)' })}
                             initialValue="tcpmux"
                           >
-                            <Select
-                              options={[
-                                { label: 'TCPMux (پرسرعت چندکاناله - پیشنهاد شده)', value: 'tcpmux' },
-                                { label: 'WSSMux (وب‌سوکت ایمن با TLS)', value: 'wssmux' },
-                                { label: 'TCPO (تک کانکشن مستقیم)', value: 'tcpo' },
-                              ]}
-                            />
+                            <Select options={BACKHAUL_TRANSPORT_OPTIONS} />
                           </Form.Item>
                         </Col>
                         <Col span={10}>
@@ -1025,13 +1029,7 @@ export default function HashemPage() {
                             label={t('pages.hashem.transportLabel', { defaultValue: 'پروتکل انتقال (Transport)' })}
                             initialValue="tcpmux"
                           >
-                            <Select
-                              options={[
-                                { label: 'TCPMux (پرسرعت چندکاناله - پیشنهاد شده)', value: 'tcpmux' },
-                                { label: 'WSSMux (وب‌سوکت ایمن با TLS)', value: 'wssmux' },
-                                { label: 'TCPO (تک کانکشن مستقیم)', value: 'tcpo' },
-                              ]}
-                            />
+                            <Select options={BACKHAUL_TRANSPORT_OPTIONS} />
                           </Form.Item>
                         </Col>
                         <Col span={10}>
@@ -1178,13 +1176,7 @@ export default function HashemPage() {
                             label={t('pages.hashem.transportLabel', { defaultValue: 'پروتکل انتقال (Transport)' })}
                             initialValue="tcpmux"
                           >
-                            <Select
-                              options={[
-                                { label: 'TCPMux (پرسرعت چندکاناله - پیشنهاد شده)', value: 'tcpmux' },
-                                { label: 'WSSMux (وب‌سوکت ایمن با TLS)', value: 'wssmux' },
-                                { label: 'TCPO (تک کانکشن مستقیم)', value: 'tcpo' },
-                              ]}
-                            />
+                            <Select options={BACKHAUL_TRANSPORT_OPTIONS} />
                           </Form.Item>
                         </Col>
                         <Col span={10}>

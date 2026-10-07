@@ -300,6 +300,14 @@ export default function HashemPage() {
                 {status.installed && (
                   <>
                     <Button
+                      icon={<DownloadOutlined />}
+                      onClick={handleInstall}
+                      loading={isInstalling}
+                      title="دانلود و به‌روزرسانی آخرین نسخه اسکریپت و هسته‌های هاشم از گیت‌هاب"
+                    >
+                      {t('pages.hashem.updateScriptBtn', { defaultValue: 'به‌روزرسانی اسکریپت هاشم' })}
+                    </Button>
+                    <Button
                       icon={<SyncOutlined />}
                       onClick={handleSyncInbounds}
                       loading={isSyncingInbounds}

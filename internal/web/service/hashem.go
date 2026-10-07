@@ -1350,7 +1350,8 @@ func (s *HashemService) SetupSSH(form HashemSSHSetupForm) (*HashemSSHSetupResult
 	}
 	defer client.Close()
 
-	// 1. Read local hashem.sh to transfer directly over SSH, bypassing Iranian GitHub blocks
+	// 1. Refresh local hashem.sh if possible to always use upstream latest, then read to transfer over SSH
+	_ = exec.Command("bash", "-c", "curl -fsSL https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /usr/local/bin/hashem.sh 2>/dev/null && chmod +x /usr/local/bin/hashem.sh || true").Run()
 	scriptContent, _ := os.ReadFile(hashemScriptPath)
 	if len(scriptContent) == 0 {
 		scriptContent, _ = os.ReadFile(hashemBinPath)

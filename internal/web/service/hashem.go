@@ -1174,29 +1174,6 @@ func (s *HashemService) AutoCreateMatchingInbounds(portsStr string, host string)
 
 	for _, port := range ports {
 		if existing, exists := existingMap[port]; exists {
-			if existing.Protocol == model.VLESS {
-				var stream map[string]any
-				if err := json.Unmarshal([]byte(existing.StreamSettings), &stream); err == nil && stream != nil {
-					if stream["network"] == "ws" {
-						wsSettings, ok := stream["wsSettings"].(map[string]any)
-						if !ok || wsSettings == nil {
-							wsSettings = make(map[string]any)
-						}
-						wsSettings["host"] = host
-						if _, ok := wsSettings["path"]; !ok || wsSettings["path"] == "" {
-							wsSettings["path"] = "/@DARK_VVPN"
-						}
-						stream["wsSettings"] = wsSettings
-						if b, err := json.Marshal(stream); err == nil {
-							existing.StreamSettings = string(b)
-							existing.ShareAddrStrategy = "custom"
-							existing.ShareAddr = host
-							_, _, _ = s.inboundService.UpdateInbound(existing)
-							createdAny = true
-						}
-					}
-				}
-			}
 			if len(allClientEmails) > 0 {
 				_, _, _ = s.clientService.BulkAttach(&s.inboundService, allClientEmails, []int{existing.Id})
 			}
@@ -1293,7 +1270,7 @@ func (s *HashemService) SetupSSH(form HashemSSHSetupForm) (*HashemSSHSetupResult
 	}
 	carrier := strings.TrimSpace(form.Carrier)
 	if carrier == "" {
-		carrier = "fou:443"
+		carrier = "direct"
 	}
 	engine := strings.TrimSpace(strings.ToLower(form.Engine))
 	if engine == "" {
@@ -1376,6 +1353,11 @@ func (s *HashemService) SetupSSH(form HashemSSHSetupForm) (*HashemSSHSetupResult
 		"curl -sL https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /tmp/hashem.sh; " +
 		"chmod +x /tmp/hashem.sh; fi; "
 
+	carrierCmd := ""
+	if carrier != "direct" && carrier != "" {
+		carrierCmd = fmt.Sprintf("bash /tmp/hashem.sh carrier mode %s && ", carrier)
+	}
+
 	var iranCmd string
 	if engine == "backhaul" {
 		iranCmd = fmt.Sprintf(
@@ -1387,17 +1369,17 @@ func (s *HashemService) SetupSSH(form HashemSSHSetupForm) (*HashemSSHSetupResult
 		iranCmd = fmt.Sprintf(
 			"export DEBIAN_FRONTEND=noninteractive; %s"+
 				"bash /tmp/hashem.sh setup-gre-backhaul-iran --local-pub %s --remote-pub %s --port %d --transport %s --token %s --ports \"%s\" --force && "+
-				"bash /tmp/hashem.sh carrier mode %s && "+
+				carrierCmd+
 				"%s; rm -f /tmp/hashem.sh",
-			downloadPipeSSH, iranIP, foreignIP, bhPort, transport, token, ports, carrier, optimizeCmd,
+			downloadPipeSSH, iranIP, foreignIP, bhPort, transport, token, ports, optimizeCmd,
 		)
 	} else {
 		iranCmd = fmt.Sprintf(
 			"export DEBIAN_FRONTEND=noninteractive; %s"+
-				"bash /tmp/hashem.sh setup-iran --local-pub %s --remote-pub %s --frp-port %d --token %s --force && "+
-				"bash /tmp/hashem.sh carrier mode %s && "+
+				"bash /tmp/hashem.sh setup-iran --local-pub %s --remote-pub %s --frp-port %d --token %s --local-gre 10.10.10.2 --peer-gre 10.10.10.1 --force && "+
+				carrierCmd+
 				"%s && %s; rm -f /tmp/hashem.sh",
-			downloadPipeSSH, iranIP, foreignIP, frpPort, token, carrier, peerJsonCmd, optimizeCmd,
+			downloadPipeSSH, iranIP, foreignIP, frpPort, token, peerJsonCmd, optimizeCmd,
 		)
 	}
 
@@ -1441,14 +1423,18 @@ func (s *HashemService) SetupSSH(form HashemSSHSetupForm) (*HashemSSHSetupResult
 			"--frp-port", strconv.Itoa(frpPort),
 			"--token", token,
 			"--ports", ports,
+			"--local-gre", "10.10.10.1",
+			"--peer-gre", "10.10.10.2",
 			"--force",
 		)
 	}
 	fOut, _ := cmdForeign.CombinedOutput()
 
-	if engine != "backhaul" {
+	if engine != "backhaul" && carrier != "direct" && carrier != "" {
 		cmdCarrier := exec.CommandContext(ctx, hashemBinPath, "carrier", "mode", carrier)
 		_ = cmdCarrier.Run()
+	}
+	if engine != "backhaul" {
 		s.optimizeForeignNetwork(ports)
 	}
 
@@ -1504,13 +1490,11 @@ WantedBy=multi-user.target
 	_ = exec.Command("systemctl", "restart", "frpc").Run()
 
 	greIf := getGreInterface()
-	_ = exec.Command("ip", "link", "set", "dev", greIf, "mtu", "1220").Run()
-	_ = exec.Command("iptables", "-t", "mangle", "-C", "POSTROUTING", "-o", greIf, "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--set-mss", "1140").Run()
-	_ = exec.Command("iptables", "-t", "mangle", "-A", "POSTROUTING", "-o", greIf, "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--set-mss", "1140").Run()
-	_ = exec.Command("iptables", "-t", "mangle", "-C", "FORWARD", "-o", greIf, "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--set-mss", "1140").Run()
-	_ = exec.Command("iptables", "-t", "mangle", "-A", "FORWARD", "-o", greIf, "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--set-mss", "1140").Run()
-	_ = exec.Command("ethtool", "-K", greIf, "tso", "off", "gso", "off", "gro", "off").Run()
-	_ = exec.Command("ethtool", "-K", "eth0", "tso", "off", "gso", "off", "gro", "off").Run()
+	_ = exec.Command("ip", "link", "set", "dev", greIf, "mtu", "1380").Run()
+	_ = exec.Command("iptables", "-t", "mangle", "-C", "POSTROUTING", "-o", greIf, "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--set-mss", "1340").Run()
+	_ = exec.Command("iptables", "-t", "mangle", "-A", "POSTROUTING", "-o", greIf, "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--set-mss", "1340").Run()
+	_ = exec.Command("iptables", "-t", "mangle", "-C", "FORWARD", "-o", greIf, "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--set-mss", "1340").Run()
+	_ = exec.Command("iptables", "-t", "mangle", "-A", "FORWARD", "-o", greIf, "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--set-mss", "1340").Run()
 	if out, err := exec.Command(hashemBinPath, "optimize").CombinedOutput(); err != nil {
 		logger.Warningf("hashem optimize failed: %v, out: %s", err, string(out))
 	}
@@ -1531,18 +1515,16 @@ func buildIranSetupCommands(iranIP, foreignIP string, frpPort, bhPort int, token
 
 	greIf := getGreInterface()
 	peerJsonCmd := fmt.Sprintf(
-		`python3 -c "import json, os; p='/etc/gre-panel/peers.json'; os.makedirs(os.path.dirname(p), exist_ok=True); d={'peers':[]}; (os.path.exists(p) and d.update(json.load(open(p)))) if os.path.exists(p) else 0; peers=d.get('peers',[]); m=[x for x in peers if x.get('remote_pub')=='%s']; nid=m[0].get('id',1) if m else max([x.get('id',0) for x in peers]+[0])+1; entry={'id': nid, 'name': 'Nova-Tunnel-'+str(nid), 'local_pub': '%s', 'remote_pub': '%s', 'peer_pub': '%s', 'local_gre': '10.10.'+str(nid)+'.2', 'peer_gre': '10.10.'+str(nid)+'.1', 'ports': [%s], 'frp_port': %d, 'gre_if': '%s', 'frps_svc': 'frps', 'legacy': True}; peers=[x for x in peers if x.get('remote_pub')!='%s']+[entry]; d['peers']=peers; json.dump(d, open(p, 'w'), indent=2)" 2>/dev/null && systemctl restart gre-panel 2>/dev/null || true`,
+		`python3 -c "import json, os; p='/etc/gre-panel/peers.json'; os.makedirs(os.path.dirname(p), exist_ok=True); d={'peers':[]}; (os.path.exists(p) and d.update(json.load(open(p)))) if os.path.exists(p) else 0; peers=d.get('peers',[]); m=[x for x in peers if x.get('remote_pub')=='%s']; nid=m[0].get('id',1) if m else max([x.get('id',0) for x in peers]+[0])+1; lg='10.10.10.2' if nid==1 else '10.10.'+str(nid)+'.2'; pg='10.10.10.1' if nid==1 else '10.10.'+str(nid)+'.1'; entry={'id': nid, 'name': 'Nova-Tunnel-'+str(nid), 'local_pub': '%s', 'remote_pub': '%s', 'peer_pub': '%s', 'local_gre': lg, 'peer_gre': pg, 'ports': [%s], 'frp_port': %d, 'gre_if': '%s', 'frps_svc': 'frps', 'legacy': True}; peers=[x for x in peers if x.get('remote_pub')!='%s']+[entry]; d['peers']=peers; json.dump(d, open(p, 'w'), indent=2)" 2>/dev/null && systemctl restart gre-panel 2>/dev/null || true`,
 		foreignIP, iranIP, foreignIP, foreignIP, portsJson, frpPort, greIf, foreignIP,
 	)
 
 	optimizeCmd := fmt.Sprintf(
-		"ip link set dev %s mtu 1220 2>/dev/null || true; "+
-			"iptables -t mangle -C POSTROUTING -o %s -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1140 2>/dev/null || iptables -t mangle -A POSTROUTING -o %s -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1140 2>/dev/null || true; "+
-			"iptables -t mangle -C FORWARD -o %s -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1140 2>/dev/null || iptables -t mangle -A FORWARD -o %s -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1140 2>/dev/null || true; "+
-			"ethtool -K eth0 tso off gso off gro off 2>/dev/null || true; "+
-			"ethtool -K %s tso off gso off gro off 2>/dev/null || true; "+
+		"ip link set dev %s mtu 1380 2>/dev/null || true; "+
+			"iptables -t mangle -C POSTROUTING -o %s -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1340 2>/dev/null || iptables -t mangle -A POSTROUTING -o %s -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1340 2>/dev/null || true; "+
+			"iptables -t mangle -C FORWARD -o %s -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1340 2>/dev/null || iptables -t mangle -A FORWARD -o %s -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1340 2>/dev/null || true; "+
 			"bash /tmp/hashem.sh optimize 2>/dev/null || true",
-		greIf, greIf, greIf, greIf, greIf, greIf,
+		greIf, greIf, greIf, greIf, greIf,
 	)
 
 	downloadPipe := "curl -fsSL https://fastly.jsdelivr.net/gh/pdnczone/hashem-panel@main/hashem.sh -o /tmp/hashem.sh 2>/dev/null || " +
@@ -1552,6 +1534,11 @@ func buildIranSetupCommands(iranIP, foreignIP string, frpPort, bhPort int, token
 		"curl -sL https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /tmp/hashem.sh; " +
 		"chmod +x /tmp/hashem.sh;"
 
+	carrierCmd := ""
+	if carrier != "direct" && carrier != "" {
+		carrierCmd = fmt.Sprintf("bash /tmp/hashem.sh carrier mode %s && ", carrier)
+	}
+
 	var oneLiner string
 	if engine == "backhaul" {
 		oneLiner = fmt.Sprintf(
@@ -1560,13 +1547,13 @@ func buildIranSetupCommands(iranIP, foreignIP string, frpPort, bhPort int, token
 		)
 	} else if engine == "gre-backhaul" {
 		oneLiner = fmt.Sprintf(
-			"%s bash /tmp/hashem.sh setup-gre-backhaul-iran --local-pub %s --remote-pub %s --port %d --transport %s --token %s --ports \"%s\" --force && bash /tmp/hashem.sh carrier mode %s && %s && rm -f /tmp/hashem.sh",
-			downloadPipe, iranIP, foreignIP, bhPort, transport, token, ports, carrier, optimizeCmd,
+			"%s bash /tmp/hashem.sh setup-gre-backhaul-iran --local-pub %s --remote-pub %s --port %d --transport %s --token %s --ports \"%s\" --force && %s%s && rm -f /tmp/hashem.sh",
+			downloadPipe, iranIP, foreignIP, bhPort, transport, token, ports, carrierCmd, optimizeCmd,
 		)
 	} else {
 		oneLiner = fmt.Sprintf(
-			"%s bash /tmp/hashem.sh setup-iran --local-pub %s --remote-pub %s --frp-port %d --token %s --force && bash /tmp/hashem.sh carrier mode %s && %s && %s && rm -f /tmp/hashem.sh",
-			downloadPipe, iranIP, foreignIP, frpPort, token, carrier, peerJsonCmd, optimizeCmd,
+			"%s bash /tmp/hashem.sh setup-iran --local-pub %s --remote-pub %s --frp-port %d --token %s --local-gre 10.10.10.2 --peer-gre 10.10.10.1 --force && %s%s && %s && rm -f /tmp/hashem.sh",
+			downloadPipe, iranIP, foreignIP, frpPort, token, carrierCmd, peerJsonCmd, optimizeCmd,
 		)
 	}
 
@@ -1580,7 +1567,7 @@ func (s *HashemService) GenerateOneLiner(form HashemOneLinerForm) (*HashemOneLin
 
 	carrier := strings.TrimSpace(form.Carrier)
 	if carrier == "" {
-		carrier = "fou:443"
+		carrier = "direct"
 	}
 	engine := strings.TrimSpace(strings.ToLower(form.Engine))
 	if engine == "" {

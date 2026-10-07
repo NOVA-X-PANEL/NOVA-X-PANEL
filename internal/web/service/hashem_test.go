@@ -130,7 +130,7 @@ func TestBuildIranSetupCommands(t *testing.T) {
 	if !strings.Contains(oneLinerGreBh, "setup-gre-backhaul-iran") {
 		t.Errorf("expected setup-gre-backhaul-iran in one-liner, got %s", oneLinerGreBh)
 	}
-	if !strings.Contains(optGreBh, "dev gre-test mtu 1220") {
+	if !strings.Contains(optGreBh, "dev gre-test mtu 1380") {
 		t.Errorf("expected optimizeCmd to use gre-test interface, got %s", optGreBh)
 	}
 

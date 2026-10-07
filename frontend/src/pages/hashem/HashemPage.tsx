@@ -198,7 +198,7 @@ export default function HashemPage() {
         sshUser: values.sshUser || 'root',
         sshPassword: values.sshPassword,
         ports: values.ports || status.ports?.join(', ') || '8080',
-        carrier: values.carrier || 'fou:443',
+        carrier: values.carrier || 'direct',
         autoCreateInbound: values.autoCreateInbound ?? true,
         inboundHost: values.inboundHost || values.iranIp,
       });
@@ -218,7 +218,7 @@ export default function HashemPage() {
         snappy: values.snappy ?? true,
         iranIp: values.iranIp,
         ports: values.ports || status.ports?.join(', ') || '8080',
-        carrier: values.carrier || 'fou:443',
+        carrier: values.carrier || 'direct',
         autoCreateInbound: values.autoCreateInbound ?? true,
         inboundHost: values.inboundHost || values.iranIp,
       });
@@ -1150,7 +1150,7 @@ export default function HashemPage() {
                     layout="vertical"
                     initialValues={{
                       role: 'foreign',
-                      carrier: 'fou:443',
+                      carrier: 'direct',
                       frpPort: 36067,
                       ports: status.ports?.join(', ') || '8080',
                     }}
@@ -1218,8 +1218,8 @@ export default function HashemPage() {
                     <Form.Item name="carrier" label={t('pages.hashem.carrierModeLabel')}>
                       <Select
                         options={[
-                          { label: 'FoU:443 (Recommended for bypassing filtering)', value: 'fou:443' },
-                          { label: 'Direct GRE (Raw IP proto 47)', value: 'direct' },
+                          { label: 'Direct GRE (Raw IP proto 47 - پیش‌فرض و پایدار)', value: 'direct' },
+                          { label: 'FoU:443 (Foo-over-UDP Port 443)', value: 'fou:443' },
                           { label: 'WSS:8443 (WebSocket TLS)', value: 'wss:8443' },
                         ]}
                       />

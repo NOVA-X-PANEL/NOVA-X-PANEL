@@ -418,6 +418,7 @@ export default function ClientFormModal({
         auth: RandomUtil.randomLowerAndNum(16),
         wgPrivateKey: wgKeypair.privateKey,
         wgPublicKey: wgKeypair.publicKey,
+        inboundIds: inbounds && inbounds.length > 0 ? [inbounds[0].id] : [],
       });
     }
 

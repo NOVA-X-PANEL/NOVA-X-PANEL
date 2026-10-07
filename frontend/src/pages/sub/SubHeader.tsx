@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Menu, Popover, Space } from 'antd';
+import { Button, Menu, Popover, Space, Tag } from 'antd';
 import {
   MoonFilled,
   MoonOutlined,
@@ -63,8 +63,11 @@ export default function SubHeader({ title, sId, email, lang, onLangChange }: Sub
           {initial ?? <WifiOutlined />}
         </span>
         <div className="sub-brand-text">
-          <div className="sub-brand-title" dir="auto">
-            {title || t('subscription.title')}
+          <div className="sub-brand-title" dir="auto" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span>{title || t('subscription.title')}</span>
+            <Tag color="purple" style={{ margin: 0, fontSize: '10px', fontWeight: 800, borderRadius: '6px', background: 'rgba(113, 64, 255, 0.25)', borderColor: '#7140ff', color: '#c4b5fd' }}>
+              PRO TUNNEL
+            </Tag>
           </div>
           <div className="sub-brand-id">
             <bdi>{email ? `${sId} - ${email}` : sId}</bdi>

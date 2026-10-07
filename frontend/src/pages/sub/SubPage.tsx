@@ -64,16 +64,16 @@ const RTL_LANGUAGES = new Set(['fa-IR', 'ar-EG']);
 // hue up instead of the panel blue useTheme pins. Mirrored in SubPage.css.
 const ACCENT = {
   light: {
-    primary: '#7c3aed',
-    hover: '#8b5cf6',
-    active: '#6d28d9',
-    rail: 'rgba(124, 58, 237, 0.16)',
+    primary: '#2563ff',
+    hover: '#3b82f6',
+    active: '#1d4ed8',
+    rail: 'rgba(37, 99, 255, 0.16)',
   },
   dark: {
-    primary: '#a78bfa',
-    hover: '#c4b5fd',
-    active: '#8b5cf6',
-    rail: 'rgba(167, 139, 250, 0.18)',
+    primary: '#38bdf8',
+    hover: '#67e8f9',
+    active: '#0284c7',
+    rail: 'rgba(56, 189, 248, 0.2)',
   },
 };
 
@@ -192,22 +192,22 @@ export default function SubPage() {
             {announce && <Alert type="info" showIcon title={announce} className="sub-announce" />}
             <SubHero {...heroData} lang={lang} />
             {tabs.length > 0 && <Tabs className="sub-tabs" tabBarGutter={24} items={tabs} />}
-            {(updateHours > 0 || subSupportUrl) && (
-              <footer className="sub-footer">
-                {updateHours > 0 && (
-                  <span>
-                    <ClockCircleOutlined />
-                    {t('subscription.updateInterval', { hours: updateHours })}
-                  </span>
-                )}
-                {subSupportUrl && (
-                  <a href={subSupportUrl} target="_blank" rel="noopener noreferrer">
-                    <CustomerServiceOutlined />
-                    {t('subscription.support')}
-                  </a>
-                )}
-              </footer>
-            )}
+            <footer className="sub-footer">
+              {updateHours > 0 && (
+                <span>
+                  <ClockCircleOutlined />
+                  {t('subscription.updateInterval', { hours: updateHours })}
+                </span>
+              )}
+              <a
+                href={subSupportUrl || 'https://t.me/dark_vpn_prroo'}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <CustomerServiceOutlined />
+                {subSupportUrl ? t('subscription.support') : 'پشتیبانی تلگرام @dark_vpn_prroo'}
+              </a>
+            </footer>
           </Card>
         </Layout.Content>
       </Layout>

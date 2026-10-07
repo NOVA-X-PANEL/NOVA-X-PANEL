@@ -35,44 +35,44 @@
 }
 
 .subscription-page.is-dark {
-  --sub-grad-from: #a78bfa;
-  --sub-grad-to: #22d3ee;
-  --sub-ink-from: #c4b5fd;
-  --sub-ink-to: #67e8f9;
-  --sub-accent: #a78bfa;
-  --bg-page: radial-gradient(ellipse 120% 90% at 18% -10%, #1f1740 0%, #16171d 52%, #101116 100%);
-  --sub-card-bg: rgba(35, 37, 43, 0.62);
-  --sub-card-border: rgba(255, 255, 255, 0.08);
-  --sub-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 24px 64px rgba(109, 40, 217, 0.24);
+  --sub-grad-from: #2563ff;
+  --sub-grad-to: #7140ff;
+  --sub-ink-from: #38bdf8;
+  --sub-ink-to: #a78bfa;
+  --sub-accent: #38bdf8;
+  --bg-page: #07090e;
+  --sub-card-bg: rgba(15, 20, 32, 0.85);
+  --sub-card-border: rgba(56, 189, 248, 0.25);
+  --sub-card-shadow: 0 16px 48px rgba(0, 0, 0, 0.75), 0 0 28px rgba(37, 99, 255, 0.25);
   --sub-card-sheen: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.16),
+    rgba(56, 189, 248, 0.22),
     rgba(255, 255, 255, 0) 42%,
-    rgba(167, 139, 250, 0.4) 88%
+    rgba(113, 64, 255, 0.35) 88%
   );
-  --sub-blob-1: rgba(139, 92, 246, 0.4);
-  --sub-blob-2: rgba(34, 211, 238, 0.26);
-  --sub-grid: rgba(255, 255, 255, 0.035);
-  --sub-hairline: linear-gradient(90deg, rgba(167, 139, 250, 0.45), rgba(34, 211, 238, 0.45));
-  --sub-tile-bg: rgba(167, 139, 250, 0.07);
-  --sub-tile-border: rgba(167, 139, 250, 0.14);
-  --sub-row-bg: rgba(167, 139, 250, 0.06);
-  --sub-row-border: rgba(167, 139, 250, 0.12);
-  --sub-row-bg-hover: rgba(167, 139, 250, 0.12);
-  --sub-row-border-hover: rgba(167, 139, 250, 0.35);
-  --sub-row-glow: rgba(139, 92, 246, 0.45);
-  --sub-glass-bg: rgba(255, 255, 255, 0.06);
+  --sub-blob-1: rgba(37, 99, 255, 0.35);
+  --sub-blob-2: rgba(113, 64, 255, 0.3);
+  --sub-grid: rgba(56, 189, 248, 0.05);
+  --sub-hairline: linear-gradient(90deg, #00bfff, #2563ff, #7140ff, #f13b96);
+  --sub-tile-bg: rgba(22, 29, 46, 0.85);
+  --sub-tile-border: rgba(56, 189, 248, 0.18);
+  --sub-row-bg: rgba(15, 20, 32, 0.8);
+  --sub-row-border: rgba(56, 189, 248, 0.2);
+  --sub-row-bg-hover: rgba(22, 29, 46, 0.95);
+  --sub-row-border-hover: rgba(56, 189, 248, 0.5);
+  --sub-row-glow: rgba(37, 99, 255, 0.55);
+  --sub-glass-bg: rgba(15, 20, 32, 0.75);
 }
 
 .subscription-page.is-dark.is-ultra {
-  --bg-page: radial-gradient(ellipse 120% 90% at 18% -10%, #120a2b 0%, #050509 55%, #000 100%);
-  --sub-card-bg: rgba(16, 16, 19, 0.68);
-  --sub-card-border: rgba(255, 255, 255, 0.055);
-  --sub-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.6), 0 24px 64px rgba(88, 28, 135, 0.3);
-  --sub-blob-1: rgba(139, 92, 246, 0.22);
-  --sub-blob-2: rgba(34, 211, 238, 0.14);
-  --sub-grid: rgba(255, 255, 255, 0.022);
-  --sub-glass-bg: rgba(255, 255, 255, 0.04);
+  --bg-page: #040508;
+  --sub-card-bg: rgba(10, 14, 24, 0.92);
+  --sub-card-border: rgba(56, 189, 248, 0.3);
+  --sub-card-shadow: 0 20px 60px rgba(0, 0, 0, 0.9), 0 0 32px rgba(113, 64, 255, 0.3);
+  --sub-blob-1: rgba(37, 99, 255, 0.25);
+  --sub-blob-2: rgba(113, 64, 255, 0.2);
+  --sub-grid: rgba(56, 189, 248, 0.04);
+  --sub-glass-bg: rgba(10, 14, 24, 0.85);
 }
 
 .subscription-page .ant-layout,
@@ -184,6 +184,20 @@
   pointer-events: none;
 }
 
+.subscription-page .sub-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #00bfff, #2563ff, #7140ff, #f13b96);
+  box-shadow: 0 0 16px rgba(0, 191, 255, 0.85);
+  border-radius: 20px 20px 0 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
 .sub-card > .ant-card-body {
   position: relative;
   z-index: 1;
@@ -235,18 +249,19 @@
 }
 
 .sub-brand-mark {
-  width: 44px;
-  height: 44px;
+  width: 46px;
+  height: 46px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 13px;
-  background: linear-gradient(135deg, var(--sub-grad-from), var(--sub-grad-to));
-  box-shadow: 0 8px 20px -8px var(--sub-row-glow);
+  border-radius: 14px;
+  background: linear-gradient(135deg, #1e1b4b 0%, #2563ff 50%, #7140ff 100%);
+  box-shadow: 0 0 20px rgba(113, 64, 255, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   color: #fff;
-  font-size: 20px;
-  font-weight: 600;
+  font-size: 22px;
+  font-weight: 700;
 }
 
 .sub-brand-text {
@@ -390,10 +405,19 @@
 }
 
 .sub-stat {
-  padding: 10px 12px;
-  border-radius: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
   border: 1px solid var(--sub-tile-border);
   background: var(--sub-tile-bg);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  transition: all 0.25s ease;
+}
+
+.sub-stat:hover {
+  border-color: var(--sub-row-border-hover);
+  background: var(--sub-row-bg-hover);
+  box-shadow: 0 4px 20px rgba(37, 99, 255, 0.25);
+  transform: translateY(-2px);
 }
 
 .sub-stat-value {

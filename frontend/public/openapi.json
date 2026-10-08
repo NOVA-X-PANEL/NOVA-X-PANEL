@@ -4939,6 +4939,10 @@
       "description": "Hashem Layer-3 GRE and FRP reverse tunnel management. Controls carrier mode (Direct GRE, FoU:443, WSS), watchdog, and port forwarding synchronization."
     },
     {
+      "name": "Telegram Shop",
+      "description": "Mirza-style automated Telegram shop bot installer and lifecycle manager. Manages bot installation, status, and control."
+    },
+    {
       "name": "WebSocket",
       "description": "Real-time status updates via WebSocket. Connect once at <code>ws://<panel>/ws</code> to receive a stream of JSON messages without polling. Requires an authenticated session cookie (Bearer token auth is not supported). Each message has a <code>type</code> field that identifies the payload shape."
     }
@@ -17291,6 +17295,125 @@
               },
               "example": {
                 "enabled": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/telegram-shop/status": {
+      "get": {
+        "tags": [
+          "Telegram Shop"
+        ],
+        "summary": "Get operational status and configuration of Telegram Shop Bot.",
+        "operationId": "get_panel_api_telegram_shop_status",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/telegram-shop/install": {
+      "post": {
+        "tags": [
+          "Telegram Shop"
+        ],
+        "summary": "Install and configure Telegram Shop Bot with token and admin chat ID.",
+        "operationId": "post_panel_api_telegram_shop_install",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "bot_token": "token",
+                "admin_chat_id": "842798945",
+                "card_number": "6037...",
+                "card_holder": "DARK VVPN"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/telegram-shop/action": {
+      "post": {
+        "tags": [
+          "Telegram Shop"
+        ],
+        "summary": "Perform lifecycle action (start, stop, restart, uninstall).",
+        "operationId": "post_panel_api_telegram_shop_action",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "action": "restart"
               }
             }
           }

@@ -1,0 +1,91 @@
+/* NOVA X PANEL — Telegram Shop (Mirza-Style Bot Installer) */
+
+.tgshop-page {
+  min-height: 100vh;
+}
+
+.tgshop-page .content-area {
+  padding: 24px;
+}
+
+@media (max-width: 768px) {
+  .tgshop-page .content-area {
+    padding: 12px;
+  }
+}
+
+.tgshop-hero {
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.12) 0%, rgba(139, 92, 246, 0.08) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  margin-bottom: 24px;
+  padding: 24px;
+}
+
+.tgshop-hero-title-text {
+  background: linear-gradient(135deg, #22d3ee 0%, #818cf8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
+  font-size: 22px;
+}
+
+.tgshop-card {
+  border-radius: 14px;
+  background: rgba(18, 22, 36, 0.65) !important;
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(99, 102, 241, 0.2) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  transition: all 0.25s ease;
+}
+
+.tgshop-card:hover {
+  border-color: rgba(6, 182, 212, 0.4) !important;
+  box-shadow: 0 8px 30px rgba(6, 182, 212, 0.15);
+}
+
+.tgshop-btn-install {
+  background: linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%) !important;
+  border: none !important;
+  color: #fff !important;
+  font-weight: 700;
+  box-shadow: 0 4px 15px rgba(6, 182, 212, 0.4);
+  transition: all 0.2s;
+}
+
+.tgshop-btn-install:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(6, 182, 212, 0.6) !important;
+}
+
+.tgshop-badge-online {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #10b981;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tgshop-badge-offline {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tgshop-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  box-shadow: 0 0 8px currentColor;
+}

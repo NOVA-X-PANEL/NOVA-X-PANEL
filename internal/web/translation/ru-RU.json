@@ -129,7 +129,8 @@
     "subFormats": "Форматы подписки",
     "myApi": "Мой API",
     "brandTagline": "Быстро • Безопасно • Бесплатно",
-    "hashem": "Hashem Tunnel"
+    "hashem": "Hashem Tunnel",
+    "telegramShop": "Магазин Telegram"
   },
   "pages": {
     "login": {

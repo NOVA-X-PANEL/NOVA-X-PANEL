@@ -33,6 +33,7 @@ import {
   SafetyOutlined,
   SearchOutlined,
   SettingOutlined,
+  ShoppingCartOutlined,
   SunOutlined,
   SwapOutlined,
   TagsOutlined,
@@ -76,6 +77,7 @@ type IconName =
   | 'tool'
   | 'cluster'
   | 'hashem'
+  | 'telegramShop'
   | 'admins'
   | 'roles'
   | 'hosts'
@@ -94,6 +96,7 @@ const iconByName: Record<IconName, ComponentType> = {
   tool: ToolOutlined,
   cluster: ClusterOutlined,
   hashem: ThunderboltOutlined,
+  telegramShop: ShoppingCartOutlined,
   admins: UserSwitchOutlined,
   roles: SafetyCertificateOutlined,
   hosts: GlobalOutlined,
@@ -249,6 +252,7 @@ export default function AppSidebar() {
       { key: '/groups', icon: 'groups', title: t('menu.groups') },
       { key: '/nodes', icon: 'cluster', title: t('menu.nodes') },
       { key: '/hashem', icon: 'hashem', title: t('menu.hashem') },
+      { key: '/telegram-shop', icon: 'telegramShop', title: t('menu.telegramShop') },
       { key: '/admins', icon: 'admins', title: t('menu.admins') },
       // Shown only when the account may hold an API token; canAccessRoute gates it.
       { key: '/my-api', icon: 'apikey', title: t('menu.myApi') },

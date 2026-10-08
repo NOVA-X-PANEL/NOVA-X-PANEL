@@ -241,6 +241,10 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 	hashem := api.Group("/hashem")
 	NewHashemController(hashem)
 
+	// Telegram Shop (Mirza-style bot installer)
+	tgShop := api.Group("/telegram-shop")
+	NewTelegramShopController(tgShop)
+
 	// Extra routes
 	api.POST("/backuptotgbot", requireOwnerRole(), a.BackuptoTgbot)
 }

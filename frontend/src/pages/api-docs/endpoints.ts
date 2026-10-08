@@ -3058,6 +3058,32 @@ export const sections: readonly Section[] = [
   },
 
   {
+    id: 'telegram-shop',
+    title: 'Telegram Shop',
+    description:
+      'Mirza-style automated Telegram shop bot installer and lifecycle manager. Manages bot installation, status, and control.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/telegram-shop/status',
+        summary: 'Get operational status and configuration of Telegram Shop Bot.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/telegram-shop/install',
+        summary: 'Install and configure Telegram Shop Bot with token and admin chat ID.',
+        body: '{\n  "bot_token": "token",\n  "admin_chat_id": "842798945",\n  "card_number": "6037...",\n  "card_holder": "DARK VVPN"\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/telegram-shop/action',
+        summary: 'Perform lifecycle action (start, stop, restart, uninstall).',
+        body: '{\n  "action": "restart"\n}',
+      },
+    ],
+  },
+
+  {
     id: 'websocket',
     title: 'WebSocket',
     description:

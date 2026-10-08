@@ -131,7 +131,8 @@
     "adminRoles": "Admin Roles",
     "myApi": "My API",
     "brandTagline": "Fast • Secure • Free",
-    "hashem": "Hashem Tunnel"
+    "hashem": "Hashem Tunnel",
+    "telegramShop": "Telegram Shop"
   },
   "pages": {
     "login": {

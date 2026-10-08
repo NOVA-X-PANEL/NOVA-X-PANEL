@@ -29,7 +29,6 @@ import {
   Typography,
 } from 'antd';
 import {
-  ApiOutlined,
   CheckCircleOutlined,
   CodeOutlined,
   CopyOutlined,
@@ -84,8 +83,6 @@ export default function HashemPage() {
     isEditingPorts,
     setup,
     isSettingUp,
-    setupSSH,
-    isSettingUpSSH,
     generateOneLiner,
     isGeneratingOneLiner,
     install,
@@ -101,18 +98,16 @@ export default function HashemPage() {
   } = useHashemMutations();
 
   const [setupModalOpen, setSetupModalOpen] = useState(false);
-  const [setupTab, setSetupTab] = useState<'ssh' | 'oneliner' | 'advanced'>('ssh');
+  const [setupTab, setSetupTab] = useState<'oneliner' | 'advanced'>('oneliner');
   const [generatedCmd, setGeneratedCmd] = useState<string | null>(null);
 
   const [editPortsModalOpen, setEditPortsModalOpen] = useState(false);
   const [portChips, setPortChips] = useState<number[]>([]);
   const [newPortInput, setNewPortInput] = useState<number | null>(null);
 
-  const [sshForm] = Form.useForm();
   const [oneLinerForm] = Form.useForm();
   const [form] = Form.useForm<HashemSetupPayload>();
 
-  const sshEngine = Form.useWatch('engine', sshForm) || 'frp';
   const oneLinerEngine = Form.useWatch('engine', oneLinerForm) || 'frp';
   const advancedEngine = Form.useWatch('engine', form) || 'frp';
 
@@ -184,29 +179,6 @@ export default function HashemPage() {
 
   const handleInstall = async () => {
     await install();
-  };
-
-  const handleSSHSubmit = async (values: any) => {
-    try {
-      await setupSSH({
-        engine: values.engine || 'frp',
-        transport: values.transport || 'tcpmux',
-        backhaulPort: values.backhaulPort || 3080,
-        snappy: values.snappy ?? true,
-        iranIp: values.iranIp,
-        sshPort: values.sshPort || 22,
-        sshUser: values.sshUser || 'root',
-        sshPassword: values.sshPassword,
-        ports: values.ports || status.ports?.join(', ') || '8080',
-        carrier: values.carrier || 'direct',
-        autoCreateInbound: values.autoCreateInbound ?? true,
-        inboundHost: values.inboundHost || values.iranIp,
-      });
-      setSetupModalOpen(false);
-      sshForm.resetFields();
-    } catch {
-      // toast shown by mutation
-    }
   };
 
   const handleOneLinerSubmit = async (values: any) => {
@@ -853,145 +825,6 @@ export default function HashemPage() {
             onChange={(k) => setSetupTab(k as any)}
             items={[
               {
-                key: 'ssh',
-                label: (
-                  <Space>
-                    <ApiOutlined />
-                    <span>{t('pages.hashem.tabSSHAuto')}</span>
-                  </Space>
-                ),
-                children: (
-                  <Form
-                    form={sshForm}
-                    layout="vertical"
-                    initialValues={{
-                      sshPort: 22,
-                      sshUser: 'root',
-                      ports: status.ports?.join(', ') || '8080',
-                    }}
-                    onFinish={handleSSHSubmit}
-                    style={{ marginTop: 12 }}
-                  >
-                    <Alert
-                      type="info"
-                      showIcon
-                      message="راه‌اندازی کاملاً خودکار تانل با اتصال SSH"
-                      description="با وارد کردن آی‌پی و رمز عبور سرور ایران، پنل مستقیماً از طریق SSH به سرور ایران متصل می‌شود. (نکته: در صورتی که دیتاسنتر ایران دسترسی مستقیم پورت ۲۲ را مسدود کرده باشد و تایم‌اوت دریافت کردید، لطفاً از تب دوم «دستور تک‌خطی سرور ایران» استفاده فرمایید.)"
-                      style={{ marginBottom: 16 }}
-                    />
-
-                    <Form.Item
-                      name="engine"
-                      label={t('pages.hashem.engineLabel', { defaultValue: 'موتور تانل (Tunnel Engine)' })}
-                      initialValue="frp"
-                    >
-                      <Radio.Group buttonStyle="solid" style={{ width: '100%' }}>
-                        <Radio.Button value="frp">⚡ FRP (معکوس)</Radio.Button>
-                        <Radio.Button value="backhaul">🚀 Backhaul (پرسرعت)</Radio.Button>
-                        <Radio.Button value="gre-backhaul">🌐 GRE + Backhaul</Radio.Button>
-                      </Radio.Group>
-                    </Form.Item>
-
-                    {sshEngine !== 'frp' && (
-                      <Row gutter={16}>
-                        <Col span={14}>
-                          <Form.Item
-                            name="transport"
-                            label={t('pages.hashem.transportLabel', { defaultValue: 'پروتکل انتقال (Transport)' })}
-                            initialValue="tcpmux"
-                          >
-                            <Select options={BACKHAUL_TRANSPORT_OPTIONS} />
-                          </Form.Item>
-                        </Col>
-                        <Col span={10}>
-                          <Form.Item
-                            name="backhaulPort"
-                            label={t('pages.hashem.backhaulPortLabel', { defaultValue: 'پورت سرور Backhaul' })}
-                            initialValue={3080}
-                          >
-                            <InputNumber style={{ width: '100%' }} min={1} max={65535} />
-                          </Form.Item>
-                        </Col>
-                      </Row>
-                    )}
-
-                    <Form.Item
-                      name="iranIp"
-                      label={t('pages.hashem.iranIpLabel')}
-                      rules={[{ required: true, message: t('pages.hashem.iranIpRequired') }]}
-                    >
-                      <Input placeholder="مثلاً 94.183.210.29" />
-                    </Form.Item>
-
-                    <Row gutter={16}>
-                      <Col span={14}>
-                        <Form.Item
-                          name="sshPassword"
-                          label={t('pages.hashem.sshPasswordLabel')}
-                          rules={[{ required: true, message: t('pages.hashem.sshPasswordRequired') }]}
-                        >
-                          <Input.Password placeholder="Password..." />
-                        </Form.Item>
-                      </Col>
-                      <Col span={5}>
-                        <Form.Item name="sshPort" label={t('pages.hashem.sshPortLabel')}>
-                          <InputNumber style={{ width: '100%' }} min={1} max={65535} />
-                        </Form.Item>
-                      </Col>
-                      <Col span={5}>
-                        <Form.Item name="sshUser" label={t('pages.hashem.sshUserLabel')}>
-                          <Input />
-                        </Form.Item>
-                      </Col>
-                    </Row>
-
-                    <Form.Item
-                      name="ports"
-                      label={t('pages.hashem.portsToTunnel')}
-                      extra={t('pages.hashem.portsToTunnelExtra')}
-                    >
-                      <Input placeholder="8080" />
-                    </Form.Item>
-
-                    <Form.Item
-                      name="autoCreateInbound"
-                      valuePropName="checked"
-                      initialValue={true}
-                      extra={t('pages.hashem.autoCreateInboundExtra', {
-                        defaultValue: 'با فعال بودن این گزینه، همزمان با اجرای تانل یک اینباند VLESS-WS متناظر با پورت انتخابی (مشابه اینباند ۸۰۸۰) با تنظیم خودکار هاست ساخته می‌شود.',
-                      })}
-                    >
-                      <Checkbox style={{ color: '#38bdf8', fontWeight: 600 }}>
-                        ⚡ {t('pages.hashem.autoCreateInboundLabel', { defaultValue: 'ساخت خودکار اینباند VLESS-WS متناظر با پورت تانل' })}
-                      </Checkbox>
-                    </Form.Item>
-
-                    <Form.Item
-                      name="inboundHost"
-                      label={t('pages.hashem.inboundHostLabel', { defaultValue: 'هاست هدر وب‌سوکت (WS Host Header)' })}
-                      extra={t('pages.hashem.inboundHostExtra', {
-                        defaultValue: 'آدرس هاست یا دامنه‌ای که در هدر وب‌سوکت اینباند ست می‌شود (مثلاً pro.ksmrx2.ir یا آی‌پی سرور ایران). در صورت خالی ماندن، آی‌پی سرور ایران درج می‌شود.',
-                      })}
-                    >
-                      <Input placeholder="pro.ksmrx2.ir" />
-                    </Form.Item>
-
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 24 }}>
-                      <Button onClick={() => setSetupModalOpen(false)}>{t('cancel')}</Button>
-                      <Button
-                        type="primary"
-                        htmlType="submit"
-                        loading={isSettingUpSSH}
-                        className="hashem-btn-setup"
-                        icon={<ApiOutlined />}
-                      >
-                        {isSettingUpSSH ? t('pages.hashem.sshConnecting') : t('pages.hashem.autoSetupBtn')}
-                      </Button>
-                    </div>
-                  </Form>
-                ),
-              },
-              {
                 key: 'oneliner',
                 label: (
                   <Space>
@@ -1013,7 +846,7 @@ export default function HashemPage() {
                       type="info"
                       showIcon
                       message="دستور تک‌خطی سرور ایران"
-                      description="اگر مایل به ارائه پسورد SSH نیستید، کافیست آی‌پی ایران و پورت‌ها را مشخص کنید. پنل خارج آماده شده و یک دستور تک‌خطی به شما تحویل می‌دهد تا در ترمینال ایران اجرا کنید."
+                      description="کافیست آی‌پی سرور ایران و پورت‌های مدنظر را وارد کنید. تنظیمات سرور خارج فوراً انجام شده و یک دستور تک‌خطی به شما تحویل داده می‌شود تا در ترمینال سرور ایران اجرا فرمایید."
                       style={{ marginBottom: 16 }}
                     />
 

@@ -1,6 +1,7 @@
 package service
 
 import (
+	_ "embed"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -22,6 +23,9 @@ const (
 	tgShopServiceUnit = "dark-shop-bot.service"
 	tgShopScriptPath  = "/usr/local/bin/dark_shop_bot.py"
 )
+
+//go:embed dark_shop_bot.py
+var defaultBotScript []byte
 
 // TelegramShopConfig represents settings required to run the bot.
 type TelegramShopConfig struct {
@@ -176,6 +180,11 @@ func (s *TelegramShopService) Install(cfg *TelegramShopConfig) error {
 	}
 	if cfg.ChannelUsername == "" {
 		cfg.ChannelUsername = "DARK_VVPN"
+	}
+
+	// Write bot script
+	if len(defaultBotScript) > 0 {
+		_ = os.WriteFile(tgShopScriptPath, defaultBotScript, 0755)
 	}
 
 	// Write config

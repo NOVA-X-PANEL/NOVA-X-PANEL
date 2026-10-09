@@ -28,6 +28,7 @@ import {
   UserOutlined,
   SafetyCertificateOutlined,
   InfoCircleOutlined,
+  GlobalOutlined,
 } from '@ant-design/icons';
 import { HttpUtil } from '@/utils';
 import { useTheme } from '@/hooks/useTheme';
@@ -335,6 +336,16 @@ export default function TelegramShopPage() {
                   style={{ marginBottom: 24 }}
                 >
                   <Space wrap size="middle">
+                    <Button
+                      type="primary"
+                      href="https://dark.ksmrx2.ir/panel/"
+                      target="_blank"
+                      icon={<GlobalOutlined />}
+                      style={{ background: '#6366f1', borderColor: '#6366f1' }}
+                    >
+                      ورود به وب‌پنل مدیریت میرزا بات ↗
+                    </Button>
+
                     <Button
                       icon={<ReloadOutlined />}
                       onClick={() => handleAction('restart')}

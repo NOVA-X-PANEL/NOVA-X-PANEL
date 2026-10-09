@@ -22,6 +22,7 @@ const (
 	tgShopDbPath      = "/etc/dark-shop/shop.db"
 	tgShopServiceUnit = "dark-shop-bot.service"
 	tgShopScriptPath  = "/usr/local/bin/dark_shop_bot.py"
+	mirzaHelperPath   = "/usr/local/bin/mirzabot_helper.php"
 )
 
 //go:embed dark_shop_bot.py
@@ -70,6 +71,36 @@ func (s *TelegramShopService) GetStatus() (*TelegramShopStatus, error) {
 	status := &TelegramShopStatus{
 		Installed: false,
 		Running:   false,
+	}
+
+	// Priority 1: Check MirzaBot native helper
+	if _, err := os.Stat(mirzaHelperPath); err == nil {
+		out, err := exec.Command(mirzaHelperPath, "status").Output()
+		if err == nil {
+			var m struct {
+				Installed       bool   `json:"installed"`
+				Running         bool   `json:"running"`
+				BotToken        string `json:"bot_token"`
+				AdminChatID     string `json:"admin_chat_id"`
+				BotUsername     string `json:"bot_username"`
+				Domain          string `json:"domain"`
+				RegisteredUsers int    `json:"registered_users"`
+				ActiveOrders    int    `json:"active_orders"`
+			}
+			if json.Unmarshal(out, &m) == nil && m.Installed {
+				status.Installed = true
+				status.Running = m.Running
+				status.BotToken = m.BotToken
+				status.AdminChatID = m.AdminChatID
+				status.BotUsername = m.BotUsername
+				status.TotalTrials = m.RegisteredUsers
+				status.TotalOrders = m.ActiveOrders
+				if status.BotToken != "" && status.BotUsername == "" {
+					s.fetchBotInfo(status.BotToken, status)
+				}
+				return status, nil
+			}
+		}
 	}
 
 	if _, err := os.Stat(tgShopConfigPath); err != nil {
@@ -155,11 +186,25 @@ func (s *TelegramShopService) Install(cfg *TelegramShopConfig) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if strings.TrimSpace(cfg.BotToken) == "" {
+	cfg.BotToken = strings.TrimSpace(cfg.BotToken)
+	cfg.AdminChatID = strings.TrimSpace(cfg.AdminChatID)
+
+	if cfg.BotToken == "" {
 		return fmt.Errorf("bot_token cannot be empty")
 	}
-	if strings.TrimSpace(cfg.AdminChatID) == "" {
+	if cfg.AdminChatID == "" {
 		return fmt.Errorf("admin_chat_id cannot be empty")
+	}
+
+	// Priority 1: MirzaBot native installation & sync
+	if _, err := os.Stat(mirzaHelperPath); err == nil {
+		st := &TelegramShopStatus{}
+		s.fetchBotInfo(cfg.BotToken, st)
+		out, err := exec.Command(mirzaHelperPath, "install", cfg.BotToken, cfg.AdminChatID, st.BotUsername).CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("mirza install error: %s (%v)", string(out), err)
+		}
+		return nil
 	}
 
 	_ = os.MkdirAll("/etc/dark-shop", 0755)
@@ -249,6 +294,15 @@ WantedBy=multi-user.target
 func (s *TelegramShopService) Action(action string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	// Priority 1: MirzaBot native actions
+	if _, err := os.Stat(mirzaHelperPath); err == nil {
+		out, err := exec.Command(mirzaHelperPath, "action", action).CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("mirza action error: %s (%v)", string(out), err)
+		}
+		return nil
+	}
 
 	switch action {
 	case "start":

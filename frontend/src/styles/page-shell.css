@@ -8,7 +8,8 @@
 .api-docs-page,
 .admins-page,
 .admin-roles-page,
-.sponsors-page {
+.sponsors-page,
+.tgshop-page {
   --bg-page: #e6e8ec;
   --bg-card: #ffffff;
   min-height: 100vh;
@@ -25,7 +26,8 @@
 .api-docs-page.is-dark,
 .admins-page.is-dark,
 .admin-roles-page.is-dark,
-.sponsors-page.is-dark {
+.sponsors-page.is-dark,
+.tgshop-page.is-dark {
   --bg-page: #1a1b1f;
   --bg-card: #23252b;
 }
@@ -40,7 +42,8 @@
 .api-docs-page.is-dark.is-ultra,
 .admins-page.is-dark.is-ultra,
 .admin-roles-page.is-dark.is-ultra,
-.sponsors-page.is-dark.is-ultra {
+.sponsors-page.is-dark.is-ultra,
+.tgshop-page.is-dark.is-ultra {
   --bg-page: #000;
   --bg-card: #101013;
 }
@@ -64,7 +67,9 @@
 .admins-page .ant-layout,
 .admins-page .ant-layout-content,
 .admin-roles-page .ant-layout,
-.admin-roles-page .ant-layout-content {
+.admin-roles-page .ant-layout-content,
+.tgshop-page .ant-layout,
+.tgshop-page .ant-layout-content {
   background: transparent;
 }
 
@@ -77,7 +82,8 @@
 .groups-page .content-shell,
 .api-docs-page .content-shell,
 .admins-page .content-shell,
-.admin-roles-page .content-shell {
+.admin-roles-page .content-shell,
+.tgshop-page .content-shell {
   background: transparent;
 }
 

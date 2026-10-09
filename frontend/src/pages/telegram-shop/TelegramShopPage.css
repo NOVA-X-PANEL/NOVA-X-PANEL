@@ -11,6 +11,16 @@
 @media (max-width: 768px) {
   .tgshop-page .content-area {
     padding: 12px;
+    padding-top: 64px;
+  }
+
+  .tgshop-hero {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .tgshop-hero-title-text {
+    font-size: 19px;
   }
 }
 
@@ -26,9 +36,14 @@
 .tgshop-hero-title-text {
   background: linear-gradient(135deg, #22d3ee 0%, #818cf8 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   font-weight: 800;
   font-size: 22px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .tgshop-card {

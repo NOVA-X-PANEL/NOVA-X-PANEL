@@ -29,17 +29,17 @@ var defaultBotScript []byte
 
 // TelegramShopConfig represents settings required to run the bot.
 type TelegramShopConfig struct {
-	BotToken         string  `json:"bot_token"`
-	AdminChatID      string  `json:"admin_chat_id"`
-	CardNumber       string  `json:"card_number"`
-	CardHolder       string  `json:"card_holder"`
-	BotEnabled       bool    `json:"bot_enabled"`
-	FreeTrialEnabled bool    `json:"free_trial_enabled"`
-	FreeTrialGB      float64 `json:"free_trial_gb"`
-	FreeTrialDays    int     `json:"free_trial_days"`
-	DefaultInboundID int     `json:"default_inbound_id"`
-	SupportUsername  string  `json:"support_username"`
-	ChannelUsername  string  `json:"channel_username"`
+	BotToken         string  `json:"bot_token" form:"bot_token"`
+	AdminChatID      string  `json:"admin_chat_id" form:"admin_chat_id"`
+	CardNumber       string  `json:"card_number" form:"card_number"`
+	CardHolder       string  `json:"card_holder" form:"card_holder"`
+	BotEnabled       bool    `json:"bot_enabled" form:"bot_enabled"`
+	FreeTrialEnabled bool    `json:"free_trial_enabled" form:"free_trial_enabled"`
+	FreeTrialGB      float64 `json:"free_trial_gb" form:"free_trial_gb"`
+	FreeTrialDays    int     `json:"free_trial_days" form:"free_trial_days"`
+	DefaultInboundID int     `json:"default_inbound_id" form:"default_inbound_id"`
+	SupportUsername  string  `json:"support_username" form:"support_username"`
+	ChannelUsername  string  `json:"channel_username" form:"channel_username"`
 }
 
 // TelegramShopStatus returns the operational status of the bot.
@@ -231,6 +231,17 @@ WantedBy=multi-user.target
 
 	_ = exec.Command("systemctl", "daemon-reload").Run()
 	_ = exec.Command("systemctl", "enable", "--now", tgShopServiceUnit).Run()
+	_ = exec.Command("systemctl", "restart", tgShopServiceUnit).Run()
+
+	// Clear any active Telegram webhook asynchronously so polling getUpdates works without conflict
+	go func(token string) {
+		cl := http.Client{Timeout: 5 * time.Second}
+		resp, err := cl.Get(fmt.Sprintf("https://api.telegram.org/bot%s/deleteWebhook?drop_pending_updates=true", token))
+		if err == nil && resp != nil {
+			_ = resp.Body.Close()
+		}
+	}(cfg.BotToken)
+
 	return nil
 }
 

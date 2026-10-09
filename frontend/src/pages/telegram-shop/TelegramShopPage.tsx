@@ -91,10 +91,12 @@ export default function TelegramShopPage() {
     fetchStatus();
   }, []);
 
+  const JSON_OPTIONS = { headers: { 'Content-Type': 'application/json' } };
+
   const handleInstall = async (values: any) => {
     try {
       setInstalling(true);
-      await HttpUtil.post('/panel/api/telegram-shop/install', values);
+      await HttpUtil.post('/panel/api/telegram-shop/install', values, JSON_OPTIONS);
       message.success('ربات تلگرام شاپ با موفقیت نصب و فعال شد! 🚀');
       fetchStatus();
     } catch (err: any) {
@@ -107,7 +109,7 @@ export default function TelegramShopPage() {
   const handleAction = async (action: 'start' | 'stop' | 'restart' | 'uninstall') => {
     try {
       setActionLoading(true);
-      await HttpUtil.post('/panel/api/telegram-shop/action', { action });
+      await HttpUtil.post('/panel/api/telegram-shop/action', { action }, JSON_OPTIONS);
       if (action === 'uninstall') {
         message.warning('ربات تلگرام شاپ با موفقیت حذف گردید.');
         form.resetFields();

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Layout,
   ConfigProvider,
@@ -53,6 +54,7 @@ interface TgShopStatus {
 }
 
 export default function TelegramShopPage() {
+  const { t } = useTranslation();
   const { isDark, isUltra, antdThemeConfig } = useTheme();
   const [form] = Form.useForm();
 
@@ -82,7 +84,7 @@ export default function TelegramShopPage() {
         }
       }
     } catch (err: any) {
-      message.error(err?.message || 'خطا در واکشی وضعیت تلگرام شاپ');
+      message.error(err?.message || t('pages.telegramShop.toasts.fetchError'));
     } finally {
       setLoading(false);
     }
@@ -98,10 +100,10 @@ export default function TelegramShopPage() {
     try {
       setInstalling(true);
       await HttpUtil.post('/panel/api/telegram-shop/install', values, JSON_OPTIONS);
-      message.success('ربات تلگرام شاپ با موفقیت نصب و فعال شد! 🚀');
+      message.success(t('pages.telegramShop.toasts.installedSuccess'));
       fetchStatus();
     } catch (err: any) {
-      message.error(err?.message || 'خطا در نصب ربات تلگرام شاپ');
+      message.error(err?.message || t('pages.telegramShop.toasts.installError'));
     } finally {
       setInstalling(false);
     }
@@ -112,14 +114,14 @@ export default function TelegramShopPage() {
       setActionLoading(true);
       await HttpUtil.post('/panel/api/telegram-shop/action', { action }, JSON_OPTIONS);
       if (action === 'uninstall') {
-        message.warning('ربات تلگرام شاپ با موفقیت حذف گردید.');
+        message.warning(t('pages.telegramShop.toasts.uninstalledSuccess'));
         form.resetFields();
       } else {
-        message.success(`دستور ${action} با موفقیت اجرا شد.`);
+        message.success(t('pages.telegramShop.toasts.actionSuccess', { action }));
       }
       fetchStatus();
     } catch (err: any) {
-      message.error(err?.message || 'خطا در اجرای عملیات');
+      message.error(err?.message || t('pages.telegramShop.toasts.actionError'));
     } finally {
       setActionLoading(false);
     }
@@ -137,12 +139,9 @@ export default function TelegramShopPage() {
                 <Col xs={24} md={16}>
                   <Space align="center" size="middle">
                     <ShoppingCartOutlined style={{ fontSize: 36, color: '#06b6d4', flexShrink: 0 }} />
-                    <div dir="rtl" style={{ textAlign: 'right' }}>
+                    <div style={{ textAlign: 'start' }}>
                       <Title level={2} className="tgshop-hero-title-text" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                        <span>تلگرام شاپ</span>
-                        <span style={{ fontSize: '0.8em', opacity: 0.85, fontWeight: 500, direction: 'ltr', display: 'inline-block' }}>
-                          (Telegram Shop)
-                        </span>
+                        <span>{t('pages.telegramShop.title')}</span>
                         <span
                           style={{
                             color: '#fbbf24',
@@ -159,20 +158,20 @@ export default function TelegramShopPage() {
                         </span>
                       </Title>
                       <Paragraph style={{ margin: 0, color: '#94a3b8', fontSize: 13, marginTop: 4 }}>
-                        نصب، مدیریت و حذف آسان ربات فروش و تست خودکار اشتراک مستقیماً از داخل پنل
+                        {t('pages.telegramShop.subtitle')}
                       </Paragraph>
                     </div>
                   </Space>
                 </Col>
-                <Col xs={24} md={8} style={{ textAlign: 'right' }}>
+                <Col xs={24} md={8} style={{ textAlign: 'end' }}>
                   <Space wrap>
                     <Button icon={<ReloadOutlined />} onClick={fetchStatus} loading={loading}>
-                      بروزرسانی وضعیت
+                      {t('pages.telegramShop.refreshStatus')}
                     </Button>
                     {status?.installed && (
                       <span className={status.running ? 'tgshop-badge-online' : 'tgshop-badge-offline'}>
                         <span className="tgshop-dot" style={{ backgroundColor: status.running ? '#10b981' : '#ef4444' }} />
-                        {status.running ? 'ربات فعال و آنلاین' : 'ربات متوقف است'}
+                        {status.running ? t('pages.telegramShop.statusOnline') : t('pages.telegramShop.statusOffline')}
                       </span>
                     )}
                   </Space>
@@ -183,7 +182,7 @@ export default function TelegramShopPage() {
             {loading ? (
               <div style={{ textAlign: 'center', padding: '60px 0' }}>
                 <Spin size="large" />
-                <div style={{ marginTop: 12, color: '#94a3b8' }}>در حال بارگذاری وضعیت...</div>
+                <div style={{ marginTop: 12, color: '#94a3b8' }}>{t('pages.telegramShop.loadingStatus')}</div>
               </div>
             ) : !status?.installed ? (
               /* INSTALLER VIEW (NOT INSTALLED) */
@@ -194,7 +193,7 @@ export default function TelegramShopPage() {
                     title={
                       <Space>
                         <ThunderboltOutlined style={{ color: '#06b6d4' }} />
-                        <span style={{ color: '#fff', fontWeight: 700 }}>نصب و استقرار ربات (One-Click Installer)</span>
+                        <span style={{ color: '#fff', fontWeight: 700 }}>{t('pages.telegramShop.installerTitle')}</span>
                       </Space>
                     }
                   >
@@ -203,16 +202,16 @@ export default function TelegramShopPage() {
                       showIcon
                       icon={<InfoCircleOutlined />}
                       style={{ marginBottom: 20, background: 'rgba(6, 182, 212, 0.08)', borderColor: 'rgba(6, 182, 212, 0.2)' }}
-                      message="راه‌اندازی کاملاً مستقل و ایزوله"
-                      description="با وارد کردن توکن و آیدی ادمین، ربات در قالب یک سرویس پرسرعت لینوکسی مستقر شده و مستقیماً کانفیگ‌ها را در هسته پنل نوا صادر می‌کند."
+                      message={t('pages.telegramShop.installerAlertTitle')}
+                      description={t('pages.telegramShop.installerAlertDesc')}
                     />
 
                     <Form form={form} layout="vertical" onFinish={handleInstall}>
                       <Form.Item
                         name="bot_token"
-                        label={<span style={{ color: '#e2e8f0' }}>توکن ربات تلگرام (Bot Token)</span>}
-                        extra="توکن دریافت شده از @BotFather"
-                        rules={[{ required: true, message: 'لطفاً توکن ربات تلگرام را وارد کنید' }]}
+                        label={<span style={{ color: '#e2e8f0' }}>{t('pages.telegramShop.botTokenLabel')}</span>}
+                        extra={t('pages.telegramShop.botTokenExtra')}
+                        rules={[{ required: true, message: t('pages.telegramShop.botTokenRequired') }]}
                       >
                         <Input
                           placeholder="8781465649:AAEEKMK_umrtGoi8..."
@@ -223,9 +222,9 @@ export default function TelegramShopPage() {
 
                       <Form.Item
                         name="admin_chat_id"
-                        label={<span style={{ color: '#e2e8f0' }}>چت آیدی عددی ادمین (Admin Chat ID)</span>}
-                        extra="آیدی عددی تلگرام شما جهت دریافت اعلانات و سفارشات (دریافت از @userinfobot)"
-                        rules={[{ required: true, message: 'لطفاً آیدی عددی ادمین را وارد کنید' }]}
+                        label={<span style={{ color: '#e2e8f0' }}>{t('pages.telegramShop.adminChatIdLabel')}</span>}
+                        extra={t('pages.telegramShop.adminChatIdExtra')}
+                        rules={[{ required: true, message: t('pages.telegramShop.adminChatIdRequired') }]}
                       >
                         <Input
                           placeholder="842798945"
@@ -244,40 +243,40 @@ export default function TelegramShopPage() {
                         icon={<ThunderboltOutlined />}
                         style={{ marginTop: 12 }}
                       >
-                        نصب و راه‌اندازی خودکار تلگرام شاپ
+                        {t('pages.telegramShop.installBtn')}
                       </Button>
                     </Form>
                   </Card>
                 </Col>
 
                 <Col xs={24} lg={9}>
-                  <Card className="tgshop-card" title={<span style={{ color: '#fff' }}>ویژگی‌های سیستم تلگرام شاپ</span>}>
+                  <Card className="tgshop-card" title={<span style={{ color: '#fff' }}>{t('pages.telegramShop.featuresTitle')}</span>}>
                     <Space direction="vertical" size="middle" style={{ width: '100%' }}>
                       <div>
-                        <Text strong style={{ color: '#06b6d4' }}>⚡️ بدون تداخل با پنل و وب‌سرور:</Text>
+                        <Text strong style={{ color: '#06b6d4' }}>{t('pages.telegramShop.feature1Title')}</Text>
                         <Paragraph style={{ color: '#94a3b8', fontSize: 13, margin: 0 }}>
-                          برخلاف نصب‌های سنتی، هیچ پورت مشترکی اشغال نمی‌شود و روی دامنه‌های فعال یا Nginx تاثیر منفی ندارد.
+                          {t('pages.telegramShop.feature1Desc')}
                         </Paragraph>
                       </div>
 
                       <div>
-                        <Text strong style={{ color: '#10b981' }}>🎁 اکانت تست رایگان ۲۴ ساعته:</Text>
+                        <Text strong style={{ color: '#10b981' }}>{t('pages.telegramShop.feature2Title')}</Text>
                         <Paragraph style={{ color: '#94a3b8', fontSize: 13, margin: 0 }}>
-                          جلوگیری از دریافت مکرر تست با ثبت آیدی تلگرام در دیتابیس اختصاصی.
+                          {t('pages.telegramShop.feature2Desc')}
                         </Paragraph>
                       </div>
 
                       <div>
-                        <Text strong style={{ color: '#8b5cf6' }}>📊 استعلام لحظه‌ای ترافیک:</Text>
+                        <Text strong style={{ color: '#8b5cf6' }}>{t('pages.telegramShop.feature3Title')}</Text>
                         <Paragraph style={{ color: '#94a3b8', fontSize: 13, margin: 0 }}>
-                          مشتری با زدن دکمه استعلام، باقیمانده حجم و تاریخ انقضا را مستقیماً از دیتابیس پنل مشاهده می‌کند.
+                          {t('pages.telegramShop.feature3Desc')}
                         </Paragraph>
                       </div>
 
                       <div>
-                        <Text strong style={{ color: '#ec4899' }}>🚀 حذف و نصب مستقیم درون پنل:</Text>
+                        <Text strong style={{ color: '#ec4899' }}>{t('pages.telegramShop.feature4Title')}</Text>
                         <Paragraph style={{ color: '#94a3b8', fontSize: 13, margin: 0 }}>
-                          تنظیمات و راه‌اندازی ربات بدون نیاز به دستور ترمینال و تنها از داخل همین صفحه انجام می‌شود.
+                          {t('pages.telegramShop.feature4Desc')}
                         </Paragraph>
                       </div>
                     </Space>
@@ -291,8 +290,8 @@ export default function TelegramShopPage() {
                   <Col xs={24} md={8}>
                     <Card className="tgshop-card">
                       <Statistic
-                        title={<span style={{ color: '#94a3b8' }}>ربات تلگرام متصل</span>}
-                        value={status.bot_username ? `@${status.bot_username}` : 'متصل'}
+                        title={<span style={{ color: '#94a3b8' }}>{t('pages.telegramShop.connectedBot')}</span>}
+                        value={status.bot_username ? `@${status.bot_username}` : t('pages.telegramShop.connected')}
                         prefix={<SendOutlined style={{ color: '#06b6d4' }} />}
                         valueStyle={{ color: '#22d3ee', fontSize: 18 }}
                       />
@@ -303,7 +302,7 @@ export default function TelegramShopPage() {
                           target="_blank"
                           style={{ padding: 0, marginTop: 8 }}
                         >
-                          باز کردن ربات در تلگرام ↗
+                          {t('pages.telegramShop.openInTelegram')}
                         </Button>
                       )}
                     </Card>
@@ -312,7 +311,7 @@ export default function TelegramShopPage() {
                   <Col xs={12} md={4}>
                     <Card className="tgshop-card">
                       <Statistic
-                        title={<span style={{ color: '#94a3b8' }}>تست‌های رایگان</span>}
+                        title={<span style={{ color: '#94a3b8' }}>{t('pages.telegramShop.freeTrials')}</span>}
                         value={status.total_trials}
                         prefix={<CheckCircleOutlined style={{ color: '#10b981' }} />}
                         valueStyle={{ color: '#10b981' }}
@@ -323,7 +322,7 @@ export default function TelegramShopPage() {
                   <Col xs={12} md={4}>
                     <Card className="tgshop-card">
                       <Statistic
-                        title={<span style={{ color: '#94a3b8' }}>سفارشات ثبت‌شده</span>}
+                        title={<span style={{ color: '#94a3b8' }}>{t('pages.telegramShop.ordersPlaced')}</span>}
                         value={status.total_orders}
                         prefix={<ShoppingCartOutlined style={{ color: '#ec4899' }} />}
                         valueStyle={{ color: '#ec4899' }}
@@ -334,8 +333,8 @@ export default function TelegramShopPage() {
                   <Col xs={24} md={8}>
                     <Card className="tgshop-card">
                       <Statistic
-                        title={<span style={{ color: '#94a3b8' }}>آیدی ادمین متصل</span>}
-                        value={status.admin_chat_id || 'نامشخص'}
+                        title={<span style={{ color: '#94a3b8' }}>{t('pages.telegramShop.connectedAdminId')}</span>}
+                        value={status.admin_chat_id || t('pages.telegramShop.unspecified')}
                         prefix={<SafetyCertificateOutlined style={{ color: '#8b5cf6' }} />}
                         valueStyle={{ color: '#818cf8', fontSize: 18 }}
                       />
@@ -346,7 +345,7 @@ export default function TelegramShopPage() {
                 {/* ACTION & CONTROLS */}
                 <Card
                   className="tgshop-card"
-                  title={<span style={{ color: '#fff' }}>عملیات و مدیریت سرویک تلگرام شاپ</span>}
+                  title={<span style={{ color: '#fff' }}>{t('pages.telegramShop.actionsTitle')}</span>}
                   style={{ marginBottom: 24 }}
                 >
                   <Space wrap size="middle">
@@ -357,7 +356,7 @@ export default function TelegramShopPage() {
                       icon={<GlobalOutlined />}
                       style={{ background: '#6366f1', borderColor: '#6366f1' }}
                     >
-                      ورود به وب‌پنل مدیریت میرزا بات ↗
+                      {t('pages.telegramShop.mirzaAdminBtn')}
                     </Button>
 
                     <Button
@@ -365,7 +364,7 @@ export default function TelegramShopPage() {
                       onClick={() => handleAction('restart')}
                       loading={actionLoading}
                     >
-                      راه‌اندازی مجدد سرویس (Restart)
+                      {t('pages.telegramShop.restartBtn')}
                     </Button>
 
                     {status.running ? (
@@ -375,7 +374,7 @@ export default function TelegramShopPage() {
                         onClick={() => handleAction('stop')}
                         loading={actionLoading}
                       >
-                        توقف موقت ربات (Stop)
+                        {t('pages.telegramShop.stopBtn')}
                       </Button>
                     ) : (
                       <Button
@@ -385,20 +384,20 @@ export default function TelegramShopPage() {
                         loading={actionLoading}
                         style={{ background: '#10b981', borderColor: '#10b981' }}
                       >
-                        شروع و فعال‌سازی (Start)
+                        {t('pages.telegramShop.startBtn')}
                       </Button>
                     )}
 
                     <Popconfirm
-                      title="حذف کامل تلگرام شاپ"
-                      description="آیا از لغو نصب و حذف کامل سرویس ربات تلگرام شاپ اطمینان دارید؟"
+                      title={t('pages.telegramShop.uninstallConfirmTitle')}
+                      description={t('pages.telegramShop.uninstallConfirmDesc')}
                       onConfirm={() => handleAction('uninstall')}
-                      okText="بله، حذف کن"
-                      cancelText="انصراف"
+                      okText={t('pages.telegramShop.yesDelete')}
+                      cancelText={t('cancel')}
                       okButtonProps={{ danger: true }}
                     >
                       <Button danger icon={<DeleteOutlined />} loading={actionLoading}>
-                        لغو نصب و حذف کامل (Uninstall)
+                        {t('pages.telegramShop.uninstallBtn')}
                       </Button>
                     </Popconfirm>
                   </Space>
@@ -407,14 +406,14 @@ export default function TelegramShopPage() {
                 {/* CONFIG DETAILS */}
                 <Card
                   className="tgshop-card"
-                  title={<span style={{ color: '#fff' }}>مشخصات و پیکربندی فعال</span>}
+                  title={<span style={{ color: '#fff' }}>{t('pages.telegramShop.configTitle')}</span>}
                 >
                   <Form form={form} layout="vertical" onFinish={handleInstall}>
                     <Row gutter={16}>
                       <Col xs={24} md={12}>
                         <Form.Item
                           name="bot_token"
-                          label={<span style={{ color: '#e2e8f0' }}>توکن ربات تلگرام</span>}
+                          label={<span style={{ color: '#e2e8f0' }}>{t('pages.telegramShop.botTokenLabel')}</span>}
                           rules={[{ required: true }]}
                         >
                           <Input prefix={<SendOutlined />} />
@@ -423,7 +422,7 @@ export default function TelegramShopPage() {
                       <Col xs={24} md={12}>
                         <Form.Item
                           name="admin_chat_id"
-                          label={<span style={{ color: '#e2e8f0' }}>چت آیدی ادمین</span>}
+                          label={<span style={{ color: '#e2e8f0' }}>{t('pages.telegramShop.adminChatIdLabel')}</span>}
                           rules={[{ required: true }]}
                         >
                           <Input prefix={<UserOutlined />} />
@@ -432,7 +431,7 @@ export default function TelegramShopPage() {
                     </Row>
 
                     <Button type="primary" htmlType="submit" loading={installing} className="tgshop-btn-install">
-                      ذخیره و اعمال تغییرات
+                      {t('pages.telegramShop.saveChanges')}
                     </Button>
                   </Form>
                 </Card>

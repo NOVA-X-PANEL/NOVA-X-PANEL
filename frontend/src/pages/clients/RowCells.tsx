@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Popover, Space, Tag, Tooltip } from 'antd';
+import { Button, Popover, Tag, Tooltip } from 'antd';
 import {
   DeleteOutlined,
   EditOutlined,
@@ -11,8 +11,6 @@ import {
 
 import { formatInboundLabel } from '@/lib/inbounds/label';
 import type { InboundOption } from '@/hooks/useClients';
-
-const ICON_BUTTON_STYLE = { fontSize: 16 } as const;
 
 interface ClientRowActionsProps {
   email: string;

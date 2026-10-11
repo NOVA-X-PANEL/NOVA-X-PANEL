@@ -56,20 +56,21 @@ import './HashemPage.css';
 
 const { Title, Text, Paragraph } = Typography;
 
-const BACKHAUL_TRANSPORT_OPTIONS = [
-  { label: 'TCPMux (پرسرعت چندکاناله - پیشنهاد شده)', value: 'tcpmux' },
-  { label: 'X-TCPMux (نسخه ارتقایافته ضد اختلال)', value: 'xtcpmux' },
-  { label: 'AnyTLS (پوشش کامل AnyTLS ضد فیلتر)', value: 'anytls' },
-  { label: 'WSSMux (وب‌سوکت ایمن با TLS)', value: 'wssmux' },
-  { label: 'WS (وب‌سوکت استاندارد بدون TLS)', value: 'ws' },
-  { label: 'TCP / TCPO (تک کانکشن مستقیم)', value: 'tcp' },
-  { label: 'TUN (تونل لایه ۳ در سطح کارت شبکه)', value: 'tun' },
+const getBackhaulTransportOptions = (t: any) => [
+  { label: t('pages.hashem.transports.tcpmux', { defaultValue: 'TCPMux (Multi-Channel High-Speed - Recommended)' }), value: 'tcpmux' },
+  { label: t('pages.hashem.transports.xtcpmux', { defaultValue: 'X-TCPMux (Anti-Throttling Enhanced)' }), value: 'xtcpmux' },
+  { label: t('pages.hashem.transports.anytls', { defaultValue: 'AnyTLS (Full Anti-DPI Obfuscation)' }), value: 'anytls' },
+  { label: t('pages.hashem.transports.wssmux', { defaultValue: 'WSSMux (Secure WebSocket + TLS)' }), value: 'wssmux' },
+  { label: t('pages.hashem.transports.ws', { defaultValue: 'WS (Standard WebSocket without TLS)' }), value: 'ws' },
+  { label: t('pages.hashem.transports.tcp', { defaultValue: 'TCP / TCPO (Direct Single-Connection)' }), value: 'tcp' },
+  { label: t('pages.hashem.transports.tun', { defaultValue: 'TUN (L3 Network Interface Tunnel)' }), value: 'tun' },
 ];
 
 export default function HashemPage() {
   const { t } = useTranslation();
   const { isDark, isUltra, antdThemeConfig } = useTheme();
   const { status, loading, refetch } = useHashemQuery();
+  const backhaulTransportOptions = useMemo(() => getBackhaulTransportOptions(t), [t]);
   const {
     setCarrier,
     isSettingCarrier,
@@ -140,11 +141,11 @@ export default function HashemPage() {
 
   const handleAddPortChip = () => {
     if (!newPortInput || newPortInput < 1 || newPortInput > 65535) {
-      message.warning(t('pages.hashem.portMustBeValid', { defaultValue: 'شماره پورت باید بین ۱ تا ۶۵۵۳۵ باشد' }));
+      message.warning(t('pages.hashem.portMustBeValid', { defaultValue: 'Port number must be between 1 and 65535' }));
       return;
     }
     if (portChips.includes(newPortInput)) {
-      message.warning(t('pages.hashem.portAlreadyExists', { defaultValue: 'این پورت قبلاً در لیست وجود دارد' }));
+      message.warning(t('pages.hashem.portAlreadyExists', { defaultValue: 'This port already exists in the list' }));
       return;
     }
     setPortChips([...portChips, newPortInput].sort((a, b) => a - b));
@@ -153,7 +154,7 @@ export default function HashemPage() {
 
   const handleRemovePortChip = (portToRemove: number) => {
     if (portChips.length <= 1) {
-      message.warning(t('pages.hashem.atLeastOnePortRequired', { defaultValue: 'حداقل یک پورت باید در لیست باقی بماند' }));
+      message.warning(t('pages.hashem.atLeastOnePortRequired', { defaultValue: 'At least one port must remain in the list' }));
       return;
     }
     setPortChips(portChips.filter((p: number) => p !== portToRemove));
@@ -161,7 +162,7 @@ export default function HashemPage() {
 
   const handleSavePorts = async () => {
     if (portChips.length === 0) {
-      message.warning(t('pages.hashem.atLeastOnePortRequired', { defaultValue: 'حداقل یک پورت باید در لیست باقی بماند' }));
+      message.warning(t('pages.hashem.atLeastOnePortRequired', { defaultValue: 'At least one port must remain in the list' }));
       return;
     }
     try {
@@ -275,9 +276,9 @@ export default function HashemPage() {
                       icon={<DownloadOutlined />}
                       onClick={handleInstall}
                       loading={isInstalling}
-                      title="دانلود و به‌روزرسانی آخرین نسخه اسکریپت و هسته‌های هاشم از گیت‌هاب"
+                      title={t('pages.hashem.updateScriptTooltip', { defaultValue: 'Download and update latest Hashem script and cores from GitHub' })}
                     >
-                      {t('pages.hashem.updateScriptBtn', { defaultValue: 'به‌روزرسانی اسکریپت هاشم' })}
+                      {t('pages.hashem.updateScriptBtn', { defaultValue: 'Update Hashem Script' })}
                     </Button>
                     <Button
                       icon={<SyncOutlined />}
@@ -457,7 +458,7 @@ export default function HashemPage() {
                         )}
                         <span>
                           {isEngineBackhaul
-                            ? t('pages.hashem.cardBackhaulTitle', { defaultValue: 'تانل Backhaul' })
+                            ? t('pages.hashem.cardBackhaulTitle', { defaultValue: 'Backhaul Tunnel' })
                             : t('pages.hashem.cardFrpTitle')}
                         </span>
                       </Space>
@@ -487,7 +488,7 @@ export default function HashemPage() {
                             {engineStatus === 'active'
                               ? t('pages.hashem.frpRunning')
                               : engineStatus === 'connecting'
-                                ? t('pages.hashem.frpConnecting', { defaultValue: 'در حال برقراری اتصال...' })
+                                ? t('pages.hashem.frpConnecting', { defaultValue: 'Connecting...' })
                                 : t('pages.hashem.frpStopped')}
                           </Text>
                         }
@@ -497,7 +498,7 @@ export default function HashemPage() {
                       <div>
                         <Text type="secondary">
                           {status.engine === 'backhaul'
-                            ? t('pages.hashem.backhaulPort', { defaultValue: 'پورت Backhaul' })
+                            ? t('pages.hashem.backhaulPort', { defaultValue: 'Backhaul Port' })
                             : t('pages.hashem.frpControlPort')}
                           :{' '}
                         </Text>
@@ -506,7 +507,7 @@ export default function HashemPage() {
                         </Text>
                       </div>
                       <div>
-                        <Text type="secondary">{t('pages.hashem.engineLabel', { defaultValue: 'نوع موتور' })}: </Text>
+                        <Text type="secondary">{t('pages.hashem.engineLabel', { defaultValue: 'Engine Type' })}: </Text>
                         <Tag color={status.engine === 'backhaul' ? 'magenta' : status.engine === 'gre-backhaul' ? 'cyan' : 'purple'}>
                           {status.engine === 'backhaul'
                             ? `Backhaul (${status.transport || status.backhaulType || 'tcpmux'})`
@@ -528,16 +529,16 @@ export default function HashemPage() {
                   <Space wrap>
                     <DashboardOutlined style={{ color: '#00f2fe' }} />
                     <span style={{ fontWeight: 600 }}>
-                      {t('pages.hashem.benchmarkCardTitle', { defaultValue: 'تست عملکرد و بنچمارک هوشمند کریرها (Carrier Benchmark)' })}
+                      {t('pages.hashem.benchmarkCardTitle', { defaultValue: 'Carrier Benchmark & Real-time Metrics' })}
                     </span>
                     {status.benchmark?.bestCarrier && (
                       <Tag color="success" style={{ borderRadius: 6, fontWeight: 600 }}>
-                        {t('pages.hashem.bestCarrier', { defaultValue: 'بهترین مسیر:' })} {status.benchmark.bestCarrier}
+                        {t('pages.hashem.bestCarrier', { defaultValue: 'Best Route:' })} {status.benchmark.bestCarrier}
                       </Tag>
                     )}
                     {status.benchmark?.updatedAt && (
                       <Text type="secondary" style={{ fontSize: 12 }}>
-                        ({t('pages.hashem.lastUpdated', { defaultValue: 'آخرین بررسی:' })} {status.benchmark.updatedAt})
+                        ({t('pages.hashem.lastUpdated', { defaultValue: 'Last Check:' })} {status.benchmark.updatedAt})
                       </Text>
                     )}
                   </Space>
@@ -546,7 +547,7 @@ export default function HashemPage() {
                   <Space wrap>
                     <Space style={{ marginRight: 8 }}>
                       <Text style={{ fontSize: 13, color: 'var(--nc-text-2, #94a3b8)' }}>
-                        {t('pages.hashem.autoPilotLabel', { defaultValue: 'اتوپایلوت هوشمند:' })}
+                        {t('pages.hashem.autoPilotLabel', { defaultValue: 'Smart Auto-Pilot:' })}
                       </Text>
                       <Switch
                         checked={status.autoPilot}
@@ -563,7 +564,7 @@ export default function HashemPage() {
                       loading={isRunningBenchmark}
                       className="hashem-btn-sync"
                     >
-                      {t('pages.hashem.runBenchmarkBtn', { defaultValue: 'اجرای بنچمارک زنده' })}
+                      {t('pages.hashem.runBenchmarkBtn', { defaultValue: 'Run Live Benchmark' })}
                     </Button>
                   </Space>
                 }
@@ -576,7 +577,7 @@ export default function HashemPage() {
                     dataSource={status.benchmark.metrics}
                     columns={[
                       {
-                        title: t('pages.hashem.carrierName', { defaultValue: 'کریر / مسیر' }),
+                        title: t('pages.hashem.carrierName', { defaultValue: 'Carrier / Route' }),
                         dataIndex: 'name',
                         key: 'name',
                         render: (_: any, record: any) => (
@@ -585,19 +586,19 @@ export default function HashemPage() {
                               {record.name}
                             </Text>
                             {status.activeCarrier === record.id || status.carrier === record.id ? (
-                              <Tag color="cyan">{t('pages.hashem.active', { defaultValue: 'فعال' })}</Tag>
+                              <Tag color="cyan">{t('pages.hashem.active', { defaultValue: 'Active' })}</Tag>
                             ) : null}
                           </Space>
                         ),
                       },
                       {
-                        title: t('pages.hashem.carrierType', { defaultValue: 'نوع پروتکل' }),
+                        title: t('pages.hashem.carrierType', { defaultValue: 'Protocol' }),
                         dataIndex: 'type',
                         key: 'type',
                         render: (type: string) => <Tag color="blue">{type}</Tag>,
                       },
                       {
-                        title: t('pages.hashem.avgRtt', { defaultValue: 'تاخیر (RTT)' }),
+                        title: t('pages.hashem.avgRtt', { defaultValue: 'Latency (RTT)' }),
                         dataIndex: 'avgRttMs',
                         key: 'avgRttMs',
                         render: (ms: number) => (
@@ -612,7 +613,7 @@ export default function HashemPage() {
                         ),
                       },
                       {
-                        title: t('pages.hashem.packetLoss', { defaultValue: 'پکت لاس' }),
+                        title: t('pages.hashem.packetLoss', { defaultValue: 'Packet Loss' }),
                         dataIndex: 'packetLoss',
                         key: 'packetLoss',
                         render: (loss: number) => (
@@ -622,13 +623,13 @@ export default function HashemPage() {
                         ),
                       },
                       {
-                        title: t('pages.hashem.jitter', { defaultValue: 'جیتر (Jitter)' }),
+                        title: t('pages.hashem.jitter', { defaultValue: 'Jitter' }),
                         dataIndex: 'jitterMs',
                         key: 'jitterMs',
                         render: (jitter: number) => <Text>{jitter > 0 ? `${jitter.toFixed(1)} ms` : '-'}</Text>,
                       },
                       {
-                        title: t('pages.hashem.score', { defaultValue: 'امتیاز کیفیت' }),
+                        title: t('pages.hashem.score', { defaultValue: 'Quality Score' }),
                         dataIndex: 'score',
                         key: 'score',
                         render: (score: number) => (
@@ -638,18 +639,18 @@ export default function HashemPage() {
                         ),
                       },
                       {
-                        title: t('pages.hashem.carrierStatus', { defaultValue: 'وضعیت' }),
+                        title: t('pages.hashem.carrierStatus', { defaultValue: 'Status' }),
                         dataIndex: 'status',
                         key: 'status',
                         render: (st: string) => (
                           <Badge
                             status={st === 'optimal' ? 'success' : st === 'good' ? 'processing' : 'error'}
-                            text={st === 'optimal' ? 'عالی' : st === 'good' ? 'خوب' : 'ضعیف'}
+                            text={st === 'optimal' ? t('pages.hashem.optimal', { defaultValue: 'Optimal' }) : st === 'good' ? t('pages.hashem.good', { defaultValue: 'Good' }) : t('pages.hashem.poor', { defaultValue: 'Poor' })}
                           />
                         ),
                       },
                       {
-                        title: t('pages.hashem.action', { defaultValue: 'عملیات' }),
+                        title: t('pages.hashem.action', { defaultValue: 'Action' }),
                         key: 'action',
                         render: (_: any, record: any) => (
                           <Button
@@ -659,7 +660,7 @@ export default function HashemPage() {
                             loading={isSettingCarrier}
                             onClick={() => handleCarrierChange(record.id)}
                           >
-                            {t('pages.hashem.switchToCarrier', { defaultValue: 'انتخاب این مسیر' })}
+                            {t('pages.hashem.switchToCarrier', { defaultValue: 'Select Route' })}
                           </Button>
                         ),
                       },
@@ -669,7 +670,7 @@ export default function HashemPage() {
                   <div style={{ textAlign: 'center', padding: '24px 0' }}>
                     <Text type="secondary">
                       {t('pages.hashem.noBenchmarkYet', {
-                        defaultValue: 'هنوز بنچمارکی ثبت نشده است. برای ارزیابی تاخیر و پکت‌لاس تمامی کریرها، روی دکمه «اجرای بنچمارک زنده» کلیک کنید.',
+                        defaultValue: 'No benchmark recorded yet. Click "Run Live Benchmark" to evaluate carrier latency.',
                       })}
                     </Text>
                   </div>
@@ -725,13 +726,13 @@ export default function HashemPage() {
                             onClick={() =>
                               autoCreateInbound({
                                 ports: status.ports?.join(', '),
-                                host: status.remotePubIP,
+                                host: status.remotePubIp,
                               })
                             }
                             loading={isAutoCreatingInbound}
                             style={{ borderRadius: 6, fontSize: 12, borderColor: '#00f2fe', color: '#00f2fe' }}
                           >
-                            {t('pages.hashem.autoCreateInboundBtn', { defaultValue: '⚡ ساخت اینباند VLESS-WS' })}
+                            {t('pages.hashem.autoCreateInboundBtn', { defaultValue: '⚡ Auto-Create VLESS-WS Inbound' })}
                           </Button>
                           <Button
                             size="small"
@@ -741,7 +742,7 @@ export default function HashemPage() {
                             onClick={handleOpenEditPorts}
                             style={{ borderRadius: 6, fontSize: 12 }}
                           >
-                            {t('pages.hashem.editPortsBtn', { defaultValue: 'ویرایش پورت‌ها' })}
+                            {t('pages.hashem.editPortsBtn', { defaultValue: 'Edit Ports' })}
                           </Button>
                         </Space>
                       </div>
@@ -845,19 +846,19 @@ export default function HashemPage() {
                     <Alert
                       type="info"
                       showIcon
-                      message="دستور تک‌خطی سرور ایران"
-                      description="کافیست آی‌پی سرور ایران و پورت‌های مدنظر را وارد کنید. تنظیمات سرور خارج فوراً انجام شده و یک دستور تک‌خطی به شما تحویل داده می‌شود تا در ترمینال سرور ایران اجرا فرمایید."
+                      message={t('pages.hashem.oneLinerIranCommand', { defaultValue: 'Iran Server One-Liner Command' })}
+                      description={t('pages.hashem.oneLinerIranCommandDesc', { defaultValue: 'Enter Iran server IP and desired ports. Foreign server configuration will be applied immediately and a one-liner command will be generated to run on your Iran server.' })}
                       style={{ marginBottom: 16 }}
                     />
 
                     <Form.Item
                       name="engine"
-                      label={t('pages.hashem.engineLabel', { defaultValue: 'موتور تانل (Tunnel Engine)' })}
+                      label={t('pages.hashem.engineLabel', { defaultValue: 'Tunnel Engine' })}
                       initialValue="frp"
                     >
                       <Radio.Group buttonStyle="solid" style={{ width: '100%' }}>
-                        <Radio.Button value="frp">⚡ FRP (معکوس)</Radio.Button>
-                        <Radio.Button value="backhaul">🚀 Backhaul (پرسرعت)</Radio.Button>
+                        <Radio.Button value="frp">{t('pages.hashem.frpOption', { defaultValue: '⚡ FRP (Reverse)' })}</Radio.Button>
+                        <Radio.Button value="backhaul">{t('pages.hashem.backhaulOption', { defaultValue: '🚀 Backhaul (High-Speed)' })}</Radio.Button>
                         <Radio.Button value="gre-backhaul">🌐 GRE + Backhaul</Radio.Button>
                       </Radio.Group>
                     </Form.Item>
@@ -867,16 +868,16 @@ export default function HashemPage() {
                         <Col span={14}>
                           <Form.Item
                             name="transport"
-                            label={t('pages.hashem.transportLabel', { defaultValue: 'پروتکل انتقال (Transport)' })}
+                            label={t('pages.hashem.transportLabel', { defaultValue: 'Transport Protocol' })}
                             initialValue="tcpmux"
                           >
-                            <Select options={BACKHAUL_TRANSPORT_OPTIONS} />
+                            <Select options={backhaulTransportOptions} />
                           </Form.Item>
                         </Col>
                         <Col span={10}>
                           <Form.Item
                             name="backhaulPort"
-                            label={t('pages.hashem.backhaulPortLabel', { defaultValue: 'پورت سرور Backhaul' })}
+                            label={t('pages.hashem.backhaulPortLabel', { defaultValue: 'Backhaul Server Port' })}
                             initialValue={3080}
                           >
                             <InputNumber style={{ width: '100%' }} min={1} max={65535} />
@@ -890,7 +891,7 @@ export default function HashemPage() {
                       label={t('pages.hashem.iranIpLabel')}
                       rules={[{ required: true, message: t('pages.hashem.iranIpRequired') }]}
                     >
-                      <Input placeholder="مثلاً 94.183.210.29" />
+                      <Input placeholder={t('pages.hashem.iranIpPlaceholder', { defaultValue: 'e.g. 94.183.210.29' })} />
                     </Form.Item>
 
                     <Form.Item
@@ -906,19 +907,19 @@ export default function HashemPage() {
                       valuePropName="checked"
                       initialValue={true}
                       extra={t('pages.hashem.autoCreateInboundExtra', {
-                        defaultValue: 'با فعال بودن این گزینه، همزمان با اجرای تانل یک اینباند VLESS-WS متناظر با پورت انتخابی (مشابه اینباند ۸۰۸۰) با تنظیم خودکار هاست ساخته می‌شود.',
+                        defaultValue: 'When enabled, creates a matching VLESS-WS inbound for the tunneled port (similar to port 8080) with automatic host header configuration.',
                       })}
                     >
                       <Checkbox style={{ color: '#38bdf8', fontWeight: 600 }}>
-                        ⚡ {t('pages.hashem.autoCreateInboundLabel', { defaultValue: 'ساخت خودکار اینباند VLESS-WS متناظر با پورت تانل' })}
+                        ⚡ {t('pages.hashem.autoCreateInboundLabel', { defaultValue: 'Auto-create matching VLESS-WS inbound for tunnel port' })}
                       </Checkbox>
                     </Form.Item>
 
                     <Form.Item
                       name="inboundHost"
-                      label={t('pages.hashem.inboundHostLabel', { defaultValue: 'هاست هدر وب‌سوکت (WS Host Header)' })}
+                      label={t('pages.hashem.inboundHostLabel', { defaultValue: 'WebSocket Host Header (WS Host Header)' })}
                       extra={t('pages.hashem.inboundHostExtra', {
-                        defaultValue: 'آدرس هاست یا دامنه‌ای که در هدر وب‌سوکت اینباند ست می‌شود (مثلاً pro.ksmrx2.ir یا آی‌پی سرور ایران). در صورت خالی ماندن، آی‌پی سرور ایران درج می‌شود.',
+                        defaultValue: 'Host domain or IP set in inbound WebSocket header (e.g. pro.ksmrx2.ir or Iran server IP). If left blank, Iran server IP is used.',
                       })}
                     >
                       <Input placeholder="pro.ksmrx2.ir" />
@@ -1001,12 +1002,12 @@ export default function HashemPage() {
 
                     <Form.Item
                       name="engine"
-                      label={t('pages.hashem.engineLabel', { defaultValue: 'موتور تانل (Tunnel Engine)' })}
+                      label={t('pages.hashem.engineLabel', { defaultValue: 'Tunnel Engine' })}
                       initialValue="frp"
                     >
                       <Radio.Group buttonStyle="solid" style={{ width: '100%' }}>
-                        <Radio.Button value="frp">⚡ FRP (معکوس)</Radio.Button>
-                        <Radio.Button value="backhaul">🚀 Backhaul (پرسرعت)</Radio.Button>
+                        <Radio.Button value="frp">{t('pages.hashem.frpOption', { defaultValue: '⚡ FRP (Reverse)' })}</Radio.Button>
+                        <Radio.Button value="backhaul">{t('pages.hashem.backhaulOption', { defaultValue: '🚀 Backhaul (High-Speed)' })}</Radio.Button>
                         <Radio.Button value="gre-backhaul">🌐 GRE + Backhaul</Radio.Button>
                       </Radio.Group>
                     </Form.Item>
@@ -1016,16 +1017,16 @@ export default function HashemPage() {
                         <Col span={14}>
                           <Form.Item
                             name="transport"
-                            label={t('pages.hashem.transportLabel', { defaultValue: 'پروتکل انتقال (Transport)' })}
+                            label={t('pages.hashem.transportLabel', { defaultValue: 'Transport Protocol' })}
                             initialValue="tcpmux"
                           >
-                            <Select options={BACKHAUL_TRANSPORT_OPTIONS} />
+                            <Select options={backhaulTransportOptions} />
                           </Form.Item>
                         </Col>
                         <Col span={10}>
                           <Form.Item
                             name="backhaulPort"
-                            label={t('pages.hashem.backhaulPortLabel', { defaultValue: 'پورت سرور Backhaul' })}
+                            label={t('pages.hashem.backhaulPortLabel', { defaultValue: 'Backhaul Server Port' })}
                             initialValue={3080}
                           >
                             <InputNumber style={{ width: '100%' }} min={1} max={65535} />
@@ -1053,7 +1054,7 @@ export default function HashemPage() {
                     <Form.Item name="carrier" label={t('pages.hashem.carrierModeLabel')}>
                       <Select
                         options={[
-                          { label: 'Direct GRE (Raw IP proto 47 - پیش‌فرض و پایدار)', value: 'direct' },
+                          { label: t('pages.hashem.directGreLabel', { defaultValue: 'Direct GRE (Raw IP proto 47 - Default & Stable)' }), value: 'direct' },
                           { label: 'FoU:443 (Foo-over-UDP Port 443)', value: 'fou:443' },
                           { label: 'WSS:8443 (WebSocket TLS)', value: 'wss:8443' },
                         ]}
@@ -1069,19 +1070,19 @@ export default function HashemPage() {
                       valuePropName="checked"
                       initialValue={true}
                       extra={t('pages.hashem.autoCreateInboundExtra', {
-                        defaultValue: 'با فعال بودن این گزینه، همزمان با اجرای تانل یک اینباند VLESS-WS متناظر با پورت انتخابی (مشابه اینباند ۸۰۸۰) با تنظیم خودکار هاست ساخته می‌شود.',
+                        defaultValue: 'When enabled, creates a matching VLESS-WS inbound for the tunneled port (similar to port 8080) with automatic host header configuration.',
                       })}
                     >
                       <Checkbox style={{ color: '#38bdf8', fontWeight: 600 }}>
-                        ⚡ {t('pages.hashem.autoCreateInboundLabel', { defaultValue: 'ساخت خودکار اینباند VLESS-WS متناظر با پورت تانل' })}
+                        ⚡ {t('pages.hashem.autoCreateInboundLabel', { defaultValue: 'Auto-create matching VLESS-WS inbound for tunnel port' })}
                       </Checkbox>
                     </Form.Item>
 
                     <Form.Item
                       name="inboundHost"
-                      label={t('pages.hashem.inboundHostLabel', { defaultValue: 'هاست هدر وب‌سوکت (WS Host Header)' })}
+                      label={t('pages.hashem.inboundHostLabel', { defaultValue: 'WebSocket Host Header (WS Host Header)' })}
                       extra={t('pages.hashem.inboundHostExtra', {
-                        defaultValue: 'آدرس هاست یا دامنه‌ای که در هدر وب‌سوکت اینباند ست می‌شود (مثلاً pro.ksmrx2.ir یا آی‌پی سرور ایران). در صورت خالی ماندن، آی‌پی سرور ایران درج می‌شود.',
+                        defaultValue: 'Host domain or IP set in inbound WebSocket header (e.g. pro.ksmrx2.ir or Iran server IP). If left blank, Iran server IP is used.',
                       })}
                     >
                       <Input placeholder="pro.ksmrx2.ir" />
@@ -1112,14 +1113,14 @@ export default function HashemPage() {
           title={
             <Space>
               <EditOutlined style={{ color: '#38bdf8' }} />
-              <span>{t('pages.hashem.editPortsModalTitle', { defaultValue: 'ویرایش پورت‌های فوروارد شده تانل' })}</span>
+              <span>{t('pages.hashem.editPortsModalTitle', { defaultValue: 'Edit Tunnel Forwarded Ports' })}</span>
             </Space>
           }
           open={editPortsModalOpen}
           onCancel={() => setEditPortsModalOpen(false)}
           footer={[
             <Button key="cancel" onClick={() => setEditPortsModalOpen(false)}>
-              {t('cancel', { defaultValue: 'انصراف' })}
+              {t('cancel', { defaultValue: 'Cancel' })}
             </Button>,
             <Button
               key="save"
@@ -1131,20 +1132,20 @@ export default function HashemPage() {
                 borderColor: '#38bdf8',
               }}
             >
-              {t('pages.hashem.saveAndApply', { defaultValue: 'ذخیره و اعمال آنی' })}
+              {t('pages.hashem.saveAndApply', { defaultValue: 'Save & Apply Immediately' })}
             </Button>,
           ]}
           className="hashem-modal"
         >
           <Paragraph style={{ color: 'var(--nc-subtext, #94a3b8)', fontSize: 13, marginBottom: 16 }}>
             {t('pages.hashem.editPortsDesc', {
-              defaultValue: 'پورت‌های فوروارد شده را بدون قطعی تانل به صورت آنی اضافه، حذف یا ذخیره کنید.',
+              defaultValue: 'Add, remove or save forwarded ports instantly without tunnel downtime.',
             })}
           </Paragraph>
 
           <div style={{ marginBottom: 16 }}>
             <Text strong style={{ display: 'block', marginBottom: 8, color: 'var(--nc-text, #f1f5f9)' }}>
-              {t('pages.hashem.forwardedPortsList', { defaultValue: 'پورت‌های فعلی' })}:
+              {t('pages.hashem.forwardedPortsList', { defaultValue: 'Current Ports' })}:
             </Text>
             <div
               style={{
@@ -1187,7 +1188,7 @@ export default function HashemPage() {
                   color: 'var(--nc-subtext, #94a3b8)',
                 }}
               >
-                {t('pages.hashem.addPortLabel', { defaultValue: 'افزودن پورت جدید' })}:
+                {t('pages.hashem.addPortLabel', { defaultValue: 'Add New Port' })}:
               </label>
               <InputNumber
                 min={1}
@@ -1195,7 +1196,7 @@ export default function HashemPage() {
                 value={newPortInput}
                 onChange={(val: number | null) => setNewPortInput(val)}
                 onPressEnter={handleAddPortChip}
-                placeholder={t('pages.hashem.enterPortPlaceholder', { defaultValue: 'مثال: 8080' })}
+                placeholder={t('pages.hashem.enterPortPlaceholder', { defaultValue: 'e.g. 8080' })}
                 style={{ width: '100%' }}
               />
             </div>
@@ -1205,7 +1206,7 @@ export default function HashemPage() {
               type="dashed"
               style={{ borderColor: 'rgba(56, 189, 248, 0.4)' }}
             >
-              {t('pages.hashem.addPortBtn', { defaultValue: 'افزودن' })}
+              {t('pages.hashem.addPortBtn', { defaultValue: 'Add' })}
             </Button>
           </div>
         </Modal>

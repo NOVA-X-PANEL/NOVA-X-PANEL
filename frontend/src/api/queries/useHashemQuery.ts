@@ -36,6 +36,7 @@ export interface BenchmarkReport {
   bestCarrier: string;
   autoPilot: AutoPilotStatus;
   metrics: CarrierMetric[];
+  updatedAt?: string;
 }
 
 export interface HashemStatus {
@@ -45,6 +46,8 @@ export interface HashemStatus {
   engine?: 'frp' | 'backhaul' | 'gre-backhaul';
   transport?: 'tcpmux' | 'wssmux' | 'tcpo';
   backhaulPort?: number;
+  backhaulStatus?: string;
+  backhaulType?: string;
   snappy?: boolean;
   carrier: string;
   activeCarrier: string;

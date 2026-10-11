@@ -140,7 +140,7 @@ export function useHashemMutations() {
       return res;
     },
     onSuccess: () => {
-      message.success(t('pages.hashem.toasts.editPortsSuccess', { defaultValue: 'پورت‌های تانل با موفقیت به‌روزرسانی شدند' }));
+      message.success(t('pages.hashem.toasts.editPortsSuccess', { defaultValue: 'Tunnel ports updated successfully' }));
       invalidate();
     },
     onError: (err: Error) => message.error(err.message),
@@ -225,7 +225,7 @@ export function useHashemMutations() {
       return res.obj;
     },
     onSuccess: () => {
-      message.success(t('pages.hashem.toasts.benchmarkSuccess', { defaultValue: 'بنچمارک کریرها با موفقیت تکمیل شد' }));
+      message.success(t('pages.hashem.toasts.benchmarkSuccess', { defaultValue: 'Carrier benchmark completed successfully' }));
       invalidate();
     },
     onError: (err: Error) => message.error(err.message),
@@ -238,7 +238,7 @@ export function useHashemMutations() {
       return res;
     },
     onSuccess: () => {
-      message.success(t('pages.hashem.toasts.autoPilotSuccess', { defaultValue: 'وضعیت اتوپایلوت کریر به‌روزرسانی شد' }));
+      message.success(t('pages.hashem.toasts.autoPilotSuccess', { defaultValue: 'Carrier auto-pilot status updated' }));
       invalidate();
     },
     onError: (err: Error) => message.error(err.message),
@@ -249,7 +249,7 @@ export function useHashemMutations() {
       return HttpUtil.post('/panel/api/hashem/auto-create-inbound', payload);
     },
     onSuccess: () => {
-      message.success(t('pages.hashem.toasts.inboundCreated', { defaultValue: 'اینباندهای متناظر با موفقیت ساخته شدند.' }));
+      message.success(t('pages.hashem.toasts.inboundCreated', { defaultValue: 'Matching inbounds created successfully.' }));
       invalidate();
     },
     onError: (err: Error) => message.error(err.message),

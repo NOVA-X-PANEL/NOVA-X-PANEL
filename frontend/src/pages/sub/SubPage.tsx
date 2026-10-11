@@ -205,7 +205,7 @@ export default function SubPage() {
                 rel="noopener noreferrer"
               >
                 <CustomerServiceOutlined />
-                {subSupportUrl ? t('subscription.support') : 'پشتیبانی تلگرام @dark_vpn_prroo'}
+                {subSupportUrl ? t('support') : `${t('support')} @dark_vpn_prroo`}
               </a>
             </footer>
           </Card>

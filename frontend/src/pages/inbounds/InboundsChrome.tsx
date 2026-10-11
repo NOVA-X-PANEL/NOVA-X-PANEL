@@ -3,8 +3,6 @@ import { useTranslation } from 'react-i18next';
 import {
   ArrowDownOutlined,
   ArrowUpOutlined,
-  CheckCircleOutlined,
-  CloudServerOutlined,
   PieChartOutlined,
   TeamOutlined,
   ThunderboltOutlined,

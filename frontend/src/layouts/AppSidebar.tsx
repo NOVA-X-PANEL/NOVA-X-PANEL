@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ComponentType, CSSProperties } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { Drawer, Layout, Menu, Tooltip } from 'antd';
+import { Drawer, Layout, Menu } from 'antd';
 import type { MenuProps } from 'antd';
 import {
   ApiOutlined,
@@ -31,7 +31,6 @@ import {
   PushpinOutlined,
   ReadOutlined,
   SafetyOutlined,
-  SearchOutlined,
   SettingOutlined,
   ShoppingCartOutlined,
   SunOutlined,
@@ -47,7 +46,6 @@ import { HttpUtil, TimeFormatter } from '@/utils';
 import { formatPanelVersion } from '@/lib/panel-version';
 import { pauseAnimationsUntilLeave, useTheme } from '@/hooks/useTheme';
 import { useAllSettings } from '@/api/queries/useAllSettings';
-import { useCommandPalette } from '@/components/command-palette/useCommandPalette';
 import { clearAdminCache, useAdmin } from '@/pg-ui/hooks/use-admin';
 import { canAccessRoute } from '@/pg-ui/utils/rbac';
 import NeonLandscape from '@/components/NeonLandscape';
@@ -56,9 +54,6 @@ import { preloadRoute } from '@/utils/routePreload';
 import './AppSidebar.css';
 
 const DONATE_URL = 'https://donate.sanaei.dev/';
-// The palette listens for Ctrl as well as Cmd, so the chip must not show a
-// Mac glyph to the Linux and Windows operators who are most of this panel's.
-const SHORTCUT_MODIFIER = /Mac|iPhone|iPad|iPod/.test(navigator.userAgent) ? '⌘' : 'Ctrl';
 const DOCS_URL = 'https://docs.sanaei.dev/';
 const REPO_URL = 'https://github.com/NOVA-X-PANEL/NOVA-X-PANEL';
 const LOGOUT_KEY = '__logout__';
@@ -204,7 +199,6 @@ export default function AppSidebar() {
   const { t } = useTranslation();
   const { status } = useStatusQuery();
   const { isDark, isUltra, toggleTheme, toggleUltra } = useTheme();
-  const { open: openCommandPalette } = useCommandPalette();
   const navigate = useNavigate();
   const { pathname, hash } = useLocation();
   const { allSetting } = useAllSettings();

@@ -51,6 +51,7 @@ interface TgShopStatus {
   channel_username?: string;
   total_trials: number;
   total_orders: number;
+  domain?: string;
 }
 
 export default function TelegramShopPage() {
@@ -94,14 +95,16 @@ export default function TelegramShopPage() {
     fetchStatus();
   }, []);
 
-  const JSON_OPTIONS = { headers: { 'Content-Type': 'application/json' } };
-
   const handleInstall = async (values: any) => {
     try {
       setInstalling(true);
-      await HttpUtil.post('/panel/api/telegram-shop/install', values, JSON_OPTIONS);
-      message.success(t('pages.telegramShop.toasts.installedSuccess'));
-      fetchStatus();
+      const res = await HttpUtil.post('/panel/api/telegram-shop/install', values, { silent: true });
+      if (res && res.success) {
+        message.success(t('pages.telegramShop.toasts.installedSuccess'));
+        fetchStatus();
+      } else {
+        message.error(res?.msg || t('pages.telegramShop.toasts.installError'));
+      }
     } catch (err: any) {
       message.error(err?.message || t('pages.telegramShop.toasts.installError'));
     } finally {
@@ -112,14 +115,18 @@ export default function TelegramShopPage() {
   const handleAction = async (action: 'start' | 'stop' | 'restart' | 'uninstall') => {
     try {
       setActionLoading(true);
-      await HttpUtil.post('/panel/api/telegram-shop/action', { action }, JSON_OPTIONS);
-      if (action === 'uninstall') {
-        message.warning(t('pages.telegramShop.toasts.uninstalledSuccess'));
-        form.resetFields();
+      const res = await HttpUtil.post('/panel/api/telegram-shop/action', { action }, { silent: true });
+      if (res && res.success) {
+        if (action === 'uninstall') {
+          message.warning(t('pages.telegramShop.toasts.uninstalledSuccess'));
+          form.resetFields();
+        } else {
+          message.success(t('pages.telegramShop.toasts.actionSuccess', { action }));
+        }
+        fetchStatus();
       } else {
-        message.success(t('pages.telegramShop.toasts.actionSuccess', { action }));
+        message.error(res?.msg || t('pages.telegramShop.toasts.actionError'));
       }
-      fetchStatus();
     } catch (err: any) {
       message.error(err?.message || t('pages.telegramShop.toasts.actionError'));
     } finally {
@@ -351,7 +358,7 @@ export default function TelegramShopPage() {
                   <Space wrap size="middle">
                     <Button
                       type="primary"
-                      href="https://dark.ksmrx2.ir/panel/"
+                      href={`https://${status.domain || 'dark.ksmrx2.ir'}/panel/`}
                       target="_blank"
                       icon={<GlobalOutlined />}
                       style={{ background: '#6366f1', borderColor: '#6366f1' }}

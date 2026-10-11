@@ -55,6 +55,7 @@ type TelegramShopStatus struct {
 	BotFirstName    string `json:"bot_first_name"`
 	SupportUsername string `json:"support_username"`
 	ChannelUsername string `json:"channel_username"`
+	Domain          string `json:"domain"`
 	TotalTrials     int    `json:"total_trials"`
 	TotalOrders     int    `json:"total_orders"`
 }
@@ -93,6 +94,7 @@ func (s *TelegramShopService) GetStatus() (*TelegramShopStatus, error) {
 				status.BotToken = m.BotToken
 				status.AdminChatID = m.AdminChatID
 				status.BotUsername = m.BotUsername
+				status.Domain = m.Domain
 				status.TotalTrials = m.RegisteredUsers
 				status.TotalOrders = m.ActiveOrders
 				if status.BotToken != "" && status.BotUsername == "" {

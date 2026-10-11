@@ -65,7 +65,25 @@ export default function TelegramTab({ allSetting, updateSetting }: TelegramTabPr
       items={[
         {
           key: '1',
-          label: catTabLabel(<SettingOutlined />, t('pages.settings.panelSettings'), isMobile),
+          label: (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              {catTabLabel(<SettingOutlined />, t('pages.settings.panelSettings'), isMobile)}
+              <span
+                style={{
+                  color: '#fbbf24',
+                  backgroundColor: 'rgba(245, 158, 11, 0.16)',
+                  border: '1px solid rgba(245, 158, 11, 0.45)',
+                  padding: '1px 6px',
+                  borderRadius: 4,
+                  fontSize: 10,
+                  fontWeight: 700,
+                  lineHeight: '16px',
+                }}
+              >
+                beta
+              </span>
+            </span>
+          ),
           children: (
             <>
               <SettingListItem

@@ -138,10 +138,24 @@ export default function TelegramShopPage() {
                   <Space align="center" size="middle">
                     <ShoppingCartOutlined style={{ fontSize: 36, color: '#06b6d4', flexShrink: 0 }} />
                     <div dir="rtl" style={{ textAlign: 'right' }}>
-                      <Title level={2} className="tgshop-hero-title-text" style={{ margin: 0 }}>
+                      <Title level={2} className="tgshop-hero-title-text" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                         <span>تلگرام شاپ</span>
-                        <span style={{ fontSize: '0.8em', opacity: 0.85, fontWeight: 500, direction: 'ltr', display: 'inline-block', marginRight: 6 }}>
+                        <span style={{ fontSize: '0.8em', opacity: 0.85, fontWeight: 500, direction: 'ltr', display: 'inline-block' }}>
                           (Telegram Shop)
+                        </span>
+                        <span
+                          style={{
+                            color: '#fbbf24',
+                            backgroundColor: 'rgba(245, 158, 11, 0.16)',
+                            border: '1px solid rgba(245, 158, 11, 0.45)',
+                            padding: '1px 8px',
+                            borderRadius: 4,
+                            fontSize: 12,
+                            fontWeight: 700,
+                            lineHeight: '18px',
+                          }}
+                        >
+                          beta
                         </span>
                       </Title>
                       <Paragraph style={{ margin: 0, color: '#94a3b8', fontSize: 13, marginTop: 4 }}>

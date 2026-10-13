@@ -622,10 +622,12 @@ func (s *HashemService) isFrpConnected(peerGre string, port int) bool {
 
 	filter := fmt.Sprintf("dport = :%d", port)
 	if peerGre != "" {
-		filter = fmt.Sprintf("dst %s and dport = :%d", peerGre, port)
+		if sanitizedGre := sanitizeTunnelIP(peerGre); sanitizedGre != "" {
+			filter = fmt.Sprintf("dst %s and dport = :%d", sanitizedGre, port)
+		}
 	}
 
-	cmd := exec.CommandContext(ctx, "bash", "-c", fmt.Sprintf("ss -t state established '%s' 2>/dev/null", filter))
+	cmd := exec.CommandContext(ctx, "ss", "-t", "state", "established", filter)
 	out, err := cmd.Output()
 	if err == nil {
 		lines := strings.Split(strings.TrimSpace(string(out)), "\n")
@@ -812,7 +814,7 @@ func (s *HashemService) Setup(form HashemSetupForm) (string, error) {
 		if inHost == "" {
 			inHost = form.RemotePub
 		}
-		_ = s.AutoCreateMatchingInbounds(form.Ports, inHost)
+		_ = s.AutoCreateMatchingInbounds(form.Ports, form.RemotePub, inHost)
 	}
 
 	return string(out), nil
@@ -1081,10 +1083,59 @@ func (s *HashemService) getForeignPubIP() string {
 	return ""
 }
 
+func sanitizeTunnelIP(ipStr string) string {
+	ipStr = strings.TrimSpace(ipStr)
+	if ip := net.ParseIP(ipStr); ip != nil {
+		return ip.String()
+	}
+	validHost := regexp.MustCompile(`^[a-zA-Z0-9.-]+$`)
+	if validHost.MatchString(ipStr) && !strings.HasPrefix(ipStr, "-") {
+		return ipStr
+	}
+	return ""
+}
+
+func sanitizeCarrier(c string) string {
+	c = strings.ToLower(strings.TrimSpace(c))
+	switch c {
+	case "direct", "mci", "irancell", "rightel", "mokhaberat", "shatel", "asiatech", "hiweb", "afranet":
+		return c
+	default:
+		return "direct"
+	}
+}
+
+func sanitizeEngine(e string) string {
+	e = strings.ToLower(strings.TrimSpace(e))
+	switch e {
+	case "frp", "backhaul", "gre-backhaul":
+		return e
+	default:
+		return "frp"
+	}
+}
+
+func sanitizeTransport(t string) string {
+	t = strings.ToLower(strings.TrimSpace(t))
+	switch t {
+	case "tcpmux", "xtcpmux", "anytls", "wssmux", "ws", "tcp", "tun":
+		return t
+	default:
+		return "tcpmux"
+	}
+}
+
 func (s *HashemService) resolveTunnelPorts(portsStr string) string {
 	cleaned := strings.TrimSpace(portsStr)
 	if cleaned != "" {
-		return cleaned
+		parsed := s.parsePorts(cleaned)
+		if len(parsed) > 0 {
+			var pstrs []string
+			for _, p := range parsed {
+				pstrs = append(pstrs, strconv.Itoa(p))
+			}
+			return strings.Join(pstrs, ", ")
+		}
 	}
 
 	if database.GetDB() == nil {
@@ -1152,7 +1203,7 @@ func (s *HashemService) AutoCreateMatchingInbounds(portsStr string, iranIP strin
 		iranIP = s.getForeignPubIP()
 	}
 
-	hostHeader := "botf.ksmrx.ir"
+	hostHeader := iranIP
 	if len(wsHost) > 0 && strings.TrimSpace(wsHost[0]) != "" {
 		hostHeader = strings.TrimSpace(wsHost[0])
 	}
@@ -1189,7 +1240,7 @@ func (s *HashemService) AutoCreateMatchingInbounds(portsStr string, iranIP strin
 		initialClients := []model.Client{
 			{
 				ID:        uuid.NewString(),
-				Email:     fmt.Sprintf("dark_vip_%d", port),
+				Email:     fmt.Sprintf("nova_%d", port),
 				SubID:     uuid.NewString(),
 				Enable:    true,
 				CreatedAt: now,
@@ -1209,7 +1260,7 @@ func (s *HashemService) AutoCreateMatchingInbounds(portsStr string, iranIP strin
 			"security": "none",
 			"wsSettings": map[string]any{
 				"acceptProxyProtocol": false,
-				"path":                "/@DARK_VVPN",
+				"path":                "/@NOVA-X-PANEL",
 				"host":                hostHeader,
 				"headers":             map[string]any{},
 				"heartbeatPeriod":     0,
@@ -1227,8 +1278,8 @@ func (s *HashemService) AutoCreateMatchingInbounds(portsStr string, iranIP strin
 			Enable:            true,
 			Protocol:          model.VLESS,
 			Port:              port,
-			Tag:               fmt.Sprintf("in-%d-tcp", port),
-			Remark:            "⚡️┃𝑫𝑨𝑹𝑲_𝑽𝑽𝑷𝑵┃",
+			Tag:               fmt.Sprintf("in-%d-nova", port),
+			Remark:            "NOVA-X-PANEL",
 			Listen:            "",
 			Settings:          string(settingsBytes),
 			StreamSettings:    string(streamBytes),
@@ -1258,8 +1309,9 @@ func (s *HashemService) AutoCreateMatchingInbounds(portsStr string, iranIP strin
 }
 
 func (s *HashemService) SetupSSH(form HashemSSHSetupForm) (*HashemSSHSetupResult, error) {
-	if strings.TrimSpace(form.IranIP) == "" {
-		return nil, fmt.Errorf("آدرس آی‌پی سرور ایران الزامی است")
+	iranIP := sanitizeTunnelIP(form.IranIP)
+	if iranIP == "" {
+		return nil, fmt.Errorf("آدرس آی‌پی سرور ایران نامعتبر است")
 	}
 	if strings.TrimSpace(form.SSHPassword) == "" {
 		return nil, fmt.Errorf("رمز عبور سرور ایران الزامی است")
@@ -1273,18 +1325,9 @@ func (s *HashemService) SetupSSH(form HashemSSHSetupForm) (*HashemSSHSetupResult
 	if sshUser == "" {
 		sshUser = "root"
 	}
-	carrier := strings.TrimSpace(form.Carrier)
-	if carrier == "" {
-		carrier = "direct"
-	}
-	engine := strings.TrimSpace(strings.ToLower(form.Engine))
-	if engine == "" {
-		engine = "frp"
-	}
-	transport := strings.TrimSpace(strings.ToLower(form.Transport))
-	if transport == "" {
-		transport = "tcpmux"
-	}
+	carrier := sanitizeCarrier(form.Carrier)
+	engine := sanitizeEngine(form.Engine)
+	transport := sanitizeTransport(form.Transport)
 	bhPort := form.BackhaulPort
 	if bhPort <= 0 {
 		bhPort = 3080
@@ -1295,7 +1338,6 @@ func (s *HashemService) SetupSSH(form HashemSSHSetupForm) (*HashemSSHSetupResult
 		return nil, fmt.Errorf("امکان تشخیص خودکار آی‌پی سرور خارج وجود ندارد")
 	}
 
-	iranIP := strings.TrimSpace(form.IranIP)
 	ports := s.resolveTunnelPorts(form.Ports)
 	frpPort, token := s.genFRPPortAndToken()
 
@@ -1449,7 +1491,7 @@ func (s *HashemService) SetupSSH(form HashemSSHSetupForm) (*HashemSSHSetupResult
 		if inHost == "" {
 			inHost = iranIP
 		}
-		_ = s.AutoCreateMatchingInbounds(ports, inHost)
+		_ = s.AutoCreateMatchingInbounds(ports, iranIP, inHost)
 	}
 
 	return &HashemSSHSetupResult{
@@ -1507,17 +1549,25 @@ WantedBy=multi-user.target
 }
 
 func buildIranSetupCommands(iranIP, foreignIP string, frpPort, bhPort int, token, carrier, ports, engine, transport string) (string, string, string) {
+	iranIP = sanitizeTunnelIP(iranIP)
+	foreignIP = sanitizeTunnelIP(foreignIP)
+	carrier = sanitizeCarrier(carrier)
+	engine = sanitizeEngine(engine)
+	transport = sanitizeTransport(transport)
+
 	var portList []string
 	for _, p := range strings.Split(ports, ",") {
 		p = strings.TrimSpace(p)
-		if _, err := strconv.Atoi(p); err == nil {
-			portList = append(portList, p)
+		if portNum, err := strconv.Atoi(p); err == nil && portNum > 0 && portNum <= 65535 {
+			portList = append(portList, strconv.Itoa(portNum))
 		}
 	}
 	portsJson := strings.Join(portList, ", ")
 	if portsJson == "" {
 		portsJson = "8080"
+		portList = []string{"8080"}
 	}
+	portsSafe := strings.Join(portList, ",")
 
 	greIf := getGreInterface()
 	peerJsonCmd := fmt.Sprintf(
@@ -1550,12 +1600,12 @@ func buildIranSetupCommands(iranIP, foreignIP string, frpPort, bhPort int, token
 	if engine == "backhaul" {
 		oneLiner = fmt.Sprintf(
 			"%s bash /tmp/hashem.sh setup-backhaul-iran --local-pub %s --remote-pub %s --port %d --transport %s --token %s --ports \"%s\" --force && rm -f /tmp/hashem.sh",
-			downloadPipe, iranIP, foreignIP, bhPort, transport, token, ports,
+			downloadPipe, iranIP, foreignIP, bhPort, transport, token, portsSafe,
 		)
 	} else if engine == "gre-backhaul" {
 		oneLiner = fmt.Sprintf(
 			"%s bash /tmp/hashem.sh setup-gre-backhaul-iran --local-pub %s --remote-pub %s --port %d --transport %s --token %s --ports \"%s\" --force && %s%s && rm -f /tmp/hashem.sh",
-			downloadPipe, iranIP, foreignIP, bhPort, transport, token, ports, carrierCmd, optimizeCmd,
+			downloadPipe, iranIP, foreignIP, bhPort, transport, token, portsSafe, carrierCmd, optimizeCmd,
 		)
 	} else {
 		oneLiner = fmt.Sprintf(
@@ -1568,22 +1618,14 @@ func buildIranSetupCommands(iranIP, foreignIP string, frpPort, bhPort int, token
 }
 
 func (s *HashemService) GenerateOneLiner(form HashemOneLinerForm) (*HashemOneLinerResult, error) {
-	if strings.TrimSpace(form.IranIP) == "" {
-		return nil, fmt.Errorf("آدرس آی‌پی سرور ایران الزامی است")
+	iranIP := sanitizeTunnelIP(form.IranIP)
+	if iranIP == "" {
+		return nil, fmt.Errorf("آدرس آی‌پی سرور ایران نامعتبر است")
 	}
 
-	carrier := strings.TrimSpace(form.Carrier)
-	if carrier == "" {
-		carrier = "direct"
-	}
-	engine := strings.TrimSpace(strings.ToLower(form.Engine))
-	if engine == "" {
-		engine = "frp"
-	}
-	transport := strings.TrimSpace(strings.ToLower(form.Transport))
-	if transport == "" {
-		transport = "tcpmux"
-	}
+	carrier := sanitizeCarrier(form.Carrier)
+	engine := sanitizeEngine(form.Engine)
+	transport := sanitizeTransport(form.Transport)
 	bhPort := form.BackhaulPort
 	if bhPort <= 0 {
 		bhPort = 3080
@@ -1643,7 +1685,7 @@ func (s *HashemService) GenerateOneLiner(form HashemOneLinerForm) (*HashemOneLin
 		if inHost == "" {
 			inHost = iranIP
 		}
-		_ = s.AutoCreateMatchingInbounds(ports, inHost)
+		_ = s.AutoCreateMatchingInbounds(ports, iranIP, inHost)
 	}
 
 	_, _, oneLiner := buildIranSetupCommands(iranIP, foreignIP, frpPort, bhPort, token, carrier, ports, engine, transport)

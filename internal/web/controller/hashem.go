@@ -112,7 +112,8 @@ func (a *HashemController) autoCreateInbound(c *gin.Context) {
 		jsonMsg(c, "invalid auto-create-inbound payload", err)
 		return
 	}
-	err := a.hashemService.AutoCreateMatchingInbounds(form.Ports, form.Host)
+	h := strings.TrimSpace(form.Host)
+	err := a.hashemService.AutoCreateMatchingInbounds(form.Ports, h, h)
 	jsonMsg(c, "matching inbounds created successfully", err)
 }
 

@@ -3014,19 +3014,19 @@ export const sections: readonly Section[] = [
         method: 'POST',
         path: '/panel/api/hashem/auto-create-inbound',
         summary: 'Automatically create matching VLESS-WS inbounds for forwarded tunnel ports with host and path configured.',
-        body: '{\n  "ports": "8080",\n  "host": "pro.ksmrx2.ir"\n}',
+        body: '{\n  "ports": "8080",\n  "host": "tunnel.example.com"\n}',
       },
       {
         method: 'POST',
         path: '/panel/api/hashem/setup-ssh',
         summary: 'Direct SSH automatic setup: connect to Iran server via SSH and establish end-to-end Hashem tunnel.',
-        body: '{\n  "iranIp": "94.183.210.29",\n  "sshPort": 22,\n  "sshUser": "root",\n  "sshPassword": "secret",\n  "ports": "8080"\n}',
+        body: '{\n  "iranIp": "1.2.3.4",\n  "sshPort": 22,\n  "sshUser": "root",\n  "sshPassword": "secret",\n  "ports": "8080"\n}',
       },
       {
         method: 'POST',
-        path: '/panel/api/hashem/generate-oneliner',
+        path: '/novapanel/api/hashem/generate-oneliner',
         summary: 'Generate a one-liner command to be run on Iran server to establish Hashem tunnel.',
-        body: '{\n  "iranIp": "94.183.210.29",\n  "ports": "8080"\n}',
+        body: '{\n  "iranIp": "1.2.3.4",\n  "ports": "8080"\n}',
       },
       {
         method: 'POST',

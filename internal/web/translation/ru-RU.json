@@ -1033,7 +1033,7 @@
       "defaultLimitsSaved": "Значения по умолчанию сохранены",
       "defaultLimitsHint": "Автоматически применяется ко всем новым клиентам. 0 — без ограничений.",
       "defaultLimits": "Значения по умолчанию",
-"renewIntervalDesc": "После истечения срока добавляет указанное число 24-часовых дней к предыдущему сроку и сбрасывает трафик клиента. Оставьте независимый сброс трафика выключенным, если дополнительный сброс не нужен.",
+      "renewIntervalDesc": "После истечения срока добавляет указанное число 24-часовых дней к предыдущему сроку и сбрасывает трафик клиента. Оставьте независимый сброс трафика выключенным, если дополнительный сброс не нужен.",
       "renewWeeklyDesc": "Календарное продление выполняется в полночь по часовому поясу панели и также сбрасывает трафик клиента. Оставьте независимый сброс трафика выключенным, если дополнительный сброс не нужен."
     },
     "groups": {
@@ -2589,11 +2589,11 @@
       "oneLinerIranCommandDesc": "Enter Iran server IP and desired ports. Foreign server configuration will be applied immediately and a one-liner command will be generated to run on your Iran server.",
       "frpOption": "⚡ FRP (Reverse)",
       "backhaulOption": "🚀 Backhaul (High-Speed)",
-      "iranIpPlaceholder": "e.g. 94.183.210.29",
+      "iranIpPlaceholder": "your iran server ip",
       "autoCreateInboundExtra": "When enabled, creates a matching VLESS-WS inbound for the tunneled port (similar to port 8080) with automatic host header configuration.",
       "autoCreateInboundLabel": "Auto-create matching VLESS-WS inbound for tunnel port",
       "inboundHostLabel": "WebSocket Host Header (WS Host Header)",
-      "inboundHostExtra": "Host domain or IP set in inbound WebSocket header (e.g. pro.ksmrx2.ir or Iran server IP). If left blank, Iran server IP is used.",
+      "inboundHostExtra": "Host domain or IP set in inbound WebSocket header (e.g. your iran domain or Iran server IP). If left blank, Iran server IP is used.",
       "directGreLabel": "Direct GRE (Raw IP proto 47 - Default & Stable)",
       "transports": {
         "tcpmux": "TCPMux (Multi-Channel High-Speed - Recommended)",
@@ -2603,7 +2603,8 @@
         "ws": "WS (Standard WebSocket without TLS)",
         "tcp": "TCP / TCPO (Direct Single-Connection)",
         "tun": "TUN (L3 Network Interface Tunnel)"
-      }
+      },
+      "inboundHostPlaceholder": "your iran domain"
     },
     "telegramShop": {
       "title": "Telegram Shop",

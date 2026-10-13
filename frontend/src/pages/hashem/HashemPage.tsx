@@ -891,7 +891,7 @@ export default function HashemPage() {
                       label={t('pages.hashem.iranIpLabel')}
                       rules={[{ required: true, message: t('pages.hashem.iranIpRequired') }]}
                     >
-                      <Input placeholder={t('pages.hashem.iranIpPlaceholder', { defaultValue: 'e.g. 94.183.210.29' })} />
+                      <Input placeholder={t('pages.hashem.iranIpPlaceholder', { defaultValue: 'your iran server ip' })} />
                     </Form.Item>
 
                     <Form.Item
@@ -919,10 +919,10 @@ export default function HashemPage() {
                       name="inboundHost"
                       label={t('pages.hashem.inboundHostLabel', { defaultValue: 'WebSocket Host Header (WS Host Header)' })}
                       extra={t('pages.hashem.inboundHostExtra', {
-                        defaultValue: 'Host domain or IP set in inbound WebSocket header (e.g. pro.ksmrx2.ir or Iran server IP). If left blank, Iran server IP is used.',
+                        defaultValue: 'Host domain or IP set in inbound WebSocket header (e.g. your iran domain or Iran server IP). If left blank, Iran server IP is used.',
                       })}
                     >
-                      <Input placeholder="pro.ksmrx2.ir" />
+                      <Input placeholder={t('pages.hashem.inboundHostPlaceholder', { defaultValue: 'your iran domain' })} />
                     </Form.Item>
 
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
@@ -987,7 +987,7 @@ export default function HashemPage() {
                       carrier: 'direct',
                       frpPort: 36067,
                       ports: status.ports?.join(', ') || '8080',
-                      inboundHost: 'botf.ksmrx.ir',
+                      inboundHost: '',
                       autoCreateInbound: true,
                     }}
                     onFinish={handleSetupSubmit}
@@ -1040,7 +1040,7 @@ export default function HashemPage() {
                       label={t('pages.hashem.peerPublicIp')}
                       rules={[{ required: true, message: t('pages.hashem.remotePubRequired') }]}
                     >
-                      <Input placeholder="e.g. 94.183.210.29" />
+                      <Input placeholder={t('pages.hashem.iranIpPlaceholder', { defaultValue: 'your iran server ip' })} />
                     </Form.Item>
 
                     <Form.Item name="localPub" label={t('pages.hashem.thisServerPublicIp')}>
@@ -1082,10 +1082,10 @@ export default function HashemPage() {
                       name="inboundHost"
                       label={t('pages.hashem.inboundHostLabel', { defaultValue: 'WebSocket Host Header (WS Host Header)' })}
                       extra={t('pages.hashem.inboundHostExtra', {
-                        defaultValue: 'Host domain or IP set in inbound WebSocket header (e.g. pro.ksmrx2.ir or Iran server IP). If left blank, Iran server IP is used.',
+                        defaultValue: 'Host domain or IP set in inbound WebSocket header (e.g. your iran domain or Iran server IP). If left blank, Iran server IP is used.',
                       })}
                     >
-                      <Input placeholder="pro.ksmrx2.ir" />
+                      <Input placeholder={t('pages.hashem.inboundHostPlaceholder', { defaultValue: 'your iran domain' })} />
                     </Form.Item>
 
                     <Form.Item

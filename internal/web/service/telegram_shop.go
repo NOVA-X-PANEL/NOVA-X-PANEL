@@ -215,7 +215,7 @@ func (s *TelegramShopService) Install(cfg *TelegramShopConfig) error {
 		cfg.CardNumber = "۶۰۳۷-۹۹۷۴-XXXX-XXXX"
 	}
 	if cfg.CardHolder == "" {
-		cfg.CardHolder = "DARK VVPN"
+		cfg.CardHolder = "NOVA-X-PANEL"
 	}
 	cfg.BotEnabled = true
 	cfg.FreeTrialEnabled = true
@@ -223,10 +223,10 @@ func (s *TelegramShopService) Install(cfg *TelegramShopConfig) error {
 	cfg.FreeTrialDays = 1
 	cfg.DefaultInboundID = 1
 	if cfg.SupportUsername == "" {
-		cfg.SupportUsername = "TheSilentOnee"
+		cfg.SupportUsername = ""
 	}
 	if cfg.ChannelUsername == "" {
-		cfg.ChannelUsername = "DARK_VVPN"
+		cfg.ChannelUsername = ""
 	}
 
 	// Write bot script

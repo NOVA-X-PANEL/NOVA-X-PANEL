@@ -1033,7 +1033,7 @@
       "defaultLimitsSaved": "Client defaults saved",
       "defaultLimitsHint": "Applied automatically to every client created from now on. Set a value to 0 for no limit.",
       "defaultLimits": "Client Defaults",
-"renewIntervalDesc": "到期後從上次截止時間增加指定天數（每天 24 小時），並重置客戶端流量。若不需要額外重置，請關閉獨立的流量重置。",
+      "renewIntervalDesc": "到期後從上次截止時間增加指定天數（每天 24 小時），並重置客戶端流量。若不需要額外重置，請關閉獨立的流量重置。",
       "renewWeeklyDesc": "日曆續期按面板時區的午夜執行，並重置客戶端流量。若不需要額外重置，請關閉獨立的流量重置。"
     },
     "groups": {
@@ -2589,11 +2589,11 @@
       "oneLinerIranCommandDesc": "Enter Iran server IP and desired ports. Foreign server configuration will be applied immediately and a one-liner command will be generated to run on your Iran server.",
       "frpOption": "⚡ FRP (Reverse)",
       "backhaulOption": "🚀 Backhaul (High-Speed)",
-      "iranIpPlaceholder": "e.g. 94.183.210.29",
+      "iranIpPlaceholder": "your iran server ip",
       "autoCreateInboundExtra": "When enabled, creates a matching VLESS-WS inbound for the tunneled port (similar to port 8080) with automatic host header configuration.",
       "autoCreateInboundLabel": "Auto-create matching VLESS-WS inbound for tunnel port",
       "inboundHostLabel": "WebSocket Host Header (WS Host Header)",
-      "inboundHostExtra": "Host domain or IP set in inbound WebSocket header (e.g. pro.ksmrx2.ir or Iran server IP). If left blank, Iran server IP is used.",
+      "inboundHostExtra": "Host domain or IP set in inbound WebSocket header (e.g. your iran domain or Iran server IP). If left blank, Iran server IP is used.",
       "directGreLabel": "Direct GRE (Raw IP proto 47 - Default & Stable)",
       "transports": {
         "tcpmux": "TCPMux (Multi-Channel High-Speed - Recommended)",
@@ -2603,7 +2603,8 @@
         "ws": "WS (Standard WebSocket without TLS)",
         "tcp": "TCP / TCPO (Direct Single-Connection)",
         "tun": "TUN (L3 Network Interface Tunnel)"
-      }
+      },
+      "inboundHostPlaceholder": "your iran domain"
     },
     "telegramShop": {
       "title": "Telegram Shop",

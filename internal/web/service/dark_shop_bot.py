@@ -123,10 +123,10 @@ def init_db():
     )
     """)
     # Set default settings
-    c.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('force_join_channel', '@DARK_VVPN')")
+    c.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('force_join_channel', '')")
     c.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('force_join_enabled', '0')")
     c.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('referral_percent', '10')")
-    c.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('support_username', 'ksmrx')")
+    c.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('support_username', '')")
     conn.commit()
     conn.close()
 
@@ -320,7 +320,7 @@ def check_channel_membership(user_id):
     force_enabled = get_setting("force_join_enabled", "0")
     if force_enabled != "1":
         return True
-    channel = get_setting("force_join_channel", "@DARK_VVPN")
+    channel = get_setting("force_join_channel", "")
     if not channel:
         return True
     res = tg_request("getChatMember", {"chat_id": channel, "user_id": user_id})
@@ -335,7 +335,7 @@ def check_channel_membership(user_id):
 
 def get_inbound_and_sub_info():
     if not os.path.exists(XUI_DB_PATH):
-        return None, 2096, "/sub/"
+        return None, 2096, "/sub/", "", ""
     conn = sqlite3.connect(XUI_DB_PATH, timeout=10.0)
     c = conn.cursor()
     c.execute("SELECT id, port, protocol, settings, stream_settings FROM inbounds WHERE enable = 1 ORDER BY id ASC")
@@ -343,7 +343,9 @@ def get_inbound_and_sub_info():
     
     sub_port = 2096
     sub_path = "/sub/"
-    c.execute("SELECT key, value FROM settings WHERE key IN ('subPort', 'subPath')")
+    sub_domain = ""
+    sub_uri = ""
+    c.execute("SELECT key, value FROM settings WHERE key IN ('subPort', 'subPath', 'subDomain', 'subURI')")
     for k, v in c.fetchall():
         if k == 'subPort' and v:
             try:
@@ -352,6 +354,10 @@ def get_inbound_and_sub_info():
                 pass
         elif k == 'subPath' and v:
             sub_path = v
+        elif k == 'subDomain' and v:
+            sub_domain = v.strip()
+        elif k == 'subURI' and v:
+            sub_uri = v.strip()
     conn.close()
 
     inbound = None
@@ -361,14 +367,14 @@ def get_inbound_and_sub_info():
             break
     if not inbound and rows:
         inbound = rows[0]
-    return inbound, sub_port, sub_path
+    return inbound, sub_port, sub_path, sub_domain, sub_uri
 
 def add_xray_client(user_id, username, traffic_gb, expiry_days, is_trial=False):
     if not os.path.exists(XUI_DB_PATH):
         logger.error("x-ui.db not found!")
         return None
     
-    inbound, sub_port, sub_path = get_inbound_and_sub_info()
+    inbound, sub_port, sub_path, sub_domain, sub_uri = get_inbound_and_sub_info()
     if not inbound:
         logger.error("No active inbound found in x-ui.db!")
         return None
@@ -380,7 +386,7 @@ def add_xray_client(user_id, username, traffic_gb, expiry_days, is_trial=False):
     client_uuid = str(uuid.uuid4())
     rand_suffix = "".join(random.choices(string.ascii_lowercase + string.digits, k=6))
     prefix = "trial" if is_trial else "usr"
-    email = f"dark_{prefix}_{user_id}_{rand_suffix}"
+    email = f"nova_{prefix}_{user_id}_{rand_suffix}"
     sub_id = "".join(random.choices(string.ascii_lowercase + string.digits, k=16))
     
     total_bytes = int(traffic_gb * 1024 * 1024 * 1024)
@@ -425,8 +431,15 @@ def add_xray_client(user_id, username, traffic_gb, expiry_days, is_trial=False):
     os.system("systemctl restart x-ui")
     
     sub_clean_path = sub_path.strip("/")
-    sub_url = f"https://nova.ksmrx2.ir:{sub_port}/{sub_clean_path}/{sub_id}"
-    vless_link = f"vless://{client_uuid}@nova.ksmrx2.ir:{inbound_port}?type=ws&security=tls&path=%2Fdark-ws&sni=nova.ksmrx2.ir#DARK_{email}"
+    if sub_uri and sub_uri.startswith("http"):
+        sub_url = f"{sub_uri.rstrip('/')}/{sub_id}"
+    elif sub_domain:
+        sub_url = f"https://{sub_domain}:{sub_port}/{sub_clean_path}/{sub_id}"
+    else:
+        sub_url = f"http://127.0.0.1:{sub_port}/{sub_clean_path}/{sub_id}"
+
+    host = sub_domain or "127.0.0.1"
+    vless_link = f"vless://{client_uuid}@{host}:{inbound_port}?type=ws&security=tls&path=%2Fnova-ws&sni={host}#NOVA_{email}"
     
     return {
         "uuid": client_uuid,
@@ -500,7 +513,7 @@ def get_user_xray_clients(user_id):
     c.execute("SELECT id, settings FROM inbounds")
     inbound_rows = c.fetchall()
     
-    _, sub_port, sub_path = get_inbound_and_sub_info()
+    _, sub_port, sub_path, sub_domain, sub_uri = get_inbound_and_sub_info()
     sub_clean_path = sub_path.strip("/")
     
     c.execute("SELECT email, up, down, total, expiry_time, enable FROM client_traffics")
@@ -529,7 +542,15 @@ def get_user_xray_clients(user_id):
                     expiry_ms = tr.get("expiry_time", cl.get("expiryTime", 0))
                     
                     sub_id = cl.get("subId", "")
-                    sub_url = f"https://nova.ksmrx2.ir:{sub_port}/{sub_clean_path}/{sub_id}" if sub_id else ""
+                    if sub_id:
+                        if sub_uri and sub_uri.startswith("http"):
+                            sub_url = f"{sub_uri.rstrip('/')}/{sub_id}"
+                        elif sub_domain:
+                            sub_url = f"https://{sub_domain}:{sub_port}/{sub_clean_path}/{sub_id}"
+                        else:
+                            sub_url = f"http://127.0.0.1:{sub_port}/{sub_clean_path}/{sub_id}"
+                    else:
+                        sub_url = ""
                     
                     user_clients.append({
                         "email": email,
@@ -691,7 +712,7 @@ def handle_callback_query(cq):
             if msg_id:
                 edit_message_text(user_id, msg_id, "✅ عضویت شما تایید گردید. به ربات DARK SHOP خوش آمدید!", get_main_keyboard(user_id))
         else:
-            channel = get_setting("force_join_channel", "@DARK_VVPN")
+            channel = get_setting("force_join_channel", "")
             answer_callback_query(cq_id, f"هنوز در کانال {channel} عضو نشده‌اید!", show_alert=True)
         return
         
@@ -809,7 +830,7 @@ def handle_callback_query(cq):
         cur_status = get_setting("force_join_enabled", "0")
         new_status = "0" if cur_status == "1" else "1"
         set_setting("force_join_enabled", new_status)
-        channel = get_setting("force_join_channel", "@DARK_VVPN")
+        channel = get_setting("force_join_channel", "")
         status_lbl = "فعال ✅" if new_status == "1" else "غیرفعال ❌"
         answer_callback_query(cq_id, f"قفل جوین اجباری {status_lbl} شد.")
         if msg_id:
@@ -1208,15 +1229,16 @@ def handle_message(msg):
 
     # Check Channel Membership before continuing
     if not check_channel_membership(user_id) and user_id != admin_id:
-        ch = get_setting("force_join_channel", "@DARK_VVPN")
-        ikb = {
-            "inline_keyboard": [
-                [{"text": "📢 عضویت در کانال رسمی", "url": f"https://t.me/{ch.lstrip('@')}"}],
-                [{"text": "✅ بررسی مجدد عضویت", "callback_data": "check_join"}]
-            ]
-        }
-        send_message(user_id, f"⚠️ <b>کاربر گرامی!</b>\nبرای استفاده از امکانات ربات، ابتدا باید در کانال ما عضو شوید:\n{ch}", ikb)
-        return
+        ch = get_setting("force_join_channel", "")
+        if ch:
+            ikb = {
+                "inline_keyboard": [
+                    [{"text": "📢 عضویت در کانال رسمی", "url": f"https://t.me/{ch.lstrip('@')}"}],
+                    [{"text": "✅ بررسی مجدد عضویت", "callback_data": "check_join"}]
+                ]
+            }
+            send_message(user_id, f"⚠️ <b>کاربر گرامی!</b>\nبرای استفاده از امکانات ربات، ابتدا باید در کانال ما عضو شوید:\n{ch}", ikb)
+            return
 
     # Process /start and referral code
     if text.startswith("/start"):
@@ -1564,7 +1586,7 @@ def handle_message(msg):
     if text == "👥 زیرمجموعه‌گیری":
         clear_user_state(user_id)
         bot_info = tg_request("getMe")
-        bot_uname = bot_info.get("result", {}).get("username", "DARK_VVPN_bot") if bot_info else "bot"
+        bot_uname = bot_info.get("result", {}).get("username", "nova_panel_bot") if bot_info else "bot"
         ref_link = f"https://t.me/{bot_uname}?start=ref_{user_id}"
         
         conn = get_db()
@@ -1606,8 +1628,11 @@ def handle_message(msg):
 
     if text == "📞 پشتیبانی":
         clear_user_state(user_id)
-        sup = get_setting("support_username", "ksmrx")
-        sup_msg = f"📞 <b>پشتیبانی DARK VVPN</b>\n\nجهت ارتباط با پشتیبانی، پیگیری سفارشات یا سوالات با آیدی زیر در ارتباط باشید:\n👉 @{sup}"
+        sup = get_setting("support_username", "")
+        if sup:
+            sup_msg = f"📞 <b>پشتیبانی NOVA-X-PANEL</b>\n\nجهت ارتباط با پشتیبانی، پیگیری سفارشات یا سوالات با آیدی زیر در ارتباط باشید:\n👉 @{sup}"
+        else:
+            sup_msg = f"📞 <b>پشتیبانی NOVA-X-PANEL</b>\n\nآیدی پشتیبانی هنوز توسط مدیر پنل تنظیم نشده است."
         send_message(user_id, sup_msg, get_main_keyboard(user_id))
         return
 

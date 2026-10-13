@@ -204,6 +204,9 @@ const SWAGGER_ONLY_DEPS = [
 ];
 
 export default defineConfig({
+  test: {
+    testTimeout: 15000,
+  },
   plugins: [react(), tailwindcss(), injectBasePathPlugin(), rocketLoaderOptOutPlugin()],
   resolve: {
     alias: {

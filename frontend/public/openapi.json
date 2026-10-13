@@ -17041,7 +17041,7 @@
               },
               "example": {
                 "ports": "8080",
-                "host": "pro.ksmrx2.ir"
+                "host": "tunnel.example.com"
               }
             }
           }
@@ -17084,7 +17084,7 @@
                 "type": "object"
               },
               "example": {
-                "iranIp": "94.183.210.29",
+                "iranIp": "1.2.3.4",
                 "sshPort": 22,
                 "sshUser": "root",
                 "sshPassword": "secret",
@@ -17116,13 +17116,13 @@
         }
       }
     },
-    "/panel/api/hashem/generate-oneliner": {
+    "/novapanel/api/hashem/generate-oneliner": {
       "post": {
         "tags": [
           "Hashem Tunnel"
         ],
         "summary": "Generate a one-liner command to be run on Iran server to establish Hashem tunnel.",
-        "operationId": "post_panel_api_hashem_generate_oneliner",
+        "operationId": "post_novapanel_api_hashem_generate_oneliner",
         "requestBody": {
           "required": true,
           "content": {
@@ -17131,7 +17131,7 @@
                 "type": "object"
               },
               "example": {
-                "iranIp": "94.183.210.29",
+                "iranIp": "1.2.3.4",
                 "ports": "8080"
               }
             }

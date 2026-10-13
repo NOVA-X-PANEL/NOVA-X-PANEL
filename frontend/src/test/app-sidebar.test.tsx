@@ -71,8 +71,8 @@ test('pin from the rail keeps it expanded after the pointer leaves', () => {
   expect(localStorage.getItem('sidebar-pinned')).toBe('true');
 });
 
-test('labels the palette shortcut with the modifier the platform actually uses', () => {
+test('palette shortcut is omitted when search is removed per user request', () => {
   const view = renderSidebar();
   const chip = view.container.querySelector('.sidebar-command-kbd');
-  expect(chip?.textContent).toBe('CtrlK');
+  expect(chip).toBeNull();
 });

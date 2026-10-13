@@ -720,7 +720,7 @@ def handle_callback_query(cq):
         conn.close()
         
         stat_text = (
-            f"📊 <b>گزارش آماری ربات فروشگاه (میرزا ادیشن)</b>\n\n"
+            f"📊 <b>گزارش آماری ربات فروشگاه (NOVA Edition)</b>\n\n"
             f"👥 <b>تعداد کل کاربران:</b> {total_users:,} نفر\n"
             f"🎁 <b>تست‌های صادر شده:</b> {total_trials:,} عدد\n"
             f"🛒 <b>سفارشات موفق:</b> {approved_orders:,} عدد\n"
@@ -1250,7 +1250,7 @@ def handle_message(msg):
             send_message(user_id, "دسترسی غیرمجاز!")
             return
         clear_user_state(user_id)
-        send_message(user_id, "⚙️ <b>به پنل مدیریت حرفه‌ای ربات (میرزا ادیشن) خوش آمدید:</b>\nجهت مدیریت بخش مورد نظر را انتخاب کنید:", get_admin_inline_keyboard())
+        send_message(user_id, "⚙️ <b>به پنل مدیریت حرفه‌ای ربات (NOVA Edition) خوش آمدید:</b>\nجهت مدیریت بخش مورد نظر را انتخاب کنید:", get_admin_inline_keyboard())
         return
 
     # Handle State: WAIT_BCAST

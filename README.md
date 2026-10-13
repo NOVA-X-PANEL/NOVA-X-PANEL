@@ -42,7 +42,7 @@ Deploy, configure and monitor VLESS, VMess, Trojan, Shadowsocks, WireGuard, Amne
 
 ## ✨ Why NOVA X PANEL
 
-**NOVA X PANEL** is an **independent** panel maintained in its own repository, built on top of the open-source [3x-ui](https://github.com/MHSanaei/3x-ui) project (which itself descends from the original X-UI). It keeps the broad protocol support, the improved stability, the per-client traffic accounting and the quality-of-life features of its upstream, then adds its own **branding, packaging and a bespoke "Nova Glass" interface**.
+**NOVA X PANEL** is an advanced proxy control panel built on top of 3x-ui with full support for MASQUE, XDRIVE, Xray v26.10.10, Hashem Tunnel, and Telegram Shop.
 
 - 🚀 **One panel, every protocol** — thirteen inbound types, modern transports and REALITY/XTLS out of the box.
 - 🧩 **Built for scale** — manage and clone inbounds across many servers from a single panel.

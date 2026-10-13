@@ -16990,7 +16990,7 @@
                 "type": "object"
               },
               "example": {
-                "iranIp": "94.183.210.29",
+                "iranIp": "1.2.3.4",
                 "sshPort": 22,
                 "sshUser": "root",
                 "sshPassword": "secret",
@@ -17037,7 +17037,7 @@
                 "type": "object"
               },
               "example": {
-                "iranIp": "94.183.210.29",
+                "iranIp": "1.2.3.4",
                 "ports": "8080"
               }
             }

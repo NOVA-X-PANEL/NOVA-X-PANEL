@@ -3072,7 +3072,7 @@ export const sections: readonly Section[] = [
         method: 'POST',
         path: '/panel/api/telegram-shop/install',
         summary: 'Install and configure Telegram Shop Bot with token and admin chat ID.',
-        body: '{\n  "bot_token": "token",\n  "admin_chat_id": "842798945",\n  "card_number": "6037...",\n  "card_holder": "DARK VVPN"\n}',
+        body: '{\n  "bot_token": "token",\n  "admin_chat_id": "123456789",\n  "card_number": "6037...",\n  "card_holder": "NOVA-X"\n}',
       },
       {
         method: 'POST',

@@ -17369,9 +17369,9 @@
               },
               "example": {
                 "bot_token": "token",
-                "admin_chat_id": "842798945",
+                "admin_chat_id": "123456789",
                 "card_number": "6037...",
-                "card_holder": "DARK VVPN"
+                "card_holder": "NOVA-X"
               }
             }
           }

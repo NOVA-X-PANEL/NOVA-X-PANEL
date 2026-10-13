@@ -234,7 +234,7 @@ export default function TelegramShopPage() {
                         rules={[{ required: true, message: t('pages.telegramShop.adminChatIdRequired') }]}
                       >
                         <Input
-                          placeholder="842798945"
+                          placeholder="123456789"
                           prefix={<UserOutlined style={{ color: '#8b5cf6' }} />}
                           size="large"
                         />

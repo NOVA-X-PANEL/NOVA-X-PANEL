@@ -1636,7 +1636,6 @@ func (s *HashemService) GenerateOneLiner(form HashemOneLinerForm) (*HashemOneLin
 		return nil, fmt.Errorf("امکان تشخیص خودکار آی‌پی سرور خارج وجود ندارد")
 	}
 
-	iranIP := strings.TrimSpace(form.IranIP)
 	ports := s.resolveTunnelPorts(form.Ports)
 	frpPort, token := s.genFRPPortAndToken()
 

@@ -17,6 +17,7 @@
 [![Release](https://img.shields.io/github/v/release/NOVA-X-PANEL/NOVA-X-PANEL?style=flat-square&label=release&color=8b5cf6)](https://github.com/NOVA-X-PANEL/NOVA-X-PANEL/releases)
 [![Build](https://img.shields.io/github/actions/workflow/status/NOVA-X-PANEL/NOVA-X-PANEL/release.yml?style=flat-square&label=build)](https://github.com/NOVA-X-PANEL/NOVA-X-PANEL/actions)
 [![Downloads](https://img.shields.io/github/downloads/NOVA-X-PANEL/NOVA-X-PANEL/total?style=flat-square&label=downloads&color=22d3ee)](https://github.com/NOVA-X-PANEL/NOVA-X-PANEL/releases)
+[![Telegram Channel](https://img.shields.io/badge/Telegram-Channel-229ED9?style=flat-square&logo=telegram&logoColor=white)](https://t.me/NOVA_X_PANELL)
 [![Go](https://img.shields.io/github/go-mod/go-version/NOVA-X-PANEL/NOVA-X-PANEL?style=flat-square&label=go&color=4f7cff)](go.mod)
 [![React](https://img.shields.io/badge/React-19-4f7cff?style=flat-square&logo=react&logoColor=white)](frontend)
 [![License](https://img.shields.io/badge/license-GPL--3.0-8b5cf6?style=flat-square)](LICENSE)
@@ -26,6 +27,7 @@
 [**شروع سریع**](#fa-quick-start) &nbsp;·&nbsp;
 [**ویژگی‌ها**](#fa-features) &nbsp;·&nbsp;
 [**اسکرین‌شات‌ها**](#fa-screenshots) &nbsp;·&nbsp;
+[**کانال تلگرام**](https://t.me/NOVA_X_PANELL) &nbsp;·&nbsp;
 [**پروتکل‌ها**](#fa-protocols) &nbsp;·&nbsp;
 [**مستندات**](https://docs.sanaei.dev/fa) &nbsp;·&nbsp;
 [**پیکربندی**](#fa-config)
@@ -85,49 +87,63 @@ bash <(curl -Ls https://raw.githubusercontent.com/NOVA-X-PANEL/NOVA-X-PANEL/main
 ## 🖼 اسکرین‌شات‌ها
 
 <details>
-<summary><b>برای دیدن گالری کلیک کنید</b></summary>
+<summary><b>برای باز کردن گالری کلیک کنید</b></summary>
 
 <br/>
 
 <p align="center">
   <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./media/00-login-dark.png">
+    <img alt="صفحه ورود" src="./media/00-login-dark.png">
+  </picture>
+</p>
+
+<p align="center">
+  <picture>
     <source media="(prefers-color-scheme: dark)" srcset="./media/01-overview-dark.png">
-    <img alt="Overview" src="./media/01-overview-light.png">
+    <img alt="نمای کلی" src="./media/01-overview-light.png">
   </picture>
 </p>
 
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="./media/02-inbounds-dark.png">
-    <img alt="Inbounds" src="./media/02-inbounds-light.png">
+    <img alt="اینباندها" src="./media/02-inbounds-light.png">
   </picture>
 </p>
 
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="./media/03-client-dark.png">
-    <img alt="Clients" src="./media/03-client-light.png">
+    <img alt="کلاینت‌ها" src="./media/03-client-light.png">
   </picture>
 </p>
 
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="./media/05-nodes-dark.png">
-    <img alt="Nodes" src="./media/05-nodes-light.png">
+    <img alt="نودها" src="./media/05-nodes-light.png">
   </picture>
 </p>
 
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="./media/06-settings-dark.png">
-    <img alt="Settings" src="./media/06-settings-light.png">
+    <img alt="تنظیمات" src="./media/06-settings-light.png">
+  </picture>
+</p>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./media/07-configs-dark.png">
+    <img alt="تانل هاشم" src="./media/07-configs-light.png">
   </picture>
 </p>
 
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="./media/08-api-docs-dark.png">
-    <img alt="API docs" src="./media/08-api-docs-light.png">
+    <img alt="مستندات API" src="./media/08-api-docs-light.png">
   </picture>
 </p>
 
@@ -301,6 +317,11 @@ x-ui update       # به‌روزرسانی به آخرین انتشار
 رابط کاربری پنل به **۱۳ زبان** در دسترس است:
 
 English · فارسی · العربية · 中文（简体） · 中文（繁體） · Español · Русский · Українська · Türkçe · Tiếng Việt · 日本語 · Bahasa Indonesia · Português (Brasil)
+
+## 📢 کانال تلگرام
+
+برای دریافت آخرین اخبار، آموزش‌ها، نسخه‌های جدید و راهنما به کانال رسمی ما بپیوندید:
+👉 **[@NOVA_X_PANELL](https://t.me/NOVA_X_PANELL)**
 
 ## 📚 مستندات و API
 

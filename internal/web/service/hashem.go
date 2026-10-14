@@ -2335,10 +2335,21 @@ except Exception as e:
 			if status.PingMs <= 0 {
 				status.PingMs = s.measurePing(doc.RemoteGre, "", 0)
 			}
-			if status.PingMs <= 0 {
-				status.PingMs = 78.0
+			if status.PingMs > 0 {
+				status.Running = true
+				status.FrpStatus = "active"
+				status.BackhaulStatus = "active"
+			} else {
+				status.Running = false
+				status.FrpStatus = "stopped"
+				status.BackhaulStatus = "stopped"
+				status.PingMs = -1
 			}
-			status.Running = true
+		} else {
+			status.Running = false
+			status.FrpStatus = "stopped"
+			status.BackhaulStatus = "stopped"
+			status.PingMs = -1
 		}
 		if len(doc.Ports) > 0 {
 			status.Ports = doc.Ports

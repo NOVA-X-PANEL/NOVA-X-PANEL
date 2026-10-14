@@ -228,15 +228,13 @@ export default function HashemPage() {
 
   const isEngineTunnelPanel = status.engine === 'tunnel-panel';
   const isEngineBackhaul = status.engine === 'backhaul' || status.engine === 'gre-backhaul';
+  const isHealthy = status.running && status.pingMs > 0;
   const engineStatus = isEngineTunnelPanel
-    ? (status.running ? 'active' : 'stopped')
+    ? (isHealthy ? 'active' : 'stopped')
     : isEngineBackhaul
       ? status.backhaulStatus
       : status.frpStatus;
 
-  const isHealthy = isEngineTunnelPanel
-    ? status.running
-    : status.running && engineStatus === 'active' && status.pingMs > 0;
   const isConnecting = engineStatus === 'connecting';
 
   return (
@@ -427,19 +425,19 @@ export default function HashemPage() {
                   </Card>
                 </Col>
 
-                {/* Latency & Ping */}
+                {/* Latency */}
                 <Col xs={24} sm={12} lg={6}>
                   <Card
                     className="hashem-card"
                     title={
                       <Space>
-                        <WifiOutlined style={{ color: (status.pingMs >= 0 || isHealthy) ? '#52c41a' : '#ff4d4f' }} />
+                        <WifiOutlined style={{ color: status.pingMs > 0 ? '#52c41a' : '#ff4d4f' }} />
                         <span>{t('pages.hashem.cardLatencyTitle')}</span>
                       </Space>
                     }
                   >
                     <div style={{ marginBottom: 10 }}>
-                      {status.pingMs >= 0 ? (
+                      {status.pingMs > 0 ? (
                         <Title
                           level={3}
                           style={{
@@ -449,10 +447,6 @@ export default function HashemPage() {
                           }}
                         >
                           {status.pingMs.toFixed(1)} <span style={{ fontSize: 14 }}>ms</span>
-                        </Title>
-                      ) : isHealthy ? (
-                        <Title level={3} style={{ margin: 0, color: '#52c41a', textShadow: '0 0 10px rgba(82, 196, 26, 0.4)' }}>
-                          {t('pages.hashem.frpRunning')}
                         </Title>
                       ) : (
                         <Title level={3} style={{ margin: 0, color: '#ff4d4f' }}>

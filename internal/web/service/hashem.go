@@ -222,13 +222,75 @@ type HashemService struct {
 }
 
 func (s *HashemService) IsInstalled() bool {
-	if _, err := os.Stat(hashemBinPath); err == nil {
+	if fi, err := os.Stat(hashemBinPath); err == nil && fi.Size() > 0 {
 		return true
 	}
-	if _, err := os.Stat(hashemScriptPath); err == nil {
+	if fi, err := os.Stat(hashemScriptPath); err == nil && fi.Size() > 0 {
 		return true
 	}
 	return false
+}
+
+func shellQuote(value string) string {
+	return "'" + strings.ReplaceAll(value, "'", "'\\''") + "'"
+}
+
+func (s *HashemService) execPrivileged(ctx context.Context, name string, args ...string) ([]byte, error) {
+	if systemdRun, err := exec.LookPath("systemd-run"); err == nil {
+		sdArgs := append([]string{"--pipe", "--wait", name}, args...)
+		cmd := exec.CommandContext(ctx, systemdRun, sdArgs...)
+		out, err := cmd.CombinedOutput()
+		if err == nil {
+			return out, nil
+		}
+		outStr := strings.TrimSpace(string(out))
+		if !strings.Contains(outStr, "System has not been booted with systemd") &&
+			!strings.Contains(outStr, "Failed to connect to bus") {
+			return out, err
+		}
+	}
+	cmd := exec.CommandContext(ctx, name, args...)
+	return cmd.CombinedOutput()
+}
+
+func (s *HashemService) execPrivilegedBash(ctx context.Context, script string) ([]byte, error) {
+	if systemdRun, err := exec.LookPath("systemd-run"); err == nil {
+		cmd := exec.CommandContext(ctx, systemdRun, "--pipe", "--wait", "bash", "-c", script)
+		out, err := cmd.CombinedOutput()
+		if err == nil {
+			return out, nil
+		}
+		outStr := strings.TrimSpace(string(out))
+		if !strings.Contains(outStr, "System has not been booted with systemd") &&
+			!strings.Contains(outStr, "Failed to connect to bus") {
+			return out, err
+		}
+	}
+	cmd := exec.CommandContext(ctx, "bash", "-c", script)
+	return cmd.CombinedOutput()
+}
+
+func (s *HashemService) writePrivilegedFile(path string, content []byte, mode os.FileMode) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	tmpFile, err := os.CreateTemp("", "hashem-priv-*")
+	if err != nil {
+		return err
+	}
+	tmpPath := tmpFile.Name()
+	defer os.Remove(tmpPath)
+
+	if _, err := tmpFile.Write(content); err != nil {
+		_ = tmpFile.Close()
+		return err
+	}
+	_ = tmpFile.Close()
+
+	cmdStr := fmt.Sprintf("mkdir -p $(dirname %s) && cp %s %s && chmod %o %s",
+		shellQuote(path), shellQuote(tmpPath), shellQuote(path), mode, shellQuote(path))
+	_, err = s.execPrivilegedBash(ctx, cmdStr)
+	return err
 }
 
 func (s *HashemService) GetStatus() (*HashemStatus, error) {
@@ -689,8 +751,7 @@ func (s *HashemService) SetCarrier(carrier string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, hashemBinPath, "carrier", "set", carrier)
-	out, err := cmd.CombinedOutput()
+	out, err := s.execPrivileged(ctx, hashemBinPath, "carrier", "set", carrier)
 	if err != nil {
 		logger.Warningf("hashem carrier set failed: %v, out: %s", err, string(out))
 		return fmt.Errorf("failed to set carrier: %s", string(out))
@@ -702,8 +763,7 @@ func (s *HashemService) Restart() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, hashemBinPath, "restart")
-	out, err := cmd.CombinedOutput()
+	out, err := s.execPrivileged(ctx, hashemBinPath, "restart")
 	if err != nil {
 		logger.Warningf("hashem restart failed: %v, out: %s", err, string(out))
 		return fmt.Errorf("failed to restart tunnel: %s", string(out))
@@ -719,8 +779,7 @@ func (s *HashemService) SetWatchdog(enabled bool) error {
 	if enabled {
 		action = "on"
 	}
-	cmd := exec.CommandContext(ctx, hashemBinPath, "watchdog", action)
-	out, err := cmd.CombinedOutput()
+	out, err := s.execPrivileged(ctx, hashemBinPath, "watchdog", action)
 	if err != nil {
 		logger.Warningf("hashem watchdog %s failed: %v, out: %s", action, err, string(out))
 		return fmt.Errorf("failed to set watchdog: %s", string(out))
@@ -802,8 +861,7 @@ func (s *HashemService) Setup(form HashemSetupForm) (string, error) {
 		}
 	}
 
-	cmd := exec.CommandContext(ctx, hashemBinPath, args...)
-	out, err := cmd.CombinedOutput()
+	out, err := s.execPrivileged(ctx, hashemBinPath, args...)
 	if err != nil {
 		logger.Warningf("hashem setup failed: %v, out: %s", err, string(out))
 		return string(out), fmt.Errorf("setup failed: %s", string(out))
@@ -858,14 +916,13 @@ func (s *HashemService) SyncInbounds() ([]int, error) {
 		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 		defer cancel()
 
-		cmd := exec.CommandContext(ctx, hashemBinPath, "setup-foreign",
+		out, err := s.execPrivileged(ctx, hashemBinPath, "setup-foreign",
 			"--local-pub", status.LocalPubIP,
 			"--remote-pub", status.RemotePubIP,
 			"--frp-port", strconv.Itoa(status.FrpPort),
 			"--ports", portsArg,
 			"--force",
 		)
-		out, err := cmd.CombinedOutput()
 		if err != nil {
 			return nil, fmt.Errorf("sync failed: %s", string(out))
 		}
@@ -904,9 +961,7 @@ func (s *HashemService) EditPorts(ports []int) error {
 	if _, err := os.Stat(hashemBinPath); err == nil {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
-		cmd := exec.CommandContext(ctx, hashemBinPath, "edit-peer-ports", "--id", "1", "--ports", portsArg)
-		cmd.Env = append(os.Environ(), "GRE_SKIP_PANEL=1")
-		if _, err := cmd.CombinedOutput(); err == nil {
+		if _, err := s.execPrivileged(ctx, hashemBinPath, "edit-peer-ports", "--id", "1", "--ports", portsArg); err == nil {
 			return nil
 		}
 	}
@@ -924,7 +979,9 @@ func (s *HashemService) EditPorts(ports []int) error {
 				doc.Peers[i]["ports"] = cleanPorts
 			}
 			if outData, err := json.MarshalIndent(doc, "", "  "); err == nil {
-				_ = os.WriteFile(peersPath, append(outData, '\n'), 0644)
+				if err := os.WriteFile(peersPath, append(outData, '\n'), 0644); err != nil {
+					_ = s.writePrivilegedFile(peersPath, append(outData, '\n'), 0644)
+				}
 				editedAny = true
 			}
 		}
@@ -933,38 +990,51 @@ func (s *HashemService) EditPorts(ports []int) error {
 	// Foreign client toml (/etc/frp/frpc.toml)
 	if rawToml, err := os.ReadFile(frpcTomlPath); err == nil {
 		updated := rewriteTomlPorts(string(rawToml), cleanPorts)
-		if err := os.WriteFile(frpcTomlPath, []byte(updated), 0644); err == nil {
-			exec.Command("systemctl", "reload-or-restart", "frpc").CombinedOutput()
-			editedAny = true
+		if err := os.WriteFile(frpcTomlPath, []byte(updated), 0644); err != nil {
+			_ = s.writePrivilegedFile(frpcTomlPath, []byte(updated), 0644)
 		}
+		c, cl := context.WithTimeout(context.Background(), 5*time.Second)
+		_, _ = s.execPrivileged(c, "systemctl", "reload-or-restart", "frpc")
+		cl()
+		editedAny = true
 	}
 
 	// Server toml (/etc/frp/frps.toml)
 	if rawToml, err := os.ReadFile(frpsTomlPath); err == nil {
 		if strings.Contains(string(rawToml), "[[proxies]]") {
 			updated := rewriteTomlPorts(string(rawToml), cleanPorts)
-			_ = os.WriteFile(frpsTomlPath, []byte(updated), 0644)
+			if err := os.WriteFile(frpsTomlPath, []byte(updated), 0644); err != nil {
+				_ = s.writePrivilegedFile(frpsTomlPath, []byte(updated), 0644)
+			}
 		}
-		exec.Command("systemctl", "reload-or-restart", "frps").CombinedOutput()
+		c, cl := context.WithTimeout(context.Background(), 5*time.Second)
+		_, _ = s.execPrivileged(c, "systemctl", "reload-or-restart", "frps")
+		cl()
 		editedAny = true
 	}
 
 	// Backhaul client toml (/etc/backhaul/client.toml)
 	if rawToml, err := os.ReadFile(backhaulClientTomlPath); err == nil {
 		updated := rewriteBackhaulPorts(string(rawToml), cleanPorts)
-		if err := os.WriteFile(backhaulClientTomlPath, []byte(updated), 0644); err == nil {
-			exec.Command("systemctl", "restart", "backhaul-client").CombinedOutput()
-			editedAny = true
+		if err := os.WriteFile(backhaulClientTomlPath, []byte(updated), 0644); err != nil {
+			_ = s.writePrivilegedFile(backhaulClientTomlPath, []byte(updated), 0644)
 		}
+		c, cl := context.WithTimeout(context.Background(), 5*time.Second)
+		_, _ = s.execPrivileged(c, "systemctl", "restart", "backhaul-client")
+		cl()
+		editedAny = true
 	}
 
 	// Backhaul server toml (/etc/backhaul/config.toml)
 	if rawToml, err := os.ReadFile(backhaulServerTomlPath); err == nil {
 		updated := rewriteBackhaulPorts(string(rawToml), cleanPorts)
-		if err := os.WriteFile(backhaulServerTomlPath, []byte(updated), 0644); err == nil {
-			exec.Command("systemctl", "restart", "backhaul-server").CombinedOutput()
-			editedAny = true
+		if err := os.WriteFile(backhaulServerTomlPath, []byte(updated), 0644); err != nil {
+			_ = s.writePrivilegedFile(backhaulServerTomlPath, []byte(updated), 0644)
 		}
+		c, cl := context.WithTimeout(context.Background(), 5*time.Second)
+		_, _ = s.execPrivileged(c, "systemctl", "restart", "backhaul-server")
+		cl()
+		editedAny = true
 	}
 
 	// Modified Backhaul tomls (/root/backhaul-core/*.toml)
@@ -1042,20 +1112,49 @@ func (s *HashemService) Install() (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
 
-	scriptCmd := "curl -fsSL https://fastly.jsdelivr.net/gh/pdnczone/hashem-panel@main/hashem.sh -o /usr/local/bin/hashem.sh 2>/dev/null || " +
-		"curl -fsSL https://ghproxy.net/https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /usr/local/bin/hashem.sh 2>/dev/null || " +
-		"curl -fsSL https://gh-proxy.com/https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /usr/local/bin/hashem.sh 2>/dev/null || " +
-		"curl -fsSL https://ghproxy.cn/https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /usr/local/bin/hashem.sh 2>/dev/null || " +
-		"curl -sL https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /usr/local/bin/hashem.sh; " +
-		"chmod +x /usr/local/bin/hashem.sh; " +
-		"ln -sf /usr/local/bin/hashem.sh /usr/local/bin/hashem; " +
-		"/usr/local/bin/hashem download-cores 2>&1 || true; " +
-		"/usr/local/bin/hashem --version 2>&1 || echo 'hashem installed'"
+	scriptCmd := `
+set -e
+mkdir -p /usr/local/bin /etc/frp /etc/gre-panel /etc/backhaul
 
-	cmd := exec.CommandContext(ctx, "bash", "-c", scriptCmd)
-	out, err := cmd.CombinedOutput()
+# 1. Download hashem.sh
+curl -fsSL --connect-timeout 10 --max-time 60 https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /usr/local/bin/hashem.sh 2>/dev/null || \
+curl -fsSL --connect-timeout 10 --max-time 60 https://fastly.jsdelivr.net/gh/pdnczone/hashem-panel@main/hashem.sh -o /usr/local/bin/hashem.sh 2>/dev/null || \
+curl -fsSL --connect-timeout 10 --max-time 60 https://ghproxy.net/https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /usr/local/bin/hashem.sh 2>/dev/null || \
+curl -fsSL --connect-timeout 10 --max-time 60 https://gh-proxy.com/https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /usr/local/bin/hashem.sh 2>/dev/null || \
+curl -sL https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /usr/local/bin/hashem.sh
+
+chmod +x /usr/local/bin/hashem.sh
+ln -sf /usr/local/bin/hashem.sh /usr/local/bin/hashem
+
+# 2. Download FRP binaries if not present
+if [ ! -x /usr/local/bin/frpc ] || [ ! -x /usr/local/bin/frps ]; then
+  ARCH=$(uname -m)
+  case "$ARCH" in
+    x86_64) FRP_ARCH="amd64" ;;
+    aarch64|arm64) FRP_ARCH="arm64" ;;
+    *) FRP_ARCH="amd64" ;;
+  esac
+  TMP_FRP=$(mktemp -d)
+  (
+    curl -fsSL --connect-timeout 10 --max-time 60 https://github.com/fatedier/frp/releases/download/v0.71.0/frp_0.71.0_linux_${FRP_ARCH}.tar.gz -o "${TMP_FRP}/frp.tar.gz" 2>/dev/null || \
+    curl -fsSL --connect-timeout 10 --max-time 60 https://ghproxy.net/https://github.com/fatedier/frp/releases/download/v0.71.0/frp_0.71.0_linux_${FRP_ARCH}.tar.gz -o "${TMP_FRP}/frp.tar.gz" 2>/dev/null
+  ) && tar -xzf "${TMP_FRP}/frp.tar.gz" -C "${TMP_FRP}" && \
+    cp "${TMP_FRP}/frp_0.71.0_linux_${FRP_ARCH}/frpc" /usr/local/bin/ && \
+    cp "${TMP_FRP}/frp_0.71.0_linux_${FRP_ARCH}/frps" /usr/local/bin/ && \
+    chmod +x /usr/local/bin/frpc /usr/local/bin/frps || true
+  rm -rf "${TMP_FRP}"
+fi
+
+echo "hashem core installed successfully"
+`
+
+	out, err := s.execPrivilegedBash(ctx, scriptCmd)
 	if err != nil {
-		return string(out), fmt.Errorf("install failed: %s", string(out))
+		logger.Warningf("hashem install failed: %v, out: %s", err, string(out))
+		return string(out), fmt.Errorf("install failed: %w (output: %s)", err, string(out))
+	}
+	if !s.IsInstalled() {
+		return string(out), fmt.Errorf("installation failed: binary not found at %s", hashemBinPath)
 	}
 	return string(out), nil
 }
@@ -1445,27 +1544,27 @@ func (s *HashemService) SetupSSH(form HashemSSHSetupForm) (*HashemSSHSetupResult
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	var cmdForeign *exec.Cmd
+	var argsForeign []string
 	if engine == "backhaul" {
-		cmdForeign = exec.CommandContext(ctx, hashemBinPath, "setup-backhaul-foreign",
+		argsForeign = []string{"setup-backhaul-foreign",
 			"--local-pub", foreignIP,
 			"--remote-pub", iranIP,
 			"--port", strconv.Itoa(bhPort),
 			"--transport", transport,
 			"--token", token,
 			"--force",
-		)
+		}
 	} else if engine == "gre-backhaul" {
-		cmdForeign = exec.CommandContext(ctx, hashemBinPath, "setup-gre-backhaul-foreign",
+		argsForeign = []string{"setup-gre-backhaul-foreign",
 			"--local-pub", foreignIP,
 			"--remote-pub", iranIP,
 			"--port", strconv.Itoa(bhPort),
 			"--transport", transport,
 			"--token", token,
 			"--force",
-		)
+		}
 	} else {
-		cmdForeign = exec.CommandContext(ctx, hashemBinPath, "setup-foreign",
+		argsForeign = []string{"setup-foreign",
 			"--local-pub", foreignIP,
 			"--remote-pub", iranIP,
 			"--frp-port", strconv.Itoa(frpPort),
@@ -1474,13 +1573,12 @@ func (s *HashemService) SetupSSH(form HashemSSHSetupForm) (*HashemSSHSetupResult
 			"--local-gre", "10.10.10.1",
 			"--peer-gre", "10.10.10.2",
 			"--force",
-		)
+		}
 	}
-	fOut, _ := cmdForeign.CombinedOutput()
+	fOut, _ := s.execPrivileged(ctx, hashemBinPath, argsForeign...)
 
 	if engine != "backhaul" && carrier != "direct" && carrier != "" {
-		cmdCarrier := exec.CommandContext(ctx, hashemBinPath, "carrier", "mode", carrier)
-		_ = cmdCarrier.Run()
+		_, _ = s.execPrivileged(ctx, hashemBinPath, "carrier", "mode", carrier)
 	}
 	if engine != "backhaul" {
 		s.optimizeForeignNetwork(ports)
@@ -1505,6 +1603,9 @@ func (s *HashemService) SetupSSH(form HashemSSHSetupForm) (*HashemSSHSetupResult
 }
 
 func (s *HashemService) optimizeForeignNetwork(ports string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
 	if data, err := os.ReadFile(frpcTomlPath); err == nil {
 		sData := string(data)
 		if strings.Contains(sData, "transport.poolCount") {
@@ -1515,7 +1616,9 @@ func (s *HashemService) optimizeForeignNetwork(ports string) {
 		}
 		reUdp := regexp.MustCompile(`(?s)\[\[proxies\]\]\s*\nname\s*=\s*"udp_[^"]+"\s*\ntype\s*=\s*"udp"[^\[]*`)
 		sData = reUdp.ReplaceAllString(sData, "")
-		_ = os.WriteFile(frpcTomlPath, []byte(sData), 0644)
+		if err := os.WriteFile(frpcTomlPath, []byte(sData), 0644); err != nil {
+			_ = s.writePrivilegedFile(frpcTomlPath, []byte(sData), 0644)
+		}
 	}
 
 	fixFrpcService := `[Unit]
@@ -1533,17 +1636,20 @@ ExecStart=/usr/local/bin/frpc -c /etc/frp/frpc.toml
 [Install]
 WantedBy=multi-user.target
 `
-	_ = os.WriteFile("/etc/systemd/system/frpc.service", []byte(fixFrpcService), 0644)
-	_ = exec.Command("systemctl", "daemon-reload").Run()
-	_ = exec.Command("systemctl", "restart", "frpc").Run()
+	if err := os.WriteFile("/etc/systemd/system/frpc.service", []byte(fixFrpcService), 0644); err != nil {
+		_ = s.writePrivilegedFile("/etc/systemd/system/frpc.service", []byte(fixFrpcService), 0644)
+	}
+
+	_, _ = s.execPrivileged(ctx, "systemctl", "daemon-reload")
+	_, _ = s.execPrivileged(ctx, "systemctl", "restart", "frpc")
 
 	greIf := getGreInterface()
-	_ = exec.Command("ip", "link", "set", "dev", greIf, "mtu", "1380").Run()
-	_ = exec.Command("iptables", "-t", "mangle", "-C", "POSTROUTING", "-o", greIf, "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--set-mss", "1340").Run()
-	_ = exec.Command("iptables", "-t", "mangle", "-A", "POSTROUTING", "-o", greIf, "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--set-mss", "1340").Run()
-	_ = exec.Command("iptables", "-t", "mangle", "-C", "FORWARD", "-o", greIf, "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--set-mss", "1340").Run()
-	_ = exec.Command("iptables", "-t", "mangle", "-A", "FORWARD", "-o", greIf, "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--set-mss", "1340").Run()
-	if out, err := exec.Command(hashemBinPath, "optimize").CombinedOutput(); err != nil {
+	_, _ = s.execPrivileged(ctx, "ip", "link", "set", "dev", greIf, "mtu", "1380")
+	_, _ = s.execPrivileged(ctx, "iptables", "-t", "mangle", "-C", "POSTROUTING", "-o", greIf, "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--set-mss", "1340")
+	_, _ = s.execPrivileged(ctx, "iptables", "-t", "mangle", "-A", "POSTROUTING", "-o", greIf, "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--set-mss", "1340")
+	_, _ = s.execPrivileged(ctx, "iptables", "-t", "mangle", "-C", "FORWARD", "-o", greIf, "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--set-mss", "1340")
+	_, _ = s.execPrivileged(ctx, "iptables", "-t", "mangle", "-A", "FORWARD", "-o", greIf, "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--set-mss", "1340")
+	if out, err := s.execPrivileged(ctx, hashemBinPath, "optimize"); err != nil {
 		logger.Warningf("hashem optimize failed: %v, out: %s", err, string(out))
 	}
 }
@@ -1584,10 +1690,11 @@ func buildIranSetupCommands(iranIP, foreignIP string, frpPort, bhPort int, token
 	)
 
 	downloadPipe := "if [ -f /opt/frp_backup/frps ] && [ ! -s /usr/local/bin/frps ]; then cp /opt/frp_backup/frps /usr/local/bin/frps && chmod +x /usr/local/bin/frps; fi; " +
-		"curl -fsSL https://fastly.jsdelivr.net/gh/pdnczone/hashem-panel@main/hashem.sh -o /tmp/hashem.sh 2>/dev/null || " +
-		"curl -fsSL https://ghproxy.net/https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /tmp/hashem.sh 2>/dev/null || " +
-		"curl -fsSL https://gh-proxy.com/https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /tmp/hashem.sh 2>/dev/null || " +
-		"curl -fsSL https://ghproxy.cn/https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /tmp/hashem.sh 2>/dev/null || " +
+		"curl -fsSL --connect-timeout 5 --max-time 30 https://fastly.jsdelivr.net/gh/pdnczone/hashem-panel@main/hashem.sh -o /tmp/hashem.sh 2>/dev/null || " +
+		"curl -fsSL --connect-timeout 5 --max-time 30 https://ghproxy.net/https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /tmp/hashem.sh 2>/dev/null || " +
+		"curl -fsSL --connect-timeout 5 --max-time 30 https://gh-proxy.com/https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /tmp/hashem.sh 2>/dev/null || " +
+		"curl -fsSL --connect-timeout 5 --max-time 30 https://ghproxy.cn/https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /tmp/hashem.sh 2>/dev/null || " +
+		"curl -fsSL --connect-timeout 5 --max-time 30 https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /tmp/hashem.sh 2>/dev/null || " +
 		"curl -sL https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /tmp/hashem.sh; " +
 		"chmod +x /tmp/hashem.sh;"
 
@@ -1608,9 +1715,13 @@ func buildIranSetupCommands(iranIP, foreignIP string, frpPort, bhPort int, token
 			downloadPipe, iranIP, foreignIP, bhPort, transport, token, portsSafe, carrierCmd, optimizeCmd,
 		)
 	} else {
+		portsArg := ""
+		if portsSafe != "" {
+			portsArg = fmt.Sprintf(" --ports \"%s\"", portsSafe)
+		}
 		oneLiner = fmt.Sprintf(
-			"%s bash /tmp/hashem.sh setup-iran --local-pub %s --remote-pub %s --frp-port %d --token %s --local-gre 10.10.10.2 --peer-gre 10.10.10.1 --force && %s%s && %s && rm -f /tmp/hashem.sh",
-			downloadPipe, iranIP, foreignIP, frpPort, token, carrierCmd, peerJsonCmd, optimizeCmd,
+			"%s bash /tmp/hashem.sh setup-iran --local-pub %s --remote-pub %s --frp-port %d --token %s%s --local-gre 10.10.10.2 --peer-gre 10.10.10.1 --force && %s%s && %s && rm -f /tmp/hashem.sh",
+			downloadPipe, iranIP, foreignIP, frpPort, token, portsArg, carrierCmd, peerJsonCmd, optimizeCmd,
 		)
 	}
 
@@ -1642,40 +1753,47 @@ func (s *HashemService) GenerateOneLiner(form HashemOneLinerForm) (*HashemOneLin
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	var cmdForeign *exec.Cmd
+	var argsForeign []string
 	if engine == "backhaul" {
-		cmdForeign = exec.CommandContext(ctx, hashemBinPath, "setup-backhaul-foreign",
+		argsForeign = []string{"setup-backhaul-foreign",
 			"--local-pub", foreignIP,
 			"--remote-pub", iranIP,
 			"--port", strconv.Itoa(bhPort),
 			"--transport", transport,
 			"--token", token,
 			"--force",
-		)
+		}
 	} else if engine == "gre-backhaul" {
-		cmdForeign = exec.CommandContext(ctx, hashemBinPath, "setup-gre-backhaul-foreign",
+		argsForeign = []string{"setup-gre-backhaul-foreign",
 			"--local-pub", foreignIP,
 			"--remote-pub", iranIP,
 			"--port", strconv.Itoa(bhPort),
 			"--transport", transport,
 			"--token", token,
 			"--force",
-		)
+		}
 	} else {
-		cmdForeign = exec.CommandContext(ctx, hashemBinPath, "setup-foreign",
+		argsForeign = []string{"setup-foreign",
 			"--local-pub", foreignIP,
 			"--remote-pub", iranIP,
 			"--frp-port", strconv.Itoa(frpPort),
 			"--token", token,
 			"--ports", ports,
 			"--force",
-		)
+		}
 	}
-	_ = cmdForeign.Run()
+	outForeign, errForeign := s.execPrivileged(ctx, hashemBinPath, argsForeign...)
+	if errForeign != nil {
+		logger.Warningf("hashem setup-foreign failed: %v, out: %s", errForeign, string(outForeign))
+	}
 
 	if engine != "backhaul" {
-		cmdCarrier := exec.CommandContext(ctx, hashemBinPath, "carrier", "mode", carrier)
-		_ = cmdCarrier.Run()
+		if carrier != "" && carrier != "direct" {
+			outCarrier, errCarrier := s.execPrivileged(ctx, hashemBinPath, "carrier", "mode", carrier)
+			if errCarrier != nil {
+				logger.Warningf("hashem carrier mode failed: %v, out: %s", errCarrier, string(outCarrier))
+			}
+		}
 		s.optimizeForeignNetwork(ports)
 	}
 
@@ -1707,38 +1825,36 @@ func (s *HashemService) Remove() error {
 	defer cancel()
 
 	// 1. Stop and disable FRP services
-	_ = exec.CommandContext(ctx, "systemctl", "stop", "frpc").Run()
-	_ = exec.CommandContext(ctx, "systemctl", "disable", "frpc").Run()
-	_ = exec.CommandContext(ctx, "systemctl", "stop", "frps").Run()
-	_ = exec.CommandContext(ctx, "systemctl", "disable", "frps").Run()
-	_ = os.Remove("/etc/systemd/system/frpc.service")
-	_ = os.Remove("/etc/systemd/system/frps.service")
-	_ = os.RemoveAll("/etc/frp")
+	_, _ = s.execPrivileged(ctx, "systemctl", "stop", "frpc")
+	_, _ = s.execPrivileged(ctx, "systemctl", "disable", "frpc")
+	_, _ = s.execPrivileged(ctx, "systemctl", "stop", "frps")
+	_, _ = s.execPrivileged(ctx, "systemctl", "disable", "frps")
 
 	// 2. Stop and disable Backhaul services
-	_ = exec.CommandContext(ctx, "systemctl", "stop", "backhaul-client").Run()
-	_ = exec.CommandContext(ctx, "systemctl", "disable", "backhaul-client").Run()
-	_ = exec.CommandContext(ctx, "systemctl", "stop", "backhaul-server").Run()
-	_ = exec.CommandContext(ctx, "systemctl", "disable", "backhaul-server").Run()
-	_ = os.Remove("/etc/systemd/system/backhaul-client.service")
-	_ = os.Remove("/etc/systemd/system/backhaul-server.service")
-	_ = os.RemoveAll("/etc/backhaul")
+	_, _ = s.execPrivileged(ctx, "systemctl", "stop", "backhaul-client")
+	_, _ = s.execPrivileged(ctx, "systemctl", "disable", "backhaul-client")
+	_, _ = s.execPrivileged(ctx, "systemctl", "stop", "backhaul-server")
+	_, _ = s.execPrivileged(ctx, "systemctl", "disable", "backhaul-server")
 
 	// 3. Delete GRE tunnel interface
 	greIf := getGreInterface()
-	_ = exec.CommandContext(ctx, "ip", "link", "set", greIf, "down").Run()
-	_ = exec.CommandContext(ctx, "ip", "link", "del", greIf).Run()
+	_, _ = s.execPrivileged(ctx, "ip", "link", "set", greIf, "down")
+	_, _ = s.execPrivileged(ctx, "ip", "link", "del", greIf)
 
 	// 4. Remove FoU listeners
-	_ = exec.CommandContext(ctx, "ip", "fou", "del", "port", "443").Run()
-	_ = exec.CommandContext(ctx, "ip", "fou", "del", "port", "19998").Run()
-	_ = exec.CommandContext(ctx, "ip", "fou", "del", "port", "55555").Run()
+	_, _ = s.execPrivileged(ctx, "ip", "fou", "del", "port", "443")
+	_, _ = s.execPrivileged(ctx, "ip", "fou", "del", "port", "19998")
+	_, _ = s.execPrivileged(ctx, "ip", "fou", "del", "port", "55555")
 
-	// 5. Remove gre-panel config directory
-	_ = os.RemoveAll("/etc/gre-panel")
+	// 5. Clean up config files and service units via privileged bash
+	cleanCmd := "rm -rf /etc/frp /etc/backhaul /etc/gre-panel " +
+		"/etc/systemd/system/frpc.service /etc/systemd/system/frps.service " +
+		"/etc/systemd/system/backhaul-client.service /etc/systemd/system/backhaul-server.service " +
+		"/etc/systemd/system/gre-tunnel.service"
+	_, _ = s.execPrivilegedBash(ctx, cleanCmd)
 
 	// 6. Reload systemd daemon
-	_ = exec.CommandContext(ctx, "systemctl", "daemon-reload").Run()
+	_, _ = s.execPrivileged(ctx, "systemctl", "daemon-reload")
 
 	logger.Info("Hashem tunnel removed completely from host")
 	return nil

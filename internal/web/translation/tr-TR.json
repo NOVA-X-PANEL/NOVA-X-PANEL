@@ -318,7 +318,10 @@
       "accessBlocked": "BLOCKED",
       "accessProxy": "PROXY",
       "importKeepHostSettings": "Bu makinenin ayarlarını koru",
-      "importKeepHostSettingsDesc": "Yüklenen dosyadan almak yerine bu panelin dinleme adreslerini, portlarını, temel yolunu, sertifikalarını ve düğüm kimliğini korur."
+      "importKeepHostSettingsDesc": "Yüklenen dosyadan almak yerine bu panelin dinleme adreslerini, portlarını, temel yolunu, sertifikalarını ve düğüm kimliğini korur.",
+      "telegramChannel": "Resmi Telegram Kanalı",
+      "telegramChannelDesc": "Güncellemeler, kılavuzlar ve destek için resmi Telegram kanalımıza katılın.",
+      "telegramChannelBtn": "Kanala Katıl"
     },
     "inbounds": {
       "totalDownUp": "Toplam Gönderilen/Alınan",

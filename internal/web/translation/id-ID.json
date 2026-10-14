@@ -318,7 +318,10 @@
       "accessBlocked": "BLOCKED",
       "accessProxy": "PROXY",
       "importKeepHostSettings": "Pertahankan pengaturan mesin ini",
-      "importKeepHostSettingsDesc": "Mempertahankan alamat dengar, port, path dasar, sertifikat, dan identitas node panel ini alih-alih mengambilnya dari berkas yang diunggah."
+      "importKeepHostSettingsDesc": "Mempertahankan alamat dengar, port, path dasar, sertifikat, dan identitas node panel ini alih-alih mengambilnya dari berkas yang diunggah.",
+      "telegramChannel": "Saluran Telegram Resmi",
+      "telegramChannelDesc": "Bergabunglah dengan saluran Telegram resmi kami untuk pembaruan, panduan, dan dukungan.",
+      "telegramChannelBtn": "Gabung Saluran"
     },
     "inbounds": {
       "totalDownUp": "Total Terkirim/Diterima",

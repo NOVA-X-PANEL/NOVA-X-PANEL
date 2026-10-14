@@ -318,7 +318,10 @@
       "accessBlocked": "BLOCKED",
       "accessProxy": "PROXY",
       "importKeepHostSettings": "保留本機設定",
-      "importKeepHostSettingsDesc": "保留本面板的監聽位址、連接埠、基礎路徑、憑證與節點身分，而不是使用上傳檔案中的值。"
+      "importKeepHostSettingsDesc": "保留本面板的監聽位址、連接埠、基礎路徑、憑證與節點身分，而不是使用上傳檔案中的值。",
+      "telegramChannel": "官方 Telegram 頻道",
+      "telegramChannelDesc": "加入我們的官方 Telegram 頻道以獲取最新更新、指南和技術支援。",
+      "telegramChannelBtn": "加入頻道"
     },
     "inbounds": {
       "totalDownUp": "總上傳 / 下載",

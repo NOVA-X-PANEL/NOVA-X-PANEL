@@ -29,6 +29,7 @@ import VitalTile from './VitalTile';
 import ThroughputCard from './ThroughputCard';
 import ConnectionsCard from './ConnectionsCard';
 import SystemStrip from './SystemStrip';
+import { TelegramBanner } from './TelegramBanner';
 import { mean, peak, useOverviewHistory } from './useOverviewHistory';
 import type { PanelUpdateInfo } from './PanelUpdateModal';
 const JsonEditor = lazy(() => import('@/components/form/JsonEditor'));
@@ -225,6 +226,8 @@ export default function IndexPage() {
                   <hr className="ov-rule" />
 
                   <OverviewStats status={status} />
+
+                  <TelegramBanner />
 
                   <div className="nc-split">
                     <div className="nc-main">

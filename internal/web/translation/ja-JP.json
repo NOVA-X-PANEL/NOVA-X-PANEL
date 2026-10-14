@@ -318,7 +318,10 @@
       "accessBlocked": "BLOCKED",
       "accessProxy": "PROXY",
       "importKeepHostSettings": "このマシンの設定を保持する",
-      "importKeepHostSettingsDesc": "アップロードしたファイルの値ではなく、このパネルのリッスンアドレス、ポート、ベースパス、証明書、ノード ID を保持します。"
+      "importKeepHostSettingsDesc": "アップロードしたファイルの値ではなく、このパネルのリッスンアドレス、ポート、ベースパス、証明書、ノード ID を保持します。",
+      "telegramChannel": "公式Telegramチャンネル",
+      "telegramChannelDesc": "最新のアップデート、ガイド、サポートについては公式Telegramチャンネルにご参加ください。",
+      "telegramChannelBtn": "チャンネルに参加"
     },
     "inbounds": {
       "totalDownUp": "総アップロード / ダウンロード",

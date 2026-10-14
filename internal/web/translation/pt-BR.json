@@ -318,7 +318,10 @@
       "accessBlocked": "BLOCKED",
       "accessProxy": "PROXY",
       "importKeepHostSettings": "Manter as configurações desta máquina",
-      "importKeepHostSettingsDesc": "Mantém os endereços de escuta, as portas, o caminho base, os certificados e a identidade de nó deste painel em vez de obtê-los do arquivo enviado."
+      "importKeepHostSettingsDesc": "Mantém os endereços de escuta, as portas, o caminho base, os certificados e a identidade de nó deste painel em vez de obtê-los do arquivo enviado.",
+      "telegramChannel": "Canal oficial do Telegram",
+      "telegramChannelDesc": "Junte-se ao nosso canal oficial do Telegram para atualizações, guias e suporte.",
+      "telegramChannelBtn": "Entrar no canal"
     },
     "inbounds": {
       "totalDownUp": "Total Enviado/Recebido",

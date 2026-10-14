@@ -248,9 +248,9 @@ export default function AppSidebar() {
       { key: '/hashem', icon: 'hashem', title: t('menu.hashem') },
       { key: '/telegram-shop', icon: 'telegramShop', title: t('menu.telegramShop') },
       { key: '/admins', icon: 'admins', title: t('menu.admins') },
+      { key: '/admin-roles', icon: 'roles', title: t('menu.adminRoles') },
       // Shown only when the account may hold an API token; canAccessRoute gates it.
       { key: '/my-api', icon: 'apikey', title: t('menu.myApi') },
-      { key: '/admin-roles', icon: 'roles', title: t('menu.adminRoles') },
       { key: '/hosts', icon: 'hosts', title: t('menu.hosts') },
       { key: '/outbound', icon: 'outbound', title: t('menu.outbounds') },
       { key: '/routing', icon: 'routing', title: t('menu.routing') },

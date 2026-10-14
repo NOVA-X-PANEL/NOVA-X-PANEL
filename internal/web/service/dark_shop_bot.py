@@ -134,11 +134,19 @@ def init_db():
         sent_at INTEGER
     )
     """)
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS wheel_luck (
+        user_id INTEGER PRIMARY KEY,
+        last_spun_at INTEGER
+    )
+    """)
     # Set default settings
     c.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('force_join_channel', '')")
     c.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('force_join_enabled', '0')")
     c.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('referral_percent', '10')")
     c.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('support_username', '')")
+    c.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('trial_gb', '1')")
+    c.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('trial_days', '1')")
     conn.commit()
     conn.close()
 
@@ -166,11 +174,42 @@ def load_config():
     with open(CONFIG_PATH, "r", encoding="utf-8") as f:
         return json.load(f)
 
+DEFAULT_PLANS = [
+    {"id": 1, "title": "پلن برنزی (۳۰ گیگ - ۱ ماهه)", "traffic_gb": 30.0, "days": 30, "price": 45000, "enabled": True},
+    {"id": 2, "title": "پلن نقره‌ای (۵۰ گیگ - ۱ ماهه)", "traffic_gb": 50.0, "days": 30, "price": 75000, "enabled": True},
+    {"id": 3, "title": "پلن طلایی (۱۰۰ گیگ - ۲ ماهه)", "traffic_gb": 100.0, "days": 60, "price": 140000, "enabled": True},
+    {"id": 4, "title": "پلن الماس (۲۰۰ گیگ - ۳ ماهه)", "traffic_gb": 200.0, "days": 90, "price": 260000, "enabled": True},
+]
+
 def load_plans():
-    if not os.path.exists(PLANS_PATH):
-        return []
-    with open(PLANS_PATH, "r", encoding="utf-8") as f:
-        return json.load(f)
+    plans = []
+    if os.path.exists(PLANS_PATH):
+        try:
+            with open(PLANS_PATH, "r", encoding="utf-8") as f:
+                plans = json.load(f)
+        except Exception:
+            plans = []
+    if not plans:
+        plans = [dict(p) for p in DEFAULT_PLANS]
+        try:
+            os.makedirs(os.path.dirname(PLANS_PATH), exist_ok=True)
+            with open(PLANS_PATH, "w", encoding="utf-8") as f:
+                json.dump(plans, f, ensure_ascii=False, indent=2)
+        except Exception:
+            pass
+
+    for p in plans:
+        if "price" not in p and "price_tomans" in p:
+            p["price"] = p["price_tomans"]
+        if "days" not in p and "period_days" in p:
+            p["days"] = p["period_days"]
+        if "price" not in p:
+            p["price"] = 50000
+        if "days" not in p:
+            p["days"] = 30
+        if "traffic_gb" not in p:
+            p["traffic_gb"] = 50.0
+    return plans
 
 def get_plan_by_id(plan_id):
     plans = load_plans()
@@ -641,12 +680,14 @@ def get_user_xray_clients(user_id):
 def get_main_keyboard(user_id):
     admin_id = get_admin_chat_id()
     kb = [
-        [{"text": "🎁 دریافت کانفیگ رایگان"}, {"text": "📊 سرویس‌های من"}],
-        [{"text": "🔄 تمدید اشتراک"}, {"text": "📱 دانلود برنامه‌ها"}],
-        [{"text": "📞 پشتیبانی"}]
+        [{"text": "🔐 خرید اشتراک"}, {"text": "♻️ تمدید سرویس"}],
+        [{"text": "🔑 اکانت تست"}, {"text": "🎲 گردونه شانس"}],
+        [{"text": "🛍 سرویس های من"}, {"text": "🏦 کیف پول + شارژ"}],
+        [{"text": "👥 زیر مجموعه گیری"}, {"text": "💵 تعرفه اشتراک ها"}],
+        [{"text": "☎️ پشتیبانی"}, {"text": "📚 آموزش"}]
     ]
     if user_id == admin_id:
-        kb.append([{"text": "⚙️ پنل مدیریت ربات"}])
+        kb.append([{"text": "⚙️ پنل مدیریت"}])
     return {"keyboard": kb, "resize_keyboard": True}
 
 def get_cancel_keyboard():
@@ -658,10 +699,11 @@ def get_cancel_keyboard():
 def get_admin_inline_keyboard():
     return {
         "inline_keyboard": [
-            [{"text": "📊 آمار و گزارش لحظه‌ای", "callback_data": "adm_stats"}],
+            [{"text": "📊 آمار و گزارش لحظه‌ای", "callback_data": "adm_stats"}, {"text": "👥 مدیریت کاربران", "callback_data": "adm_user_manage"}],
+            [{"text": "🛍 لیست پلن‌ها", "callback_data": "adm_plans"}, {"text": "💳 تنظیمات شماره کارت", "callback_data": "adm_card"}],
             [{"text": "📢 ارسال پیام همگانی", "callback_data": "adm_bcast"}, {"text": "🔄 فوروارد همگانی", "callback_data": "adm_fwd"}],
-            [{"text": "👥 مدیریت و شارژ کاربر", "callback_data": "adm_user_manage"}, {"text": "💳 تنظیمات شماره کارت", "callback_data": "adm_card"}],
-            [{"text": "🏷 مدیریت کدهای تخفیف", "callback_data": "adm_discounts"}, {"text": "📢 قفل جوین اجباری", "callback_data": "adm_force_join"}],
+            [{"text": "🏷 مدیریت کدهای تخفیف", "callback_data": "adm_discounts"}, {"text": "🔒 قفل جوین اجباری", "callback_data": "adm_force_join"}],
+            [{"text": "🔑 تنظیمات اکانت تست", "callback_data": "adm_trial_settings"}],
             [{"text": "🔙 خروج از پنل مدیریت", "callback_data": "adm_exit"}]
         ]
     }
@@ -912,6 +954,124 @@ def handle_callback_query(cq):
                 ]
             }
             edit_message_text(user_id, msg_id, f"📢 <b>قفل جوین اجباری کانال</b>\n\nکانال هدف: <code>{channel}</code>\nوضعیت فعلی: <b>{status_lbl}</b>", ikb)
+        return
+
+    if data == "adm_plans":
+        if user_id != admin_id:
+            return
+        plans = load_plans()
+        txt = "🛍 <b>لیست پلن‌های فروشگاه (Mirza Edition):</b>\n\n"
+        ikb_rows = []
+        for p in plans:
+            txt += f"▫️ <b>#{p.get('id')} - {p.get('title')}</b>\n"
+            txt += f"   حجم: {p.get('traffic_gb')} GB | زمان: {p.get('days')} روز | قیمت: {p.get('price'):,} تومان\n\n"
+            ikb_rows.append([{"text": f"❌ حذف #{p.get('id')} {p.get('title')}", "callback_data": f"adm_delplan_{p.get('id')}"}])
+        ikb_rows.append([{"text": "➕ افزودن پلن جدید", "callback_data": "adm_add_plan"}])
+        ikb_rows.append([{"text": "🔙 بازگشت به پنل مدیریت", "callback_data": "adm_stats"}])
+        answer_callback_query(cq_id)
+        if msg_id:
+            edit_message_text(user_id, msg_id, txt, {"inline_keyboard": ikb_rows})
+        return
+
+    if data == "adm_add_plan":
+        if user_id != admin_id:
+            return
+        set_user_state(user_id, "WAIT_NEW_PLAN")
+        answer_callback_query(cq_id)
+        txt = (
+            "🛍 <b>افزودن پلن جدید</b>\n\n"
+            "مشخصات را با فرمت زیر ارسال کنید:\n"
+            "<code>عنوان*حجم_گیگ*مدت_روز*قیمت_تومان</code>\n\n"
+            "مثال:\n"
+            "<code>پلن نامحدود*150*30*180000</code>"
+        )
+        send_message(user_id, txt, get_cancel_keyboard())
+        return
+
+    if data.startswith("adm_delplan_"):
+        if user_id != admin_id:
+            return
+        pid = int(data.split("_")[2])
+        plans = load_plans()
+        plans = [p for p in plans if p.get("id") != pid]
+        try:
+            with open(PLANS_PATH, "w", encoding="utf-8") as f:
+                json.dump(plans, f, ensure_ascii=False, indent=2)
+        except Exception:
+            pass
+        answer_callback_query(cq_id, "پلن با موفقیت حذف شد! ✅")
+        if msg_id:
+            edit_message_text(user_id, msg_id, "✅ پلن با موفقیت حذف گردید.", get_admin_inline_keyboard())
+        return
+
+    if data == "adm_trial_settings":
+        if user_id != admin_id:
+            return
+        t_gb = get_setting("trial_gb", "1")
+        t_days = get_setting("trial_days", "1")
+        set_user_state(user_id, "WAIT_TRIAL_SETTINGS")
+        answer_callback_query(cq_id)
+        txt = (
+            f"🔑 <b>تنظیمات اکانت تست (Mirza Edition):</b>\n\n"
+            f"▫️ حجم تست فعلی: <b>{t_gb} گیگابایت</b>\n"
+            f"▫️ مدت اعتبار فعلی: <b>{t_days} روز</b>\n\n"
+            f"جهت تغییر، مقادیر جدید را با فرمت زیر بفرستید:\n"
+            f"<code>حجم_گیگابایت*مدت_روز</code>\n\n"
+            f"مثال:\n"
+            f"<code>2*1</code> (یعنی ۲ گیگابایت برای ۱ روز)"
+        )
+        send_message(user_id, txt, get_cancel_keyboard())
+        return
+
+    if data.startswith("adm_user_add_"):
+        if user_id != admin_id:
+            return
+        target_uid = int(data.split("_")[3])
+        set_user_state(user_id, "WAIT_USER_ADD_BAL", {"target_uid": target_uid})
+        answer_callback_query(cq_id)
+        send_message(user_id, f"💰 لطفاً مبلغ مورد نظر جهت **افزایش موجودی** کاربر <code>{target_uid}</code> را به تومان وارد کنید:\n(مثال: 50000)", get_cancel_keyboard())
+        return
+
+    if data.startswith("adm_user_sub_"):
+        if user_id != admin_id:
+            return
+        target_uid = int(data.split("_")[3])
+        set_user_state(user_id, "WAIT_USER_SUB_BAL", {"target_uid": target_uid})
+        answer_callback_query(cq_id)
+        send_message(user_id, f"➖ لطفاً مبلغ مورد نظر جهت **کسر از موجودی** کاربر <code>{target_uid}</code> را به تومان وارد کنید:\n(مثال: 20000)", get_cancel_keyboard())
+        return
+
+    if data.startswith("adm_user_ban_"):
+        if user_id != admin_id:
+            return
+        target_uid = int(data.split("_")[3])
+        conn = get_db()
+        c = conn.cursor()
+        c.execute("SELECT is_banned FROM users WHERE user_id = ?", (target_uid,))
+        r = c.fetchone()
+        cur_ban = r["is_banned"] if r else 0
+        new_ban = 0 if cur_ban else 1
+        c.execute("UPDATE users SET is_banned = ? WHERE user_id = ?", (new_ban, target_uid))
+        conn.commit()
+        conn.close()
+        st_txt = "مسدود (Ban) شد ⛔️" if new_ban else "آزاد (Unban) شد ✅"
+        answer_callback_query(cq_id, f"وضعیت کاربر به {st_txt} تغییر یافت.", show_alert=True)
+        return
+
+    if data.startswith("qr_"):
+        email = data[3:]
+        clients = get_user_xray_clients(user_id)
+        target = None
+        for cl in clients:
+            if cl.get("email") == email:
+                target = cl
+                break
+        if target and target.get("sub_url"):
+            answer_callback_query(cq_id)
+            qr_bytes = generate_qr_bytes(target["sub_url"])
+            send_photo(user_id, qr_bytes, caption=f"📸 <b>بارکد اتصال سرویس:</b> <code>{email}</code>\n🔗 <code>{target['sub_url']}</code>")
+        else:
+            answer_callback_query(cq_id, "لینک سابسکریپشن یافت نشد!", show_alert=True)
         return
 
     # Handle Approval / Rejection by Admin
@@ -1179,17 +1339,16 @@ def handle_callback_query(cq):
 
     if data.startswith("renew_"):
         email = data[6:]
-        ok = renew_xray_client(email, 50.0, 30.0)
-        answer_callback_query(cq_id, "سرویس شما با موفقیت تمدید شد! 🎉", show_alert=True)
-        if ok:
-            r_msg = f"🎉 <b>اشتراک شما با موفقیت تمدید شد!</b>\n\n🔹 شناسه: <code>{email}</code>\n📊 ۵۰ گیگابایت حجم و ۳۰ روز اعتبار اضافه گردید.\nلینک قبلی شما مجدداً فعال است."
-            if msg_id:
-                edit_message_text(user_id, msg_id, r_msg)
-            else:
-                send_message(user_id, r_msg, get_main_keyboard(user_id))
+        plans = load_plans()
+        ikb_rows = []
+        for p in plans:
+            ikb_rows.append([{"text": f"🔄 {p['title']} ({p['traffic_gb']}GB - {p['price']:,}T)", "callback_data": f"dorenew_{p['id']}_{email}"}])
+        ikb_rows.append([{"text": "🔙 بازگشت", "callback_data": "adm_exit"}])
+        answer_callback_query(cq_id)
+        if msg_id:
+            edit_message_text(user_id, msg_id, f"سرویس انتخابی برای تمدید: <code>{email}</code>\nپلن تمدید مورد نظر را انتخاب فرمایید:", {"inline_keyboard": ikb_rows})
         else:
-            if msg_id:
-                edit_message_text(user_id, msg_id, "❌ متأسفانه در حال حاضر خطایی در تمدید رخ داد. لطفاً با پشتیبانی در ارتباط باشید.")
+            send_message(user_id, f"سرویس انتخابی برای تمدید: <code>{email}</code>\nپلن تمدید مورد نظر را انتخاب فرمایید:", {"inline_keyboard": ikb_rows})
         return
 
     if data.startswith("dorenew_"):
@@ -1332,22 +1491,22 @@ def handle_message(msg):
                 pass
                 
         welcome_txt = (
-            f"سلام <b>{first_name or 'دوست عزیز'}</b>! به ربات <b>NOVA</b> خوش آمدید. ✨\n\n"
-            f"🔹 ارائه‌دهنده پرسرعت‌ترین سرورهای ضد فیلتر V2Ray و Sing-box\n"
-            f"🔹 اتصال تضمینی بر روی تمامی اپراتورها (همراه‌اول، ایرانسل، رایتل و مخابرات)\n"
-            f"🔹 اشتراک کاملاً رایگان و پرسرعت برای شما\n\n"
-            f"جهت دریافت کانفیگ از منوی زیر استفاده کنید:"
+            f"سلام <b>{first_name or 'کاربر'}</b> عزیز به ربات خوش آمدید 🌹\n\n"
+            f"🚀 ارائه‌دهنده پرسرعت‌ترین و پایدارترین سرورهای V2Ray و Sing-box\n"
+            f"🛡 اتصال تضمینی و ضد فیلتر بر روی تمامی اپراتورها (همراه‌اول، ایرانسل، مخابرات، رایتل و وای‌فای)\n"
+            f"⚡️ تحویل آنی و خودکار اشتراک پس از پرداخت\n\n"
+            f"💡 جهت شروع، از منوی زیر گزینه مورد نظر را انتخاب فرمایید:"
         )
         send_message(user_id, welcome_txt, get_main_keyboard(user_id))
         return
 
     # Admin Panel command
-    if text in ["/admin", "⚙️ پنل مدیریت ربات"]:
+    if text in ["/admin", "/panel", "⚙️ پنل مدیریت", "⚙️ پنل مدیریت ربات", "⚙️ مدیریت"]:
         if user_id != admin_id:
             send_message(user_id, "دسترسی غیرمجاز!")
             return
         clear_user_state(user_id)
-        send_message(user_id, "⚙️ <b>به پنل مدیریت حرفه‌ای ربات (NOVA Edition) خوش آمدید:</b>\nجهت مدیریت بخش مورد نظر را انتخاب کنید:", get_admin_inline_keyboard())
+        send_message(user_id, "⚙️ <b>به پنل مدیریت ربات (Mirza Edition) خوش آمدید:</b>\nجهت مدیریت، بخش مورد نظر را انتخاب نمایید:", get_admin_inline_keyboard())
         return
 
     # Handle State: WAIT_BCAST
@@ -1414,15 +1573,132 @@ def handle_message(msg):
         t_bal = u_info["balance"]
         
         clients = get_user_xray_clients(t_id)
+        conn = get_db()
+        c = conn.cursor()
+        c.execute("SELECT is_banned FROM users WHERE user_id = ?", (t_id,))
+        ub_row = c.fetchone()
+        conn.close()
+        is_b = ub_row["is_banned"] if ub_row else 0
+        b_lbl = "مسدود ⛔️" if is_b else "فعال 🟢"
+        
         u_txt = (
             f"👤 <b>اطلاعات کاربر:</b>\n\n"
             f"▫️ شناسه عددی: <code>{t_id}</code>\n"
             f"▫️ یوزرنیم: @{t_uname}\n"
             f"▫️ نام: {t_name}\n"
+            f"▫️ وضعیت حساب: <b>{b_lbl}</b>\n"
             f"💰 موجودی کیف پول: <b>{t_bal:,} تومان</b>\n"
             f"🌐 تعداد سرویس‌های فعال: {len(clients)}\n"
         )
-        send_message(user_id, u_txt, get_main_keyboard(user_id))
+        ikb_user = {
+            "inline_keyboard": [
+                [
+                    {"text": "➕ افزایش موجودی", "callback_data": f"adm_user_add_{t_id}"},
+                    {"text": "➖ کسر موجودی", "callback_data": f"adm_user_sub_{t_id}"}
+                ],
+                [
+                    {"text": "مسدود / رفع مسدودی", "callback_data": f"adm_user_ban_{t_id}"}
+                ],
+                [
+                    {"text": "🔙 بازگشت به پنل مدیریت", "callback_data": "adm_stats"}
+                ]
+            ]
+        }
+        send_message(user_id, u_txt, ikb_user)
+        return
+
+    # Handle State: WAIT_USER_ADD_BAL
+    if cur_state == "WAIT_USER_ADD_BAL" and user_id == admin_id:
+        clear_user_state(user_id)
+        target_uid = sdata.get("target_uid")
+        try:
+            amt = int(text.strip().replace(",", ""))
+            new_bal = change_user_balance(target_uid, amt)
+            send_message(user_id, f"✅ مبلغ {amt:,} تومان به کیف پول کاربر <code>{target_uid}</code> اضافه شد.\nموجودی جدید: <b>{new_bal:,} تومان</b>", get_main_keyboard(user_id))
+            send_message(target_uid, f"🎉 <b>کیف پول شما توسط مدیریت شارژ شد!</b>\n\n💰 مبلغ: <b>{amt:,} تومان</b>\n💵 موجودی فعلی: <b>{new_bal:,} تومان</b>", get_main_keyboard(target_uid))
+        except Exception as e:
+            send_message(user_id, f"❌ خطا: {e}", get_main_keyboard(user_id))
+        return
+
+    # Handle State: WAIT_USER_SUB_BAL
+    if cur_state == "WAIT_USER_SUB_BAL" and user_id == admin_id:
+        clear_user_state(user_id)
+        target_uid = sdata.get("target_uid")
+        try:
+            amt = int(text.strip().replace(",", ""))
+            new_bal = change_user_balance(target_uid, -amt)
+            send_message(user_id, f"✅ مبلغ {amt:,} تومان از کیف پول کاربر <code>{target_uid}</code> کسر شد.\nموجودی جدید: <b>{new_bal:,} تومان</b>", get_main_keyboard(user_id))
+        except Exception as e:
+            send_message(user_id, f"❌ خطا: {e}", get_main_keyboard(user_id))
+        return
+
+    # Handle State: WAIT_CUSTOM_TOPUP
+    if cur_state == "WAIT_CUSTOM_TOPUP":
+        try:
+            amt = int(text.strip().replace(",", ""))
+            if amt < 10000:
+                send_message(user_id, "حداقل مبلغ شارژ ۱۰,۰۰۰ تومان است. لطفاً مبلغ دیگری ارسال فرمایید:")
+                return
+            cfg = load_config()
+            card_num = cfg.get("card_number", "۶۰۳۷-۹۹۷۴-XXXX-XXXX")
+            card_holder = cfg.get("card_holder", "DARK VVPN")
+            set_user_state(user_id, "WAIT_RECEIPT_WALLET", {"amount": amt})
+            txt = (
+                f"💳 <b>شارژ کیف پول به مبلغ {amt:,} تومان:</b>\n\n"
+                f"💳 <b>شماره کارت:</b> <code>{card_num}</code>\n"
+                f"👤 <b>به نام:</b> <b>{card_holder}</b>\n\n"
+                f"لطفاً پس از واریز، <b>عکس فیش بانکی</b> را ارسال فرمایید:"
+            )
+            send_message(user_id, txt, get_cancel_keyboard())
+        except Exception:
+            send_message(user_id, "لطفاً مبلغ را به عدد انگلیسی ارسال فرمایید (مثلاً 50000):")
+        return
+
+    # Handle State: WAIT_NEW_PLAN
+    if cur_state == "WAIT_NEW_PLAN" and user_id == admin_id:
+        clear_user_state(user_id)
+        parts = text.split("*")
+        if len(parts) >= 4:
+            try:
+                title = parts[0].strip()
+                gb = float(parts[1].strip())
+                days = int(parts[2].strip())
+                price = int(parts[3].strip().replace(",", ""))
+                plans = load_plans()
+                new_id = max([p.get("id", 0) for p in plans] or [0]) + 1
+                plans.append({
+                    "id": new_id,
+                    "title": title,
+                    "traffic_gb": gb,
+                    "days": days,
+                    "price": price,
+                    "enabled": True,
+                    "inbound_id": 1
+                })
+                with open(PLANS_PATH, "w", encoding="utf-8") as f:
+                    json.dump(plans, f, ensure_ascii=False, indent=2)
+                send_message(user_id, f"✅ پلن <b>{title}</b> ({gb}GB - {days} روز - {price:,} تومان) با موفقیت ذخیره شد.", get_main_keyboard(user_id))
+            except Exception as e:
+                send_message(user_id, f"❌ خطا در مقادیر: {e}", get_main_keyboard(user_id))
+        else:
+            send_message(user_id, "❌ فرمت ورودی نامعتبر بود. تغییری ایجاد نشد.", get_main_keyboard(user_id))
+        return
+
+    # Handle State: WAIT_TRIAL_SETTINGS
+    if cur_state == "WAIT_TRIAL_SETTINGS" and user_id == admin_id:
+        clear_user_state(user_id)
+        parts = text.split("*")
+        if len(parts) >= 2:
+            try:
+                gb = str(float(parts[0].strip()))
+                days = str(int(parts[1].strip()))
+                set_setting("trial_gb", gb)
+                set_setting("trial_days", days)
+                send_message(user_id, f"✅ تنظیمات اکانت تست به‌روزرسانی شد:\nحجم: <b>{gb} گیگابایت</b>\nمدت اعتبار: <b>{days} روز</b>", get_main_keyboard(user_id))
+            except Exception as e:
+                send_message(user_id, f"❌ خطا در مقادیر: {e}", get_main_keyboard(user_id))
+        else:
+            send_message(user_id, "❌ فرمت نامعتبر بود.", get_main_keyboard(user_id))
         return
 
     # Handle State: WAIT_NEW_CARD
@@ -1562,112 +1838,126 @@ def handle_message(msg):
         send_photo(admin_id, file_id, caption=admin_cap, reply_markup=ikb_admin)
         return
 
-    # User Keyboards
-    if text in ["🎁 دریافت کانفیگ رایگان", "🎁 تست رایگان ۲۴ ساعته", "🎁 دریافت اشتراک رایگان"]:
+    # User Keyboards (Mirza Edition)
+    if text in ["🔐 خرید اشتراک", "🛒 خرید اشتراک", "/buy"]:
+        clear_user_state(user_id)
+        plans = load_plans()
+        ikb_rows = []
+        for p in plans:
+            ikb_rows.append([{"text": f"🛒 {p['title']} — {p['price']:,} تومان", "callback_data": f"plan_{p['id']}"}])
+        send_message(user_id, "🌟 <b>پلن مورد نظر خود را برای خرید انتخاب فرمایید:</b>", {"inline_keyboard": ikb_rows})
+        return
+
+    if text in ["🔑 اکانت تست", "🎁 تست رایگان ۲۴ ساعته", "🎁 اکانت تست", "🎁 دریافت کانفیگ رایگان", "/test"]:
         clear_user_state(user_id)
         conn = get_db()
         c = conn.cursor()
         c.execute("SELECT * FROM trials WHERE user_id = ?", (user_id,))
         already = c.fetchone()
+        conn.close()
         if already:
-            conn.close()
-            clients = get_user_xray_clients(user_id)
-            if clients:
-                cl = clients[0]
-                rem_gb = max(0, cl["total_gb"] - cl["used_gb"])
-                st_lbl = "فعال 🟢" if cl["enable"] else "غیرفعال 🔴"
-                exp_date = datetime.datetime.fromtimestamp(cl["expiry_time_ms"]/1000).strftime('%Y-%m-%d %H:%M') if cl["expiry_time_ms"] > 0 else "نامحدود"
-                c_txt = (
-                    f"✨ <b>شما در حال حاضر یک اشتراک فعال دارید:</b>\n\n"
-                    f"🔹 <b>شناسه:</b> <code>{cl['email']}</code>\n"
-                    f"📊 مصرف: <b>{cl['used_gb']} GB</b> از <b>{cl['total_gb']} GB</b> (باقیمانده: {rem_gb:.2f} GB)\n"
-                    f"⏳ انقضا: <code>{exp_date}</code>\n"
-                    f"وضعیت: {st_lbl}\n\n"
-                    f"🔗 <b>لینک سابسکریپشن:</b>\n<code>{cl['sub_url']}</code>\n\n"
-                    f"⚡️ <b>کانفیگ VLESS:</b>\n<code>vless://{cl['uuid']}@...</code>\n\n"
-                    f"💡 در صورت نیاز به حجم یا زمان بیشتر، از گزینه «🔄 تمدید اشتراک» استفاده فرمایید."
-                )
-                send_message(user_id, c_txt, get_main_keyboard(user_id))
-                qr_bytes = generate_qr_bytes(cl["sub_url"])
-                send_photo(user_id, qr_bytes, caption="📸 اسکن بارکد QR جهت اتصال مستقیم")
-                return
-
-        send_message(user_id, "⏳ در حال ساخت کانفیگ رایگان و پرسرعت برای شما...")
-        res = add_xray_client(user_id, username, traffic_gb=50.0, expiry_days=30.0, is_trial=False)
-        if not res:
-            send_message(user_id, "❌ متأسفانه در حال حاضر امکان صدور کانفیگ وجود ندارد. لطفاً دقایقی دیگر تلاش فرمایید.")
+            t_warn = (
+                "⚠️ <b>کاربر گرامی؛</b>\n\n"
+                "شما قبلاً یک‌بار اکانت تست رایگان دریافت کرده‌اید.\n"
+                "جهت خرید اشتراک جدید، از منوی «🔐 خرید اشتراک» استفاده فرمایید."
+            )
+            send_message(user_id, t_warn, get_main_keyboard(user_id))
             return
 
+        trial_gb = float(get_setting("trial_gb", "1"))
+        trial_days = float(get_setting("trial_days", "1"))
+        days_str = f"{int(trial_days * 24)} ساعت" if trial_days < 1 else f"{int(trial_days)} روز"
+
+        send_message(user_id, "⏳ در حال ساخت اکانت تست اختصاصی برای شما...")
+        res = add_xray_client(user_id, username, traffic_gb=trial_gb, expiry_days=trial_days, is_trial=True)
+        if not res:
+            send_message(user_id, "❌ متأسفانه در حال حاضر امکان صدور اکانت تست وجود ندارد. لطفاً دقایقی دیگر تلاش فرمایید.", get_main_keyboard(user_id))
+            return
+
+        conn = get_db()
+        c = conn.cursor()
         c.execute("INSERT OR REPLACE INTO trials (user_id, username, sub_id, created_at) VALUES (?, ?, ?, ?)", (user_id, username, res["sub_id"], int(time.time())))
         conn.commit()
         conn.close()
 
         t_msg = (
-            f"🎁 <b>کانفیگ رایگان شما با موفقیت آماده شد!</b>\n\n"
-            f"📊 <b>حجم:</b> ۵۰ گیگابایت\n"
-            f"⏳ <b>اعتبار:</b> ۳۰ روز\n\n"
-            f"🔗 <b>لینک سابسکریپشن:</b>\n<code>{res['sub_url']}</code>\n\n"
-            f"⚡️ <b>کانفیگ VLESS:</b>\n<code>{res['vless_link']}</code>"
+            f"✅ <b>سرویس با موفقیت ایجاد شد</b>\n\n"
+            f"👤 نام کاربری سرویس : <code>{res['client_email']}</code>\n"
+            f"🌿 نام سرویس: اکانت تست رایگان\n"
+            f"⏳ مدت زمان: {days_str}\n"
+            f"🗜 حجم سرویس: {trial_gb} گیگابایت\n\n"
+            f"<b>لینک اتصال:</b>\n"
+            f"<code>{res['sub_url']}</code>\n\n"
+            f"⚡️ <b>کانفیگ تک‌خطی VLESS:</b>\n"
+            f"<code>{res['vless_link']}</code>\n\n"
+            f"🧑‍🦯 شما می‌توانید شیوه اتصال را با فشردن دکمه «📚 آموزش» دریافت کنید یا بارکد QR زیر را اسکن نمایید."
         )
         send_message(user_id, t_msg, get_main_keyboard(user_id))
         qr_bytes = generate_qr_bytes(res["sub_url"])
         send_photo(user_id, qr_bytes, caption="📸 اسکن بارکد QR جهت اتصال مستقیم")
         return
 
-    if text == "📊 سرویس‌های من":
+    if text in ["🛍 سرویس های من", "📊 سرویس‌های من", "/services"]:
         clear_user_state(user_id)
         clients = get_user_xray_clients(user_id)
         if not clients:
-            send_message(user_id, "شما هنوز هیچ سرویس فعالی ندارید. می‌توانید با دکمه «🎁 دریافت کانفیگ رایگان» یک سرویس دریافت کنید.")
+            send_message(user_id, "شما در حال حاضر هیچ سرویس فعالی ندارید. می‌توانید با دکمه «🔐 خرید اشتراک» یا «🔑 اکانت تست» سرویس دریافت کنید.", get_main_keyboard(user_id))
             return
             
-        send_message(user_id, f"📋 <b>لیست اشتراک‌های فعال شما ({len(clients)} سرویس):</b>")
+        send_message(user_id, f"🛍 <b>لیست سرویس‌های فعال شما ({len(clients)} سرویس):</b>")
         for cl in clients:
             rem_gb = max(0, cl["total_gb"] - cl["used_gb"])
             st_lbl = "فعال 🟢" if cl["enable"] else "غیرفعال 🔴"
             exp_date = datetime.datetime.fromtimestamp(cl["expiry_time_ms"]/1000).strftime('%Y-%m-%d %H:%M') if cl["expiry_time_ms"] > 0 else "نامحدود"
             c_txt = (
-                f"🔹 <b>شناسه:</b> <code>{cl['email']}</code>\n"
+                f"👤 <b>نام کاربری:</b> <code>{cl['email']}</code>\n"
                 f"📊 مصرف: <b>{cl['used_gb']} GB</b> از <b>{cl['total_gb']} GB</b> (باقیمانده: {rem_gb:.2f} GB)\n"
                 f"⏳ انقضا: <code>{exp_date}</code>\n"
-                f"وضعیت: {st_lbl}\n"
-                f"🔗 سابسکریپشن:\n<code>{cl['sub_url']}</code>"
+                f"وضعیت: {st_lbl}\n\n"
+                f"🔗 <b>لینک سابسکریپشن:</b>\n<code>{cl['sub_url']}</code>"
             )
-            ikb = {"inline_keyboard": [[{"text": "🔄 تمدید این سرویس", "callback_data": f"renew_{cl['email']}"}]]}
+            ikb = {
+                "inline_keyboard": [
+                    [
+                        {"text": "♻️ تمدید سرویس", "callback_data": f"renew_{cl['email']}"},
+                        {"text": "📸 دریافت بارکد QR", "callback_data": f"qr_{cl['email']}"}
+                    ]
+                ]
+            }
             send_message(user_id, c_txt, ikb)
         return
 
-    if text in ["🔄 تمدید اشتراک", "🔄 تمدید سرویس"]:
+    if text in ["♻️ تمدید سرویس", "🔄 تمدید اشتراک", "🔄 تمدید سرویس", "/renew", "/extend"]:
         clear_user_state(user_id)
         clients = get_user_xray_clients(user_id)
         if not clients:
-            send_message(user_id, "شما هنوز هیچ سرویسی ندارید. ابتدا با دکمه «🎁 دریافت کانفیگ رایگان» یک سرویس دریافت کنید.")
+            send_message(user_id, "شما اشتراکی برای تمدید ندارید. لطفاً ابتدا از منوی «🔐 خرید اشتراک» خرید فرمایید.", get_main_keyboard(user_id))
             return
         ikb_rows = []
         for cl in clients:
-            ikb_rows.append([{"text": f"🔄 تمدید رایگان ۵۰ گیگ برای {cl['email']}", "callback_data": f"renew_{cl['email']}"}])
+            ikb_rows.append([{"text": f"🔄 تمدید سرویس {cl['email']}", "callback_data": f"renew_{cl['email']}"}])
         send_message(user_id, "سرویسی که قصد تمدید آن را دارید انتخاب کنید:", {"inline_keyboard": ikb_rows})
         return
 
-    if text == "💰 کیف پول من":
+    if text in ["🏦 کیف پول + شارژ", "💰 کیف پول من", "/wallet"]:
         clear_user_state(user_id)
         u = get_user(user_id)
         bal = u["balance"] if u else 0
         w_txt = (
-            f"💰 <b>کیف پول کاربری</b>\n\n"
-            f"💳 موجودی فعلی: <b>{bal:,} تومان</b>\n\n"
-            f"با شارژ کیف پول، می‌توانید تمام پلن‌ها و تمدیدها را به صورت **آنی و بدون معطلی برای بررسی فیش** خریداری کنید."
+            f"🏦 <b>کیف پول حساب کاربری شما</b>\n\n"
+            f"💵 موجودی فعلی: <b>{bal:,} تومان</b>\n\n"
+            f"با شارژ کیف پول، می‌توانید تمام پلن‌ها و تمدیدها را به صورت **آنی و بدون معطلی برای بررسی فیش** خریداری فرمایید."
         )
         ikb = {
             "inline_keyboard": [
-                [{"text": "💳 شارژ کیف پول", "callback_data": "topup_menu"}],
-                [{"text": "🛒 خرید اشتراک از موجودی", "callback_data": "list_plans"}]
+                [{"text": "💰 افزایش موجودی", "callback_data": "topup_menu"}],
+                [{"text": "🔐 خرید اشتراک از موجودی", "callback_data": "list_plans"}]
             ]
         }
         send_message(user_id, w_txt, ikb)
         return
 
-    if text == "👥 زیرمجموعه‌گیری":
+    if text in ["👥 زیر مجموعه گیری", "👥 زیرمجموعه‌گیری", "/affiliates"]:
         clear_user_state(user_id)
         bot_info = tg_request("getMe")
         bot_uname = bot_info.get("result", {}).get("username", "nova_panel_bot") if bot_info else "bot"
@@ -1694,29 +1984,108 @@ def handle_message(msg):
         send_message(user_id, ref_msg, get_main_keyboard(user_id))
         return
 
-    if text == "📱 دانلود برنامه‌ها":
+    if text in ["💵 تعرفه اشتراک ها", "💵 تعرفه‌ها", "/tariffs"]:
+        clear_user_state(user_id)
+        plans = load_plans()
+        txt = "💵 <b>تعرفه اشتراک‌های پرسرعت:</b>\n\n"
+        for i, p in enumerate(plans, 1):
+            txt += f"<b>{i}️⃣ {p['title']}</b>\n"
+            txt += f"▫️ حجم ترافیک: <b>{p['traffic_gb']} گیگابایت</b>\n"
+            txt += f"▫️ مدت اعتبار: <b>{p['days']} روز</b>\n"
+            txt += f"▫️ قیمت: <b>{p['price']:,} تومان</b>\n\n"
+        txt += (
+            "⚡️ سرورهای پرسرعت با آپ‌تایم ۹۹.۹٪\n"
+            "🛡 بدون قطعی و سازگار با اینترنت‌های همراه و ثابت\n"
+            "🚀 تحویل آنی پس از پرداخت\n\n"
+            "برای خرید هر یک از پلن‌ها، دکمه «🔐 خرید اشتراک» را لمس کنید."
+        )
+        ikb = {"inline_keyboard": [[{"text": "🔐 خرید اشتراک", "callback_data": "list_plans"}]]}
+        send_message(user_id, txt, ikb)
+        return
+
+    if text in ["🎲 گردونه شانس", "/wheel", "/luck"]:
+        clear_user_state(user_id)
+        conn = get_db()
+        c = conn.cursor()
+        c.execute("SELECT last_spun_at FROM wheel_luck WHERE user_id = ?", (user_id,))
+        row = c.fetchone()
+        now = int(time.time())
+        if row and (now - row["last_spun_at"]) < 86400:
+            rem_hrs = int((86400 - (now - row["last_spun_at"])) / 3600) + 1
+            conn.close()
+            send_message(user_id, f"⏳ <b>شما امروز گردونه شانس را چرخانده‌اید!</b>\n\nلطفاً حدود <b>{rem_hrs} ساعت دیگر</b> مجدداً شانس خود را امتحان کنید. 🎲", get_main_keyboard(user_id))
+            return
+            
+        c.execute("INSERT OR REPLACE INTO wheel_luck (user_id, last_spun_at) VALUES (?, ?)", (user_id, now))
+        conn.commit()
+        conn.close()
+        
+        prizes = [
+            {"type": "wallet", "amount": 5000, "text": "💰 ۵,۰۰۰ تومان شارژ هدیه کیف پول"},
+            {"type": "wallet", "amount": 10000, "text": "💰 ۱۰,۰۰۰ تومان شارژ هدیه کیف پول"},
+            {"type": "wallet", "amount": 20000, "text": "🔥 ۲۰,۰۰۰ تومان شارژ هدیه ویژه کیف پول"},
+            {"type": "discount", "percent": 15, "text": "🎁 کد تخفیف ۱۵ درصدی"},
+            {"type": "discount", "percent": 25, "text": "🎁 کد تخفیف ۲۵ درصدی طلایی"},
+        ]
+        chosen = random.choice(prizes)
+        if chosen["type"] == "wallet":
+            new_bal = change_user_balance(user_id, chosen["amount"])
+            msg = (
+                f"🎉 <b>تبریک! گردونه شانس چرخید و برنده شدید:</b>\n\n"
+                f"{chosen['text']}\n\n"
+                f"💵 موجودی فعلی کیف پول شما: <b>{new_bal:,} تومان</b>"
+            )
+        else:
+            code = f"LUCK-{random.randint(1000, 9999)}"
+            conn = get_db()
+            c = conn.cursor()
+            c.execute("INSERT OR REPLACE INTO discount_codes (code, percent, max_uses, used_count) VALUES (?, ?, 1, 0)", (code, chosen["percent"]))
+            conn.commit()
+            conn.close()
+            msg = (
+                f"🎉 <b>تبریک! گردونه شانس چرخید و برنده شدید:</b>\n\n"
+                f"{chosen['text']}\n\n"
+                f"🏷 کد تخفیف اختصاصی شما:\n<code>{code}</code>\n\n"
+                f"<i>این کد هنگام خرید اشتراک قابل استفاده است.</i>"
+            )
+        send_message(user_id, msg, get_main_keyboard(user_id))
+        return
+
+    if text in ["📚 آموزش", "📱 دانلود برنامه‌ها", "/help"]:
         clear_user_state(user_id)
         dl_msg = (
-            f"📱 <b>نرم‌افزارهای پیشنهادی برای اتصال:</b>\n\n"
+            f"📚 <b>آموزش اتصال و دانلود نرم‌افزارها:</b>\n\n"
             f"🤖 <b>اندروید:</b>\n"
-            f"• <a href=\"https://github.com/2dust/v2rayNG/releases\">دانلود v2rayNG (گیت‌هاب)</a>\n"
-            f"• <a href=\"https://github.com/SagerNet/sing-box/releases\">دانلود Sing-box (گیت‌هاب)</a>\n\n"
+            f"۱. برنامه <b>v2rayNG</b> یا <b>Sing-box</b> را نصب کنید.\n"
+            f"۲. لینک سابسکریپشن را کپی کرده و در برنامه وارد نمایید.\n"
+            f"• <a href=\"https://github.com/2dust/v2rayNG/releases\">دانلود v2rayNG از گیت‌هاب</a>\n"
+            f"• <a href=\"https://play.google.com/store/apps/details?id=com.v2ray.ang\">دانلود v2rayNG از گوگل‌پلی</a>\n\n"
             f"🍏 <b>آیفون و آیپد (iOS):</b>\n"
+            f"۱. برنامه <b>Streisand</b> یا <b>V2Box</b> را نصب کنید.\n"
+            f"۲. علامت + را زده و لینک اشتراک را اضافه کنید.\n"
             f"• <a href=\"https://apps.apple.com/app/streisand/id6450534064\">دانلود Streisand (اپ استور)</a>\n"
             f"• <a href=\"https://apps.apple.com/app/v2box-v2ray-client/id6446814043\">دانلود V2Box (اپ استور)</a>\n\n"
             f"💻 <b>ویندوز (PC):</b>\n"
-            f"• <a href=\"https://github.com/2dust/v2rayN/releases\">دانلود v2rayN (گیت‌هاب)</a>"
+            f"• <a href=\"https://github.com/2dust/v2rayN/releases\">دانلود v2rayN از گیت‌هاب</a>"
         )
         send_message(user_id, dl_msg, get_main_keyboard(user_id))
         return
 
-    if text == "📞 پشتیبانی":
+    if text in ["☎️ پشتیبانی", "📞 پشتیبانی", "/support"]:
         clear_user_state(user_id)
         sup = get_setting("support_username", "")
+        cfg = load_config()
+        if not sup:
+            sup = cfg.get("support_username", "")
         if sup:
-            sup_msg = f"📞 <b>پشتیبانی NOVA-X-PANEL</b>\n\nجهت ارتباط با پشتیبانی، پیگیری سفارشات یا سوالات با آیدی زیر در ارتباط باشید:\n👉 @{sup}"
+            sup_clean = sup.lstrip("@")
+            sup_msg = (
+                f"☎️ <b>پشتیبانی:</b>\n\n"
+                f"جهت پیگیری سفارشات، سوالات پیش از خرید یا گزارش اختلال، با پشتیبانی در ارتباط باشید:\n"
+                f"👉 @{sup_clean}"
+            )
         else:
-            sup_msg = f"📞 <b>پشتیبانی NOVA-X-PANEL</b>\n\nآیدی پشتیبانی هنوز توسط مدیر پنل تنظیم نشده است."
+            sup_msg = "☎️ <b>پشتیبانی:</b>\n\nجهت ارتباط با پشتیبانی، پیام خود را همین‌جا ارسال فرمایید تا به دست مدیریت برسد."
         send_message(user_id, sup_msg, get_main_keyboard(user_id))
         return
 

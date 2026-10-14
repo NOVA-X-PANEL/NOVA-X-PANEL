@@ -297,7 +297,10 @@ fi
 if [ ! -f /etc/dark-shop/plans.json ]; then
     cat << "EOF" > /etc/dark-shop/plans.json
 [
-  {"id": 1, "title": "اشتراک رایگان ماهانه (۵۰ گیگ)", "traffic_gb": 50, "period_days": 30, "price_tomans": 0, "enabled": true, "inbound_id": 1}
+  {"id": 1, "title": "پلن برنزی (۳۰ گیگ - ۱ ماهه)", "traffic_gb": 30, "period_days": 30, "price_tomans": 45000, "enabled": true, "inbound_id": 1},
+  {"id": 2, "title": "پلن نقره‌ای (۵۰ گیگ - ۱ ماهه)", "traffic_gb": 50, "period_days": 30, "price_tomans": 75000, "enabled": true, "inbound_id": 1},
+  {"id": 3, "title": "پلن طلایی (۱۰۰ گیگ - ۲ ماهه)", "traffic_gb": 100, "period_days": 60, "price_tomans": 140000, "enabled": true, "inbound_id": 1},
+  {"id": 4, "title": "پلن الماس (۲۰۰ گیگ - ۳ ماهه)", "traffic_gb": 200, "period_days": 90, "price_tomans": 260000, "enabled": true, "inbound_id": 1}
 ]
 EOF
     chmod 644 /etc/dark-shop/plans.json

@@ -30,6 +30,7 @@ import {
   SafetyCertificateOutlined,
   InfoCircleOutlined,
   GlobalOutlined,
+  SettingOutlined,
 } from '@ant-design/icons';
 import { HttpUtil } from '@/utils';
 import { useTheme } from '@/hooks/useTheme';
@@ -61,6 +62,7 @@ export default function TelegramShopPage() {
 
   const [loading, setLoading] = useState(true);
   const [installing, setInstalling] = useState(false);
+  const [installingDeps, setInstallingDeps] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [status, setStatus] = useState<TgShopStatus | null>(null);
 
@@ -109,6 +111,22 @@ export default function TelegramShopPage() {
       message.error(err?.message || t('pages.telegramShop.toasts.installError'));
     } finally {
       setInstalling(false);
+    }
+  };
+
+  const handleInstallDeps = async () => {
+    try {
+      setInstallingDeps(true);
+      const res = await HttpUtil.post('/panel/api/telegram-shop/install-deps');
+      if (res && res.success) {
+        message.success(t('pages.telegramShop.installDepsSuccess'));
+      } else {
+        message.error(res?.msg || t('pages.telegramShop.installDepsError'));
+      }
+    } catch (err: any) {
+      message.error(err?.message || t('pages.telegramShop.installDepsError'));
+    } finally {
+      setInstallingDeps(false);
     }
   };
 
@@ -240,18 +258,30 @@ export default function TelegramShopPage() {
                         />
                       </Form.Item>
 
-                      <Button
-                        type="primary"
-                        htmlType="submit"
-                        size="large"
-                        block
-                        className="tgshop-btn-install"
-                        loading={installing}
-                        icon={<ThunderboltOutlined />}
-                        style={{ marginTop: 12 }}
-                      >
-                        {t('pages.telegramShop.installBtn')}
-                      </Button>
+                      <Space direction="vertical" style={{ width: '100%', marginTop: 12 }}>
+                        <Button
+                          type="primary"
+                          htmlType="submit"
+                          size="large"
+                          block
+                          className="tgshop-btn-install"
+                          loading={installing}
+                          icon={<ThunderboltOutlined />}
+                        >
+                          {t('pages.telegramShop.installBtn')}
+                        </Button>
+
+                        <Button
+                          size="large"
+                          block
+                          icon={<SettingOutlined />}
+                          loading={installingDeps}
+                          onClick={handleInstallDeps}
+                          style={{ borderColor: 'rgba(6, 182, 212, 0.4)', color: '#06b6d4', background: 'rgba(6, 182, 212, 0.05)' }}
+                        >
+                          {t('pages.telegramShop.installDepsBtn')}
+                        </Button>
+                      </Space>
                     </Form>
                   </Card>
                 </Col>
@@ -372,6 +402,15 @@ export default function TelegramShopPage() {
                       loading={actionLoading}
                     >
                       {t('pages.telegramShop.restartBtn')}
+                    </Button>
+
+                    <Button
+                      icon={<SettingOutlined />}
+                      loading={installingDeps}
+                      onClick={handleInstallDeps}
+                      style={{ borderColor: 'rgba(6, 182, 212, 0.4)', color: '#06b6d4' }}
+                    >
+                      {t('pages.telegramShop.installDepsBtn')}
                     </Button>
 
                     {status.running ? (

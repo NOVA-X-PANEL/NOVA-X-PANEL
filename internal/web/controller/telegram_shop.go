@@ -24,6 +24,7 @@ func NewTelegramShopController(g *gin.RouterGroup) *TelegramShopController {
 func (a *TelegramShopController) initRouter(g *gin.RouterGroup) {
 	g.GET("/status", requireOwnerRole(), a.getStatus)
 	g.POST("/install", requireOwnerRole(), a.install)
+	g.POST("/install-deps", requireOwnerRole(), a.installDeps)
 	g.POST("/action", requireOwnerRole(), a.action)
 }
 
@@ -93,4 +94,9 @@ func (a *TelegramShopController) action(c *gin.Context) {
 
 	err := a.shopService.Action(action)
 	jsonMsg(c, "action executed", err)
+}
+
+func (a *TelegramShopController) installDeps(c *gin.Context) {
+	err := a.shopService.InstallDependencies()
+	jsonMsg(c, "dependencies installed", err)
 }

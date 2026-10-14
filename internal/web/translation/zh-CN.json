@@ -2655,7 +2655,10 @@
         "uninstalledSuccess": "Telegram Shop bot removed successfully.",
         "actionSuccess": "Command {{action}} executed successfully.",
         "actionError": "Failed to execute operation"
-      }
+      },
+      "installDepsBtn": "📦 Auto-Install Bot Prerequisites (Python, Requests, QR)",
+      "installDepsSuccess": "Bot prerequisites installed successfully.",
+      "installDepsError": "Failed to install bot prerequisites."
     }
   },
   "tgbot": {

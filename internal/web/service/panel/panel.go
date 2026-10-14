@@ -439,23 +439,48 @@ func fetchPanelRelease(tag string) (*service.Release, error) {
 	}
 	client := (&service.SettingService{}).NewProxiedHTTPClient(10 * time.Second)
 	req, reqErr := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
-	if reqErr != nil {
-		return nil, reqErr
-	}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("GitHub API returned status %d: %s", resp.StatusCode, resp.Status)
+	if reqErr == nil {
+		req.Header.Set("User-Agent", "NOVA-X-PANEL/"+config.GetBaseVersion())
+		resp, err := client.Do(req)
+		if err == nil && resp != nil {
+			defer resp.Body.Close()
+			if resp.StatusCode == http.StatusOK {
+				var release service.Release
+				if err := json.NewDecoder(resp.Body).Decode(&release); err == nil && release.TagName != "" {
+					return &release, nil
+				}
+			}
+		}
 	}
 
-	var release service.Release
-	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
-		return nil, err
+	// Web redirect fallback (bypasses GitHub API rate limits / 403s on shared server IPs)
+	if tag == "" {
+		redirectClient := (&service.SettingService{}).NewProxiedHTTPClient(10 * time.Second)
+		redirectClient.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		}
+		headReq, headErr := http.NewRequestWithContext(context.Background(), http.MethodHead, "https://github.com/NOVA-X-PANEL/NOVA-X-PANEL/releases/latest", nil)
+		if headErr == nil {
+			headReq.Header.Set("User-Agent", "Mozilla/5.0")
+			headResp, doErr := redirectClient.Do(headReq)
+			if doErr == nil && headResp != nil {
+				defer headResp.Body.Close()
+				loc := headResp.Header.Get("Location")
+				if loc != "" && strings.Contains(loc, "/tag/") {
+					parts := strings.Split(loc, "/tag/")
+					tagVal := parts[len(parts)-1]
+					if tagVal != "" {
+						return &service.Release{
+							TagName: tagVal,
+							Name:    tagVal,
+						}, nil
+					}
+				}
+			}
+		}
 	}
-	return &release, nil
+
+	return nil, fmt.Errorf("failed to fetch release from GitHub API and web redirect")
 }
 
 // extractReleaseCommit reads the build commit recorded in the dev release: first

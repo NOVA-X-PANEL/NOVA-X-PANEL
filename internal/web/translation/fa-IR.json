@@ -2655,7 +2655,10 @@
         "uninstalledSuccess": "ربات تلگرام شاپ با موفقیت حذف گردید.",
         "actionSuccess": "دستور {{action}} با موفقیت اجرا شد.",
         "actionError": "خطا در اجرای عملیات"
-      }
+      },
+      "installDepsBtn": "📦 نصب خودکار پیش‌نیازهای ربات (پایتون، Requests، QR)",
+      "installDepsSuccess": "پیش‌نیازهای پایتونی ربات با موفقیت نصب شدند.",
+      "installDepsError": "خطا در نصب پیش‌نیازها."
     }
   },
   "tgbot": {

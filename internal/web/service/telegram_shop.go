@@ -282,10 +282,15 @@ if [ -f "%s" ]; then
     rm -f %s
 fi
 
-if command -v apt-get >/dev/null 2>&1; then
-    if ! python3 -c "import requests, qrcode" >/dev/null 2>&1; then
+if ! python3 -c "import requests, qrcode" >/dev/null 2>&1; then
+    if command -v apt-get >/dev/null 2>&1; then
+        export DEBIAN_FRONTEND=noninteractive
         apt-get update -qq >/dev/null 2>&1 || true
-        apt-get install -y -qq python3-requests python3-qrcode >/dev/null 2>&1 || true
+        apt-get install -y -qq python3 python3-requests python3-qrcode python3-pip >/dev/null 2>&1 || true
+    elif command -v dnf >/dev/null 2>&1; then
+        dnf install -y -q python3 python3-requests python3-qrcode python3-pip >/dev/null 2>&1 || true
+    elif command -v yum >/dev/null 2>&1; then
+        yum install -y -q python3 python3-requests python3-qrcode python3-pip >/dev/null 2>&1 || true
     fi
 fi
 
@@ -380,4 +385,35 @@ systemctl daemon-reload
 	default:
 		return fmt.Errorf("unknown action: %s", action)
 	}
+}
+
+// InstallDependencies installs python3, requests, and qrcode using system package manager.
+func (s *TelegramShopService) InstallDependencies() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+	defer cancel()
+
+	cmd := `
+set -e
+if command -v apt-get >/dev/null 2>&1; then
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update -qq
+    apt-get install -y -qq python3 python3-requests python3-qrcode python3-pip
+elif command -v dnf >/dev/null 2>&1; then
+    dnf install -y -q python3 python3-requests python3-qrcode python3-pip
+elif command -v yum >/dev/null 2>&1; then
+    yum install -y -q python3 python3-requests python3-qrcode python3-pip
+elif command -v pacman >/dev/null 2>&1; then
+    pacman -Sy --noconfirm python python-requests python-qrcode
+elif command -v apk >/dev/null 2>&1; then
+    apk update && apk add python3 py3-requests py3-qrcode
+fi
+`
+	out, err := s.execPrivilegedBash(ctx, cmd)
+	if err != nil {
+		return fmt.Errorf("failed to install dependencies: %s (%v)", string(out), err)
+	}
+	return nil
 }

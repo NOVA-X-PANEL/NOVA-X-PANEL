@@ -130,7 +130,7 @@
     "adminRoles": "نقش‌های مدیر",
     "myApi": "API من",
     "brandTagline": "سریع • امن • آزاد",
-    "hashem": "تانل هاشم",
+    "hashem": "NOVA-TUNELL",
     "telegramShop": "تلگرام شاپ"
   },
   "pages": {
@@ -2475,7 +2475,7 @@
       "activeCount": "{count} فعال"
     },
     "hashem": {
-      "title": "مدیریت تانل هاشم",
+      "title": "NOVA-TUNELL",
       "subtitle": "اتوماسیون و پایش تانل لایه ۳ GRE و پروکسی معکوس FRP",
       "statusHealthy": "متصل و پایدار",
       "statusNotInstalled": "نصب نشده",

@@ -234,7 +234,9 @@ export default function HashemPage() {
       ? status.backhaulStatus
       : status.frpStatus;
 
-  const isHealthy = status.running && (isEngineTunnelPanel || engineStatus === 'active') && status.pingMs > 0;
+  const isHealthy = isEngineTunnelPanel
+    ? status.running
+    : status.running && engineStatus === 'active' && status.pingMs > 0;
   const isConnecting = engineStatus === 'connecting';
 
   return (

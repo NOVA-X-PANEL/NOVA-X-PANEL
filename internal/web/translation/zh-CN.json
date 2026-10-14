@@ -128,7 +128,7 @@
     "subFormats": "Sub Formats",
     "myApi": "我的 API",
     "brandTagline": "快速 • 安全 • 免费",
-    "hashem": "Hashem Tunnel",
+    "hashem": "NOVA-TUNELL",
     "telegramShop": "电报商店",
     "admins": "Admins",
     "adminRoles": "Admin Roles"
@@ -2475,7 +2475,7 @@
       "activeCount": "{count} 个进行中"
     },
     "hashem": {
-      "title": "Hashem Tunnel",
+      "title": "NOVA-TUNELL",
       "subtitle": "Automated Layer-3 GRE & FRP Reverse Tunnel Management",
       "statusHealthy": "Active & Healthy",
       "statusNotInstalled": "Not Installed",

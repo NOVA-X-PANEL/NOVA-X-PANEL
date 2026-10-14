@@ -128,7 +128,7 @@
     "subFormats": "Sub Formats",
     "myApi": "API Saya",
     "brandTagline": "Cepat • Aman • Gratis",
-    "hashem": "Hashem Tunnel",
+    "hashem": "NOVA-TUNELL",
     "telegramShop": "Toko Telegram",
     "admins": "Admins",
     "adminRoles": "Admin Roles"
@@ -2475,7 +2475,7 @@
       "activeCount": "{count} aktif"
     },
     "hashem": {
-      "title": "Hashem Tunnel",
+      "title": "NOVA-TUNELL",
       "subtitle": "Automated Layer-3 GRE & FRP Reverse Tunnel Management",
       "statusHealthy": "Active & Healthy",
       "statusNotInstalled": "Not Installed",

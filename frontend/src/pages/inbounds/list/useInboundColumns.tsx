@@ -107,14 +107,14 @@ export function useInboundColumns({
         dataIndex: 'id',
         key: 'id',
         align: 'right',
-        width: 60,
+        width: 48,
         sorter: (a, b) => a.id - b.id,
       },
       {
         title: t('pages.inbounds.operate'),
         key: 'action',
         align: 'center',
-        width: 70,
+        width: 60,
         render: (_, record) => (
           <RowActionsCell
             record={record}
@@ -128,7 +128,7 @@ export function useInboundColumns({
         title: t('pages.inbounds.enable'),
         key: 'enable',
         align: 'center',
-        width: 90,
+        width: 75,
         render: (_, record) => (
           <div className="inb-switch-cell">
             <Switch
@@ -150,7 +150,7 @@ export function useInboundColumns({
         dataIndex: 'remark',
         key: 'remark',
         align: 'center',
-        width: 140,
+        width: 120,
         sorter: (a, b) => compareText(a.remark, b.remark),
         render: (_, record) => {
           const hostRemarks = hostRemarksByInboundId.get(record.id) ?? [];
@@ -211,7 +211,7 @@ export function useInboundColumns({
         dataIndex: 'port',
         key: 'port',
         align: 'center',
-        width: 85,
+        width: 70,
         sorter: (a, b) => a.port - b.port,
         render: (port: number) => <span className="inb-port-cyber">:{port}</span>,
       },
@@ -219,7 +219,7 @@ export function useInboundColumns({
         title: t('pages.inbounds.protocol'),
         key: 'protocol',
         align: 'left',
-        width: 190,
+        width: 145,
         sorter: (a, b) => compareText(a.protocol, b.protocol),
         render: (_, record) => {
           const tags: ReactElement[] = [
@@ -292,7 +292,7 @@ export function useInboundColumns({
         title: t('clients'),
         key: 'clients',
         align: 'center',
-        width: 165,
+        width: 110,
         sorter: (a, b) => clientTotal(a) - clientTotal(b),
         render: (_, record) => {
           const cc = clientCount[record.id] || fallbackClientCount(record);
@@ -400,7 +400,7 @@ export function useInboundColumns({
         title: t('pages.inbounds.traffic'),
         key: 'traffic',
         align: 'center',
-        width: 140,
+        width: 120,
         sorter: (a, b) => a.up + a.down - (b.up + b.down),
         render: (_, record) => (
           <Popover
@@ -450,7 +450,7 @@ export function useInboundColumns({
         title: t('pages.inbounds.expireDate'),
         key: 'expiryTime',
         align: 'center',
-        width: 100,
+        width: 85,
         sorter: (a, b) => expirySortValue(a) - expirySortValue(b),
         render: (_, record) => {
           if (record.expiryTime > 0) {

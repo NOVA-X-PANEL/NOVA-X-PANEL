@@ -181,11 +181,6 @@ export default function InboundList({
     onSwitchEnable,
   });
 
-  const tableScrollX = useMemo(
-    () => columns.reduce((sum, c) => sum + (typeof c.width === 'number' ? c.width : 0), 0),
-    [columns],
-  );
-
   const paginationFor = (rows: DBInboundRecord[]) => {
     const size = pageSize > 0 ? pageSize : rows.length || 1;
     return { pageSize: size, showSizeChanger: false, hideOnSinglePage: true };
@@ -371,7 +366,7 @@ export default function InboundList({
               onChange: (keys: Key[]) => setSelectedRowKeys(keys as number[]),
             }}
             pagination={paginationFor(visibleInbounds)}
-            scroll={{ x: tableScrollX }}
+            scroll={undefined}
             style={{ marginTop: 10 }}
             size="small"
             locale={{

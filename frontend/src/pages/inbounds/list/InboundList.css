@@ -295,3 +295,15 @@
   white-space: nowrap;
   cursor: default;
 }
+
+/* Table Fit without horizontal scroll */
+.inbound-list-card .ant-table-wrapper,
+.inbound-list-card .ant-table-container,
+.inbound-list-card .ant-table-content {
+  overflow-x: hidden !important;
+}
+
+.inbound-list-card .ant-table table {
+  width: 100% !important;
+  table-layout: auto !important;
+}

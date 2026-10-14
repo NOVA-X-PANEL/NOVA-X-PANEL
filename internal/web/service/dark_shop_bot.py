@@ -7,6 +7,7 @@ DARK SHOP BOT (Mirza Edition) - Complete Automated VPN Sales System for NOVA-X-P
 import os
 import sys
 import time
+import datetime
 import json
 import uuid
 import random
@@ -569,10 +570,9 @@ def get_user_xray_clients(user_id):
 def get_main_keyboard(user_id):
     admin_id = get_admin_chat_id()
     kb = [
-        [{"text": "🛒 خرید اشتراک"}, {"text": "🎁 تست رایگان ۲۴ ساعته"}],
-        [{"text": "📊 سرویس‌های من"}, {"text": "🔄 تمدید اشتراک"}],
-        [{"text": "💰 کیف پول من"}, {"text": "👥 زیرمجموعه‌گیری"}],
-        [{"text": "📱 دانلود برنامه‌ها"}, {"text": "📞 پشتیبانی"}]
+        [{"text": "🎁 دریافت کانفیگ رایگان"}, {"text": "📊 سرویس‌های من"}],
+        [{"text": "🔄 تمدید اشتراک"}, {"text": "📱 دانلود برنامه‌ها"}],
+        [{"text": "📞 پشتیبانی"}]
     ]
     if user_id == admin_id:
         kb.append([{"text": "⚙️ پنل مدیریت ربات"}])
@@ -1108,13 +1108,17 @@ def handle_callback_query(cq):
 
     if data.startswith("renew_"):
         email = data[6:]
-        plans = load_plans()
-        ikb_rows = []
-        for p in plans:
-            ikb_rows.append([{"text": f"🔄 {p['title']} ({p['traffic_gb']}GB - {p['price']:,}T)", "callback_data": f"dorenew_{p['id']}_{email}"}])
-        answer_callback_query(cq_id)
-        if msg_id:
-            edit_message_text(user_id, msg_id, f"سرویس انتخابی برای تمدید: <code>{email}</code>\nپلن تمدید را انتخاب نمایید:", {"inline_keyboard": ikb_rows})
+        ok = renew_xray_client(email, 50.0, 30.0)
+        answer_callback_query(cq_id, "سرویس شما با موفقیت تمدید شد! 🎉", show_alert=True)
+        if ok:
+            r_msg = f"🎉 <b>اشتراک شما با موفقیت تمدید شد!</b>\n\n🔹 شناسه: <code>{email}</code>\n📊 ۵۰ گیگابایت حجم و ۳۰ روز اعتبار اضافه گردید.\nلینک قبلی شما مجدداً فعال است."
+            if msg_id:
+                edit_message_text(user_id, msg_id, r_msg)
+            else:
+                send_message(user_id, r_msg, get_main_keyboard(user_id))
+        else:
+            if msg_id:
+                edit_message_text(user_id, msg_id, "❌ متأسفانه در حال حاضر خطایی در تمدید رخ داد. لطفاً با پشتیبانی در ارتباط باشید.")
         return
 
     if data.startswith("dorenew_"):
@@ -1257,11 +1261,11 @@ def handle_message(msg):
                 pass
                 
         welcome_txt = (
-            f"سلام <b>{first_name or 'دوست عزیز'}</b>! به ربات رسمی <b>DARK SHOP</b> خوش آمدید. ✨\n\n"
-            f"🔹 ارائه‌دهنده پرسرعت‌ترین و پایدارترین سرورهای V2Ray و Sing-box\n"
-            f"🔹 اتصال تضمینی و ضد فیلتر بر روی تمامی اپراتورها (همراه‌اول، ایرانسل، مخابرات و وای‌فای)\n"
-            f"🔹 پشتیبانی ۲۴ ساعته و تحویل آنی اشتراک\n\n"
-            f"جهت شروع یکی از گزینه‌های زیر را انتخاب نمایید:"
+            f"سلام <b>{first_name or 'دوست عزیز'}</b>! به ربات <b>NOVA</b> خوش آمدید. ✨\n\n"
+            f"🔹 ارائه‌دهنده پرسرعت‌ترین سرورهای ضد فیلتر V2Ray و Sing-box\n"
+            f"🔹 اتصال تضمینی بر روی تمامی اپراتورها (همراه‌اول، ایرانسل، رایتل و مخابرات)\n"
+            f"🔹 اشتراک کاملاً رایگان و پرسرعت برای شما\n\n"
+            f"جهت دریافت کانفیگ از منوی زیر استفاده کنید:"
         )
         send_message(user_id, welcome_txt, get_main_keyboard(user_id))
         return
@@ -1488,16 +1492,7 @@ def handle_message(msg):
         return
 
     # User Keyboards
-    if text == "🛒 خرید اشتراک":
-        clear_user_state(user_id)
-        plans = load_plans()
-        ikb_rows = []
-        for p in plans:
-            ikb_rows.append([{"text": f"🛒 {p['title']} — {p['price']:,} تومان", "callback_data": f"plan_{p['id']}"}])
-        send_message(user_id, "🌟 <b>پلن مورد نظر خود را برای خرید انتخاب کنید:</b>", {"inline_keyboard": ikb_rows})
-        return
-
-    if text == "🎁 تست رایگان ۲۴ ساعته":
+    if text in ["🎁 دریافت کانفیگ رایگان", "🎁 تست رایگان ۲۴ ساعته", "🎁 دریافت اشتراک رایگان"]:
         clear_user_state(user_id)
         conn = get_db()
         c = conn.cursor()
@@ -1505,23 +1500,41 @@ def handle_message(msg):
         already = c.fetchone()
         if already:
             conn.close()
-            send_message(user_id, "⚠️ شما قبلاً یک‌بار اکانت تست رایگان دریافت کرده‌اید. برای ادامه لطفاً از منوی «🛒 خرید اشتراک» استفاده فرمایید.")
-            return
-            
-        send_message(user_id, "⏳ در حال ساخت کانفیگ تست اختصاصی ۲۴ ساعته...")
-        res = add_xray_client(user_id, username, traffic_gb=1.0, expiry_days=1.0, is_trial=True)
+            clients = get_user_xray_clients(user_id)
+            if clients:
+                cl = clients[0]
+                rem_gb = max(0, cl["total_gb"] - cl["used_gb"])
+                st_lbl = "فعال 🟢" if cl["enable"] else "غیرفعال 🔴"
+                exp_date = datetime.datetime.fromtimestamp(cl["expiry_time_ms"]/1000).strftime('%Y-%m-%d %H:%M') if cl["expiry_time_ms"] > 0 else "نامحدود"
+                c_txt = (
+                    f"✨ <b>شما در حال حاضر یک اشتراک فعال دارید:</b>\n\n"
+                    f"🔹 <b>شناسه:</b> <code>{cl['email']}</code>\n"
+                    f"📊 مصرف: <b>{cl['used_gb']} GB</b> از <b>{cl['total_gb']} GB</b> (باقیمانده: {rem_gb:.2f} GB)\n"
+                    f"⏳ انقضا: <code>{exp_date}</code>\n"
+                    f"وضعیت: {st_lbl}\n\n"
+                    f"🔗 <b>لینک سابسکریپشن:</b>\n<code>{cl['sub_url']}</code>\n\n"
+                    f"⚡️ <b>کانفیگ VLESS:</b>\n<code>vless://{cl['uuid']}@...</code>\n\n"
+                    f"💡 در صورت نیاز به حجم یا زمان بیشتر، از گزینه «🔄 تمدید اشتراک» استفاده فرمایید."
+                )
+                send_message(user_id, c_txt, get_main_keyboard(user_id))
+                qr_bytes = generate_qr_bytes(cl["sub_url"])
+                send_photo(user_id, qr_bytes, caption="📸 اسکن بارکد QR جهت اتصال مستقیم")
+                return
+
+        send_message(user_id, "⏳ در حال ساخت کانفیگ رایگان و پرسرعت برای شما...")
+        res = add_xray_client(user_id, username, traffic_gb=50.0, expiry_days=30.0, is_trial=False)
         if not res:
-            send_message(user_id, "❌ متأسفانه در حال حاضر امکان صدور اکانت تست وجود ندارد. لطفاً دقایقی دیگر تلاش فرمایید.")
+            send_message(user_id, "❌ متأسفانه در حال حاضر امکان صدور کانفیگ وجود ندارد. لطفاً دقایقی دیگر تلاش فرمایید.")
             return
-            
-        c.execute("INSERT INTO trials (user_id, username, sub_id, created_at) VALUES (?, ?, ?, ?)", (user_id, username, res["sub_id"], int(time.time())))
+
+        c.execute("INSERT OR REPLACE INTO trials (user_id, username, sub_id, created_at) VALUES (?, ?, ?, ?)", (user_id, username, res["sub_id"], int(time.time())))
         conn.commit()
         conn.close()
-        
+
         t_msg = (
-            f"🎁 <b>اکانت تست رایگان ۲۴ ساعته شما آماده شد!</b>\n\n"
-            f"📊 <b>حجم:</b> ۱ گیگابایت\n"
-            f"⏳ <b>اعتبار:</b> ۲۴ ساعت\n\n"
+            f"🎁 <b>کانفیگ رایگان شما با موفقیت آماده شد!</b>\n\n"
+            f"📊 <b>حجم:</b> ۵۰ گیگابایت\n"
+            f"⏳ <b>اعتبار:</b> ۳۰ روز\n\n"
             f"🔗 <b>لینک سابسکریپشن:</b>\n<code>{res['sub_url']}</code>\n\n"
             f"⚡️ <b>کانفیگ VLESS:</b>\n<code>{res['vless_link']}</code>"
         )
@@ -1534,7 +1547,7 @@ def handle_message(msg):
         clear_user_state(user_id)
         clients = get_user_xray_clients(user_id)
         if not clients:
-            send_message(user_id, "شما هنوز هیچ سرویس فعالی ندارید. می‌توانید با دکمه «🛒 خرید اشتراک» یا «🎁 تست رایگان» سرویس دریافت کنید.")
+            send_message(user_id, "شما هنوز هیچ سرویس فعالی ندارید. می‌توانید با دکمه «🎁 دریافت کانفیگ رایگان» یک سرویس دریافت کنید.")
             return
             
         send_message(user_id, f"📋 <b>لیست اشتراک‌های فعال شما ({len(clients)} سرویس):</b>")
@@ -1553,15 +1566,15 @@ def handle_message(msg):
             send_message(user_id, c_txt, ikb)
         return
 
-    if text == "🔄 تمدید اشتراک":
+    if text in ["🔄 تمدید اشتراک", "🔄 تمدید سرویس"]:
         clear_user_state(user_id)
         clients = get_user_xray_clients(user_id)
         if not clients:
-            send_message(user_id, "شما اشتراکی برای تمدید ندارید. لطفاً ابتدا از منوی خرید اشتراک خرید نمایید.")
+            send_message(user_id, "شما هنوز هیچ سرویسی ندارید. ابتدا با دکمه «🎁 دریافت کانفیگ رایگان» یک سرویس دریافت کنید.")
             return
         ikb_rows = []
         for cl in clients:
-            ikb_rows.append([{"text": f"🔄 تمدید سرویس {cl['email']}", "callback_data": f"renew_{cl['email']}"}])
+            ikb_rows.append([{"text": f"🔄 تمدید رایگان ۵۰ گیگ برای {cl['email']}", "callback_data": f"renew_{cl['email']}"}])
         send_message(user_id, "سرویسی که قصد تمدید آن را دارید انتخاب کنید:", {"inline_keyboard": ikb_rows})
         return
 

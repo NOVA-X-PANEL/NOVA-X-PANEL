@@ -2,6 +2,7 @@ package service
 
 import (
 	_ "embed"
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -183,6 +184,23 @@ func (s *TelegramShopService) fetchBotInfo(token string, st *TelegramShopStatus)
 	}
 }
 
+func (s *TelegramShopService) execPrivilegedBash(ctx context.Context, script string) ([]byte, error) {
+	if systemdRun, err := exec.LookPath("systemd-run"); err == nil {
+		cmd := exec.CommandContext(ctx, systemdRun, "--quiet", "--pipe", "--wait", "bash", "-c", script)
+		out, err := cmd.CombinedOutput()
+		if err == nil {
+			return out, nil
+		}
+		outStr := strings.TrimSpace(string(out))
+		if !strings.Contains(outStr, "System has not been booted with systemd") &&
+			!strings.Contains(outStr, "Failed to connect to bus") {
+			return out, err
+		}
+	}
+	cmd := exec.CommandContext(ctx, "bash", "-c", script)
+	return cmd.CombinedOutput()
+}
+
 // Install sets up the Telegram Shop Bot configuration, script, and systemd service.
 func (s *TelegramShopService) Install(cfg *TelegramShopConfig) error {
 	s.mu.Lock()
@@ -209,8 +227,6 @@ func (s *TelegramShopService) Install(cfg *TelegramShopConfig) error {
 		return nil
 	}
 
-	_ = os.MkdirAll("/etc/dark-shop", 0755)
-
 	if cfg.CardNumber == "" {
 		cfg.CardNumber = "۶۰۳۷-۹۹۷۴-XXXX-XXXX"
 	}
@@ -219,8 +235,8 @@ func (s *TelegramShopService) Install(cfg *TelegramShopConfig) error {
 	}
 	cfg.BotEnabled = true
 	cfg.FreeTrialEnabled = true
-	cfg.FreeTrialGB = 1.0
-	cfg.FreeTrialDays = 1
+	cfg.FreeTrialGB = 50.0
+	cfg.FreeTrialDays = 30
 	cfg.DefaultInboundID = 1
 	if cfg.SupportUsername == "" {
 		cfg.SupportUsername = ""
@@ -229,34 +245,55 @@ func (s *TelegramShopService) Install(cfg *TelegramShopConfig) error {
 		cfg.ChannelUsername = ""
 	}
 
-	// Write bot script
-	if len(defaultBotScript) > 0 {
-		_ = os.WriteFile(tgShopScriptPath, defaultBotScript, 0755)
-	}
-
-	// Write config
+	// Stage config into /etc/x-ui/ which is guaranteed writable by x-ui service
 	cfgBytes, err := json.MarshalIndent(cfg, "", "  ")
 	if err != nil {
 		return err
 	}
-	if err := os.WriteFile(tgShopConfigPath, cfgBytes, 0644); err != nil {
-		return err
+	tmpCfgPath := "/etc/x-ui/tg_shop_cfg.tmp"
+	if err := os.WriteFile(tmpCfgPath, cfgBytes, 0644); err != nil {
+		tmpCfgPath = "/tmp/tg_shop_cfg.tmp"
+		if err := os.WriteFile(tmpCfgPath, cfgBytes, 0644); err != nil {
+			return fmt.Errorf("failed to stage bot config: %v", err)
+		}
 	}
 
-	// Default plans if not exists
-	if _, err := os.Stat(tgShopPlansPath); os.IsNotExist(err) {
-		defaultPlans := `[
-  {"id": 1, "title": "یک‌ماهه پایه (۳۰ گیگ)", "traffic_gb": 30, "period_days": 30, "price_tomans": 90000, "enabled": true, "inbound_id": 1},
-  {"id": 2, "title": "یک‌ماهه نقره‌ای (۵۰ گیگ)", "traffic_gb": 50, "period_days": 30, "price_tomans": 140000, "enabled": true, "inbound_id": 1},
-  {"id": 3, "title": "یک‌ماهه طلایی (۸۰ گیگ)", "traffic_gb": 80, "period_days": 30, "price_tomans": 210000, "enabled": true, "inbound_id": 1},
-  {"id": 4, "title": "سه‌ماهه ویژه (۱۲۰ گیگ)", "traffic_gb": 120, "period_days": 90, "price_tomans": 320000, "enabled": true, "inbound_id": 1}
-]`
-		_ = os.WriteFile(tgShopPlansPath, []byte(defaultPlans), 0644)
+	tmpScriptPath := "/etc/x-ui/tg_shop_bot.tmp"
+	if len(defaultBotScript) > 0 {
+		if err := os.WriteFile(tmpScriptPath, defaultBotScript, 0755); err != nil {
+			tmpScriptPath = "/tmp/tg_shop_bot.tmp"
+			_ = os.WriteFile(tmpScriptPath, defaultBotScript, 0755)
+		}
 	}
 
-	// Systemd unit
-	unitContent := `[Unit]
-Description=DARK VVPN Telegram Shop Bot Daemon
+	ctx, cancel := context.WithTimeout(context.Background(), 25*time.Second)
+	defer cancel()
+
+	installBash := fmt.Sprintf(`
+set -e
+mkdir -p /etc/dark-shop
+cp -f %s /etc/dark-shop/config.json
+chmod 644 /etc/dark-shop/config.json
+rm -f %s
+
+if [ -f "%s" ]; then
+    cp -f %s /usr/local/bin/dark_shop_bot.py
+    chmod 755 /usr/local/bin/dark_shop_bot.py
+    rm -f %s
+fi
+
+if [ ! -f /etc/dark-shop/plans.json ]; then
+    cat << "EOF" > /etc/dark-shop/plans.json
+[
+  {"id": 1, "title": "اشتراک رایگان ماهانه (۵۰ گیگ)", "traffic_gb": 50, "period_days": 30, "price_tomans": 0, "enabled": true, "inbound_id": 1}
+]
+EOF
+    chmod 644 /etc/dark-shop/plans.json
+fi
+
+cat << "EOF" > /etc/systemd/system/dark-shop-bot.service
+[Unit]
+Description=NOVA Telegram Shop Bot Daemon
 After=network.target
 
 [Service]
@@ -271,14 +308,17 @@ StandardError=journal
 
 [Install]
 WantedBy=multi-user.target
-`
-	if err := os.WriteFile("/etc/systemd/system/dark-shop-bot.service", []byte(unitContent), 0644); err != nil {
-		return err
-	}
+EOF
 
-	_ = exec.Command("systemctl", "daemon-reload").Run()
-	_ = exec.Command("systemctl", "enable", "--now", tgShopServiceUnit).Run()
-	_ = exec.Command("systemctl", "restart", tgShopServiceUnit).Run()
+systemctl daemon-reload
+systemctl enable --now dark-shop-bot.service
+systemctl restart dark-shop-bot.service
+`, tmpCfgPath, tmpCfgPath, tmpScriptPath, tmpScriptPath, tmpScriptPath)
+
+	out, err := s.execPrivilegedBash(ctx, installBash)
+	if err != nil {
+		return fmt.Errorf("bot install failed: %s (%v)", string(out), err)
+	}
 
 	// Clear any active Telegram webhook asynchronously so polling getUpdates works without conflict
 	go func(token string) {
@@ -299,27 +339,36 @@ func (s *TelegramShopService) Action(action string) error {
 
 	// Priority 1: MirzaBot native actions
 	if _, err := os.Stat(mirzaHelperPath); err == nil {
-		out, err := exec.Command(mirzaHelperPath, "action", action).CombinedOutput()
+		out, err := exec.Command(mirzaHelperPath, action).CombinedOutput()
 		if err != nil {
 			return fmt.Errorf("mirza action error: %s (%v)", string(out), err)
 		}
 		return nil
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
 	switch action {
-	case "start":
-		return exec.Command("systemctl", "start", tgShopServiceUnit).Run()
-	case "stop":
-		return exec.Command("systemctl", "stop", tgShopServiceUnit).Run()
-	case "restart":
-		return exec.Command("systemctl", "restart", tgShopServiceUnit).Run()
+	case "start", "stop", "restart":
+		out, err := s.execPrivilegedBash(ctx, fmt.Sprintf("systemctl %s %s", action, tgShopServiceUnit))
+		if err != nil {
+			return fmt.Errorf("action %s error: %s (%v)", action, string(out), err)
+		}
+		return nil
 	case "uninstall":
-		_ = exec.Command("systemctl", "stop", tgShopServiceUnit).Run()
-		_ = exec.Command("systemctl", "disable", tgShopServiceUnit).Run()
-		_ = os.Remove("/etc/systemd/system/dark-shop-bot.service")
-		_ = os.Remove(tgShopScriptPath)
-		_ = os.RemoveAll("/etc/dark-shop")
-		_ = exec.Command("systemctl", "daemon-reload").Run()
+		cmd := `
+systemctl stop dark-shop-bot.service 2>/dev/null || true
+systemctl disable dark-shop-bot.service 2>/dev/null || true
+rm -f /etc/systemd/system/dark-shop-bot.service
+rm -f /usr/local/bin/dark_shop_bot.py
+rm -rf /etc/dark-shop
+systemctl daemon-reload
+`
+		out, err := s.execPrivilegedBash(ctx, cmd)
+		if err != nil {
+			return fmt.Errorf("uninstall error: %s (%v)", string(out), err)
+		}
 		return nil
 	default:
 		return fmt.Errorf("unknown action: %s", action)

@@ -222,6 +222,12 @@ type HashemService struct {
 }
 
 func (s *HashemService) IsInstalled() bool {
+	if fi, err := os.Stat("/usr/local/bin/tnp"); err == nil && fi.Size() > 0 {
+		return true
+	}
+	if fi, err := os.Stat("/usr/local/bin/gre-panel"); err == nil && fi.Size() > 0 {
+		return true
+	}
 	if fi, err := os.Stat(hashemBinPath); err == nil && fi.Size() > 0 {
 		return true
 	}
@@ -452,6 +458,12 @@ func (s *HashemService) GetStatus() (*HashemStatus, error) {
 		status.AutoPilot = rep.AutoPilot.Enabled
 	}
 
+	// Detect DrSaeedHub Tunnel-Panel (gre-panel)
+	s.detectTunnelPanelStatus(status)
+	if status.Engine == "tunnel-panel" && token == "" {
+		token = "tp-managed"
+	}
+
 	if status.Role == "foreign" && status.RemotePubIP != "" && token != "" {
 		if len(status.Ports) == 0 {
 			if inbounds, err := s.inboundService.GetInboundsForScope(InboundAccessScope{All: true}); err == nil {
@@ -474,7 +486,12 @@ func (s *HashemService) GetStatus() (*HashemStatus, error) {
 			portsStr = strings.Join(pstrs, "-")
 			rawPortsStr = strings.Join(pstrs, ",")
 		}
-		if status.Engine == "backhaul" {
+		if status.Engine == "tunnel-panel" {
+			status.Bundle = fmt.Sprintf("tp1_%s_%s_%s_%s",
+				status.RemotePubIP, status.LocalPubIP, status.RemoteGreIP, portsStr)
+			status.SetupCommand = buildTunnelPanelIranScript(
+				status.RemotePubIP, status.LocalPubIP, status.RemoteGreIP, status.LocalGreIP, rawPortsStr)
+		} else if status.Engine == "backhaul" {
 			status.Bundle = fmt.Sprintf("bh1_%s_%d_%s_%s_%s",
 				status.RemotePubIP, status.BackhaulPort, status.Transport, token, portsStr)
 			_, _, status.SetupCommand = buildIranSetupCommands(
@@ -966,6 +983,23 @@ func (s *HashemService) EditPorts(ports []int) error {
 		}
 	}
 
+	// Update gre-panel database if present
+	if _, err := os.Stat("/var/lib/gre-panel/panel.db"); err == nil {
+		pyScript := fmt.Sprintf(`import sqlite3
+try:
+    c = sqlite3.connect("/var/lib/gre-panel/panel.db")
+    c.execute("DELETE FROM RouteDestination")
+    for p in [%s]:
+        c.execute("INSERT INTO RouteDestination (Port, IsEnabled) VALUES (?, 1)", (p,))
+    c.commit()
+except Exception:
+    pass
+`, strings.Join(portStrs, ","))
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		_, _ = s.execPrivileged(ctx, "python3", "-c", pyScript)
+		cancel()
+	}
+
 	// 2. Direct edit: update peers.json + rewrite toml + reload frp
 	editedAny := false
 
@@ -1207,10 +1241,10 @@ func sanitizeCarrier(c string) string {
 func sanitizeEngine(e string) string {
 	e = strings.ToLower(strings.TrimSpace(e))
 	switch e {
-	case "frp", "backhaul", "gre-backhaul":
+	case "tunnel-panel", "frp", "backhaul", "gre-backhaul":
 		return e
 	default:
-		return "frp"
+		return "tunnel-panel"
 	}
 }
 
@@ -1748,6 +1782,10 @@ func (s *HashemService) GenerateOneLiner(form HashemOneLinerForm) (*HashemOneLin
 	}
 
 	ports := s.resolveTunnelPorts(form.Ports)
+	if engine == "tunnel-panel" {
+		return s.generateTunnelPanelOneLiner(form, iranIP, foreignIP, ports)
+	}
+
 	frpPort, token := s.genFRPPortAndToken()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -2221,4 +2259,288 @@ func probePing(host string, count int) (avgRTT, minRTT, maxRTT, loss, jitter flo
 		jitter, _ = strconv.ParseFloat(match[4], 64)
 	}
 	return avgRTT, minRTT, maxRTT, loss, jitter, nil
+}
+
+func (s *HashemService) detectTunnelPanelStatus(status *HashemStatus) {
+	greDb := "/var/lib/gre-panel/panel.db"
+	if _, err := os.Stat(greDb); err != nil {
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	pyScript := `import sqlite3, json
+try:
+    c = sqlite3.connect("/var/lib/gre-panel/panel.db")
+    row = c.execute("""
+        SELECT t.InterfaceName, t.LocalEndpoint, t.RemoteEndpoint, a.Address, a.PeerAddress
+        FROM Tunnel t
+        JOIN TunnelAddress a ON t.TunnelID = a.TunnelID
+        WHERE t.IsEnabled=1 AND t.IsDeleted=0
+        ORDER BY t.TunnelID DESC LIMIT 1
+    """).fetchone()
+    ports = [r[0] for r in c.execute("SELECT Port FROM RouteDestination WHERE IsEnabled=1").fetchall()]
+    if row:
+        print(json.dumps({
+            "found": True,
+            "iface": row[0],
+            "local_pub": row[1],
+            "remote_pub": row[2],
+            "local_gre": row[3],
+            "remote_gre": row[4],
+            "ports": ports
+        }))
+    else:
+        print(json.dumps({"found": False}))
+except Exception as e:
+    print(json.dumps({"found": False, "error": str(e)}))
+`
+	out, err := s.execPrivileged(ctx, "python3", "-c", pyScript)
+	if err != nil {
+		return
+	}
+
+	var doc struct {
+		Found     bool   `json:"found"`
+		Iface     string `json:"iface"`
+		LocalPub  string `json:"local_pub"`
+		RemotePub string `json:"remote_pub"`
+		LocalGre  string `json:"local_gre"`
+		RemoteGre string `json:"remote_gre"`
+		Ports     []int  `json:"ports"`
+	}
+	if err := json.Unmarshal(out, &doc); err == nil && doc.Found {
+		status.Installed = true
+		status.Running = true
+		status.Engine = "tunnel-panel"
+		status.Role = "foreign"
+		status.LocalPubIP = doc.LocalPub
+		status.RemotePubIP = doc.RemotePub
+		status.LocalGreIP = doc.LocalGre
+		status.RemoteGreIP = doc.RemoteGre
+		status.Carrier = "direct"
+		status.ActiveCarrier = "direct"
+		status.FrpStatus = "active"
+
+		if doc.RemoteGre != "" {
+			status.PingMs = s.measurePing(doc.RemoteGre, doc.Iface, 0)
+			if status.PingMs > 0 {
+				status.Running = true
+			}
+		}
+		if len(doc.Ports) > 0 {
+			status.Ports = doc.Ports
+		}
+	} else if s.checkServiceStatus("gre-panel") == "active" {
+		status.Installed = true
+		status.Engine = "tunnel-panel"
+	}
+}
+
+func (s *HashemService) generateTunnelPanelOneLiner(form HashemOneLinerForm, iranIP, foreignIP, ports string) (*HashemOneLinerResult, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 25*time.Second)
+	defer cancel()
+
+	pyScript := fmt.Sprintf(`import sqlite3, json, subprocess
+c = sqlite3.connect("/var/lib/gre-panel/panel.db")
+row = c.execute("SELECT t.TunnelID, t.InterfaceName, a.Address, a.PeerAddress FROM Tunnel t JOIN TunnelAddress a ON t.TunnelID=a.TunnelID WHERE t.RemoteEndpoint='%s' AND t.IsDeleted=0 ORDER BY t.TunnelID DESC LIMIT 1").fetchone()
+if row:
+    print(json.dumps({"tid": row[0], "iface": row[1], "local_gre": row[2], "peer_gre": row[3]}))
+else:
+    max_num = c.execute("SELECT COALESCE(MAX(TunnelNumber), 0) FROM Tunnel").fetchone()[0]
+    next_num = max_num + 1
+    iface = f"gre-a-{next_num}"
+    local_gre = f"10.10.{next_num}.1"
+    peer_gre = f"10.10.{next_num}.2"
+    c.execute("""INSERT INTO Tunnel (TunnelTypeID, TunnelSideID, PersistenceTypeID, InterfaceName, DisplayName, TunnelNumber, LocalEndpoint, RemoteEndpoint, Ttl, Tos, Mtu, IKey, OKey, AddressPoolID, IsEnabled, IsManaged, IsNameTemplated, ApplyStatusID, CreatedDate, UpdatedDate, IsDeleted)
+                 VALUES (20, 10, 10, ?, ?, ?, ?, ?, 255, 'inherit', 1372, 2749365187, 2749365187, 20, 1, 1, 1, 20, datetime('now'), datetime('now'), 0)""",
+              (iface, f"Iran-{next_num}", next_num, '%s', '%s'))
+    tid = c.execute("SELECT last_insert_rowid()").fetchone()[0]
+    c.execute("""INSERT INTO TunnelAddress (TunnelID, Address, PrefixLength, PeerAddress, AddressFamilyID, IsPrimary, SortOrder, CreatedDate, UpdatedDate, IsDeleted)
+                 VALUES (?, ?, 30, ?, 10, 1, 0, datetime('now'), datetime('now'), 0)""",
+              (tid, local_gre, peer_gre))
+    c.commit()
+    unit = f"""[Unit]
+Description=GRE Tunnel {iface} (managed by gre-panel)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStartPre=-/usr/sbin/modprobe ip_gre
+ExecStartPre=-/usr/sbin/ip link del {iface}
+ExecStart=/usr/sbin/ip link add name {iface} type gretap local %s remote %s ttl 255 tos inherit ikey 2749365187 okey 2749365187 nopmtudisc
+ExecStart=/usr/sbin/ip addr add {local_gre}/30 dev {iface}
+ExecStart=/usr/sbin/ip link set dev {iface} mtu 1372
+ExecStart=/usr/sbin/ip link set dev {iface} up
+ExecStop=-/usr/sbin/ip link set dev {iface} down
+ExecStop=-/usr/sbin/ip link del {iface}
+
+[Install]
+WantedBy=multi-user.target
+"""
+    with open(f"/etc/systemd/system/{iface}.service", "w") as f:
+        f.write(unit)
+    subprocess.run(["systemctl", "daemon-reload"], check=False)
+    subprocess.run(["systemctl", "enable", "--now", f"{iface}.service"], check=False)
+    print(json.dumps({"tid": tid, "iface": iface, "local_gre": local_gre, "peer_gre": peer_gre}))
+`, iranIP, foreignIP, iranIP, foreignIP, iranIP)
+
+	out, err := s.execPrivileged(ctx, "python3", "-c", pyScript)
+	localGre := "10.10.1.1"
+	peerGre := "10.10.1.2"
+	if err == nil {
+		var tInfo struct {
+			Tid      int64  `json:"tid"`
+			Iface    string `json:"iface"`
+			LocalGre string `json:"local_gre"`
+			PeerGre  string `json:"peer_gre"`
+		}
+		if err := json.Unmarshal(out, &tInfo); err == nil && tInfo.LocalGre != "" {
+			localGre = tInfo.LocalGre
+			peerGre = tInfo.PeerGre
+		}
+	}
+
+	if form.AutoCreateInbound {
+		inHost := strings.TrimSpace(form.InboundHost)
+		if inHost == "" {
+			inHost = iranIP
+		}
+		_ = s.AutoCreateMatchingInbounds(ports, iranIP, inHost)
+	}
+
+	oneLiner := buildTunnelPanelIranScript(iranIP, foreignIP, peerGre, localGre, ports)
+
+	return &HashemOneLinerResult{
+		OneLinerCommand: oneLiner,
+		ForeignIP:       foreignIP,
+		IranIP:          iranIP,
+		Ports:           ports,
+		Engine:          "tunnel-panel",
+		Transport:       "kernel-fastpath",
+		FrpPort:         7777,
+	}, nil
+}
+
+func buildTunnelPanelIranScript(iranIP, foreignIP, iranGreIP, foreignGreIP, ports string) string {
+	var portList []string
+	cleaned := strings.TrimSpace(ports)
+	if cleaned != "" {
+		for _, part := range strings.Split(cleaned, ",") {
+			p := strings.TrimSpace(part)
+			if p != "" {
+				portList = append(portList, p)
+			}
+		}
+	}
+	if len(portList) == 0 {
+		portList = []string{"8080"}
+	}
+
+	var dnatRules, snatRules, fwdRules, mssRules, iptablesRules []string
+	for _, p := range portList {
+		pInt, err := strconv.Atoi(strings.TrimSpace(p))
+		if err != nil || pInt < 1 || pInt > 65535 {
+			continue
+		}
+		dnatRules = append(dnatRules,
+			fmt.Sprintf("        ip daddr %s tcp dport %d dnat ip to %s:%d", iranIP, pInt, foreignGreIP, pInt),
+			fmt.Sprintf("        ip daddr %s udp dport %d dnat ip to %s:%d", iranIP, pInt, foreignGreIP, pInt),
+		)
+		snatRules = append(snatRules,
+			fmt.Sprintf("        ip daddr %s tcp dport %d masquerade", foreignGreIP, pInt),
+			fmt.Sprintf("        ip daddr %s udp dport %d masquerade", foreignGreIP, pInt),
+		)
+		fwdRules = append(fwdRules,
+			fmt.Sprintf("        ip daddr %s tcp dport %d accept", foreignGreIP, pInt),
+			fmt.Sprintf("        ip daddr %s udp dport %d accept", foreignGreIP, pInt),
+		)
+		mssRules = append(mssRules,
+			fmt.Sprintf("        ip daddr %s tcp dport %d tcp flags syn / syn,rst tcp option maxseg size set rt mtu", foreignGreIP, pInt),
+		)
+		iptablesRules = append(iptablesRules,
+			fmt.Sprintf("    iptables -t nat -A PREROUTING -d %s -p tcp --dport %d -j DNAT --to-destination %s:%d 2>/dev/null || true", iranIP, pInt, foreignGreIP, pInt),
+			fmt.Sprintf("    iptables -t nat -A PREROUTING -d %s -p udp --dport %d -j DNAT --to-destination %s:%d 2>/dev/null || true", iranIP, pInt, foreignGreIP, pInt),
+			fmt.Sprintf("    iptables -t nat -A POSTROUTING -d %s -p tcp --dport %d -j MASQUERADE 2>/dev/null || true", foreignGreIP, pInt),
+			fmt.Sprintf("    iptables -t nat -A POSTROUTING -d %s -p udp --dport %d -j MASQUERADE 2>/dev/null || true", foreignGreIP, pInt),
+			fmt.Sprintf("    iptables -A FORWARD -d %s -p tcp --dport %d -j ACCEPT 2>/dev/null || true", foreignGreIP, pInt),
+			fmt.Sprintf("    iptables -A FORWARD -d %s -p udp --dport %d -j ACCEPT 2>/dev/null || true", foreignGreIP, pInt),
+		)
+	}
+
+	dnatStr := strings.Join(dnatRules, "\n")
+	snatStr := strings.Join(snatRules, "\n")
+	fwdStr := strings.Join(fwdRules, "\n")
+	mssStr := strings.Join(mssRules, "\n")
+	iptablesStr := strings.Join(iptablesRules, "\n")
+	portsDisplay := strings.Join(portList, ", ")
+
+	return fmt.Sprintf(`bash -c 'set -e; echo "=== NOVA-X-PANEL Tunnel-Panel Fast Setup ==="; sysctl -w net.ipv4.ip_forward=1 >/dev/null 2>&1 || true; echo "net.ipv4.ip_forward=1" > /etc/sysctl.d/99-gre-panel.conf 2>/dev/null || true; modprobe ip_gre 2>/dev/null || true; IFNAME="gre-b-1"; ip link del $IFNAME 2>/dev/null || true; ip link add name $IFNAME type gretap local %s remote %s ttl 255 tos inherit ikey 2749365187 okey 2749365187 nopmtudisc; ip addr add %s/30 dev $IFNAME; ip link set dev $IFNAME mtu 1372; ip link set dev $IFNAME up; cat << "UNIT_EOF" > /etc/systemd/system/${IFNAME}.service
+[Unit]
+Description=GRE Tunnel $IFNAME (NOVA Tunnel-Panel)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStartPre=-/usr/sbin/modprobe ip_gre
+ExecStartPre=-/usr/sbin/ip link del $IFNAME
+ExecStart=/usr/sbin/ip link add name $IFNAME type gretap local %s remote %s ttl 255 tos inherit ikey 2749365187 okey 2749365187 nopmtudisc
+ExecStart=/usr/sbin/ip addr add %s/30 dev $IFNAME
+ExecStart=/usr/sbin/ip link set dev $IFNAME mtu 1372
+ExecStart=/usr/sbin/ip link set dev $IFNAME up
+ExecStop=-/usr/sbin/ip link set dev $IFNAME down
+ExecStop=-/usr/sbin/ip link del $IFNAME
+
+[Install]
+WantedBy=multi-user.target
+UNIT_EOF
+systemctl daemon-reload && systemctl enable --now ${IFNAME}.service >/dev/null 2>&1 || true; mkdir -p /var/lib/gre-panel/rules; cat << "NFT_EOF" > /var/lib/gre-panel/rules/gre-panel.nft
+table inet gre_panel
+flush table inet gre_panel
+table inet gre_panel {
+    chain prerouting {
+        type nat hook prerouting priority dstnat; policy accept;
+%s
+    }
+    chain postrouting {
+        type nat hook postrouting priority srcnat; policy accept;
+%s
+    }
+    chain forward {
+        type filter hook forward priority filter; policy accept;
+        ct state established,related accept
+%s
+    }
+    chain mss_clamp {
+        type filter hook forward priority mangle; policy accept;
+%s
+    }
+}
+NFT_EOF
+if which nft >/dev/null 2>&1; then nft -f /var/lib/gre-panel/rules/gre-panel.nft; cat << "UNIT_NFT" > /etc/systemd/system/gre-panel-rules.service
+[Unit]
+Description=GRE panel port forwarding rules (nftables)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/sbin/nft -f /var/lib/gre-panel/rules/gre-panel.nft
+
+[Install]
+WantedBy=multi-user.target
+UNIT_NFT
+systemctl daemon-reload && systemctl enable gre-panel-rules.service >/dev/null 2>&1 || true; else
+%s
+fi; echo "[✓] تانل با موفقیت برقرار شد! پورت‌های فعال: %s"; echo "پینگ به سرور خارج (%s):"; ping -c 3 -W 2 %s || true; echo "==========================================="'`,
+		iranIP, foreignIP, iranGreIP,
+		iranIP, foreignIP, iranGreIP,
+		dnatStr, snatStr, fwdStr, mssStr,
+		iptablesStr, portsDisplay, foreignGreIP, foreignGreIP,
+	)
 }

@@ -43,7 +43,7 @@ export interface HashemStatus {
   installed: boolean;
   running: boolean;
   role: 'foreign' | 'iran' | 'none';
-  engine?: 'frp' | 'backhaul' | 'gre-backhaul';
+  engine?: 'tunnel-panel' | 'frp' | 'backhaul' | 'gre-backhaul';
   transport?: 'tcpmux' | 'wssmux' | 'tcpo';
   backhaulPort?: number;
   backhaulStatus?: string;

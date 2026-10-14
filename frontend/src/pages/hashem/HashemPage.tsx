@@ -40,6 +40,7 @@ import {
   PlusOutlined,
   ReloadOutlined,
   RocketOutlined,
+  SafetyCertificateOutlined,
   SendOutlined,
   SettingOutlined,
   SwapOutlined,
@@ -109,8 +110,8 @@ export default function HashemPage() {
   const [oneLinerForm] = Form.useForm();
   const [form] = Form.useForm<HashemSetupPayload>();
 
-  const oneLinerEngine = Form.useWatch('engine', oneLinerForm) || 'frp';
-  const advancedEngine = Form.useWatch('engine', form) || 'frp';
+  const oneLinerEngine = Form.useWatch('engine', oneLinerForm) || 'tunnel-panel';
+  const advancedEngine = Form.useWatch('engine', form) || 'tunnel-panel';
 
   const handleRemove = async () => {
     try {
@@ -185,7 +186,7 @@ export default function HashemPage() {
   const handleOneLinerSubmit = async (values: any) => {
     try {
       const res = await generateOneLiner({
-        engine: values.engine || 'frp',
+        engine: values.engine || 'tunnel-panel',
         transport: values.transport || 'tcpmux',
         backhaulPort: values.backhaulPort || 3080,
         snappy: values.snappy ?? true,
@@ -225,10 +226,15 @@ export default function HashemPage() {
     return classes.join(' ');
   }, [isDark, isUltra]);
 
+  const isEngineTunnelPanel = status.engine === 'tunnel-panel';
   const isEngineBackhaul = status.engine === 'backhaul' || status.engine === 'gre-backhaul';
-  const engineStatus = isEngineBackhaul ? status.backhaulStatus : status.frpStatus;
+  const engineStatus = isEngineTunnelPanel
+    ? (status.running ? 'active' : 'stopped')
+    : isEngineBackhaul
+      ? status.backhaulStatus
+      : status.frpStatus;
 
-  const isHealthy = status.running && engineStatus === 'active' && status.pingMs > 0;
+  const isHealthy = status.running && (isEngineTunnelPanel || engineStatus === 'active') && status.pingMs > 0;
   const isConnecting = engineStatus === 'connecting';
 
   return (
@@ -462,15 +468,19 @@ export default function HashemPage() {
                     className="hashem-card"
                     title={
                       <Space>
-                        {status.engine === 'backhaul' ? (
+                        {isEngineTunnelPanel ? (
+                          <SafetyCertificateOutlined style={{ color: '#00f2fe' }} />
+                        ) : status.engine === 'backhaul' ? (
                           <RocketOutlined style={{ color: '#d946ef' }} />
                         ) : (
                           <SendOutlined style={{ color: '#a855f7' }} />
                         )}
                         <span>
-                          {isEngineBackhaul
-                            ? t('pages.hashem.cardBackhaulTitle', { defaultValue: 'Backhaul Tunnel' })
-                            : t('pages.hashem.cardFrpTitle')}
+                          {isEngineTunnelPanel
+                            ? t('pages.hashem.cardTunnelPanelTitle', { defaultValue: 'Tunnel-Panel (GRE Kernel)' })
+                            : isEngineBackhaul
+                              ? t('pages.hashem.cardBackhaulTitle', { defaultValue: 'Backhaul Tunnel' })
+                              : t('pages.hashem.cardFrpTitle')}
                         </span>
                       </Space>
                     }
@@ -497,7 +507,7 @@ export default function HashemPage() {
                             }}
                           >
                             {engineStatus === 'active'
-                              ? t('pages.hashem.frpRunning')
+                              ? (isEngineTunnelPanel ? t('pages.hashem.statusRunning', { defaultValue: 'Active (Fast-Path)' }) : t('pages.hashem.frpRunning'))
                               : engineStatus === 'connecting'
                                 ? t('pages.hashem.frpConnecting', { defaultValue: 'Connecting...' })
                                 : t('pages.hashem.frpStopped')}
@@ -508,23 +518,27 @@ export default function HashemPage() {
                     <div style={{ fontSize: 13, display: 'flex', flexDirection: 'column', gap: 6 }}>
                       <div>
                         <Text type="secondary">
-                          {status.engine === 'backhaul'
-                            ? t('pages.hashem.backhaulPort', { defaultValue: 'Backhaul Port' })
-                            : t('pages.hashem.frpControlPort')}
+                          {isEngineTunnelPanel
+                            ? t('pages.hashem.tunnelRouting', { defaultValue: 'Routing Engine' })
+                            : status.engine === 'backhaul'
+                              ? t('pages.hashem.backhaulPort', { defaultValue: 'Backhaul Port' })
+                              : t('pages.hashem.frpControlPort')}
                           :{' '}
                         </Text>
                         <Text code style={{ background: 'rgba(0,0,0,0.4)', borderColor: 'rgba(56,189,248,0.2)' }}>
-                          {status.engine === 'backhaul' ? status.backhaulPort || 3080 : status.frpPort || '-'}
+                          {isEngineTunnelPanel ? 'NFTables / Kernel L3' : status.engine === 'backhaul' ? status.backhaulPort || 3080 : status.frpPort || '-'}
                         </Text>
                       </div>
                       <div>
                         <Text type="secondary">{t('pages.hashem.engineLabel', { defaultValue: 'Engine Type' })}: </Text>
-                        <Tag color={status.engine === 'backhaul' ? 'magenta' : status.engine === 'gre-backhaul' ? 'cyan' : 'purple'}>
-                          {status.engine === 'backhaul'
-                            ? `Backhaul (${status.transport || status.backhaulType || 'tcpmux'})`
-                            : status.engine === 'gre-backhaul'
-                              ? `GRE + Backhaul`
-                              : 'FRP Reverse'}
+                        <Tag color={isEngineTunnelPanel ? 'cyan' : status.engine === 'backhaul' ? 'magenta' : status.engine === 'gre-backhaul' ? 'blue' : 'purple'}>
+                          {isEngineTunnelPanel
+                            ? '🛡️ Tunnel-Panel (NFTables)'
+                            : status.engine === 'backhaul'
+                              ? `Backhaul (${status.transport || status.backhaulType || 'tcpmux'})`
+                              : status.engine === 'gre-backhaul'
+                                ? `GRE + Backhaul`
+                                : 'FRP Reverse'}
                         </Tag>
                       </div>
                     </div>
@@ -865,16 +879,17 @@ export default function HashemPage() {
                     <Form.Item
                       name="engine"
                       label={t('pages.hashem.engineLabel', { defaultValue: 'Tunnel Engine' })}
-                      initialValue="frp"
+                      initialValue="tunnel-panel"
                     >
                       <Radio.Group buttonStyle="solid" style={{ width: '100%' }}>
+                        <Radio.Button value="tunnel-panel">{t('pages.hashem.tunnelPanelOption', { defaultValue: '🛡️ Tunnel-Panel (کرنل GRE + NFTables)' })}</Radio.Button>
                         <Radio.Button value="frp">{t('pages.hashem.frpOption', { defaultValue: '⚡ FRP (Reverse)' })}</Radio.Button>
                         <Radio.Button value="backhaul">{t('pages.hashem.backhaulOption', { defaultValue: '🚀 Backhaul (High-Speed)' })}</Radio.Button>
                         <Radio.Button value="gre-backhaul">🌐 GRE + Backhaul</Radio.Button>
                       </Radio.Group>
                     </Form.Item>
 
-                    {oneLinerEngine !== 'frp' && (
+                    {oneLinerEngine !== 'frp' && oneLinerEngine !== 'tunnel-panel' && (
                       <Row gutter={16}>
                         <Col span={14}>
                           <Form.Item
@@ -1014,16 +1029,17 @@ export default function HashemPage() {
                     <Form.Item
                       name="engine"
                       label={t('pages.hashem.engineLabel', { defaultValue: 'Tunnel Engine' })}
-                      initialValue="frp"
+                      initialValue="tunnel-panel"
                     >
                       <Radio.Group buttonStyle="solid" style={{ width: '100%' }}>
+                        <Radio.Button value="tunnel-panel">{t('pages.hashem.tunnelPanelOption', { defaultValue: '🛡️ Tunnel-Panel (کرنل GRE + NFTables)' })}</Radio.Button>
                         <Radio.Button value="frp">{t('pages.hashem.frpOption', { defaultValue: '⚡ FRP (Reverse)' })}</Radio.Button>
                         <Radio.Button value="backhaul">{t('pages.hashem.backhaulOption', { defaultValue: '🚀 Backhaul (High-Speed)' })}</Radio.Button>
                         <Radio.Button value="gre-backhaul">🌐 GRE + Backhaul</Radio.Button>
                       </Radio.Group>
                     </Form.Item>
 
-                    {advancedEngine !== 'frp' && (
+                    {advancedEngine !== 'frp' && advancedEngine !== 'tunnel-panel' && (
                       <Row gutter={16}>
                         <Col span={14}>
                           <Form.Item

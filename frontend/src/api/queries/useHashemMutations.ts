@@ -8,7 +8,7 @@ import type { BenchmarkReport } from './useHashemQuery';
 
 export interface HashemSetupPayload {
   role?: string;
-  engine?: 'frp' | 'backhaul' | 'gre-backhaul';
+  engine?: 'tunnel-panel' | 'frp' | 'backhaul' | 'gre-backhaul';
   transport?: 'tcpmux' | 'wssmux' | 'tcpo';
   backhaulPort?: number;
   snappy?: boolean;
@@ -24,7 +24,7 @@ export interface HashemSetupPayload {
 }
 
 export interface HashemSSHSetupPayload {
-  engine?: 'frp' | 'backhaul' | 'gre-backhaul';
+  engine?: 'tunnel-panel' | 'frp' | 'backhaul' | 'gre-backhaul';
   transport?: 'tcpmux' | 'wssmux' | 'tcpo';
   backhaulPort?: number;
   snappy?: boolean;
@@ -48,7 +48,7 @@ export interface HashemSSHSetupResult {
 }
 
 export interface HashemOneLinerPayload {
-  engine?: 'frp' | 'backhaul' | 'gre-backhaul';
+  engine?: 'tunnel-panel' | 'frp' | 'backhaul' | 'gre-backhaul';
   transport?: 'tcpmux' | 'wssmux' | 'tcpo';
   backhaulPort?: number;
   snappy?: boolean;

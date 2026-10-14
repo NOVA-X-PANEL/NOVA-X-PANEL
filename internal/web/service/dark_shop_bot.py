@@ -15,9 +15,20 @@ import string
 import logging
 import sqlite3
 import threading
-import requests
 import io
-import qrcode
+import urllib.request
+import urllib.parse
+import urllib.error
+
+try:
+    import requests
+except ImportError:
+    requests = None
+
+try:
+    import qrcode
+except ImportError:
+    qrcode = None
 
 CONFIG_PATH = "/etc/dark-shop/config.json"
 PLANS_PATH = "/etc/dark-shop/plans.json"
@@ -236,19 +247,36 @@ def change_user_balance(user_id, amount_delta):
     return row["balance"] if row else 0
 
 def generate_qr_bytes(text_data):
-    qr = qrcode.QRCode(
-        version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_L,
-        box_size=8,
-        border=3,
-    )
-    qr.add_data(text_data)
-    qr.make(fit=True)
-    img = qr.make_image(fill_color="black", back_color="white")
-    bio = io.BytesIO()
-    img.save(bio, format="PNG")
-    bio.seek(0)
-    return bio.getvalue()
+    if qrcode is not None:
+        try:
+            qr = qrcode.QRCode(
+                version=1,
+                error_correction=qrcode.constants.ERROR_CORRECT_L,
+                box_size=8,
+                border=3,
+            )
+            qr.add_data(text_data)
+            qr.make(fit=True)
+            img = qr.make_image(fill_color="black", back_color="white")
+            bio = io.BytesIO()
+            img.save(bio, format="PNG")
+            bio.seek(0)
+            return bio.getvalue()
+        except Exception as e:
+            logger.warning(f"Local QR generation error: {e}")
+            
+    # Zero-dependency HTTP fallback via public QR API
+    try:
+        import urllib.request
+        import urllib.parse
+        encoded = urllib.parse.quote(text_data)
+        qr_url = f"https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={encoded}"
+        req = urllib.request.Request(qr_url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            return resp.read()
+    except Exception as e:
+        logger.warning(f"Remote QR fetch fallback error: {e}")
+        return None
 
 
 def get_bot_token():
@@ -268,17 +296,60 @@ def tg_request(method, payload=None, files=None):
     if not token:
         return None
     url = f"https://api.telegram.org/bot{token}/{method}"
+    
+    # 1. Use requests if installed
+    if requests is not None:
+        try:
+            if files:
+                res = requests.post(url, data=payload or {}, files=files, timeout=25)
+            else:
+                res = requests.post(url, json=payload or {}, timeout=25)
+            data = res.json()
+            if not data.get("ok"):
+                logger.warning(f"Telegram API {method} error: {data.get('description')}")
+            return data
+        except Exception as e:
+            logger.error(f"Telegram API request {method} exception: {e}")
+            return None
+
+    # 2. Pure Python standard library urllib fallback (zero external dependencies)
     try:
+        import urllib.request
+        import urllib.error
+        
         if files:
-            res = requests.post(url, data=payload or {}, files=files, timeout=25)
+            boundary = '----WebKitFormBoundary' + uuid.uuid4().hex
+            body = bytearray()
+            if payload:
+                for k, v in payload.items():
+                    body.extend(f'--{boundary}\r\nContent-Disposition: form-data; name="{k}"\r\n\r\n{v}\r\n'.encode('utf-8'))
+            for field_name, file_tuple in files.items():
+                filename, file_bytes, mime_type = file_tuple
+                body.extend(f'--{boundary}\r\nContent-Disposition: form-data; name="{field_name}"; filename="{filename}"\r\nContent-Type: {mime_type}\r\n\r\n'.encode('utf-8'))
+                body.extend(file_bytes)
+                body.extend(b'\r\n')
+            body.extend(f'--{boundary}--\r\n'.encode('utf-8'))
+            headers = {'Content-Type': f'multipart/form-data; boundary={boundary}'}
+            req = urllib.request.Request(url, data=bytes(body), headers=headers, method='POST')
         else:
-            res = requests.post(url, json=payload or {}, timeout=25)
-        data = res.json()
-        if not data.get("ok"):
-            logger.warning(f"Telegram API {method} error: {data.get('description')}")
-        return data
+            data_bytes = json.dumps(payload or {}).encode('utf-8')
+            headers = {'Content-Type': 'application/json'}
+            req = urllib.request.Request(url, data=data_bytes, headers=headers, method='POST')
+            
+        with urllib.request.urlopen(req, timeout=25) as resp:
+            data = json.loads(resp.read().decode('utf-8'))
+            if not data.get("ok"):
+                logger.warning(f"Telegram API {method} error: {data.get('description')}")
+            return data
+    except urllib.error.HTTPError as e:
+        err_body = e.read().decode('utf-8', errors='ignore')
+        logger.warning(f"Telegram API {method} HTTP {e.code} error: {err_body}")
+        try:
+            return json.loads(err_body)
+        except Exception:
+            return None
     except Exception as e:
-        logger.error(f"Telegram API request {method} exception: {e}")
+        logger.error(f"Network error in tg_request ({method}): {e}")
         return None
 
 def send_message(chat_id, text, reply_markup=None, parse_mode="HTML"):
@@ -1657,12 +1728,27 @@ def main():
     t = threading.Thread(target=background_notifier, daemon=True)
     t.start()
     
-    last_update_id = 0
     token = get_bot_token()
     if not token:
         logger.error("No bot token set in config!")
         sys.exit(1)
+
+    # Purge any stale webhook from previous bot sessions so getUpdates works cleanly
+    try:
+        del_res = tg_request("deleteWebhook", {"drop_pending_updates": False})
+        logger.info(f"Purged webhook status: {del_res}")
+    except Exception as e:
+        logger.warning(f"Error purging webhook: {e}")
+
+    # Check connection and verify bot identity
+    me = tg_request("getMe")
+    if me and me.get("ok"):
+        bot_info = me.get("result", {})
+        logger.info(f"Bot connected successfully as @{bot_info.get('username')} (Name: {bot_info.get('first_name')}, ID: {bot_info.get('id')})")
+    else:
+        logger.error(f"Failed to verify bot token with Telegram: {me}")
         
+    last_update_id = 0
     logger.info("Bot polling loop running successfully.")
     while True:
         try:
@@ -1670,10 +1756,13 @@ def main():
             if res and res.get("ok"):
                 for upd in res.get("result", []):
                     last_update_id = upd["update_id"]
-                    if "message" in upd:
-                        handle_message(upd["message"])
-                    elif "callback_query" in upd:
-                        handle_callback_query(upd["callback_query"])
+                    try:
+                        if "message" in upd:
+                            handle_message(upd["message"])
+                        elif "callback_query" in upd:
+                            handle_callback_query(upd["callback_query"])
+                    except Exception as handler_err:
+                        logger.error(f"Exception handling update {last_update_id}: {handler_err}")
             time.sleep(0.5)
         except Exception as e:
             logger.error(f"Polling loop exception: {e}")

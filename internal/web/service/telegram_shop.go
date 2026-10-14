@@ -282,6 +282,13 @@ if [ -f "%s" ]; then
     rm -f %s
 fi
 
+if command -v apt-get >/dev/null 2>&1; then
+    if ! python3 -c "import requests, qrcode" >/dev/null 2>&1; then
+        apt-get update -qq >/dev/null 2>&1 || true
+        apt-get install -y -qq python3-requests python3-qrcode >/dev/null 2>&1 || true
+    fi
+fi
+
 if [ ! -f /etc/dark-shop/plans.json ]; then
     cat << "EOF" > /etc/dark-shop/plans.json
 [

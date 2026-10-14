@@ -2607,7 +2607,9 @@
         "tcp": "TCP / TCPO (Direct Single-Connection)",
         "tun": "TUN (L3 Network Interface Tunnel)"
       },
-      "inboundHostPlaceholder": "your iran domain"
+      "inboundHostPlaceholder": "your iran domain",
+      "tunnelPanelOption": "🛡️ GRETAP (Linux Kernel + NFTables - Fast Path)",
+      "cardTunnelPanelTitle": "GRETAP Kernel Tunnel"
     },
     "telegramShop": {
       "title": "Telegram Shop",

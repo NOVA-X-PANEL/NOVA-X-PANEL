@@ -1,8 +1,8 @@
 import type { CSSProperties } from 'react';
 
 export const SPEED_TAG_CLASS_NAME = 'table-speed-tag' as const;
-export const SPEED_TAG_WIDTH = 200 as const;
-export const SPEED_TABLE_CELL_INLINE_PADDING = 8 as const;
+export const SPEED_TAG_WIDTH = 170 as const;
+export const SPEED_TABLE_CELL_INLINE_PADDING = 6 as const;
 
 export const SPEED_TAG_STYLE = {
   width: SPEED_TAG_WIDTH,

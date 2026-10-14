@@ -16,6 +16,7 @@ import {
 } from '@ant-design/icons';
 
 import { CPUFormatter, SizeFormatter, TimeFormatter } from '@/utils';
+import { formatPanelVersion } from '@/lib/panel-version';
 import type { Status } from '@/models/status';
 
 /**
@@ -75,7 +76,7 @@ export function OverviewHero({ panelVersion }: OverviewHeroProps) {
         </div>
         <div className="nc-hero-metric">
           <div className="nc-hero-metric-label">{t('pages.index.currentPanelVersion')}</div>
-          <div className="nc-hero-metric-value">v{panelVersion}</div>
+          <div className="nc-hero-metric-value">{formatPanelVersion(panelVersion) || (panelVersion && panelVersion !== '?' ? `v${panelVersion}` : 'v2.6.25')}</div>
         </div>
       </div>
     </div>
@@ -168,7 +169,7 @@ export function OverviewRail({ status, panelVersion }: OverviewRailProps) {
       label: 'Xray',
       value: status.xray.version || status.xray.state,
     },
-    { icon: <RocketOutlined />, label: t('menu.dashboard'), value: `v${panelVersion}` },
+    { icon: <RocketOutlined />, label: t('menu.dashboard'), value: formatPanelVersion(panelVersion) || (panelVersion && panelVersion !== '?' ? `v${panelVersion}` : 'v2.6.25') },
     {
       icon: <ThunderboltOutlined />,
       label: t('pages.index.systemHistoryTitle'),

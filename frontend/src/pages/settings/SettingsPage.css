@@ -2,6 +2,19 @@
   margin-bottom: 10px;
 }
 
+.settings-page .header-actions .ant-btn:disabled,
+.settings-page .header-actions .ant-btn[disabled] {
+  background: rgba(30, 41, 59, 0.6) !important;
+  border: 1px solid rgba(148, 163, 184, 0.25) !important;
+  color: #94a3b8 !important;
+  cursor: not-allowed !important;
+  opacity: 0.85 !important;
+}
+
+.settings-page .header-actions .ant-btn:not(:disabled) {
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.3) !important;
+}
+
 .ldap-no-inbounds {
   margin-top: 6px;
   color: var(--ant-color-text-tertiary);

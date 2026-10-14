@@ -771,7 +771,7 @@ body.dark .ant-drawer-body .drawer-menu .ant-menu-item-group-list {
 }
 
 .sider-nav {
-  padding: 0 6px 4px;
+  padding: 0 6px 20px;
 }
 
 @media (max-width: 768px) {

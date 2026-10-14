@@ -2585,7 +2585,7 @@
       "optimal": "Optimal",
       "good": "Good",
       "poor": "Poor",
-      "autoCreateInboundBtn": "⚡ Auto-Create VLESS-WS Inbound",
+      "autoCreateInboundBtn": "Auto-Create VLESS-WS Inbound",
       "oneLinerIranCommandDesc": "Enter Iran server IP and desired ports. Foreign server configuration will be applied immediately and a one-liner command will be generated to run on your Iran server.",
       "frpOption": "⚡ FRP (Reverse)",
       "backhaulOption": "🚀 Backhaul (High-Speed)",

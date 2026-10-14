@@ -128,7 +128,7 @@ export function useInboundColumns({
         title: t('pages.inbounds.enable'),
         key: 'enable',
         align: 'center',
-        width: 110,
+        width: 90,
         render: (_, record) => (
           <div className="inb-switch-cell">
             <Switch
@@ -211,7 +211,7 @@ export function useInboundColumns({
         dataIndex: 'port',
         key: 'port',
         align: 'center',
-        width: 100,
+        width: 85,
         sorter: (a, b) => a.port - b.port,
         render: (port: number) => <span className="inb-port-cyber">:{port}</span>,
       },
@@ -292,7 +292,7 @@ export function useInboundColumns({
         title: t('clients'),
         key: 'clients',
         align: 'center',
-        width: 200,
+        width: 165,
         sorter: (a, b) => clientTotal(a) - clientTotal(b),
         render: (_, record) => {
           const cc = clientCount[record.id] || fallbackClientCount(record);

@@ -2585,7 +2585,7 @@
       "optimal": "عالی",
       "good": "خوب",
       "poor": "ضعیف",
-      "autoCreateInboundBtn": "⚡ ساخت اینباند VLESS-WS",
+      "autoCreateInboundBtn": "ساخت اینباند VLESS-WS",
       "oneLinerIranCommandDesc": "کافیست آی‌پی سرور ایران و پورت‌های مدنظر را وارد کنید. تنظیمات سرور خارج فوراً انجام شده و یک دستور تک‌خطی به شما تحویل داده می‌شود تا در ترمینال سرور ایران اجرا فرمایید.",
       "frpOption": "⚡ FRP (معکوس)",
       "backhaulOption": "🚀 Backhaul (پرسرعت)",

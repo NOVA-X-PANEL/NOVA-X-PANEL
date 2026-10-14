@@ -308,6 +308,8 @@ export default function AppSidebar() {
                 lineHeight: '16px',
                 marginLeft: 6,
                 marginRight: 6,
+                flexShrink: 0,
+                whiteSpace: 'nowrap',
               }}
             >
               beta
@@ -441,6 +443,8 @@ export default function AppSidebar() {
                     lineHeight: '16px',
                     marginLeft: 6,
                     marginRight: 6,
+                    flexShrink: 0,
+                    whiteSpace: 'nowrap',
                   }}
                 >
                   beta

@@ -118,7 +118,7 @@ export function ClientsActions({ onAdd, onImport, onExport, onResetTraffic }: Cl
     {
       key: 'reset',
       icon: <ReloadOutlined />,
-      label: t('pages.clients.resetAllTrafficsTitle'),
+      label: t('pages.clients.resetAllTraffics'),
       onClick: onResetTraffic,
       cls: 'is-danger',
     },

@@ -29,7 +29,6 @@ import {
   Typography,
 } from 'antd';
 import {
-  CheckCircleOutlined,
   CodeOutlined,
   CopyOutlined,
   DashboardOutlined,
@@ -46,6 +45,7 @@ import {
   SwapOutlined,
   SyncOutlined,
   ThunderboltOutlined,
+  WifiOutlined,
 } from '@ant-design/icons';
 
 import { useTheme } from '@/hooks/useTheme';
@@ -256,7 +256,17 @@ export default function HashemPage() {
                           : t('pages.hashem.statusDisconnected')}
                     </Tag>
                   ) : (
-                    <Tag color="error" style={{ marginLeft: 8, borderRadius: 12 }}>
+                    <Tag
+                      style={{
+                        marginLeft: 8,
+                        borderRadius: 12,
+                        backgroundColor: 'rgba(239, 68, 68, 0.16)',
+                        border: '1px solid rgba(239, 68, 68, 0.45)',
+                        color: '#f87171',
+                        fontWeight: 600,
+                        padding: '2px 10px',
+                      }}
+                    >
                       {t('pages.hashem.statusNotInstalled')}
                     </Tag>
                   )}
@@ -390,8 +400,9 @@ export default function HashemPage() {
                       </Space>
                     }
                   >
-                    <div style={{ marginBottom: 14 }}>
-                      <Tag color="cyan" style={{ fontSize: 13, padding: '3px 10px', borderRadius: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                      <Text type="secondary" style={{ fontSize: 12 }}>{t('pages.hashem.activeMode', { defaultValue: 'Active Mode:' })}</Text>
+                      <Tag color="cyan" style={{ fontSize: 12, padding: '2px 8px', borderRadius: 6, margin: 0 }}>
                         {status.activeCarrier || status.carrier || t('pages.hashem.unknown')}
                       </Tag>
                     </div>
@@ -414,7 +425,7 @@ export default function HashemPage() {
                     className="hashem-card"
                     title={
                       <Space>
-                        <CheckCircleOutlined style={{ color: '#52c41a' }} />
+                        <WifiOutlined style={{ color: (status.pingMs >= 0 || isHealthy) ? '#52c41a' : '#ff4d4f' }} />
                         <span>{t('pages.hashem.cardLatencyTitle')}</span>
                       </Space>
                     }
@@ -732,7 +743,7 @@ export default function HashemPage() {
                             loading={isAutoCreatingInbound}
                             style={{ borderRadius: 6, fontSize: 12, borderColor: '#00f2fe', color: '#00f2fe' }}
                           >
-                            {t('pages.hashem.autoCreateInboundBtn', { defaultValue: '⚡ Auto-Create VLESS-WS Inbound' })}
+                            {t('pages.hashem.autoCreateInboundBtn', { defaultValue: 'Auto-Create VLESS-WS Inbound' })}
                           </Button>
                           <Button
                             size="small"

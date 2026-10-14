@@ -61,8 +61,8 @@ type sponsorLogo struct {
 }
 
 var (
-	sponsorsURL     = "https://sponsors.sanaei.dev/3X/sponsors.json"
-	sponsorLogoBase = "https://sponsors.sanaei.dev/3X/logos/"
+	sponsorsURL     = ""
+	sponsorLogoBase = ""
 	sponsorNow      = time.Now
 
 	// The panel proxies logos from sponsorLogoBase: CSP stays 'self' and no third party sees admin IPs.
@@ -144,6 +144,9 @@ func (s *PanelService) GetSponsorLogo(name string) ([]byte, string, error) {
 }
 
 func fetchSponsorLogo(name string) ([]byte, string, error) {
+	if sponsorLogoBase == "" {
+		return nil, "", ErrSponsorLogoUnknown
+	}
 	data, err := readSponsorSource(sponsorLogoBase+name, filepath.Join(localSponsorsDir, "logos", name), maxLogoBytes)
 	if err != nil {
 		return nil, "", err
@@ -198,6 +201,9 @@ func fetchLimited(url string, limit int) ([]byte, error) {
 }
 
 func fetchSponsors() (*SponsorList, error) {
+	if sponsorsURL == "" {
+		return &SponsorList{Sponsors: []Sponsor{}}, nil
+	}
 	body, err := readSponsorSource(sponsorsURL, filepath.Join(localSponsorsDir, "sponsors.json"), maxSponsorsBytes)
 	if err != nil {
 		return nil, err

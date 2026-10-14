@@ -472,7 +472,6 @@ func fetchPanelRelease(tag string) (*service.Release, error) {
 					if tagVal != "" {
 						return &service.Release{
 							TagName: tagVal,
-							Name:    tagVal,
 						}, nil
 					}
 				}

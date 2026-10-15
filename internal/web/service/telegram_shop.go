@@ -3,6 +3,7 @@ package service
 import (
 	_ "embed"
 	"context"
+	"crypto/tls"
 	"database/sql"
 	"encoding/json"
 	"fmt"

@@ -136,7 +136,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/NOVA-X-PANEL/NOVA-X-PANEL/main
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="./media/07-configs-dark.png">
-    <img alt="تانل هاشم" src="./media/07-configs-light.png">
+    <img alt="تانل نوا" src="./media/07-configs-light.png">
   </picture>
 </p>
 

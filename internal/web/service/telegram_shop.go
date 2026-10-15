@@ -419,7 +419,7 @@ INSERT INTO marzban_panel (
 
 	// 8. Setup systemd unit for background poller (mirzabot-poller.service)
 	pollerUnit := fmt.Sprintf(`[Unit]
-Description=Mirza Bot Polling Daemon for NOVA-X-PANEL
+Description=NOVA Bot Polling Daemon for NOVA-X-PANEL
 After=network.target mariadb.service mysql.service
 
 [Service]
@@ -527,10 +527,10 @@ func (s *TelegramShopService) Action(action string) error {
 						return fmt.Errorf("auto-install error: %v", err)
 					}
 				} else {
-					return fmt.Errorf("ربات میرزا هنوز نصب نشده است. لطفاً ابتدا توکن و چت‌آیدی را وارد کرده و دکمه نصب را بزنید.")
+					return fmt.Errorf("ربات نوا هنوز نصب نشده است. لطفاً ابتدا توکن و چت‌آیدی را وارد کرده و دکمه نصب را بزنید.")
 				}
 			} else {
-				return fmt.Errorf("ربات میرزا هنوز نصب نشده است. لطفاً ابتدا توکن و چت‌آیدی را وارد کرده و دکمه نصب را بزنید.")
+				return fmt.Errorf("ربات نوا هنوز نصب نشده است. لطفاً ابتدا توکن و چت‌آیدی را وارد کرده و دکمه نصب را بزنید.")
 			}
 		} else {
 			return nil

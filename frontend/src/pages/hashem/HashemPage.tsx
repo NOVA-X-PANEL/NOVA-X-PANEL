@@ -292,9 +292,9 @@ export default function HashemPage() {
                       icon={<DownloadOutlined />}
                       onClick={handleInstall}
                       loading={isInstalling}
-                      title={t('pages.hashem.updateScriptTooltip', { defaultValue: 'Download and update latest Hashem script and cores from GitHub' })}
+                      title={t('pages.hashem.updateScriptTooltip', { defaultValue: 'Download and update latest NOVA script and cores from GitHub' })}
                     >
-                      {t('pages.hashem.updateScriptBtn', { defaultValue: 'Update Hashem Script' })}
+                      {t('pages.hashem.updateScriptBtn', { defaultValue: 'Update NOVA Script' })}
                     </Button>
                     <Button
                       icon={<SyncOutlined />}

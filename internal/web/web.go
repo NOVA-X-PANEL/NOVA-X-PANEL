@@ -281,6 +281,19 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 	// Reverse proxy for NOVA-BOT Web Panel and Mini App to local port 9099
 	botTarget, _ := url.Parse("http://127.0.0.1:9099")
 	botProxy := httputil.NewSingleHostReverseProxy(botTarget)
+	botProxy.ModifyResponse = func(resp *http.Response) error {
+		loc := resp.Header.Get("Location")
+		if loc != "" {
+			if strings.HasPrefix(loc, "/panel/") {
+				resp.Header.Set("Location", "/botpanel"+loc)
+			} else if loc == "/panel" {
+				resp.Header.Set("Location", "/botpanel/panel/")
+			} else if strings.HasPrefix(loc, "/app/") {
+				resp.Header.Set("Location", "/botpanel"+loc)
+			}
+		}
+		return nil
+	}
 	botProxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.WriteHeader(http.StatusBadGateway)
@@ -289,11 +302,7 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 
 	botHandler := func(c *gin.Context) {
 		p := c.Param("filepath")
-		if p == "" || p == "/" {
-			c.Redirect(http.StatusMovedPermanently, "/botpanel/panel/")
-			return
-		}
-		if p == "/panel" {
+		if p == "" || p == "/" || p == "/panel" {
 			c.Redirect(http.StatusMovedPermanently, "/botpanel/panel/")
 			return
 		}
@@ -318,15 +327,21 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 	})
 
 	if basePath != "/" {
+		cleanBase := strings.TrimSuffix(basePath, "/")
 		g.Any("/botpanel/*filepath", botHandler)
 		g.Any("/botpanel", func(c *gin.Context) {
-			c.Redirect(http.StatusMovedPermanently, strings.TrimSuffix(basePath, "/")+"/botpanel/panel/")
+			c.Redirect(http.StatusMovedPermanently, cleanBase+"/botpanel/panel/")
 		})
 	}
 
 	// Let unknown panel document routes fall back to the SPA shell, while every
 	// non-SPA miss still returns a hard 404.
 	engine.NoRoute(func(c *gin.Context) {
+		p := c.Request.URL.Path
+		if strings.HasPrefix(p, "/panel/login.php") || strings.HasPrefix(p, "/panel/index.php") || strings.HasPrefix(p, "/panel/users.php") || strings.HasPrefix(p, "/panel/css/") || strings.HasPrefix(p, "/panel/js/") {
+			c.Redirect(http.StatusMovedPermanently, "/botpanel"+p)
+			return
+		}
 		if s.panel.HandleNoRoutePanelSPA(c) {
 			return
 		}

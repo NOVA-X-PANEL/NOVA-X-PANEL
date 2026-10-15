@@ -84,6 +84,14 @@ func (s *TelegramShopService) ensureWebUnit() {
 	if _, err := os.Stat("/var/www/mirzabot"); os.IsNotExist(err) {
 		return
 	}
+	if len(defaultMirzaBotTarGz) > 0 {
+		tmpTar := fmt.Sprintf("/tmp/novabot_sync_%d.tar.gz", time.Now().UnixNano())
+		if err := os.WriteFile(tmpTar, defaultMirzaBotTarGz, 0644); err == nil {
+			defer os.Remove(tmpTar)
+			cmd := fmt.Sprintf("tar --exclude='config.php' -zxf %s -C /var/www/mirzabot >/dev/null 2>&1 || true", tmpTar)
+			_, _ = s.execPrivilegedBash(context.Background(), cmd)
+		}
+	}
 	script := `
 if [ ! -f /etc/systemd/system/novabot-web.service ] || ! systemctl is-active --quiet novabot-web.service; then
     PHP_BIN="php"

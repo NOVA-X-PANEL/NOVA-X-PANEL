@@ -80,6 +80,44 @@ func (s *TelegramShopService) ensureMirzaHelper() {
 	}
 }
 
+func (s *TelegramShopService) ensureWebUnit() {
+	if _, err := os.Stat("/var/www/mirzabot"); os.IsNotExist(err) {
+		return
+	}
+	script := `
+if [ ! -f /etc/systemd/system/novabot-web.service ] || ! systemctl is-active --quiet novabot-web.service; then
+    PHP_BIN="php"
+    if [ -x /usr/bin/php8.3 ]; then PHP_BIN="/usr/bin/php8.3";
+    elif [ -x /usr/bin/php8.2 ]; then PHP_BIN="/usr/bin/php8.2";
+    elif [ -x /usr/bin/php8.1 ]; then PHP_BIN="/usr/bin/php8.1"; fi
+
+    cat <<EOF > /etc/systemd/system/novabot-web.service
+[Unit]
+Description=NOVA Bot Web Service (Local)
+After=network.target mariadb.service mysql.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/var/www/mirzabot
+ExecStart=${PHP_BIN} -S 127.0.0.1:9099 -t /var/www/mirzabot
+Restart=always
+RestartSec=3
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    chmod 644 /etc/systemd/system/novabot-web.service
+    systemctl daemon-reload
+    systemctl enable --now novabot-web.service 2>/dev/null || true
+    systemctl restart novabot-web.service 2>/dev/null || true
+fi
+`
+	_, _ = s.execPrivilegedBash(context.Background(), script)
+}
+
 // purgeLegacyBot completely terminates, disables, and removes any previous python dark-shop-bot remnants.
 func (s *TelegramShopService) purgeLegacyBot() {
 	_, _ = s.execPrivilegedBash(context.Background(), `
@@ -99,6 +137,7 @@ func (s *TelegramShopService) GetStatus() (*TelegramShopStatus, error) {
 
 	s.purgeLegacyBot()
 	s.ensureMirzaHelper()
+	s.ensureWebUnit()
 
 	status := &TelegramShopStatus{
 		Installed: false,
@@ -584,6 +623,7 @@ func (s *TelegramShopService) Action(action string) error {
 
 	s.purgeLegacyBot()
 	s.ensureMirzaHelper()
+	s.ensureWebUnit()
 
 	// If Mirza Bot is not yet installed:
 	if _, err := os.Stat(mirzaConfigPath); os.IsNotExist(err) {

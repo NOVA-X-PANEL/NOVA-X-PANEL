@@ -97,6 +97,7 @@ if ($cmd === 'install') {
             $stmt = $db->prepare("UPDATE admin SET id_admin = ? WHERE rule = 'administrator' LIMIT 1");
             $stmt->execute([$adminId]);
             $db->exec("UPDATE setting SET Bot_Status = 'botstatuson'");
+            $db->exec("UPDATE setting SET Channel_Report = '' WHERE Channel_Report LIKE '-%'");
         } catch (\Throwable $e) {}
     }
 

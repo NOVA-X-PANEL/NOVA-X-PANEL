@@ -29,6 +29,9 @@ const (
 //go:embed dark_shop_bot.py
 var defaultBotScript []byte
 
+//go:embed mirzabot_helper.php
+var defaultMirzaHelper []byte
+
 // TelegramShopConfig represents settings required to run the bot.
 type TelegramShopConfig struct {
 	BotToken         string  `json:"bot_token" form:"bot_token"`
@@ -65,10 +68,21 @@ type TelegramShopService struct {
 	mu sync.Mutex
 }
 
+func (s *TelegramShopService) ensureMirzaHelper() {
+	if len(defaultMirzaHelper) == 0 {
+		return
+	}
+	if _, err := os.Stat(mirzaHelperPath); err != nil {
+		_ = os.WriteFile(mirzaHelperPath, defaultMirzaHelper, 0755)
+	}
+}
+
 // GetStatus checks if the Telegram Shop Bot is installed and running.
 func (s *TelegramShopService) GetStatus() (*TelegramShopStatus, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	s.ensureMirzaHelper()
 
 	status := &TelegramShopStatus{
 		Installed: false,
@@ -201,6 +215,156 @@ func (s *TelegramShopService) execPrivilegedBash(ctx context.Context, script str
 	return cmd.CombinedOutput()
 }
 
+func (s *TelegramShopService) getPanelDetails() (token string, port string, inboundId int) {
+	port = "2053"
+	inboundId = 1
+	db, err := sql.Open("sqlite3", "/etc/x-ui/x-ui.db")
+	if err != nil {
+		return "", port, inboundId
+	}
+	defer db.Close()
+
+	_ = db.QueryRow("SELECT value FROM settings WHERE key = 'webPort' LIMIT 1").Scan(&port)
+	if port == "" {
+		port = "2053"
+	}
+
+	_ = db.QueryRow("SELECT id FROM inbounds WHERE enable = 1 ORDER BY id ASC LIMIT 1").Scan(&inboundId)
+	if inboundId <= 0 {
+		inboundId = 1
+	}
+
+	_ = db.QueryRow("SELECT token FROM api_tokens WHERE name = 'mirzabot' AND enabled = 1 LIMIT 1").Scan(&token)
+	if token == "" {
+		_ = db.QueryRow("SELECT token FROM api_tokens WHERE (scope = 'admin' OR scope = 'admin:full') AND enabled = 1 LIMIT 1").Scan(&token)
+	}
+
+	if token == "" {
+		token = fmt.Sprintf("%x%x", time.Now().UnixNano(), time.Now().Unix())
+		now := time.Now().Unix()
+		_, _ = db.Exec("INSERT INTO api_tokens (name, token, enabled, created_at, scope, expires_at, admin_id) VALUES ('mirzabot', ?, 1, ?, 'admin', 0, 0)", token, now)
+	}
+
+	return token, port, inboundId
+}
+
+func (s *TelegramShopService) installMirzaBotNativeStack(ctx context.Context, cfg *TelegramShopConfig) error {
+	token, port, inboundId := s.getPanelDetails()
+
+	installScript := fmt.Sprintf(`
+set -e
+export DEBIAN_FRONTEND=noninteractive
+
+# 1. Install PHP, MariaDB, curl, tar, unzip
+if command -v apt-get >/dev/null 2>&1; then
+    apt-get update -qq || true
+    apt-get install -y -qq php-cli php-fpm php-mysql php-curl php-mbstring php-zip php-gd mariadb-server curl tar unzip || true
+elif command -v dnf >/dev/null 2>&1; then
+    dnf install -y -q php-cli php-fpm php-mysqlnd php-curl php-mbstring php-zip php-gd mariadb-server curl tar unzip || true
+elif command -v yum >/dev/null 2>&1; then
+    yum install -y -q php-cli php-fpm php-mysqlnd php-curl php-mbstring php-zip php-gd mariadb-server curl tar unzip || true
+fi
+
+# 2. Ensure MySQL / MariaDB service running
+systemctl enable --now mariadb 2>/dev/null || systemctl enable --now mysql 2>/dev/null || true
+
+# 3. Create database and dedicated user
+mysql -e "CREATE DATABASE IF NOT EXISTS mirzabot CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null || true
+mysql -e "CREATE USER IF NOT EXISTS 'mirzauser'@'localhost' IDENTIFIED BY 'MirzaDbSecure_Nova!';" 2>/dev/null || true
+mysql -e "GRANT ALL PRIVILEGES ON mirzabot.* TO 'mirzauser'@'localhost'; FLUSH PRIVILEGES;" 2>/dev/null || true
+
+# 4. Deploy Mirza Bot source directly from NOVA-X-PANEL/mirzabot repository
+mkdir -p /var/www/mirzabot
+if [ ! -f /var/www/mirzabot/index.php ]; then
+    TMP_DIR="/tmp/mirzabot_setup_$$"
+    rm -rf "$TMP_DIR"
+    mkdir -p "$TMP_DIR"
+    curl -fsSL --retry 3 --max-time 60 "https://github.com/NOVA-X-PANEL/mirzabot/releases/download/v1.0.1/mirzabot.tar.gz" -o "$TMP_DIR/mirzabot.tar.gz" || \
+    curl -fsSL --retry 3 --max-time 60 "https://github.com/NOVA-X-PANEL/mirzabot/archive/refs/heads/main.tar.gz" -o "$TMP_DIR/mirzabot.tar.gz"
+    tar -xzf "$TMP_DIR/mirzabot.tar.gz" -C /var/www/mirzabot || true
+    if [ -d /var/www/mirzabot/mirzabot-main ]; then
+        cp -rn /var/www/mirzabot/mirzabot-main/* /var/www/mirzabot/
+        rm -rf /var/www/mirzabot/mirzabot-main
+    fi
+    rm -rf "$TMP_DIR"
+fi
+
+# 5. Write base config.php
+cat << 'EOF' > /var/www/mirzabot/config.php
+<?php
+// Mirza Bot (NOVA-X-PANEL Edition) Configuration
+$request_exec_timeout = null;
+$dbhost = getenv('DB_HOST') ?: 'localhost';
+$dbname = getenv('DB_NAME') ?: 'mirzabot';
+$usernamedb = getenv('DB_USER') ?: 'mirzauser';
+$passworddb = getenv('DB_PASS') ?: 'MirzaDbSecure_Nova!';
+
+$options = [
+    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    PDO::ATTR_EMULATE_PREPARES => false,
+    PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci",
+];
+$dsn = "mysql:host=$dbhost;dbname=$dbname;charset=utf8mb4";
+try {
+    $pdo = new PDO($dsn, $usernamedb, $passworddb, $options);
+} catch (\PDOException $e) {
+    error_log("Database connection failed: " . $e->getMessage());
+}
+
+$APIKEY = '%s';
+$adminnumber = '%s';
+$domainhosts = '';
+$usernamebot = '';
+?>
+EOF
+chmod 644 /var/www/mirzabot/config.php
+
+# 6. Initialize database tables via table.php
+if [ -f /var/www/mirzabot/table.php ]; then
+    php /var/www/mirzabot/table.php >/dev/null 2>&1 || true
+fi
+
+# 7. Register NOVA-X-PANEL as local panel in Mirza Bot DB
+mysql -u mirzauser -p'MirzaDbSecure_Nova!' mirzabot -e "
+INSERT INTO marzban_panel (
+    code_panel, name_panel, status, url_panel, password_panel, type, inboundid, inbounds, conecton, on_hold_test, version_panel
+) VALUES (
+    'nova_panel', 'NOVA-X-PANEL', 'active', 'http://127.0.0.1:%s', '%s', 'x-ui_single', '[%d]', '[%d]', 'onconecton', '0', '3'
+) ON DUPLICATE KEY UPDATE url_panel = VALUES(url_panel), password_panel = VALUES(password_panel);
+" 2>/dev/null || true
+
+# 8. Setup systemd unit for background poller (mirzabot-poller.service)
+cat << 'EOF' > /etc/systemd/system/mirzabot-poller.service
+[Unit]
+Description=Mirza Bot Polling Daemon for NOVA-X-PANEL
+After=network.target mariadb.service mysql.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/var/www/mirzabot
+ExecStart=/usr/bin/php /var/www/mirzabot/poll.php
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable --now mirzabot-poller.service 2>/dev/null || true
+`, cfg.BotToken, cfg.AdminChatID, port, token, inboundId, inboundId)
+
+	out, err := s.execPrivilegedBash(ctx, installScript)
+	if err != nil {
+		return fmt.Errorf("script execution error: %s (%v)", string(out), err)
+	}
+	return nil
+}
+
 // Install sets up the Telegram Shop Bot configuration, script, and systemd service.
 func (s *TelegramShopService) Install(cfg *TelegramShopConfig) error {
 	s.mu.Lock()
@@ -216,10 +380,29 @@ func (s *TelegramShopService) Install(cfg *TelegramShopConfig) error {
 		return fmt.Errorf("admin_chat_id cannot be empty")
 	}
 
+	s.ensureMirzaHelper()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 180*time.Second)
+	defer cancel()
+
+	// Stop legacy python dark-shop-bot if running
+	_, _ = s.execPrivilegedBash(ctx, "systemctl stop dark-shop-bot.service 2>/dev/null; systemctl disable dark-shop-bot.service 2>/dev/null || true")
+
+	// Check if Mirza Bot is installed; if not, perform automated native deployment
+	if _, err := os.Stat("/var/www/mirzabot/config.php"); os.IsNotExist(err) {
+		if err := s.installMirzaBotNativeStack(ctx, cfg); err != nil {
+			return fmt.Errorf("native mirzabot install error: %v", err)
+		}
+	}
+
+	st := &TelegramShopStatus{}
+	s.fetchBotInfo(cfg.BotToken, st)
+	if st.BotUsername == "" {
+		st.BotUsername = "ShopBot"
+	}
+
 	// Priority 1: MirzaBot native installation & sync
 	if _, err := os.Stat(mirzaHelperPath); err == nil {
-		st := &TelegramShopStatus{}
-		s.fetchBotInfo(cfg.BotToken, st)
 		out, err := exec.Command(mirzaHelperPath, "install", cfg.BotToken, cfg.AdminChatID, st.BotUsername).CombinedOutput()
 		if err != nil {
 			return fmt.Errorf("mirza install error: %s (%v)", string(out), err)
@@ -227,124 +410,7 @@ func (s *TelegramShopService) Install(cfg *TelegramShopConfig) error {
 		return nil
 	}
 
-	if cfg.CardNumber == "" {
-		cfg.CardNumber = "۶۰۳۷-۹۹۷۴-XXXX-XXXX"
-	}
-	if cfg.CardHolder == "" {
-		cfg.CardHolder = "NOVA-X-PANEL"
-	}
-	cfg.BotEnabled = true
-	cfg.FreeTrialEnabled = true
-	cfg.FreeTrialGB = 50.0
-	cfg.FreeTrialDays = 30
-	cfg.DefaultInboundID = 1
-	if cfg.SupportUsername == "" {
-		cfg.SupportUsername = ""
-	}
-	if cfg.ChannelUsername == "" {
-		cfg.ChannelUsername = ""
-	}
-
-	// Stage config into /etc/x-ui/ which is guaranteed writable by x-ui service
-	cfgBytes, err := json.MarshalIndent(cfg, "", "  ")
-	if err != nil {
-		return err
-	}
-	tmpCfgPath := "/etc/x-ui/tg_shop_cfg.tmp"
-	if err := os.WriteFile(tmpCfgPath, cfgBytes, 0644); err != nil {
-		tmpCfgPath = "/tmp/tg_shop_cfg.tmp"
-		if err := os.WriteFile(tmpCfgPath, cfgBytes, 0644); err != nil {
-			return fmt.Errorf("failed to stage bot config: %v", err)
-		}
-	}
-
-	tmpScriptPath := "/etc/x-ui/tg_shop_bot.tmp"
-	if len(defaultBotScript) > 0 {
-		if err := os.WriteFile(tmpScriptPath, defaultBotScript, 0755); err != nil {
-			tmpScriptPath = "/tmp/tg_shop_bot.tmp"
-			_ = os.WriteFile(tmpScriptPath, defaultBotScript, 0755)
-		}
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
-	defer cancel()
-
-	installBash := fmt.Sprintf(`
-set -e
-mkdir -p /etc/dark-shop
-cp -f %s /etc/dark-shop/config.json
-chmod 644 /etc/dark-shop/config.json
-rm -f %s
-
-if [ -f "%s" ]; then
-    cp -f %s /usr/local/bin/dark_shop_bot.py
-    chmod 755 /usr/local/bin/dark_shop_bot.py
-    rm -f %s
-fi
-
-if ! python3 -c "import requests, qrcode" >/dev/null 2>&1; then
-    if command -v apt-get >/dev/null 2>&1; then
-        export DEBIAN_FRONTEND=noninteractive
-        apt-get update -qq >/dev/null 2>&1 || true
-        apt-get install -y -qq python3 python3-requests python3-qrcode python3-pip >/dev/null 2>&1 || true
-    elif command -v dnf >/dev/null 2>&1; then
-        dnf install -y -q python3 python3-requests python3-qrcode python3-pip >/dev/null 2>&1 || true
-    elif command -v yum >/dev/null 2>&1; then
-        yum install -y -q python3 python3-requests python3-qrcode python3-pip >/dev/null 2>&1 || true
-    fi
-fi
-
-if [ ! -f /etc/dark-shop/plans.json ]; then
-    cat << "EOF" > /etc/dark-shop/plans.json
-[
-  {"id": 1, "title": "پلن برنزی (۳۰ گیگ - ۱ ماهه)", "traffic_gb": 30, "period_days": 30, "price_tomans": 45000, "enabled": true, "inbound_id": 1},
-  {"id": 2, "title": "پلن نقره‌ای (۵۰ گیگ - ۱ ماهه)", "traffic_gb": 50, "period_days": 30, "price_tomans": 75000, "enabled": true, "inbound_id": 1},
-  {"id": 3, "title": "پلن طلایی (۱۰۰ گیگ - ۲ ماهه)", "traffic_gb": 100, "period_days": 60, "price_tomans": 140000, "enabled": true, "inbound_id": 1},
-  {"id": 4, "title": "پلن الماس (۲۰۰ گیگ - ۳ ماهه)", "traffic_gb": 200, "period_days": 90, "price_tomans": 260000, "enabled": true, "inbound_id": 1}
-]
-EOF
-    chmod 644 /etc/dark-shop/plans.json
-fi
-
-cat << "EOF" > /etc/systemd/system/dark-shop-bot.service
-[Unit]
-Description=NOVA Telegram Shop Bot Daemon
-After=network.target
-
-[Service]
-Type=simple
-User=root
-WorkingDirectory=/etc/dark-shop
-ExecStart=/usr/bin/python3 /usr/local/bin/dark_shop_bot.py
-Restart=always
-RestartSec=5
-StandardOutput=journal
-StandardError=journal
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-systemctl daemon-reload
-systemctl enable --now dark-shop-bot.service
-systemctl restart dark-shop-bot.service
-`, tmpCfgPath, tmpCfgPath, tmpScriptPath, tmpScriptPath, tmpScriptPath)
-
-	out, err := s.execPrivilegedBash(ctx, installBash)
-	if err != nil {
-		return fmt.Errorf("bot install failed: %s (%v)", string(out), err)
-	}
-
-	// Clear any active Telegram webhook asynchronously so polling getUpdates works without conflict
-	go func(token string) {
-		cl := http.Client{Timeout: 5 * time.Second}
-		resp, err := cl.Get(fmt.Sprintf("https://api.telegram.org/bot%s/deleteWebhook?drop_pending_updates=true", token))
-		if err == nil && resp != nil {
-			_ = resp.Body.Close()
-		}
-	}(cfg.BotToken)
-
-	return nil
+	return fmt.Errorf("mirzabot helper CLI not found at %s", mirzaHelperPath)
 }
 
 // Action performs management operations (start, stop, restart, uninstall).
@@ -352,9 +418,11 @@ func (s *TelegramShopService) Action(action string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	s.ensureMirzaHelper()
+
 	// Priority 1: MirzaBot native actions
 	if _, err := os.Stat(mirzaHelperPath); err == nil {
-		out, err := exec.Command(mirzaHelperPath, action).CombinedOutput()
+		out, err := exec.Command(mirzaHelperPath, "action", action).CombinedOutput()
 		if err != nil {
 			return fmt.Errorf("mirza action error: %s (%v)", string(out), err)
 		}
@@ -390,29 +458,26 @@ systemctl daemon-reload
 	}
 }
 
-// InstallDependencies installs python3, requests, and qrcode using system package manager.
+// InstallDependencies installs system packages required for Mirza Bot.
 func (s *TelegramShopService) InstallDependencies() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 180*time.Second)
 	defer cancel()
 
 	cmd := `
 set -e
+export DEBIAN_FRONTEND=noninteractive
 if command -v apt-get >/dev/null 2>&1; then
-    export DEBIAN_FRONTEND=noninteractive
-    apt-get update -qq
-    apt-get install -y -qq python3 python3-requests python3-qrcode python3-pip
+    apt-get update -qq || true
+    apt-get install -y -qq php-cli php-fpm php-mysql php-curl php-mbstring php-zip php-gd mariadb-server curl tar unzip python3 python3-requests python3-qrcode || true
 elif command -v dnf >/dev/null 2>&1; then
-    dnf install -y -q python3 python3-requests python3-qrcode python3-pip
+    dnf install -y -q php-cli php-fpm php-mysqlnd php-curl php-mbstring php-zip php-gd mariadb-server curl tar unzip python3 python3-requests python3-qrcode || true
 elif command -v yum >/dev/null 2>&1; then
-    yum install -y -q python3 python3-requests python3-qrcode python3-pip
-elif command -v pacman >/dev/null 2>&1; then
-    pacman -Sy --noconfirm python python-requests python-qrcode
-elif command -v apk >/dev/null 2>&1; then
-    apk update && apk add python3 py3-requests py3-qrcode
+    yum install -y -q php-cli php-fpm php-mysqlnd php-curl php-mbstring php-zip php-gd mariadb-server curl tar unzip python3 python3-requests python3-qrcode || true
 fi
+systemctl enable --now mariadb 2>/dev/null || systemctl enable --now mysql 2>/dev/null || true
 `
 	out, err := s.execPrivilegedBash(ctx, cmd)
 	if err != nil {

@@ -401,7 +401,7 @@ export default function TelegramShopPage() {
                   <Space wrap size="middle">
                     <Button
                       type="primary"
-                      href={status?.domain ? (status.domain.startsWith('http') ? `${status.domain}/panel/` : `https://${status.domain}/panel/`) : `http://${window.location.hostname}:9099/panel/`}
+                      href={`${window.location.origin}/botpanel/panel/`}
                       target="_blank"
                       icon={<GlobalOutlined />}
                       style={{ background: '#6366f1', borderColor: '#6366f1' }}

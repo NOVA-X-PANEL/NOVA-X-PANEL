@@ -12,6 +12,8 @@ import (
 	"io/fs"
 	"net"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -275,6 +277,52 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 	engine.GET("/.well-known/appspecific/com.chrome.devtools.json", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{})
 	})
+
+	// Reverse proxy for NOVA-BOT Web Panel and Mini App to local port 9099
+	botTarget, _ := url.Parse("http://127.0.0.1:9099")
+	botProxy := httputil.NewSingleHostReverseProxy(botTarget)
+	botProxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(http.StatusBadGateway)
+		_, _ = w.Write([]byte(`<!DOCTYPE html><html dir="rtl"><head><meta charset="utf-8"><title>NOVA-BOT</title></head><body style="background:#07090e;color:#00ffc4;font-family:sans-serif;text-align:center;padding:50px;"><h2>سرویس وب ربات نوا هنوز در دسترس نیست</h2><p style="color:#94a3b8;">لطفاً از منوی تلگرام شاپ در پنل نوا، وضعیت سرویس را بررسی کنید.</p></body></html>`))
+	}
+
+	botHandler := func(c *gin.Context) {
+		p := c.Param("filepath")
+		if p == "" || p == "/" {
+			c.Redirect(http.StatusMovedPermanently, "/botpanel/panel/")
+			return
+		}
+		if p == "/panel" {
+			c.Redirect(http.StatusMovedPermanently, "/botpanel/panel/")
+			return
+		}
+		if p == "/app" {
+			c.Redirect(http.StatusMovedPermanently, "/botpanel/app/")
+			return
+		}
+		if !strings.HasPrefix(p, "/") {
+			p = "/" + p
+		}
+		if !strings.HasPrefix(p, "/panel/") && !strings.HasPrefix(p, "/app/") && !strings.HasPrefix(p, "/api/") {
+			p = "/panel" + p
+		}
+		c.Request.URL.Path = p
+		c.Request.Header.Set("X-Forwarded-Prefix", "/botpanel")
+		botProxy.ServeHTTP(c.Writer, c.Request)
+	}
+
+	engine.Any("/botpanel/*filepath", botHandler)
+	engine.Any("/botpanel", func(c *gin.Context) {
+		c.Redirect(http.StatusMovedPermanently, "/botpanel/panel/")
+	})
+
+	if basePath != "/" {
+		g.Any("/botpanel/*filepath", botHandler)
+		g.Any("/botpanel", func(c *gin.Context) {
+			c.Redirect(http.StatusMovedPermanently, strings.TrimSuffix(basePath, "/")+"/botpanel/panel/")
+		})
+	}
 
 	// Let unknown panel document routes fall back to the SPA shell, while every
 	// non-SPA miss still returns a hard 404.

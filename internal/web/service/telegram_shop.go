@@ -161,7 +161,14 @@ func (s *TelegramShopService) GetStatus() (*TelegramShopStatus, error) {
 					status.BotUsername = m.BotUsername
 				}
 				if m.Domain != "" {
-					status.Domain = m.Domain
+					cleanDisp := m.Domain
+					if idx := strings.Index(cleanDisp, "/"); idx != -1 {
+						cleanDisp = cleanDisp[:idx]
+					}
+					if idx := strings.Index(cleanDisp, ":"); idx != -1 {
+						cleanDisp = cleanDisp[:idx]
+					}
+					status.Domain = cleanDisp
 				}
 				status.TotalTrials = m.RegisteredUsers
 				status.TotalOrders = m.ActiveOrders
@@ -180,6 +187,10 @@ func (s *TelegramShopService) GetStatus() (*TelegramShopStatus, error) {
 
 	if status.BotToken != "" && status.BotUsername == "" {
 		s.fetchBotInfo(status.BotToken, status)
+	}
+
+	if status.Installed {
+		_, _ = s.execPrivilegedBash(context.Background(), "if ! systemctl is-active --quiet novabot-web.service 2>/dev/null; then systemctl enable --now novabot-web.service 2>/dev/null; fi")
 	}
 
 	return status, nil
@@ -267,6 +278,34 @@ func (s *TelegramShopService) getPanelDetails() (token string, port string, inbo
 	}
 
 	return token, port, inboundId
+}
+
+func (s *TelegramShopService) formatBotDomain(rawDomain string) string {
+	d := strings.TrimSpace(rawDomain)
+	d = strings.TrimPrefix(d, "https://")
+	d = strings.TrimPrefix(d, "http://")
+	d = strings.TrimRight(d, "/")
+
+	_, port, _ := s.getPanelDetails()
+	if d == "" {
+		db, err := sql.Open("sqlite3", "/etc/x-ui/x-ui.db")
+		if err == nil {
+			var webDomain string
+			_ = db.QueryRow("SELECT value FROM settings WHERE key = 'webDomain' LIMIT 1").Scan(&webDomain)
+			db.Close()
+			d = strings.TrimSpace(webDomain)
+		}
+	}
+	if d == "" {
+		return ""
+	}
+	if !strings.Contains(d, ":") && port != "" && port != "443" && port != "80" {
+		d = fmt.Sprintf("%s:%s", d, port)
+	}
+	if !strings.Contains(d, "/botpanel") && !strings.Contains(d, "/panel") {
+		d = fmt.Sprintf("%s/botpanel", d)
+	}
+	return d
 }
 
 func (s *TelegramShopService) installMirzaBotNativeStack(ctx context.Context, cfg *TelegramShopConfig) error {
@@ -385,7 +424,7 @@ $adminnumber = '%s';
 $domainhosts = '%s';
 $usernamebot = '';
 ?>
-`, cfg.BotToken, cfg.AdminChatID, strings.TrimPrefix(strings.TrimPrefix(strings.TrimRight(cfg.Domain, "/"), "https://"), "http://"))
+`, cfg.BotToken, cfg.AdminChatID, s.formatBotDomain(cfg.Domain))
 	_ = os.WriteFile(mirzaConfigPath, []byte(configPHP), 0644)
 
 	// 6. Initialize database tables via table.php
@@ -525,7 +564,7 @@ func (s *TelegramShopService) Install(cfg *TelegramShopConfig) error {
 
 	// Sync config via mirzabot_helper CLI
 	if _, err := os.Stat(mirzaHelperPath); err == nil {
-		cmdStr := fmt.Sprintf("%s install %s %s %s %s", mirzaHelperPath, cfg.BotToken, cfg.AdminChatID, st.BotUsername, cfg.Domain)
+		cmdStr := fmt.Sprintf("%s install %s %s %s %s", mirzaHelperPath, cfg.BotToken, cfg.AdminChatID, st.BotUsername, s.formatBotDomain(cfg.Domain))
 		out, err := s.execPrivilegedBash(ctx, cmdStr)
 		if err != nil {
 			return fmt.Errorf("mirza sync error: %s (%v)", string(out), err)

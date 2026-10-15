@@ -72,19 +72,23 @@ func (s *TelegramShopService) ensureMirzaHelper() {
 	if len(defaultMirzaHelper) == 0 {
 		return
 	}
-	_ = os.WriteFile(mirzaHelperPath, defaultMirzaHelper, 0755)
+	tmpHelper := fmt.Sprintf("/tmp/mirza_helper_%d.php", time.Now().UnixNano())
+	if err := os.WriteFile(tmpHelper, defaultMirzaHelper, 0755); err == nil {
+		defer os.Remove(tmpHelper)
+		_, _ = s.execPrivilegedBash(context.Background(), fmt.Sprintf("cp -f %s %s && chmod 755 %s", tmpHelper, mirzaHelperPath, mirzaHelperPath))
+	}
 }
 
 // purgeLegacyBot completely terminates, disables, and removes any previous python dark-shop-bot remnants.
 func (s *TelegramShopService) purgeLegacyBot() {
-	_, _ = exec.Command("sh", "-c", `
+	_, _ = s.execPrivilegedBash(context.Background(), `
 systemctl stop dark-shop-bot.service 2>/dev/null || true
 systemctl disable dark-shop-bot.service 2>/dev/null || true
 rm -f /etc/systemd/system/dark-shop-bot.service
 rm -f /usr/local/bin/dark_shop_bot.py
 pkill -9 -f dark_shop_bot.py 2>/dev/null || true
 systemctl daemon-reload 2>/dev/null || true
-`).CombinedOutput()
+`)
 }
 
 // GetStatus checks if Mirza Bot is installed and running natively.
@@ -126,14 +130,14 @@ func (s *TelegramShopService) GetStatus() (*TelegramShopStatus, error) {
 	status.Installed = true
 
 	// Check systemd status
-	out, err := exec.Command("systemctl", "is-active", mirzaPollerUnit).Output()
+	out, err := s.execPrivilegedBash(context.Background(), "systemctl is-active "+mirzaPollerUnit)
 	if err == nil && strings.TrimSpace(string(out)) == "active" {
 		status.Running = true
 	}
 
 	// Read detailed stats via helper CLI
 	if _, err := os.Stat(mirzaHelperPath); err == nil {
-		out, err := exec.Command(mirzaHelperPath, "status").Output()
+		out, err := s.execPrivilegedBash(context.Background(), mirzaHelperPath+" status")
 		if err == nil {
 			var m struct {
 				Installed       bool   `json:"installed"`
@@ -168,7 +172,7 @@ func (s *TelegramShopService) GetStatus() (*TelegramShopStatus, error) {
 	}
 
 	if !status.Running {
-		if out, err := exec.Command("pgrep", "-f", "poll.php").Output(); err == nil && len(strings.TrimSpace(string(out))) > 0 {
+		if out, err := s.execPrivilegedBash(context.Background(), "pgrep -f 'poll.php'"); err == nil && len(strings.TrimSpace(string(out))) > 0 {
 			status.Running = true
 		}
 	}
@@ -431,16 +435,19 @@ StandardError=journal
 [Install]
 WantedBy=multi-user.target
 `, phpBin)
-	_ = os.WriteFile("/etc/systemd/system/mirzabot-poller.service", []byte(pollerUnit), 0644)
-
-	// 9. Reload systemd, enable and start worker
-	startScript := `
+	tmpPoller := fmt.Sprintf("/tmp/poller_%d.service", time.Now().UnixNano())
+	if err := os.WriteFile(tmpPoller, []byte(pollerUnit), 0644); err == nil {
+		defer os.Remove(tmpPoller)
+		startScript := fmt.Sprintf(`
+cp -f %s /etc/systemd/system/mirzabot-poller.service
+chmod 644 /etc/systemd/system/mirzabot-poller.service
 systemctl daemon-reload
 systemctl enable --now mirzabot-poller.service 2>/dev/null || true
 systemctl restart mirzabot-poller.service 2>/dev/null || true
-`
-	if out, err := s.execPrivilegedBash(ctx, startScript); err != nil {
-		return fmt.Errorf("failed to start mirzabot poller: %s (%v)", string(out), err)
+`, tmpPoller)
+		if out, err := s.execPrivilegedBash(ctx, startScript); err != nil {
+			return fmt.Errorf("failed to start mirzabot poller: %s (%v)", string(out), err)
+		}
 	}
 
 	return nil
@@ -486,15 +493,15 @@ func (s *TelegramShopService) Install(cfg *TelegramShopConfig) error {
 
 	// Sync config via mirzabot_helper CLI
 	if _, err := os.Stat(mirzaHelperPath); err == nil {
-		out, err := exec.Command(mirzaHelperPath, "install", cfg.BotToken, cfg.AdminChatID, st.BotUsername).CombinedOutput()
+		cmdStr := fmt.Sprintf("%s install %s %s %s", mirzaHelperPath, cfg.BotToken, cfg.AdminChatID, st.BotUsername)
+		out, err := s.execPrivilegedBash(ctx, cmdStr)
 		if err != nil {
 			return fmt.Errorf("mirza sync error: %s (%v)", string(out), err)
 		}
 	}
 
 	// Ensure systemd poller is enabled and actively running
-	_ = exec.Command("systemctl", "enable", "--now", mirzaPollerUnit).Run()
-	_ = exec.Command("systemctl", "restart", mirzaPollerUnit).Run()
+	_, _ = s.execPrivilegedBash(ctx, "systemctl daemon-reload && systemctl enable --now mirzabot-poller.service && systemctl restart mirzabot-poller.service")
 
 	return nil
 }
@@ -532,7 +539,8 @@ func (s *TelegramShopService) Action(action string) error {
 
 	// Mirza Bot is installed; perform action via helper CLI
 	if _, err := os.Stat(mirzaHelperPath); err == nil {
-		out, err := exec.Command(mirzaHelperPath, "action", action).CombinedOutput()
+		cmdStr := fmt.Sprintf("%s action %s", mirzaHelperPath, action)
+		out, err := s.execPrivilegedBash(context.Background(), cmdStr)
 		if err != nil {
 			return fmt.Errorf("mirza action error: %s (%v)", string(out), err)
 		}
@@ -541,18 +549,13 @@ func (s *TelegramShopService) Action(action string) error {
 	// Ensure systemd unit matches action
 	switch action {
 	case "start":
-		_, _ = exec.Command("systemctl", "enable", "--now", mirzaPollerUnit).CombinedOutput()
-		_, _ = exec.Command("systemctl", "restart", mirzaPollerUnit).CombinedOutput()
+		_, _ = s.execPrivilegedBash(context.Background(), "systemctl enable --now mirzabot-poller.service && systemctl restart mirzabot-poller.service")
 	case "stop":
-		_, _ = exec.Command("systemctl", "stop", mirzaPollerUnit).CombinedOutput()
+		_, _ = s.execPrivilegedBash(context.Background(), "systemctl stop mirzabot-poller.service")
 	case "restart":
-		_, _ = exec.Command("systemctl", "enable", "--now", mirzaPollerUnit).CombinedOutput()
-		_, _ = exec.Command("systemctl", "restart", mirzaPollerUnit).CombinedOutput()
+		_, _ = s.execPrivilegedBash(context.Background(), "systemctl enable --now mirzabot-poller.service && systemctl restart mirzabot-poller.service")
 	case "uninstall":
-		_, _ = exec.Command("systemctl", "stop", mirzaPollerUnit).CombinedOutput()
-		_, _ = exec.Command("systemctl", "disable", mirzaPollerUnit).CombinedOutput()
-		_ = os.Remove("/etc/systemd/system/mirzabot-poller.service")
-		_ = exec.Command("systemctl", "daemon-reload").Run()
+		_, _ = s.execPrivilegedBash(context.Background(), "systemctl stop mirzabot-poller.service 2>/dev/null; systemctl disable mirzabot-poller.service 2>/dev/null; rm -f /etc/systemd/system/mirzabot-poller.service; systemctl daemon-reload")
 	}
 
 	return nil

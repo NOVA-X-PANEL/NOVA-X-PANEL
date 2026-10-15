@@ -13,6 +13,7 @@
 # Ignore temporary files
 tmp/
 *.tar.gz
+!internal/web/service/mirzabot.tar.gz
 
 # Ignore build and distribution directories
 backup/

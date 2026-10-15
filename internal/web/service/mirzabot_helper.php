@@ -94,9 +94,9 @@ if ($cmd === 'install') {
     $db = getDb();
     if ($db) {
         try {
-            $stmt = $db->prepare("UPDATE admin SET id_admin = ? WHERE rule = 'administrator' LIMIT 1");
-            $stmt->execute([$adminId]);
-            $db->exec("UPDATE setting SET Bot_Status = 'botstatuson'");
+            $stmt = $db->prepare("INSERT INTO admin (id_admin, username, password, rule) VALUES (?, 'admin', 'admin', 'administrator') ON DUPLICATE KEY UPDATE id_admin = ?");
+            $stmt->execute([$adminId, $adminId]);
+            $db->exec("UPDATE setting SET Bot_Status = 'botstatuson', roll_Status = 'rolleoff'");
             $db->exec("UPDATE setting SET Channel_Report = '' WHERE Channel_Report LIKE '-%'");
         } catch (\Throwable $e) {}
     }

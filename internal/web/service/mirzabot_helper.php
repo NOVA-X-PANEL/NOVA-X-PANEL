@@ -70,6 +70,7 @@ if ($cmd === 'install') {
     $token = trim($argv[2] ?? '');
     $adminId = trim($argv[3] ?? '');
     $username = trim($argv[4] ?? '');
+    $domain = trim($argv[5] ?? '');
 
     if ($token === '' || $adminId === '') {
         echo json_encode(['success' => false, 'error' => 'token and admin_id are required']);
@@ -88,6 +89,10 @@ if ($cmd === 'install') {
     if ($username !== '') {
         $content = preg_replace('/\\$usernamebot\\s*=\\s*[\'"][^\'"]*[\'"];/', "\$usernamebot = '$username';", $content);
     }
+    if ($domain !== '') {
+        $cleanDomain = preg_replace('#^https?://#', '', rtrim($domain, '/'));
+        $content = preg_replace('/\\$domainhosts\\s*=\\s*[\'"][^\'"]*[\'"];/', "\$domainhosts = '$cleanDomain';", $content);
+    }
     file_put_contents($configPath, $content);
 
     // Update DB
@@ -98,6 +103,10 @@ if ($cmd === 'install') {
             $stmt->execute([$adminId, $adminId]);
             $db->exec("UPDATE setting SET Bot_Status = 'botstatuson', roll_Status = 'rolleoff'");
             $db->exec("UPDATE setting SET Channel_Report = '' WHERE Channel_Report LIKE '-%'");
+            if ($domain !== '') {
+                $cleanDomain = preg_replace('#^https?://#', '', rtrim($domain, '/'));
+                $db->prepare("UPDATE setting SET domainhosts = ?")->execute([$cleanDomain]);
+            }
         } catch (\Throwable $e) {}
     }
 
@@ -107,6 +116,8 @@ if ($cmd === 'install') {
     }
     @shell_exec('systemctl enable --now mirzabot-poller.service 2>&1');
     @shell_exec('systemctl restart mirzabot-poller.service 2>&1');
+    @shell_exec('systemctl enable --now novabot-web.service 2>&1');
+    @shell_exec('systemctl restart novabot-web.service 2>&1');
 
     echo json_encode(['success' => true]);
     exit(0);

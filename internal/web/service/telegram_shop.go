@@ -36,6 +36,7 @@ var defaultMirzaHelper []byte
 type TelegramShopConfig struct {
 	BotToken         string  `json:"bot_token" form:"bot_token"`
 	AdminChatID      string  `json:"admin_chat_id" form:"admin_chat_id"`
+	Domain           string  `json:"domain" form:"domain"`
 	CardNumber       string  `json:"card_number" form:"card_number"`
 	CardHolder       string  `json:"card_holder" form:"card_holder"`
 	BotEnabled       bool    `json:"bot_enabled" form:"bot_enabled"`
@@ -381,10 +382,10 @@ try {
 
 $APIKEY = '%s';
 $adminnumber = '%s';
-$domainhosts = '';
+$domainhosts = '%s';
 $usernamebot = '';
 ?>
-`, cfg.BotToken, cfg.AdminChatID)
+`, cfg.BotToken, cfg.AdminChatID, strings.TrimPrefix(strings.TrimPrefix(strings.TrimRight(cfg.Domain, "/"), "https://"), "http://"))
 	_ = os.WriteFile(mirzaConfigPath, []byte(configPHP), 0644)
 
 	// 6. Initialize database tables via table.php
@@ -450,6 +451,37 @@ systemctl restart mirzabot-poller.service 2>/dev/null || true
 		}
 	}
 
+	// 9. Setup systemd unit for local web service (novabot-web.service) on port 9099
+	webUnit := fmt.Sprintf(`[Unit]
+Description=NOVA Bot Web Service (Local)
+After=network.target mariadb.service mysql.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/var/www/mirzabot
+ExecStart=%s -S 127.0.0.1:9099 -t /var/www/mirzabot
+Restart=always
+RestartSec=3
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+`, phpBin)
+	tmpWeb := fmt.Sprintf("/tmp/novabot_web_%d.service", time.Now().UnixNano())
+	if err := os.WriteFile(tmpWeb, []byte(webUnit), 0644); err == nil {
+		defer os.Remove(tmpWeb)
+		startWebScript := fmt.Sprintf(`
+cp -f %s /etc/systemd/system/novabot-web.service
+chmod 644 /etc/systemd/system/novabot-web.service
+systemctl daemon-reload
+systemctl enable --now novabot-web.service 2>/dev/null || true
+systemctl restart novabot-web.service 2>/dev/null || true
+`, tmpWeb)
+		_, _ = s.execPrivilegedBash(ctx, startWebScript)
+	}
+
 	return nil
 }
 
@@ -493,15 +525,15 @@ func (s *TelegramShopService) Install(cfg *TelegramShopConfig) error {
 
 	// Sync config via mirzabot_helper CLI
 	if _, err := os.Stat(mirzaHelperPath); err == nil {
-		cmdStr := fmt.Sprintf("%s install %s %s %s", mirzaHelperPath, cfg.BotToken, cfg.AdminChatID, st.BotUsername)
+		cmdStr := fmt.Sprintf("%s install %s %s %s %s", mirzaHelperPath, cfg.BotToken, cfg.AdminChatID, st.BotUsername, cfg.Domain)
 		out, err := s.execPrivilegedBash(ctx, cmdStr)
 		if err != nil {
 			return fmt.Errorf("mirza sync error: %s (%v)", string(out), err)
 		}
 	}
 
-	// Ensure systemd poller is enabled and actively running
-	_, _ = s.execPrivilegedBash(ctx, "systemctl daemon-reload && systemctl enable --now mirzabot-poller.service && systemctl restart mirzabot-poller.service")
+	// Ensure systemd poller and local web service are enabled and actively running
+	_, _ = s.execPrivilegedBash(ctx, "systemctl daemon-reload && systemctl enable --now mirzabot-poller.service && systemctl restart mirzabot-poller.service && systemctl enable --now novabot-web.service 2>/dev/null && systemctl restart novabot-web.service 2>/dev/null")
 
 	return nil
 }

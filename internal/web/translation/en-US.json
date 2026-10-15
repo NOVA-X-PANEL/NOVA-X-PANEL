@@ -2620,6 +2620,8 @@
       "adminChatIdLabel": "Admin Numeric Chat ID",
       "adminChatIdExtra": "Your numeric Telegram ID to receive orders and alerts (get from @userinfobot)",
       "adminChatIdRequired": "Please enter the Admin Numeric Chat ID",
+      "domainLabel": "Bot & Mini App Domain",
+      "domainExtra": "Domain pointed to this server for Mini App and Web Panel access (e.g. shop.example.com)",
       "installBtn": "Deploy Telegram Shop",
       "featuresTitle": "Telegram Shop System Features",
       "feature1Title": "⚡ Zero Conflict with Panel & Web Server:",

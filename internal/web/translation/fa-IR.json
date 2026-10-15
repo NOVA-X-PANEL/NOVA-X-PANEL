@@ -2620,6 +2620,8 @@
       "adminChatIdLabel": "چت آیدی عددی ادمین (Admin Chat ID)",
       "adminChatIdExtra": "آیدی عددی تلگرام شما جهت دریافت اعلانات و سفارشات (دریافت از @userinfobot)",
       "adminChatIdRequired": "لطفاً آیدی عددی ادمین را وارد کنید",
+      "domainLabel": "دامنه اختصاصی ربات و مینی‌اپ (Domain)",
+      "domainExtra": "دامنه متصل به سرور جهت فعالسازی مینی‌اپ و ورود به وب‌پنل (مثال: shop.example.com)",
       "installBtn": "نصب و راه‌اندازی خودکار تلگرام شاپ",
       "featuresTitle": "ویژگی‌های سیستم تلگرام شاپ",
       "feature1Title": "⚡️ بدون تداخل با پنل و وب‌سرور:",

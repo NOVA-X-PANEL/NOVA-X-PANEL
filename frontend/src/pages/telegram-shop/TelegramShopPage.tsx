@@ -83,6 +83,7 @@ export default function TelegramShopPage() {
           form.setFieldsValue({
             bot_token: res.obj.bot_token,
             admin_chat_id: res.obj.admin_chat_id,
+            domain: res.obj.domain,
           });
         }
       }
@@ -258,6 +259,18 @@ export default function TelegramShopPage() {
                         />
                       </Form.Item>
 
+                      <Form.Item
+                        name="domain"
+                        label={<span style={{ color: '#e2e8f0' }}>{t('pages.telegramShop.domainLabel')}</span>}
+                        extra={t('pages.telegramShop.domainExtra')}
+                      >
+                        <Input
+                          placeholder="shop.example.com"
+                          prefix={<GlobalOutlined style={{ color: '#10b981' }} />}
+                          size="large"
+                        />
+                      </Form.Item>
+
                       <Space direction="vertical" style={{ width: '100%', marginTop: 12 }}>
                         <Button
                           type="primary"
@@ -388,7 +401,7 @@ export default function TelegramShopPage() {
                   <Space wrap size="middle">
                     <Button
                       type="primary"
-                      href={status?.domain ? `https://${status.domain}/panel/` : '/panel/'}
+                      href={status?.domain ? (status.domain.startsWith('http') ? `${status.domain}/panel/` : `https://${status.domain}/panel/`) : `http://${window.location.hostname}:9099/panel/`}
                       target="_blank"
                       icon={<GlobalOutlined />}
                       style={{ background: '#6366f1', borderColor: '#6366f1' }}
@@ -472,6 +485,15 @@ export default function TelegramShopPage() {
                           rules={[{ required: true }]}
                         >
                           <Input prefix={<UserOutlined />} />
+                        </Form.Item>
+                      </Col>
+                      <Col xs={24} md={24}>
+                        <Form.Item
+                          name="domain"
+                          label={<span style={{ color: '#e2e8f0' }}>{t('pages.telegramShop.domainLabel')}</span>}
+                          extra={t('pages.telegramShop.domainExtra')}
+                        >
+                          <Input prefix={<GlobalOutlined style={{ color: '#10b981' }} />} placeholder="shop.example.com" />
                         </Form.Item>
                       </Col>
                     </Row>

@@ -37,11 +37,16 @@ if ($cmd === 'status') {
     $orders = 0;
 
     if ($installed) {
+        $pollerActive = (trim((string)@shell_exec('systemctl is-active mirzabot-poller.service 2>/dev/null')) === 'active');
+        $running = $pollerActive;
+
         $db = getDb();
         if ($db) {
             try {
                 $statusRow = $db->query("SELECT Bot_Status FROM setting LIMIT 1")->fetch(PDO::FETCH_ASSOC);
-                $running = ($statusRow['Bot_Status'] ?? '') === 'botstatuson';
+                if (($statusRow['Bot_Status'] ?? '') === 'botstatusoff') {
+                    $running = false;
+                }
                 $users = (int) $db->query("SELECT COUNT(*) FROM user")->fetchColumn();
                 $orders = (int) $db->query("SELECT COUNT(*) FROM invoice WHERE status = 'paid'")->fetchColumn();
             } catch (\Throwable $e) {}
@@ -99,6 +104,7 @@ if ($cmd === 'install') {
     if (is_file($tableScript)) {
         @shell_exec('php ' . escapeshellarg($tableScript) . ' 2>&1');
     }
+    @shell_exec('systemctl enable --now mirzabot-poller.service 2>&1');
     @shell_exec('systemctl restart mirzabot-poller.service 2>&1');
 
     echo json_encode(['success' => true]);
@@ -110,9 +116,13 @@ if ($cmd === 'action') {
     $db = getDb();
 
     if ($action === 'start') {
-        if ($db) $db->exec("UPDATE setting SET Bot_Status = 'botstatuson'");
-        if (is_file($tableScript)) @shell_exec('php ' . escapeshellarg($tableScript) . ' 2>&1');
-        @shell_exec('systemctl start mirzabot-poller.service 2>&1');
+        if ($db) {
+            try {
+                $db->exec("UPDATE setting SET Bot_Status = 'botstatuson'");
+            } catch (\Throwable $e) {}
+        }
+        @shell_exec('systemctl enable --now mirzabot-poller.service 2>&1');
+        @shell_exec('systemctl restart mirzabot-poller.service 2>&1');
         echo json_encode(['success' => true]);
         exit(0);
     }

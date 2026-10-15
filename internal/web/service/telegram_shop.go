@@ -166,6 +166,12 @@ func (s *TelegramShopService) GetStatus() (*TelegramShopStatus, error) {
 		}
 	}
 
+	if !status.Running {
+		if out, err := exec.Command("pgrep", "-f", "poll.php").Output(); err == nil && len(strings.TrimSpace(string(out))) > 0 {
+			status.Running = true
+		}
+	}
+
 	if status.BotToken != "" && status.BotUsername == "" {
 		s.fetchBotInfo(status.BotToken, status)
 	}
@@ -174,7 +180,10 @@ func (s *TelegramShopService) GetStatus() (*TelegramShopStatus, error) {
 }
 
 func (s *TelegramShopService) fetchBotInfo(token string, st *TelegramShopStatus) {
-	client := http.Client{Timeout: 3 * time.Second}
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := http.Client{Transport: tr, Timeout: 5 * time.Second}
 	url := fmt.Sprintf("https://api.telegram.org/bot%s/getMe", token)
 	resp, err := client.Get(url)
 	if err != nil {
@@ -278,8 +287,13 @@ set -e
 export DEBIAN_FRONTEND=noninteractive
 
 need_install=0
-if ! command -v php >/dev/null 2>&1 || ! command -v mysql >/dev/null 2>&1; then
+if ! command -v php >/dev/null 2>&1 || (! command -v mysql >/dev/null 2>&1 && ! command -v mariadb >/dev/null 2>&1); then
     need_install=1
+fi
+if command -v php >/dev/null 2>&1; then
+    if ! php -m 2>/dev/null | grep -qi curl || ! php -m 2>/dev/null | grep -qi pdo_mysql; then
+        need_install=1
+    fi
 fi
 
 if [ "$need_install" -eq 1 ]; then
@@ -294,6 +308,13 @@ if [ "$need_install" -eq 1 ]; then
 fi
 
 systemctl enable --now mariadb 2>/dev/null || systemctl enable --now mysql 2>/dev/null || true
+
+for i in $(seq 1 15); do
+    if mysqladmin ping >/dev/null 2>&1 || mariadb-admin ping >/dev/null 2>&1; then
+        break
+    fi
+    sleep 1
+done
 `
 	if out, err := s.execPrivilegedBash(ctx, depScript); err != nil {
 		return fmt.Errorf("failed to setup PHP/MariaDB dependencies: %s (%v)", string(out), err)
@@ -301,10 +322,26 @@ systemctl enable --now mariadb 2>/dev/null || systemctl enable --now mysql 2>/de
 
 	// 4. Setup MySQL Database and dedicated user
 	dbScript := `
-mysql -e "CREATE DATABASE IF NOT EXISTS mirzabot CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null || true
-mysql -e "CREATE USER IF NOT EXISTS 'mirzauser'@'localhost' IDENTIFIED BY 'MirzaDbSecure_Nova!';" 2>/dev/null || true
-mysql -e "ALTER USER 'mirzauser'@'localhost' IDENTIFIED BY 'MirzaDbSecure_Nova!';" 2>/dev/null || true
-mysql -e "GRANT ALL PRIVILEGES ON mirzabot.* TO 'mirzauser'@'localhost'; FLUSH PRIVILEGES;" 2>/dev/null || true
+SQL_BIN="mysql"
+if ! command -v mysql >/dev/null 2>&1 && command -v mariadb >/dev/null 2>&1; then
+    SQL_BIN="mariadb"
+fi
+
+$SQL_BIN -e "CREATE DATABASE IF NOT EXISTS mirzabot CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null || true
+$SQL_BIN -e "CREATE USER IF NOT EXISTS 'mirzauser'@'localhost' IDENTIFIED BY 'MirzaDbSecure_Nova!';" 2>/dev/null || true
+$SQL_BIN -e "CREATE USER IF NOT EXISTS 'mirzauser'@'127.0.0.1' IDENTIFIED BY 'MirzaDbSecure_Nova!';" 2>/dev/null || true
+$SQL_BIN -e "CREATE USER IF NOT EXISTS 'mirzauser'@'%' IDENTIFIED BY 'MirzaDbSecure_Nova!';" 2>/dev/null || true
+$SQL_BIN -e "ALTER USER 'mirzauser'@'localhost' IDENTIFIED BY 'MirzaDbSecure_Nova!';" 2>/dev/null || true
+$SQL_BIN -e "ALTER USER 'mirzauser'@'127.0.0.1' IDENTIFIED BY 'MirzaDbSecure_Nova!';" 2>/dev/null || true
+$SQL_BIN -e "GRANT ALL PRIVILEGES ON mirzabot.* TO 'mirzauser'@'localhost';" 2>/dev/null || true
+$SQL_BIN -e "GRANT ALL PRIVILEGES ON mirzabot.* TO 'mirzauser'@'127.0.0.1';" 2>/dev/null || true
+$SQL_BIN -e "GRANT ALL PRIVILEGES ON mirzabot.* TO 'mirzauser'@'%';" 2>/dev/null || true
+$SQL_BIN -e "FLUSH PRIVILEGES;" 2>/dev/null || true
+
+if [ -f /var/www/mirzabot/mirzabot_init.sql ]; then
+    $SQL_BIN -u mirzauser -p'MirzaDbSecure_Nova!' mirzabot < /var/www/mirzabot/mirzabot_init.sql 2>/dev/null || \
+    $SQL_BIN mirzabot < /var/www/mirzabot/mirzabot_init.sql 2>/dev/null || true
+fi
 `
 	_, _ = s.execPrivilegedBash(ctx, dbScript)
 
@@ -312,7 +349,7 @@ mysql -e "GRANT ALL PRIVILEGES ON mirzabot.* TO 'mirzauser'@'localhost'; FLUSH P
 	configPHP := fmt.Sprintf(`<?php
 // Mirza Bot (NOVA-X-PANEL Edition) Configuration
 $request_exec_timeout = null;
-$dbhost = getenv('DB_HOST') ?: 'localhost';
+$dbhost = getenv('DB_HOST') ?: '127.0.0.1';
 $dbname = getenv('DB_NAME') ?: 'mirzabot';
 $usernamedb = getenv('DB_USER') ?: 'mirzauser';
 $passworddb = getenv('DB_PASS') ?: 'MirzaDbSecure_Nova!';
@@ -323,11 +360,18 @@ $options = [
     PDO::ATTR_EMULATE_PREPARES => false,
     PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci",
 ];
-$dsn = "mysql:host=$dbhost;dbname=$dbname;charset=utf8mb4";
+
 try {
+    $dsn = "mysql:host=$dbhost;dbname=$dbname;charset=utf8mb4";
     $pdo = new PDO($dsn, $usernamedb, $passworddb, $options);
-} catch (\PDOException $e) {
-    error_log("Database connection failed: " . $e->getMessage());
+} catch (\PDOException $e1) {
+    try {
+        $dsn = "mysql:host=localhost;dbname=$dbname;charset=utf8mb4";
+        $pdo = new PDO($dsn, $usernamedb, $passworddb, $options);
+    } catch (\PDOException $e2) {
+        error_log("Database connection failed: " . $e2->getMessage());
+        $pdo = null;
+    }
 }
 
 $APIKEY = '%s';
@@ -348,7 +392,12 @@ fi
 
 	// 7. Register NOVA-X-PANEL as local panel in Mirza Bot DB
 	registerPanelScript := fmt.Sprintf(`
-mysql -u mirzauser -p'MirzaDbSecure_Nova!' mirzabot -e "
+SQL_BIN="mysql"
+if ! command -v mysql >/dev/null 2>&1 && command -v mariadb >/dev/null 2>&1; then
+    SQL_BIN="mariadb"
+fi
+
+$SQL_BIN -u mirzauser -p'MirzaDbSecure_Nova!' mirzabot -e "
 INSERT INTO marzban_panel (
     code_panel, name_panel, status, url_panel, password_panel, type, inboundid, inbounds, conecton, on_hold_test, version_panel
 ) VALUES (
@@ -358,8 +407,13 @@ INSERT INTO marzban_panel (
 `, port, token, inboundId, inboundId)
 	_, _ = s.execPrivilegedBash(ctx, registerPanelScript)
 
+	phpBin, err := exec.LookPath("php")
+	if err != nil || phpBin == "" {
+		phpBin = "/usr/bin/php"
+	}
+
 	// 8. Setup systemd unit for background poller (mirzabot-poller.service)
-	pollerUnit := `[Unit]
+	pollerUnit := fmt.Sprintf(`[Unit]
 Description=Mirza Bot Polling Daemon for NOVA-X-PANEL
 After=network.target mariadb.service mysql.service
 
@@ -367,7 +421,7 @@ After=network.target mariadb.service mysql.service
 Type=simple
 User=root
 WorkingDirectory=/var/www/mirzabot
-ExecStart=/usr/bin/php /var/www/mirzabot/poll.php
+ExecStart=%s /var/www/mirzabot/poll.php
 Restart=always
 RestartSec=3
 StandardOutput=journal
@@ -375,7 +429,7 @@ StandardError=journal
 
 [Install]
 WantedBy=multi-user.target
-`
+`, phpBin)
 	_ = os.WriteFile("/etc/systemd/system/mirzabot-poller.service", []byte(pollerUnit), 0644)
 
 	// 9. Reload systemd, enable and start worker
@@ -437,6 +491,10 @@ func (s *TelegramShopService) Install(cfg *TelegramShopConfig) error {
 		}
 	}
 
+	// Ensure systemd poller is enabled and actively running
+	_ = exec.Command("systemctl", "enable", "--now", mirzaPollerUnit).Run()
+	_ = exec.Command("systemctl", "restart", mirzaPollerUnit).Run()
+
 	return nil
 }
 
@@ -482,10 +540,12 @@ func (s *TelegramShopService) Action(action string) error {
 	// Ensure systemd unit matches action
 	switch action {
 	case "start":
-		_, _ = exec.Command("systemctl", "start", mirzaPollerUnit).CombinedOutput()
+		_, _ = exec.Command("systemctl", "enable", "--now", mirzaPollerUnit).CombinedOutput()
+		_, _ = exec.Command("systemctl", "restart", mirzaPollerUnit).CombinedOutput()
 	case "stop":
 		_, _ = exec.Command("systemctl", "stop", mirzaPollerUnit).CombinedOutput()
 	case "restart":
+		_, _ = exec.Command("systemctl", "enable", "--now", mirzaPollerUnit).CombinedOutput()
 		_, _ = exec.Command("systemctl", "restart", mirzaPollerUnit).CombinedOutput()
 	case "uninstall":
 		_, _ = exec.Command("systemctl", "stop", mirzaPollerUnit).CombinedOutput()

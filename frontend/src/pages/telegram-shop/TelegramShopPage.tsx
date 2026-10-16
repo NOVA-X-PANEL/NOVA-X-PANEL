@@ -74,8 +74,8 @@ export default function TelegramShopPage() {
   }, [isDark, isUltra]);
 
   const fetchStatus = useCallback(async () => {
+    setLoading(true);
     try {
-      setLoading(true);
       const res = await HttpUtil.get<TgShopStatus>('/panel/api/telegram-shop/status');
       if (res && res.obj) {
         setStatus(res.obj);
@@ -96,8 +96,33 @@ export default function TelegramShopPage() {
   }, [form, t]);
 
   useEffect(() => {
-    void fetchStatus();
-  }, [fetchStatus]);
+    let active = true;
+    void (async () => {
+      try {
+        const res = await HttpUtil.get<TgShopStatus>('/panel/api/telegram-shop/status');
+        if (!active) return;
+        if (res && res.obj) {
+          setStatus(res.obj);
+          if (res.obj.installed) {
+            form.setFieldsValue({
+              bot_token: res.obj.bot_token,
+              admin_chat_id: res.obj.admin_chat_id,
+              domain: res.obj.domain,
+            });
+          }
+        }
+      } catch (err: unknown) {
+        if (!active) return;
+        const msg = err instanceof Error ? err.message : undefined;
+        message.error(msg || t('pages.telegramShop.toasts.fetchError'));
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [form, t]);
 
   const handleInstall = async (values: Record<string, unknown>) => {
     try {

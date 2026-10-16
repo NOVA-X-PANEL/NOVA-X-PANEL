@@ -292,120 +292,101 @@ export function useInboundColumns({
         title: t('clients'),
         key: 'clients',
         align: 'center',
-        width: 110,
+        width: 140,
         sorter: (a, b) => clientTotal(a) - clientTotal(b),
         render: (_, record) => {
           const cc = clientCount[record.id] || fallbackClientCount(record);
           if (!cc) return null;
+
+          const hasActive = cc.active.length > 0;
+          const hasOnline = cc.online.length > 0;
+          const hasDeactive = cc.deactive.length > 0;
+          const hasDepleted = cc.depleted.length > 0;
+          const hasAnySub = hasActive || hasOnline || hasDeactive || hasDepleted;
+
           return (
-            <div
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 6,
-                flexWrap: 'wrap',
-              }}
-            >
-              <Tag
-                className="client-count-tag"
-                style={{
-                  margin: 0,
-                  padding: '2px 8px',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 4,
-                }}
-              >
-                <TeamOutlined /> <span>{cc.clients}</span>
-              </Tag>
-              {cc.active.length > 0 ? (
-                <Popover
-                  title={t('subscription.active')}
-                  content={
-                    <div className="client-email-list">
-                      {cc.active.map((e) => (
-                        <div key={e}>{e}</div>
-                      ))}
-                    </div>
-                  }
-                >
-                  <Tag
-                    color="green"
-                    className="client-count-tag"
-                    style={{ margin: 0, marginRight: 4, padding: '0 2px' }}
-                  >
-                    {cc.active.length}
-                  </Tag>
-                </Popover>
-              ) : (
-                <Tag
-                  color="green"
-                  className="client-count-tag"
-                  style={{ margin: 0, marginRight: 4, padding: '0 2px' }}
-                >
-                  0
+            <div className="inb-clients-cell">
+              <div className="inb-clients-total-row">
+                <Tag className="client-count-tag is-total">
+                  <TeamOutlined /> <span>{cc.clients}</span>
                 </Tag>
-              )}
-              {cc.deactive.length > 0 && (
-                <Popover
-                  title={t('disabled')}
-                  content={
-                    <div className="client-email-list">
-                      {cc.deactive.map((e) => (
-                        <div key={e}>{e}</div>
-                      ))}
-                    </div>
-                  }
-                >
-                  <Tag
-                    className="client-count-tag"
-                    style={{ margin: 0, marginRight: 4, padding: '0 2px' }}
-                  >
-                    {cc.deactive.length}
-                  </Tag>
-                </Popover>
-              )}
-              {cc.depleted.length > 0 && (
-                <Popover
-                  title={t('depleted')}
-                  content={
-                    <div className="client-email-list">
-                      {cc.depleted.map((e) => (
-                        <div key={e}>{e}</div>
-                      ))}
-                    </div>
-                  }
-                >
-                  <Tag
-                    color="red"
-                    className="client-count-tag"
-                    style={{ margin: 0, marginRight: 4, padding: '0 2px' }}
-                  >
-                    {cc.depleted.length}
-                  </Tag>
-                </Popover>
-              )}
-              {cc.online.length > 0 && (
-                <Popover
-                  title={t('online')}
-                  content={
-                    <div className="client-email-list">
-                      {cc.online.map((e) => (
-                        <div key={e}>{e}</div>
-                      ))}
-                    </div>
-                  }
-                >
-                  <Tag
-                    color="blue"
-                    className="client-count-tag"
-                    style={{ margin: 0, padding: '0 2px' }}
-                  >
-                    {cc.online.length}
-                  </Tag>
-                </Popover>
-              )}
+              </div>
+              <div className="inb-clients-sub-row">
+                {hasAnySub ? (
+                  <>
+                    {hasActive && (
+                      <Popover
+                        title={t('subscription.active')}
+                        content={
+                          <div className="client-email-list">
+                            {cc.active.map((e) => (
+                              <div key={e}>{e}</div>
+                            ))}
+                          </div>
+                        }
+                      >
+                        <Tag className="client-count-tag is-sub is-active">
+                          <span className="inb-status-dot is-active" />
+                          <span>{cc.active.length}</span>
+                        </Tag>
+                      </Popover>
+                    )}
+                    {hasOnline && (
+                      <Popover
+                        title={t('online')}
+                        content={
+                          <div className="client-email-list">
+                            {cc.online.map((e) => (
+                              <div key={e}>{e}</div>
+                            ))}
+                          </div>
+                        }
+                      >
+                        <Tag className="client-count-tag is-sub is-online">
+                          <span className="inb-status-dot is-online" />
+                          <span>{cc.online.length}</span>
+                        </Tag>
+                      </Popover>
+                    )}
+                    {hasDeactive && (
+                      <Popover
+                        title={t('disabled')}
+                        content={
+                          <div className="client-email-list">
+                            {cc.deactive.map((e) => (
+                              <div key={e}>{e}</div>
+                            ))}
+                          </div>
+                        }
+                      >
+                        <Tag className="client-count-tag is-sub is-deactive">
+                          <span className="inb-status-dot is-deactive" />
+                          <span>{cc.deactive.length}</span>
+                        </Tag>
+                      </Popover>
+                    )}
+                    {hasDepleted && (
+                      <Popover
+                        title={t('depleted')}
+                        content={
+                          <div className="client-email-list">
+                            {cc.depleted.map((e) => (
+                              <div key={e}>{e}</div>
+                            ))}
+                          </div>
+                        }
+                      >
+                        <Tag className="client-count-tag is-sub is-depleted">
+                          <span className="inb-status-dot is-depleted" />
+                          <span>{cc.depleted.length}</span>
+                        </Tag>
+                      </Popover>
+                    )}
+                  </>
+                ) : (
+                  <span className="inb-clients-placeholder">—</span>
+                )}
+              </div>
             </div>
           );
         },

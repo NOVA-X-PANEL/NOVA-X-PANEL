@@ -369,9 +369,7 @@ func (s *HashemService) GetStatus() (*HashemStatus, error) {
 		}
 	} else {
 		status.PingMs = -1
-		if !status.Installed {
-			status.Running = false
-		}
+		status.Running = false
 	}
 
 	if status.Role == "foreign" {
@@ -1999,39 +1997,76 @@ func (s *HashemService) GenerateOneLiner(form HashemOneLinerForm) (*HashemOneLin
 }
 
 func (s *HashemService) Remove() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 25*time.Second)
 	defer cancel()
 
-	// 1. Stop and disable FRP services
+	// 1. If hashem core CLI is installed, trigger its native remove-tunnel
+	if _, err := os.Stat(hashemBinPath); err == nil {
+		_, _ = s.execPrivileged(ctx, hashemBinPath, "remove-tunnel", "--force")
+	}
+
+	// 2. Stop and disable FRP services
 	_, _ = s.execPrivileged(ctx, "systemctl", "stop", "frpc")
 	_, _ = s.execPrivileged(ctx, "systemctl", "disable", "frpc")
 	_, _ = s.execPrivileged(ctx, "systemctl", "stop", "frps")
 	_, _ = s.execPrivileged(ctx, "systemctl", "disable", "frps")
 
-	// 2. Stop and disable Backhaul services
+	// 3. Stop and disable Backhaul services
 	_, _ = s.execPrivileged(ctx, "systemctl", "stop", "backhaul-client")
 	_, _ = s.execPrivileged(ctx, "systemctl", "disable", "backhaul-client")
 	_, _ = s.execPrivileged(ctx, "systemctl", "stop", "backhaul-server")
 	_, _ = s.execPrivileged(ctx, "systemctl", "disable", "backhaul-server")
 
-	// 3. Delete GRE tunnel interface
-	greIf := getGreInterface()
-	_, _ = s.execPrivileged(ctx, "ip", "link", "set", greIf, "down")
-	_, _ = s.execPrivileged(ctx, "ip", "link", "del", greIf)
+	// 4. Delete all GRE and GRETAP tunnel network interfaces
+	greDelBash := `
+for dev in $(ip -o link show | awk -F': ' '{print $2}' | grep -E '^(gre-a-|gre-tunnel|gretap)'); do
+    ip link set dev "$dev" down 2>/dev/null || true
+    ip link del dev "$dev" 2>/dev/null || true
+done
+`
+	_, _ = s.execPrivilegedBash(ctx, greDelBash)
 
-	// 4. Remove FoU listeners
+	// 5. Stop, disable and remove all GRE/GRETAP systemd services
+	stopSvcBash := `
+for s in /etc/systemd/system/gre-*.service /etc/systemd/system/gretap*.service; do
+    [ -f "$s" ] || continue
+    unit=$(basename "$s")
+    systemctl stop "$unit" 2>/dev/null || true
+    systemctl disable "$unit" 2>/dev/null || true
+    rm -f "$s"
+done
+`
+	_, _ = s.execPrivilegedBash(ctx, stopSvcBash)
+
+	// 6. Remove FoU listeners
 	_, _ = s.execPrivileged(ctx, "ip", "fou", "del", "port", "443")
 	_, _ = s.execPrivileged(ctx, "ip", "fou", "del", "port", "19998")
 	_, _ = s.execPrivileged(ctx, "ip", "fou", "del", "port", "55555")
 
-	// 5. Clean up config files and service units via privileged bash
-	cleanCmd := "rm -rf /etc/frp /etc/backhaul /etc/gre-panel " +
+	// 7. Mark tunnels disabled/deleted in gre-panel SQLite database
+	dbCleanBash := `python3 -c '
+import sqlite3, os
+p = "/var/lib/gre-panel/panel.db"
+if os.path.exists(p):
+    try:
+        c = sqlite3.connect(p)
+        c.execute("UPDATE Tunnel SET IsEnabled=0, IsDeleted=1")
+        c.execute("DELETE FROM RouteDestination")
+        c.commit()
+        c.close()
+    except Exception:
+        pass
+' 2>/dev/null || true`
+	_, _ = s.execPrivilegedBash(ctx, dbCleanBash)
+
+	// 8. Clean up config files and service units via privileged bash
+	cleanCmd := "rm -rf /etc/frp /etc/backhaul /etc/gre-panel /etc/x-ui/tunnel.json " +
 		"/etc/systemd/system/frpc.service /etc/systemd/system/frps.service " +
 		"/etc/systemd/system/backhaul-client.service /etc/systemd/system/backhaul-server.service " +
-		"/etc/systemd/system/gre-tunnel.service"
+		"/etc/systemd/system/gre-tunnel.service /etc/sysctl.d/99-nova-tunnel.conf"
 	_, _ = s.execPrivilegedBash(ctx, cleanCmd)
 
-	// 6. Reload systemd daemon
+	// 9. Reload systemd daemon
 	_, _ = s.execPrivileged(ctx, "systemctl", "daemon-reload")
 
 	logger.Info("Hashem tunnel removed completely from host")
@@ -2402,11 +2437,6 @@ func probePing(host string, count int) (avgRTT, minRTT, maxRTT, loss, jitter flo
 }
 
 func (s *HashemService) detectTunnelPanelStatus(status *HashemStatus) {
-	status.Installed = true
-	status.Engine = "tunnel-panel"
-	status.Carrier = "direct"
-	status.ActiveCarrier = "direct"
-
 	type TunnelJSON struct {
 		Installed bool   `json:"installed"`
 		Engine    string `json:"engine"`
@@ -2423,12 +2453,6 @@ func (s *HashemService) detectTunnelPanelStatus(status *HashemStatus) {
 	if data, err := os.ReadFile("/etc/x-ui/tunnel.json"); err == nil {
 		if err := json.Unmarshal(data, &tDoc); err == nil && tDoc.RemotePub != "" {
 			found = true
-			status.Role = "foreign"
-			status.LocalPubIP = tDoc.LocalPub
-			status.RemotePubIP = tDoc.RemotePub
-			status.LocalGreIP = tDoc.LocalGre
-			status.RemoteGreIP = tDoc.RemoteGre
-			status.Ports = tDoc.Ports
 			if tDoc.Iface == "" {
 				tDoc.Iface = "gre-a-1"
 			}
@@ -2487,43 +2511,71 @@ except Exception as e:
 					tDoc.LocalGre = doc.LocalGre
 					tDoc.RemoteGre = doc.RemoteGre
 					tDoc.Ports = doc.Ports
-					status.Role = "foreign"
-					status.LocalPubIP = doc.LocalPub
-					status.RemotePubIP = doc.RemotePub
-					status.LocalGreIP = doc.LocalGre
-					status.RemoteGreIP = doc.RemoteGre
-					status.Ports = doc.Ports
 				}
 			}
 		}
 	}
 
-	if found && status.RemoteGreIP != "" {
+	if found && tDoc.RemoteGre != "" {
 		iface := tDoc.Iface
 		if iface == "" {
 			iface = "gre-a-1"
 		}
-		status.PingMs = s.measurePing(status.RemoteGreIP, iface, 0)
-		if status.PingMs <= 0 {
-			status.PingMs = s.measurePing(status.RemoteGreIP, "", 0)
+		// Confirm the GRE interface actually exists on Linux network stack
+		if _, err := os.Stat("/sys/class/net/" + iface); err == nil {
+			status.Role = "foreign"
+			status.Engine = "tunnel-panel"
+			status.LocalPubIP = tDoc.LocalPub
+			status.RemotePubIP = tDoc.RemotePub
+			status.LocalGreIP = tDoc.LocalGre
+			status.RemoteGreIP = tDoc.RemoteGre
+			status.Ports = tDoc.Ports
+			if status.Carrier == "" {
+				status.Carrier = "direct"
+			}
+			if status.ActiveCarrier == "" {
+				status.ActiveCarrier = "direct"
+			}
+			status.PingMs = s.measurePing(status.RemoteGreIP, iface, 0)
+			if status.PingMs <= 0 {
+				status.PingMs = s.measurePing(status.RemoteGreIP, "", 0)
+			}
+			if status.PingMs > 0 {
+				status.Running = true
+				status.FrpStatus = "active"
+				status.BackhaulStatus = "active"
+			} else {
+				status.Running = false
+				status.FrpStatus = "stopped"
+				status.BackhaulStatus = "stopped"
+				status.PingMs = -1
+			}
+			return
 		}
-		if status.PingMs > 0 {
-			status.Running = true
-			status.FrpStatus = "active"
-			status.BackhaulStatus = "active"
-		} else {
-			status.Running = false
-			status.FrpStatus = "stopped"
-			status.BackhaulStatus = "stopped"
-			status.PingMs = -1
-		}
-	} else {
+	}
+
+	// Tunnel was either removed or interface doesn't exist
+	if status.Engine == "tunnel-panel" || status.Engine == "" {
 		status.Running = false
 		status.FrpStatus = "stopped"
 		status.BackhaulStatus = "stopped"
 		status.PingMs = -1
-		if status.Role == "" {
-			status.Role = "none"
+		if status.ActiveCarrier == "direct" {
+			status.ActiveCarrier = ""
+		}
+		if status.Carrier == "direct" {
+			status.Carrier = ""
+		}
+		if status.Role == "foreign" || status.Role == "" {
+			if _, err := os.Stat(frpcTomlPath); err != nil && !fileExists(backhaulClientTomlPath) {
+				status.Role = "none"
+				status.LocalPubIP = ""
+				status.RemotePubIP = ""
+				status.LocalGreIP = ""
+				status.RemoteGreIP = ""
+				status.Ports = nil
+				status.Engine = "none"
+			}
 		}
 	}
 }

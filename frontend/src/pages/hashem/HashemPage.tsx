@@ -551,10 +551,12 @@ export default function HashemPage() {
                         {t('pages.hashem.activeMode', { defaultValue: 'Active Mode:' })}
                       </Text>
                       <Tag
-                        color="cyan"
+                        color={status.running ? 'cyan' : 'default'}
                         style={{ fontSize: 12, padding: '2px 8px', borderRadius: 6, margin: 0 }}
                       >
-                        {status.activeCarrier || status.carrier || t('pages.hashem.unknown')}
+                        {status.running
+                          ? (status.activeCarrier || status.carrier || t('pages.hashem.unknown'))
+                          : t('pages.hashem.greInterfaceDown', { defaultValue: 'Disconnected' })}
                       </Tag>
                     </div>
                     <Select
@@ -738,7 +740,8 @@ export default function HashemPage() {
                             <Text strong style={{ color: 'var(--nc-text, #f1f5f9)' }}>
                               {record.name}
                             </Text>
-                            {status.activeCarrier === record.id || status.carrier === record.id ? (
+                            {status.running &&
+                            (status.activeCarrier === record.id || status.carrier === record.id) ? (
                               <Tag color="cyan">
                                 {t('pages.hashem.active', { defaultValue: 'Active' })}
                               </Tag>

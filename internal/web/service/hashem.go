@@ -21,7 +21,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
@@ -1500,10 +1499,6 @@ func (s *HashemService) AutoCreateMatchingInbounds(portsStr string, iranIP strin
 		existingMap[ib.Port] = ib
 	}
 
-	// Fetch all existing client emails in the panel to attach them
-	var allClientEmails []string
-	_ = database.GetDB().Model(&model.ClientRecord{}).Where("email != ''").Pluck("email", &allClientEmails).Error
-
 	// Resolve acting user ID for newly created inbound
 	defaultUserId := 1
 	var firstUser model.User
@@ -1514,27 +1509,12 @@ func (s *HashemService) AutoCreateMatchingInbounds(portsStr string, iranIP strin
 	createdAny := false
 
 	for _, port := range ports {
-		if existing, exists := existingMap[port]; exists {
-			if len(allClientEmails) > 0 {
-				_, _, _ = s.clientService.BulkAttach(&s.inboundService, allClientEmails, []int{existing.Id})
-			}
+		if _, exists := existingMap[port]; exists {
 			continue
 		}
 
-		now := time.Now().Unix() * 1000
-		initialClients := []model.Client{
-			{
-				ID:        uuid.NewString(),
-				Email:     fmt.Sprintf("nova_%d", port),
-				SubID:     uuid.NewString(),
-				Enable:    true,
-				CreatedAt: now,
-				UpdatedAt: now,
-			},
-		}
-
 		settingsMap := map[string]any{
-			"clients":    initialClients,
+			"clients":    []any{},
 			"decryption": "none",
 			"fallbacks":  []any{},
 		}
@@ -1576,9 +1556,6 @@ func (s *HashemService) AutoCreateMatchingInbounds(portsStr string, iranIP strin
 		addedInbound, _, err := s.inboundService.AddInbound(newInbound)
 		if err == nil && addedInbound != nil {
 			createdAny = true
-			if len(allClientEmails) > 0 {
-				_, _, _ = s.clientService.BulkAttach(&s.inboundService, allClientEmails, []int{addedInbound.Id})
-			}
 		} else {
 			logger.Warningf("AutoCreateMatchingInbounds failed for port %d: %v", port, err)
 		}

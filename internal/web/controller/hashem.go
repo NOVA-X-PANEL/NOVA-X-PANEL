@@ -92,9 +92,9 @@ func (a *HashemController) syncInbounds(c *gin.Context) {
 
 func (a *HashemController) editPorts(c *gin.Context) {
 	var form struct {
-		Ports []int `json:"ports"`
+		Ports []int `json:"ports" form:"ports"`
 	}
-	if err := c.ShouldBindJSON(&form); err != nil {
+	if err := c.ShouldBind(&form); err != nil {
 		jsonMsg(c, "invalid edit-ports payload", err)
 		return
 	}
@@ -108,10 +108,10 @@ func (a *HashemController) editPorts(c *gin.Context) {
 
 func (a *HashemController) addPort(c *gin.Context) {
 	var form struct {
-		Port        int  `json:"port"`
-		AutoInbound bool `json:"autoInbound"`
+		Port        int  `json:"port" form:"port"`
+		AutoInbound bool `json:"autoInbound" form:"autoInbound"`
 	}
-	if err := c.ShouldBindJSON(&form); err != nil {
+	if err := c.ShouldBind(&form); err != nil {
 		jsonMsg(c, "invalid add-port payload", err)
 		return
 	}
@@ -121,9 +121,9 @@ func (a *HashemController) addPort(c *gin.Context) {
 
 func (a *HashemController) removePort(c *gin.Context) {
 	var form struct {
-		Port int `json:"port"`
+		Port int `json:"port" form:"port"`
 	}
-	if err := c.ShouldBindJSON(&form); err != nil {
+	if err := c.ShouldBind(&form); err != nil {
 		jsonMsg(c, "invalid remove-port payload", err)
 		return
 	}
@@ -133,10 +133,10 @@ func (a *HashemController) removePort(c *gin.Context) {
 
 func (a *HashemController) autoCreateInbound(c *gin.Context) {
 	var form struct {
-		Ports string `json:"ports"`
-		Host  string `json:"host"`
+		Ports string `json:"ports" form:"ports"`
+		Host  string `json:"host" form:"host"`
 	}
-	if err := c.ShouldBindJSON(&form); err != nil {
+	if err := c.ShouldBind(&form); err != nil {
 		jsonMsg(c, "invalid auto-create-inbound payload", err)
 		return
 	}

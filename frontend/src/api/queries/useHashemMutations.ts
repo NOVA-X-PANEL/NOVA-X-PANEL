@@ -146,7 +146,11 @@ export function useHashemMutations(customMessageApi?: MessageInstance) {
 
   const editPortsMutation = useMutation({
     mutationFn: async (ports: number[]) => {
-      const res = await HttpUtil.post('/panel/api/hashem/edit-ports', { ports });
+      const res = await HttpUtil.post(
+        '/panel/api/hashem/edit-ports',
+        { ports },
+        { headers: { 'Content-Type': 'application/json' } },
+      );
       if (!res?.success) throw new Error(res?.msg || 'Failed to update ports');
       return res;
     },
@@ -269,7 +273,9 @@ export function useHashemMutations(customMessageApi?: MessageInstance) {
 
   const autoCreateInboundMutation = useMutation({
     mutationFn: async (payload: { ports?: string; host?: string }) => {
-      return HttpUtil.post('/panel/api/hashem/auto-create-inbound', payload);
+      return HttpUtil.post('/panel/api/hashem/auto-create-inbound', payload, {
+        headers: { 'Content-Type': 'application/json' },
+      });
     },
     onSuccess: () => {
       messageApi.success(
@@ -284,7 +290,11 @@ export function useHashemMutations(customMessageApi?: MessageInstance) {
 
   const addPortMutation = useMutation({
     mutationFn: async (payload: { port: number; autoInbound?: boolean }) => {
-      const res = await HttpUtil.post<HashemPortActionResult>('/panel/api/hashem/add-port', payload);
+      const res = await HttpUtil.post<HashemPortActionResult>(
+        '/panel/api/hashem/add-port',
+        payload,
+        { headers: { 'Content-Type': 'application/json' } },
+      );
       if (!res?.success) throw new Error(res?.msg || 'Failed to add port');
       return res.obj;
     },
@@ -301,7 +311,11 @@ export function useHashemMutations(customMessageApi?: MessageInstance) {
 
   const removePortMutation = useMutation({
     mutationFn: async (payload: { port: number }) => {
-      const res = await HttpUtil.post<HashemPortActionResult>('/panel/api/hashem/remove-port', payload);
+      const res = await HttpUtil.post<HashemPortActionResult>(
+        '/panel/api/hashem/remove-port',
+        payload,
+        { headers: { 'Content-Type': 'application/json' } },
+      );
       if (!res?.success) throw new Error(res?.msg || 'Failed to remove port');
       return res.obj;
     },

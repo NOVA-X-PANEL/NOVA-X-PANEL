@@ -2983,6 +2983,8 @@
     "apiTokenReady": "Token'ınız",
     "apiTokenOnce": "Şimdi kopyalayın — bir daha gösterilmez. Authorization: Bearer başlığıyla gönderin.",
     "apiTokenNameHint": "Sonra tanıyacağınız bir ad verin.",
-    "createdAt": "Oluşturulma"
+    "createdAt": "Oluşturulma",
+    "telegramShopAccess": "Telegram Shop erişimi",
+    "telegramShopAccessHint": "Bu yönetici için kenar çubuğunda Telegram Shop menüsünü göster veya gizle."
   }
 }

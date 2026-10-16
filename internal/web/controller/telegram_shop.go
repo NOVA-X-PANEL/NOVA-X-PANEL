@@ -22,10 +22,10 @@ func NewTelegramShopController(g *gin.RouterGroup) *TelegramShopController {
 }
 
 func (a *TelegramShopController) initRouter(g *gin.RouterGroup) {
-	g.GET("/status", requireOwnerRole(), a.getStatus)
-	g.POST("/install", requireOwnerRole(), a.install)
-	g.POST("/install-deps", requireOwnerRole(), a.installDeps)
-	g.POST("/action", requireOwnerRole(), a.action)
+	g.GET("/status", requireOwnerOrTelegramShopAccess(), a.getStatus)
+	g.POST("/install", requireOwnerOrTelegramShopAccess(), a.install)
+	g.POST("/install-deps", requireOwnerOrTelegramShopAccess(), a.installDeps)
+	g.POST("/action", requireOwnerOrTelegramShopAccess(), a.action)
 }
 
 func (a *TelegramShopController) getStatus(c *gin.Context) {

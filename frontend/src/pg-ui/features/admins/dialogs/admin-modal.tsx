@@ -155,6 +155,7 @@ export default function AdminModal({ isDialogOpen, onOpenChange, editingAdminId,
         password: values.password || undefined,
         ...(form.formState.dirtyFields.status ? { status: values.status || 'active' } : {}),
         ...(form.formState.dirtyFields.api_access ? { api_access: values.api_access === true } : {}),
+        ...(form.formState.dirtyFields.telegram_shop_access ? { telegram_shop_access: values.telegram_shop_access === true } : {}),
         ...dataLimitPayload,
         discord_webhook: values.discord_webhook,
         sub_domain: values.sub_domain,
@@ -205,6 +206,7 @@ export default function AdminModal({ isDialogOpen, onOpenChange, editingAdminId,
           status: values.status || 'active',
           ...dataLimitPayload,
           api_access: values.api_access === true,
+          telegram_shop_access: values.telegram_shop_access === true,
           discord_webhook: values.discord_webhook,
           sub_domain: values.sub_domain,
           sub_template: values.sub_template,
@@ -414,6 +416,30 @@ export default function AdminModal({ isDialogOpen, onOpenChange, editingAdminId,
                           checked={field.value === true}
                           onCheckedChange={field.onChange}
                           disabled={editingAdmin && editingAdminId === currentAdmin?.id}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="telegram_shop_access"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-md border p-3">
+                      <div className="space-y-0.5 pr-3">
+                        <FormLabel>{t('admins.telegramShopAccess', { defaultValue: 'دسترسی تلگرام شاپ' })}</FormLabel>
+                        <p className="text-muted-foreground text-xs">
+                          {t('admins.telegramShopAccessHint', {
+                            defaultValue:
+                              'نمایش یا عدم نمایش منوی تلگرام شاپ در سایدبار پنل برای این ادمین.',
+                          })}
+                        </p>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value === true}
+                          onCheckedChange={field.onChange}
                         />
                       </FormControl>
                     </FormItem>

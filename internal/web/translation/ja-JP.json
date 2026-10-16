@@ -2983,6 +2983,8 @@
     "apiTokenReady": "あなたのトークン",
     "apiTokenOnce": "今すぐコピーしてください。再表示はできません。Authorization: Bearer ヘッダーで送信します。",
     "apiTokenNameHint": "後で分かる名前を付けてください。",
-    "createdAt": "作成日"
+    "createdAt": "作成日",
+    "telegramShopAccess": "Telegram Shop アクセス",
+    "telegramShopAccessHint": "この管理者のサイドバーで Telegram Shop メニューを表示または非表示にします。"
   }
 }

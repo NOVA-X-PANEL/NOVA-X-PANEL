@@ -247,7 +247,14 @@ function routeKey(pathname: string) {
   if (path.startsWith('/admins')) return '/admins'
   if (path.startsWith('/hosts')) return '/hosts'
   if (path.startsWith('/hashem')) return '/hashem'
+  if (path.startsWith('/telegram-shop')) return '/telegram-shop'
   return path
+}
+
+export function hasTelegramShopAccess(admin: unknown): boolean {
+  if (isOwner(admin)) return true
+  const root = asRecord(admin)
+  return Boolean(root.telegram_shop_access || root.telegramShopAccess)
 }
 
 export function canAccessRoute(admin: unknown, pathname: string): boolean {
@@ -255,6 +262,7 @@ export function canAccessRoute(admin: unknown, pathname: string): boolean {
   if (key === '/api-docs') return true
   if (key === '/my-api') return hasApiAccess(admin)
   if (key === '/hashem') return isOwner(admin)
+  if (key === '/telegram-shop') return hasTelegramShopAccess(admin)
   const requirements = ROUTE_PERMISSIONS[key]
   if (!requirements) return true
   return requirements.some(req => hasPermission(admin, req.resource, req.action))

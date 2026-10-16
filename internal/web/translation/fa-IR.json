@@ -2983,6 +2983,8 @@
     "apiTokenReady": "توکن شما",
     "apiTokenOnce": "همین حالا کپی کنید — دیگر نمایش داده نمی‌شود. آن را در هدر Authorization: Bearer بفرستید.",
     "apiTokenNameHint": "نامی بگذارید که بعداً بشناسید.",
-    "createdAt": "ساخته‌شده"
+    "createdAt": "ساخته‌شده",
+    "telegramShopAccess": "دسترسی تلگرام شاپ",
+    "telegramShopAccessHint": "نمایش یا عدم نمایش منوی تلگرام شاپ در سایدبار پنل برای این ادمین."
   }
 }

@@ -36,6 +36,15 @@ describe('route access', () => {
     );
   });
 
+  it('gates the telegram-shop route on telegram_shop_access or owner role', () => {
+    expect(canAccessRoute({ role: { slug: 'owner' } }, '/telegram-shop')).toBe(true);
+    expect(canAccessRoute({ telegram_shop_access: true }, '/telegram-shop')).toBe(true);
+    expect(canAccessRoute({ telegramShopAccess: true }, '/telegram-shop')).toBe(true);
+    expect(canAccessRoute({ role: { permissions: { inbounds: { read: true } } } }, '/telegram-shop')).toBe(
+      false,
+    );
+  });
+
   it("keeps the API page out of a tokenless account's fallback route", () => {
     // An operator with no other grant must not be silently dropped on the API page.
     const operator = { role: { permissions: { inbounds: { read_simple: true } } } };

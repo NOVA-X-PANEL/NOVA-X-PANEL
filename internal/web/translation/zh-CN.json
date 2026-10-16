@@ -2983,6 +2983,8 @@
     "apiTokenReady": "你的令牌",
     "apiTokenOnce": "请立即复制——之后不再显示。请通过 Authorization: Bearer 请求头发送。",
     "apiTokenNameHint": "取一个以后能认出的名称。",
-    "createdAt": "创建于"
+    "createdAt": "创建于",
+    "telegramShopAccess": "Telegram 商店访问权限",
+    "telegramShopAccessHint": "为此管理员在侧边栏显示或隐藏 Telegram 商店菜单。"
   }
 }

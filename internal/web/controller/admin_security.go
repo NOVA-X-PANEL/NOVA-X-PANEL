@@ -252,6 +252,36 @@ func requireOwnerRole() gin.HandlerFunc {
 	}
 }
 
+// requireOwnerOrTelegramShopAccess permits the owner or admins granted telegram shop access.
+func requireOwnerOrTelegramShopAccess() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if tokenAdmin := apiTokenAdmin(c); tokenAdmin != nil {
+			role, err := adminRoleOf(tokenAdmin)
+			if err != nil || (!role.OwnerRole && !tokenAdmin.TelegramShopAccess) {
+				pureJsonMsg(c, http.StatusForbidden, false, "telegram shop access required")
+				c.Abort()
+				return
+			}
+			c.Next()
+			return
+		}
+		if c.GetBool("api_authed") {
+			c.Next()
+			return
+		}
+		user, role, ok := loginActiveAdminRole(c)
+		if !ok {
+			return
+		}
+		if !role.OwnerRole && !user.TelegramShopAccess {
+			pureJsonMsg(c, http.StatusForbidden, false, "telegram shop access required")
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}
+
 func requirePanelPermission(section string, permission string) gin.HandlerFunc {
 	return requireAdminPermission(section, permission)
 }

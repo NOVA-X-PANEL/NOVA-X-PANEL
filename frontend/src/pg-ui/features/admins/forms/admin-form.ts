@@ -19,6 +19,7 @@ export const adminFormSchema = z
     // Lets this account mint its own API token, which then carries this
     // account's role over the API.
     api_access: z.boolean().optional(),
+    telegram_shop_access: z.boolean().optional(),
     is_disabled: z.boolean().optional(),
     discord_webhook: z.string().optional(),
     sub_domain: z.string().optional(),
@@ -109,6 +110,7 @@ export const adminFormDefaultValues: Partial<AdminFormValuesInput> = {
   status: 'active',
   data_limit: null,
   api_access: false,
+  telegram_shop_access: false,
   is_disabled: false,
   discord_webhook: '',
   sub_domain: '',

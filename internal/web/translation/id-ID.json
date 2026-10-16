@@ -2983,6 +2983,8 @@
     "apiTokenReady": "Token Anda",
     "apiTokenOnce": "Salin sekarang — tidak akan ditampilkan lagi. Kirim sebagai header Authorization: Bearer.",
     "apiTokenNameHint": "Beri nama yang mudah Anda kenali nanti.",
-    "createdAt": "Dibuat"
+    "createdAt": "Dibuat",
+    "telegramShopAccess": "Akses Telegram Shop",
+    "telegramShopAccessHint": "Tampilkan atau sembunyikan menu Telegram Shop di bilah sisi untuk admin ini."
   }
 }

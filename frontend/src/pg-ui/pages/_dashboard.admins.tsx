@@ -150,6 +150,8 @@ export default function AdminsPage() {
       role_id: roleId,
       status: (admin.status || (admin.is_disabled ? 'disabled' : 'active')) === 'disabled' ? 'disabled' : 'active',
       data_limit: admin.data_limit ?? null,
+      api_access: admin.api_access === true || admin.apiAccess === true,
+      telegram_shop_access: admin.telegram_shop_access === true || admin.telegramShopAccess === true,
       is_disabled: admin.status === 'disabled' || admin.is_disabled || undefined,
       discord_webhook: admin.discord_webhook || '',
       sub_template: admin.sub_template || '',

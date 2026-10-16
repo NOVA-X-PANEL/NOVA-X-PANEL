@@ -64,6 +64,9 @@ type User struct {
 	// over the API — and nothing more. The owner always has it.
 	ApiAccess bool `json:"apiAccess" gorm:"column:api_access;default:false"`
 
+	// TelegramShopAccess gates access to the Telegram Shop management page for this admin.
+	TelegramShopAccess bool `json:"telegramShopAccess" gorm:"column:telegram_shop_access;default:false"`
+
 	// CreatedAt/UpdatedAt are populated for RBAC admin management views.
 	CreatedAt int64 `json:"createdAt" gorm:"autoCreateTime:milli"`
 	UpdatedAt int64 `json:"updatedAt" gorm:"autoUpdateTime:milli"`

@@ -2983,6 +2983,8 @@
     "apiTokenReady": "你的權杖",
     "apiTokenOnce": "請立即複製——之後不再顯示。請透過 Authorization: Bearer 標頭傳送。",
     "apiTokenNameHint": "取一個日後能認出的名稱。",
-    "createdAt": "建立於"
+    "createdAt": "建立於",
+    "telegramShopAccess": "Telegram 商店存取權限",
+    "telegramShopAccessHint": "為此管理員在側邊欄顯示或隱藏 Telegram 商店選單。"
   }
 }

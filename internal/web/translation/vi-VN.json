@@ -2983,6 +2983,8 @@
     "apiTokenReady": "Token của bạn",
     "apiTokenOnce": "Sao chép ngay — sẽ không hiển thị lại. Gửi kèm tiêu đề Authorization: Bearer.",
     "apiTokenNameHint": "Đặt tên để bạn dễ nhận ra sau này.",
-    "createdAt": "Đã tạo"
+    "createdAt": "Đã tạo",
+    "telegramShopAccess": "Quyền truy cập Telegram Shop",
+    "telegramShopAccessHint": "Hiển thị hoặc ẩn menu Telegram Shop ở thanh bên cho quản trị viên này."
   }
 }

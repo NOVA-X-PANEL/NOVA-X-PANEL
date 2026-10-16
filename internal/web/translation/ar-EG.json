@@ -2983,6 +2983,8 @@
     "apiTokenReady": "رمزك",
     "apiTokenOnce": "انسخه الآن — لن يُعرض مرة أخرى. أرسله في ترويسة Authorization: Bearer.",
     "apiTokenNameHint": "أعطه اسمًا تتذكره لاحقًا.",
-    "createdAt": "أُنشئ"
+    "createdAt": "أُنشئ",
+    "telegramShopAccess": "الوصول إلى متجر تيليجرام",
+    "telegramShopAccessHint": "إظهار أو إخفاء قائمة متجر تيليجرام في الشريط الجانبي لهذا المشرف."
   }
 }

@@ -2983,6 +2983,8 @@
     "apiTokenReady": "Your token",
     "apiTokenOnce": "Copy it now — it cannot be shown again. Send it as an Authorization: Bearer header.",
     "apiTokenNameHint": "Give it a name you will recognise later.",
-    "createdAt": "Created"
+    "createdAt": "Created",
+    "telegramShopAccess": "Telegram Shop access",
+    "telegramShopAccessHint": "Show or hide the Telegram Shop menu in the sidebar for this admin."
   }
 }

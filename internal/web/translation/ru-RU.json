@@ -2983,6 +2983,8 @@
     "apiTokenReady": "Ваш токен",
     "apiTokenOnce": "Скопируйте сейчас — повторно он не будет показан. Передавайте его в заголовке Authorization: Bearer.",
     "apiTokenNameHint": "Дайте имя, которое узнаете позже.",
-    "createdAt": "Создан"
+    "createdAt": "Создан",
+    "telegramShopAccess": "Доступ к Telegram Shop",
+    "telegramShopAccessHint": "Показать или скрыть меню Telegram Shop на боковой панели для этого администратора."
   }
 }

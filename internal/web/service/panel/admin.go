@@ -30,6 +30,8 @@ type AdminPayload struct {
 	// ApiAccess lets the account mint its own API token, which then carries this
 	// account's role over the API.
 	ApiAccess *bool `json:"apiAccess" form:"apiAccess"`
+	// TelegramShopAccess gates access to the Telegram Shop management page.
+	TelegramShopAccess *bool `json:"telegramShopAccess" form:"telegramShopAccess"`
 }
 
 // UnmarshalJSON accepts both camelCase and snake_case keys (e.g. data_limit, role_id, api_access).
@@ -40,6 +42,7 @@ func (p *AdminPayload) UnmarshalJSON(data []byte) error {
 		DataLimitSnake           *int64           `json:"data_limit"`
 		RoleIdSnake              *int             `json:"role_id"`
 		ApiAccessSnake           *bool            `json:"api_access"`
+		TelegramShopAccessSnake  *bool            `json:"telegram_shop_access"`
 		PermissionOverridesSnake *json.RawMessage `json:"permission_overrides"`
 	}{
 		Alias: (*Alias)(p),
@@ -55,6 +58,9 @@ func (p *AdminPayload) UnmarshalJSON(data []byte) error {
 	}
 	if aux.ApiAccessSnake != nil && p.ApiAccess == nil {
 		p.ApiAccess = aux.ApiAccessSnake
+	}
+	if aux.TelegramShopAccessSnake != nil && p.TelegramShopAccess == nil {
+		p.TelegramShopAccess = aux.TelegramShopAccessSnake
 	}
 	if aux.PermissionOverridesSnake != nil && len(p.PermissionOverrides) == 0 {
 		p.PermissionOverrides = *aux.PermissionOverridesSnake
@@ -77,6 +83,7 @@ type AdminView struct {
 	TotalUsers          int64  `json:"totalUsers"`
 	Limited             bool   `json:"limited"`
 	ApiAccess           bool   `json:"apiAccess"`
+	TelegramShopAccess  bool   `json:"telegramShopAccess"`
 	PermissionOverrides any    `json:"permission_overrides,omitempty"`
 	CreatedAt           int64  `json:"createdAt"`
 	UpdatedAt           int64  `json:"updatedAt"`
@@ -171,6 +178,7 @@ func adminToView(user *model.User, role *model.AdminRole, selfID int, usedBytes,
 		TotalUsers: totalUsers,
 		Limited:    adminIsLimited(user),
 		ApiAccess:  user.ApiAccess || (role != nil && role.OwnerRole),
+		TelegramShopAccess: user.TelegramShopAccess || (role != nil && role.OwnerRole),
 		CreatedAt:  user.CreatedAt,
 		UpdatedAt:  user.UpdatedAt,
 	}
@@ -389,6 +397,7 @@ func (s *AdminService) Create(payload AdminPayload) (*AdminView, error) {
 		DataLimit:               payload.DataLimit,
 		PermissionOverridesJSON: overridesJSON,
 		ApiAccess:               payload.ApiAccess != nil && *payload.ApiAccess,
+		TelegramShopAccess:      payload.TelegramShopAccess != nil && *payload.TelegramShopAccess,
 	}
 	if err := db.Create(user).Error; err != nil {
 		return nil, err
@@ -448,6 +457,10 @@ func (s *AdminService) Update(id int, payload AdminPayload) (*AdminView, error) 
 			return nil, errors.New("the owner always keeps API access")
 		}
 		updates["api_access"] = *payload.ApiAccess
+	}
+
+	if payload.TelegramShopAccess != nil && *payload.TelegramShopAccess != user.TelegramShopAccess {
+		updates["telegram_shop_access"] = *payload.TelegramShopAccess
 	}
 
 	if payload.RoleId > 0 && payload.RoleId != user.RoleId {

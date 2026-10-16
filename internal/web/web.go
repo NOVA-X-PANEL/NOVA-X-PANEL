@@ -322,6 +322,9 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 		if !strings.HasPrefix(p, "/panel/") && !strings.HasPrefix(p, "/app/") && !strings.HasPrefix(p, "/api/") {
 			p = "/panel" + p
 		}
+		if strings.HasPrefix(p, "/api/") && !strings.HasSuffix(p, ".php") && !strings.Contains(strings.TrimPrefix(p, "/api/"), ".") {
+			p = p + ".php"
+		}
 		c.Request.URL.Path = p
 		c.Request.Header.Set("X-Forwarded-Prefix", "/botpanel")
 		c.Header("Content-Security-Policy", "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws: wss:; frame-ancestors 'self'")
@@ -347,6 +350,14 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 		p := c.Request.URL.Path
 		if strings.HasPrefix(p, "/panel/login.php") || strings.HasPrefix(p, "/panel/index.php") || strings.HasPrefix(p, "/panel/users.php") || strings.HasPrefix(p, "/panel/css/") || strings.HasPrefix(p, "/panel/js/") {
 			c.Redirect(http.StatusMovedPermanently, "/botpanel"+p)
+			return
+		}
+		if strings.HasPrefix(p, "/api/keyboard") || strings.HasPrefix(p, "/api/settings") || strings.HasPrefix(p, "/api/category") || strings.HasPrefix(p, "/api/product") || strings.HasPrefix(p, "/api/users") || strings.HasPrefix(p, "/api/panels") {
+			target := "/botpanel" + p
+			if !strings.HasSuffix(target, ".php") && !strings.Contains(strings.TrimPrefix(p, "/api/"), ".") {
+				target += ".php"
+			}
+			c.Redirect(http.StatusMovedPermanently, target)
 			return
 		}
 		if s.panel.HandleNoRoutePanelSPA(c) {

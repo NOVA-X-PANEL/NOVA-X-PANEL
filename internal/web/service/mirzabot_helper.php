@@ -145,6 +145,7 @@ if ($cmd === 'install') {
     if (is_file($tableScript)) {
         @shell_exec('php ' . escapeshellarg($tableScript) . ' 2>&1');
     }
+    @shell_exec('systemctl daemon-reload 2>&1');
     @shell_exec('systemctl enable --now mirzabot-poller.service 2>&1');
     @shell_exec('systemctl restart mirzabot-poller.service 2>&1');
     @shell_exec('systemctl enable --now novabot-web.service 2>&1');

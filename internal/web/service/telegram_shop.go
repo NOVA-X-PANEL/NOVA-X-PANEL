@@ -138,6 +138,49 @@ fi
 	_, _ = s.execPrivilegedBash(context.Background(), script)
 }
 
+func (s *TelegramShopService) EnsurePollerUnit() {
+	if _, err := os.Stat("/var/www/mirzabot"); os.IsNotExist(err) {
+		return
+	}
+	script := `
+if [ ! -f /etc/systemd/system/mirzabot-poller.service ]; then
+    PHP_BIN=""
+    if [ -x /usr/bin/php ]; then PHP_BIN="/usr/bin/php";
+    elif [ -x /usr/local/bin/php ]; then PHP_BIN="/usr/local/bin/php";
+    elif [ -x /usr/bin/php8.3 ]; then PHP_BIN="/usr/bin/php8.3";
+    elif [ -x /usr/bin/php8.2 ]; then PHP_BIN="/usr/bin/php8.2";
+    elif [ -x /usr/bin/php8.1 ]; then PHP_BIN="/usr/bin/php8.1";
+    else PHP_BIN="$(command -v php 2>/dev/null || true)"; fi
+
+    if [ -z "$PHP_BIN" ] || [ ! -x "$PHP_BIN" ]; then
+        PHP_BIN="$(command -v php 2>/dev/null || echo '/usr/bin/php')"
+    fi
+
+    cat <<EOF > /etc/systemd/system/mirzabot-poller.service
+[Unit]
+Description=NOVA Bot Polling Daemon for NOVA-X-PANEL
+After=network.target mariadb.service mysql.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/var/www/mirzabot
+ExecStart=${PHP_BIN} /var/www/mirzabot/poll.php
+Restart=always
+RestartSec=3
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    chmod 644 /etc/systemd/system/mirzabot-poller.service
+    systemctl daemon-reload
+fi
+`
+	_, _ = s.execPrivilegedBash(context.Background(), script)
+}
+
 // purgeLegacyBot completely terminates, disables, and removes any previous python dark-shop-bot remnants.
 func (s *TelegramShopService) purgeLegacyBot() {
 	_, _ = s.execPrivilegedBash(context.Background(), `
@@ -186,6 +229,19 @@ func (s *TelegramShopService) GetStatus() (*TelegramShopStatus, error) {
 		return status, nil
 	}
 
+	// Check if config.php contains real credentials or placeholder
+	if cfgData, err := os.ReadFile(mirzaConfigPath); err == nil {
+		cfgStr := string(cfgData)
+		if strings.Contains(cfgStr, "{API_KEY}") || strings.Contains(cfgStr, "$APIKEY = '';") {
+			status.Installed = false
+			status.Running = false
+			status.BotToken = ""
+			status.AdminChatID = ""
+			status.BotUsername = ""
+			return status, nil
+		}
+	}
+
 	// Mirza Bot IS installed
 	status.Installed = true
 
@@ -210,6 +266,14 @@ func (s *TelegramShopService) GetStatus() (*TelegramShopStatus, error) {
 				ActiveOrders    int    `json:"active_orders"`
 			}
 			if json.Unmarshal(out, &m) == nil {
+				status.Installed = m.Installed
+				if !status.Installed {
+					status.Running = false
+					status.BotToken = ""
+					status.AdminChatID = ""
+					status.BotUsername = ""
+					return status, nil
+				}
 				if m.BotToken != "" {
 					status.BotToken = m.BotToken
 				}
@@ -607,6 +671,10 @@ func (s *TelegramShopService) Install(cfg *TelegramShopConfig) error {
 		}
 	}
 
+	// Always guarantee systemd units exist
+	s.EnsureWebUnit()
+	s.EnsurePollerUnit()
+
 	st := &TelegramShopStatus{}
 	s.fetchBotInfo(cfg.BotToken, st)
 	if st.BotUsername == "" {
@@ -637,8 +705,17 @@ func (s *TelegramShopService) Action(action string) error {
 	s.ensureMirzaHelper()
 	s.EnsureWebUnit()
 
-	// If Mirza Bot is not yet installed:
+	// If Mirza Bot is not yet installed or is uninstalled:
+	isUninstalled := false
 	if _, err := os.Stat(mirzaConfigPath); os.IsNotExist(err) {
+		isUninstalled = true
+	} else if cfgData, err := os.ReadFile(mirzaConfigPath); err == nil {
+		if strings.Contains(string(cfgData), "{API_KEY}") {
+			isUninstalled = true
+		}
+	}
+
+	if isUninstalled {
 		if action == "start" || action == "restart" {
 			data, err := os.ReadFile(tgShopConfigPath)
 			if err == nil {
@@ -678,7 +755,8 @@ func (s *TelegramShopService) Action(action string) error {
 	case "restart":
 		_, _ = s.execPrivilegedBash(context.Background(), "systemctl enable --now mirzabot-poller.service && systemctl restart mirzabot-poller.service")
 	case "uninstall":
-		_, _ = s.execPrivilegedBash(context.Background(), "systemctl stop mirzabot-poller.service 2>/dev/null; systemctl disable mirzabot-poller.service 2>/dev/null; rm -f /etc/systemd/system/mirzabot-poller.service; systemctl daemon-reload")
+		_ = os.Remove(tgShopConfigPath)
+		_, _ = s.execPrivilegedBash(context.Background(), "systemctl stop mirzabot-poller.service 2>/dev/null; systemctl disable mirzabot-poller.service 2>/dev/null; systemctl stop novabot-web.service 2>/dev/null; systemctl disable novabot-web.service 2>/dev/null; systemctl daemon-reload")
 	}
 
 	return nil

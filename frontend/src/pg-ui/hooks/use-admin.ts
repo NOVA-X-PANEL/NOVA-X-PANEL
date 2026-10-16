@@ -34,6 +34,8 @@ function normalizeCurrentAdmin(raw: any): CurrentAdmin | null {
     role_id: toNumber(raw.role_id ?? raw.roleId),
     api_access: Boolean(raw.apiAccess ?? raw.api_access),
     apiAccess: Boolean(raw.apiAccess ?? raw.api_access),
+    telegram_shop_access: Boolean(raw.telegramShopAccess ?? raw.telegram_shop_access),
+    telegramShopAccess: Boolean(raw.telegramShopAccess ?? raw.telegram_shop_access),
     profileTitle: toString(raw.profileTitle ?? raw.profile_title),
     profile_title: toString(raw.profile_title ?? raw.profileTitle),
     permissions,
@@ -159,9 +161,8 @@ export function useAdmin() {
 
     listeners.add(handleChange);
 
-    if (!sharedAdmin || (!fetchPromise && !sharedAdmin)) {
-      fetchCurrentAdmin();
-    }
+    // Stale-while-revalidate: always verify latest permissions from server in background
+    fetchCurrentAdmin(true);
 
     return () => {
       listeners.delete(handleChange);

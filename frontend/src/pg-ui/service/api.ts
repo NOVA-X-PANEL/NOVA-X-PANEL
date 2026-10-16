@@ -404,8 +404,8 @@ export function useModifyAdminById() {
         data_limit: data.data_limit === undefined && data.dataLimit === undefined
           ? existing.data_limit
           : data.data_limit ?? data.dataLimit,
-        api_access: data.api_access ?? existing.api_access,
-        telegram_shop_access: data.telegram_shop_access ?? existing.telegram_shop_access,
+        api_access: typeof data.api_access === 'boolean' ? data.api_access : existing.api_access,
+        telegram_shop_access: typeof data.telegram_shop_access === 'boolean' ? data.telegram_shop_access : existing.telegram_shop_access,
         telegram_id: data.telegram_id ?? existing.telegram_id,
         discord_webhook: data.discord_webhook ?? existing.discord_webhook,
         support_url: data.support_url ?? existing.support_url,
@@ -420,7 +420,10 @@ export function useModifyAdminById() {
       const updated = await apiPost(`/panel/api/admins/update/${adminId}`, pgAdminToHeimdallPayload(merged));
       return normalizeAdmin(updated ?? { ...merged, id: adminId });
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['pg-ui', 'admins'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['pg-ui', 'admins'] });
+      qc.invalidateQueries({ queryKey: ['my-api-tokens'] });
+    },
   });
 }
 

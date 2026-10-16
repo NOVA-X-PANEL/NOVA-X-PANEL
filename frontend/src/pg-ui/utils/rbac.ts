@@ -269,6 +269,6 @@ export function canAccessRoute(admin: unknown, pathname: string): boolean {
 }
 
 export function firstAllowedRoute(admin: unknown): string {
-  const orderedRoutes = ['/', '/inbounds', '/clients', '/groups', '/nodes', '/admins', '/admin-roles', '/outbound', '/routing', '/settings', '/xray', '/hosts', '/my-api']
+  const orderedRoutes = ['/', '/inbounds', '/clients', '/groups', '/nodes', '/hashem', '/telegram-shop', '/admins', '/admin-roles', '/outbound', '/routing', '/settings', '/xray', '/hosts', '/my-api']
   return orderedRoutes.find(route => canAccessRoute(admin, route)) || FALLBACK_ROUTE
 }

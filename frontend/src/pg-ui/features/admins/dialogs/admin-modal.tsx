@@ -12,7 +12,7 @@ import { PasswordInput } from '@/pg-ui/components/ui/password-input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/pg-ui/components/ui/select';
 import { Switch } from '@/pg-ui/components/ui/switch';
 
-import { useAdmin } from '@/pg-ui/hooks/use-admin';
+import { clearAdminCache, fetchCurrentAdmin, useAdmin } from '@/pg-ui/hooks/use-admin';
 import useDynamicErrorHandler from '@/pg-ui/hooks/use-dynamic-errors'
 import { useCreateAdmin, useGetRolesSimple, useModifyAdminById } from '@/pg-ui/service/api';
 import type { RoleLimits } from '@/pg-ui/service/api'
@@ -153,9 +153,9 @@ export default function AdminModal({ isDialogOpen, onOpenChange, editingAdminId,
           : {}
       const editData = {
         password: values.password || undefined,
-        ...(form.formState.dirtyFields.status ? { status: values.status || 'active' } : {}),
-        ...(form.formState.dirtyFields.api_access ? { api_access: values.api_access === true } : {}),
-        ...(form.formState.dirtyFields.telegram_shop_access ? { telegram_shop_access: values.telegram_shop_access === true } : {}),
+        status: values.status || 'active',
+        api_access: values.api_access === true,
+        telegram_shop_access: values.telegram_shop_access === true,
         ...dataLimitPayload,
         discord_webhook: values.discord_webhook,
         sub_domain: values.sub_domain,
@@ -174,6 +174,8 @@ export default function AdminModal({ isDialogOpen, onOpenChange, editingAdminId,
           data: editData,
         })
         upsertAdminInAdminsCache(queryClient, updatedAdmin, { allowInsert: true })
+        clearAdminCache()
+        fetchCurrentAdmin(true)
         if (passwordChanged && isEditingCurrentAdmin) {
           toast.success(t('admins.passwordChangedTitle', { defaultValue: 'Password changed' }), {
             description: t('admins.passwordChangedLogout', { defaultValue: 'Please sign in again with your new password.' }),

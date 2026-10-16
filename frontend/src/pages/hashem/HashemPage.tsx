@@ -38,6 +38,7 @@ import {
   EditOutlined,
   GatewayOutlined,
   NodeIndexOutlined,
+  PlusCircleOutlined,
   PlusOutlined,
   ReloadOutlined,
   SafetyCertificateOutlined,
@@ -55,6 +56,7 @@ import {
   useHashemMutations,
   type HashemSetupPayload,
   type HashemOneLinerPayload,
+  type HashemPortActionResult,
 } from '@/api/queries/useHashemMutations';
 import './HashemPage.css';
 
@@ -116,6 +118,9 @@ export default function HashemPage() {
     isSyncingInbounds,
     editPorts,
     isEditingPorts,
+    addPort,
+    isAddingPort,
+    removePort,
     setup,
     isSettingUp,
     generateOneLiner,
@@ -139,6 +144,11 @@ export default function HashemPage() {
   const [editPortsModalOpen, setEditPortsModalOpen] = useState(false);
   const [portChips, setPortChips] = useState<number[]>([]);
   const [newPortInput, setNewPortInput] = useState<number | null>(null);
+
+  const [addPortModalOpen, setAddPortModalOpen] = useState(false);
+  const [addPortValue, setAddPortValue] = useState<number | null>(null);
+  const [addPortAutoInbound, setAddPortAutoInbound] = useState(true);
+  const [addPortResult, setAddPortResult] = useState<HashemPortActionResult | null>(null);
 
   const [oneLinerForm] = Form.useForm();
   const [form] = Form.useForm<HashemSetupPayload>();
@@ -222,6 +232,52 @@ export default function HashemPage() {
     } catch {
       // toast shown by mutation
     }
+  };
+
+  const handleOpenAddPort = () => {
+    setAddPortValue(null);
+    setAddPortAutoInbound(true);
+    setAddPortResult(null);
+    setAddPortModalOpen(true);
+  };
+
+  const handleExecuteAddPort = async () => {
+    if (!addPortValue || addPortValue < 1 || addPortValue > 65535) {
+      messageApi.error(
+        t('pages.hashem.invalidPortNumber', {
+          defaultValue: 'Please enter a valid port between 1 and 65535',
+        }),
+      );
+      return;
+    }
+    try {
+      const res = await addPort({ port: addPortValue, autoInbound: addPortAutoInbound });
+      setAddPortResult(res);
+      refetch();
+    } catch {
+      // toast shown by mutation
+    }
+  };
+
+  const handleConfirmRemovePort = (portToRemove: number) => {
+    Modal.confirm({
+      title: t('pages.hashem.removePortConfirmTitle', { defaultValue: 'Remove Port from Tunnel?' }),
+      content: t('pages.hashem.removePortConfirmDesc', {
+        port: portToRemove,
+        defaultValue: `Are you sure you want to remove port ${portToRemove} from the tunnel? Existing ports will continue working seamlessly.`,
+      }),
+      okText: t('pages.hashem.removePortBtn', { defaultValue: 'Remove Port' }),
+      okType: 'danger',
+      cancelText: t('cancel', { defaultValue: 'Cancel' }),
+      onOk: async () => {
+        try {
+          await removePort({ port: portToRemove });
+          refetch();
+        } catch {
+          // toast handled
+        }
+      },
+    });
   };
 
   const handleRestart = async () => {
@@ -850,7 +906,21 @@ export default function HashemPage() {
                         <Text strong style={{ color: 'var(--nc-text, #f1f5f9)' }}>
                           {t('pages.hashem.forwardedPortsList')}:{' '}
                         </Text>
-                        <Space>
+                        <Space wrap>
+                          <Button
+                            size="small"
+                            type="primary"
+                            icon={<PlusOutlined />}
+                            onClick={handleOpenAddPort}
+                            style={{
+                              borderRadius: 6,
+                              fontSize: 12,
+                              background: 'linear-gradient(135deg, #10b981, #059669)',
+                              borderColor: '#10b981',
+                            }}
+                          >
+                            {t('pages.hashem.addPortBtn', { defaultValue: 'Add Port' })}
+                          </Button>
                           <Button
                             size="small"
                             type="dashed"
@@ -885,20 +955,27 @@ export default function HashemPage() {
                           </Button>
                         </Space>
                       </div>
-                      <div style={{ marginTop: 10 }}>
+                      <div style={{ marginTop: 10, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                         {status.ports && status.ports.length > 0 ? (
                           status.ports.map((p) => (
                             <Tag
                               key={p}
+                              closable
+                              onClose={(e) => {
+                                e.preventDefault();
+                                handleConfirmRemovePort(p);
+                              }}
                               color="blue"
                               style={{
                                 fontSize: 13,
                                 padding: '3px 10px',
                                 borderRadius: 8,
-                                marginBottom: 6,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 6,
                               }}
                             >
-                              Port {p}
+                              <span>Port {p}</span>
                             </Tag>
                           ))
                         ) : (
@@ -1444,6 +1521,163 @@ export default function HashemPage() {
               {t('pages.hashem.addPortBtn', { defaultValue: 'Add' })}
             </Button>
           </div>
+        </Modal>
+
+        <Modal
+          title={
+            <Space>
+              <PlusCircleOutlined style={{ color: '#10b981' }} />
+              <span>{t('pages.hashem.addPortModalTitle', { defaultValue: 'Add Tunnel Port' })}</span>
+            </Space>
+          }
+          open={addPortModalOpen}
+          onCancel={() => {
+            setAddPortModalOpen(false);
+            setAddPortResult(null);
+          }}
+          footer={
+            addPortResult
+              ? [
+                  <Button
+                    key="close"
+                    type="primary"
+                    onClick={() => {
+                      setAddPortModalOpen(false);
+                      setAddPortResult(null);
+                    }}
+                  >
+                    {t('close', { defaultValue: 'Close' })}
+                  </Button>,
+                ]
+              : [
+                  <Button
+                    key="cancel"
+                    onClick={() => {
+                      setAddPortModalOpen(false);
+                      setAddPortResult(null);
+                    }}
+                  >
+                    {t('cancel', { defaultValue: 'Cancel' })}
+                  </Button>,
+                  <Button
+                    key="submit"
+                    type="primary"
+                    loading={isAddingPort}
+                    onClick={handleExecuteAddPort}
+                    style={{
+                      background: 'linear-gradient(135deg, #10b981, #059669)',
+                      borderColor: '#10b981',
+                    }}
+                  >
+                    {t('pages.hashem.addPortAndGetCmd', {
+                      defaultValue: 'Add Port & Generate Command',
+                    })}
+                  </Button>,
+                ]
+          }
+          className="hashem-modal"
+          width={620}
+        >
+          {!addPortResult ? (
+            <div>
+              <Paragraph
+                style={{ color: 'var(--nc-subtext, #94a3b8)', fontSize: 13, marginBottom: 16 }}
+              >
+                {t('pages.hashem.addPortDesc', {
+                  defaultValue:
+                    'Enter the new port you want to tunnel. This port will be added without interrupting your existing ports, and a one-liner command will be generated for your Iran server.',
+                })}
+              </Paragraph>
+              <div style={{ marginBottom: 16 }}>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    marginBottom: 6,
+                    color: 'var(--nc-subtext, #94a3b8)',
+                  }}
+                >
+                  {t('pages.hashem.newPortNumber', { defaultValue: 'Port Number (1-65535)' })}:
+                </label>
+                <InputNumber
+                  min={1}
+                  max={65535}
+                  value={addPortValue}
+                  onChange={(val: number | null) => setAddPortValue(val)}
+                  onPressEnter={handleExecuteAddPort}
+                  placeholder="e.g. 2083"
+                  style={{ width: '100%' }}
+                  autoFocus
+                />
+              </div>
+              <div style={{ marginBottom: 12 }}>
+                <Checkbox
+                  checked={addPortAutoInbound}
+                  onChange={(e) => setAddPortAutoInbound(e.target.checked)}
+                >
+                  <span style={{ fontSize: 13, color: 'var(--nc-text, #f1f5f9)' }}>
+                    {t('pages.hashem.autoCreateInboundCheck', {
+                      defaultValue: 'Auto-create matching VLESS-WS Inbound in panel',
+                    })}
+                  </span>
+                </Checkbox>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <Alert
+                type="success"
+                showIcon
+                message={t('pages.hashem.portAddedSuccessTitle', {
+                  defaultValue: 'Port Added to Tunnel Successfully',
+                })}
+                description={addPortResult.message}
+                style={{ marginBottom: 16 }}
+              />
+              {addPortResult.oneLinerCommand && (
+                <div>
+                  <Paragraph
+                    style={{ fontWeight: 600, color: 'var(--nc-text, #f1f5f9)', marginBottom: 8 }}
+                  >
+                    {t('pages.hashem.iranOneLinerInstruction', {
+                      defaultValue:
+                        'Run this command on your Iran server to tunnel this port (existing ports will remain untouched):',
+                    })}
+                  </Paragraph>
+                  <div
+                    style={{
+                      background: 'rgba(0, 0, 0, 0.45)',
+                      padding: 14,
+                      borderRadius: 8,
+                      border: '1px solid rgba(255, 255, 255, 0.12)',
+                      fontFamily: 'monospace',
+                      fontSize: 12,
+                      wordBreak: 'break-all',
+                      position: 'relative',
+                    }}
+                  >
+                    {addPortResult.oneLinerCommand}
+                  </div>
+                  <div style={{ marginTop: 14, textAlign: 'right' }}>
+                    <Button
+                      type="primary"
+                      icon={<CopyOutlined />}
+                      onClick={() => {
+                        copyToClipboard(addPortResult.oneLinerCommand);
+                      }}
+                      style={{
+                        background: 'linear-gradient(135deg, #0284c7, #2563eb)',
+                        borderColor: '#38bdf8',
+                      }}
+                    >
+                      {t('pages.hashem.copyCommand', { defaultValue: 'Copy Iran Command' })}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </Modal>
       </Layout>
     </ConfigProvider>

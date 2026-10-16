@@ -221,8 +221,36 @@ type HashemService struct {
 	clientService  ClientService
 }
 
+type HashemPortActionResult struct {
+	Success     bool   `json:"success"`
+	Port        int    `json:"port"`
+	Ports       []int  `json:"ports"`
+	IranCommand string `json:"iranCommand"`
+	Message     string `json:"message"`
+}
+
+func (s *HashemService) ensureHashemCore(ctx context.Context) error {
+	if _, err := os.Stat(hashemBinPath); err == nil {
+		return nil
+	}
+	if _, err := os.Stat(hashemScriptPath); err == nil {
+		_ = os.Chmod(hashemScriptPath, 0o755)
+		_ = os.Remove(hashemBinPath)
+		_ = os.Symlink(hashemScriptPath, hashemBinPath)
+		return nil
+	}
+	_, err := s.Install()
+	return err
+}
+
 func (s *HashemService) IsInstalled() bool {
-	return true
+	if _, err := os.Stat(hashemBinPath); err == nil {
+		return true
+	}
+	if _, err := os.Stat(hashemScriptPath); err == nil {
+		return true
+	}
+	return false
 }
 
 func shellQuote(value string) string {
@@ -765,14 +793,28 @@ func (s *HashemService) SetCarrier(carrier string) error {
 }
 
 func (s *HashemService) Restart() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 
-	out, err := s.execPrivileged(ctx, hashemBinPath, "restart")
-	if err != nil {
-		logger.Warningf("hashem restart failed: %v, out: %s", err, string(out))
-		return fmt.Errorf("failed to restart tunnel: %s", string(out))
+	_ = s.ensureHashemCore(ctx)
+
+	if _, err := os.Stat(hashemBinPath); err == nil {
+		out, err := s.execPrivileged(ctx, hashemBinPath, "restart")
+		if err == nil {
+			return nil
+		}
+		logger.Warningf("hashem restart CLI failed: %v, out: %s", err, string(out))
 	}
+
+	restartCmd := `
+systemctl daemon-reload 2>/dev/null || true
+for svc in gre-tunnel frpc frps backhaul-client backhaul-server gre-panel; do
+    if [ -f "/etc/systemd/system/${svc}.service" ]; then
+        systemctl restart "$svc" 2>/dev/null || true
+    fi
+done
+`
+	_, _ = s.execPrivilegedBash(ctx, restartCmd)
 	return nil
 }
 
@@ -897,17 +939,22 @@ func (s *HashemService) SyncInbounds() ([]int, error) {
 	}
 
 	if len(ports) == 0 {
-		return nil, fmt.Errorf("no active inbounds found")
+		return nil, fmt.Errorf("هیچ اینباند فعالی برای همگام‌سازی با تانل یافت نشد")
 	}
 
-	status, err := s.GetStatus()
-	if err != nil || (!status.Installed) {
-		return nil, fmt.Errorf("hashem tunnel not configured")
-	}
+	ctx, cancel := context.WithTimeout(context.Background(), 25*time.Second)
+	defer cancel()
+
+	_ = s.ensureHashemCore(ctx)
 
 	// Dynamic zero-downtime port sync via EditPorts
 	if err := s.EditPorts(ports); err == nil {
 		return ports, nil
+	}
+
+	status, err := s.GetStatus()
+	if err != nil {
+		return nil, fmt.Errorf("خطا در دریافت وضعیت تانل: %w", err)
 	}
 
 	// Fallback to setup-foreign if toml direct edit was not applicable
@@ -918,9 +965,6 @@ func (s *HashemService) SyncInbounds() ([]int, error) {
 		}
 		portsArg := strings.Join(portStrs, ", ")
 
-		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-		defer cancel()
-
 		out, err := s.execPrivileged(ctx, hashemBinPath, "setup-foreign",
 			"--local-pub", status.LocalPubIP,
 			"--remote-pub", status.RemotePubIP,
@@ -929,12 +973,12 @@ func (s *HashemService) SyncInbounds() ([]int, error) {
 			"--force",
 		)
 		if err != nil {
-			return nil, fmt.Errorf("sync failed: %s", string(out))
+			return nil, fmt.Errorf("همگام‌سازی ناموفق بود: %s", string(out))
 		}
 		return ports, nil
 	}
 
-	return nil, fmt.Errorf("hashem tunnel not configured as foreign client")
+	return nil, fmt.Errorf("تانل روی این سرور به عنوان سرور خارج (Foreign Client) پیکربندی نشده است. ابتدا تانل را از بخش دستور تک‌خطی یا اتصال SSH راه‌اندازی کنید.")
 }
 
 // EditPorts dynamically updates forwarded ports in frpc/frps without dropping the tunnel.
@@ -971,6 +1015,8 @@ func (s *HashemService) EditPorts(ports []int) error {
 		}
 	}
 
+	editedAny := false
+
 	// Update gre-panel database if present
 	if _, err := os.Stat("/var/lib/gre-panel/panel.db"); err == nil {
 		pyScript := fmt.Sprintf(`import sqlite3
@@ -986,6 +1032,7 @@ except Exception:
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		_, _ = s.execPrivileged(ctx, "python3", "-c", pyScript)
 		cancel()
+		editedAny = true
 	}
 
 	// Update /etc/x-ui/tunnel.json if exists
@@ -995,13 +1042,12 @@ except Exception:
 			doc["ports"] = cleanPorts
 			if bs, err := json.MarshalIndent(doc, "", "  "); err == nil {
 				_ = os.WriteFile("/etc/x-ui/tunnel.json", bs, 0o644)
+				editedAny = true
 			}
 		}
 	}
 
 	// 2. Direct edit: update peers.json + rewrite toml + reload frp
-	editedAny := false
-
 	peersPath := "/etc/gre-panel/peers.json"
 	if data, err := os.ReadFile(peersPath); err == nil {
 		var doc struct {
@@ -1100,6 +1146,113 @@ except Exception:
 	}
 
 	return nil
+}
+
+func (s *HashemService) AddPort(port int, autoInbound bool) (*HashemPortActionResult, error) {
+	if port < 1 || port > 65535 {
+		return nil, fmt.Errorf("شماره پورت نامعتبر است: %d", port)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 25*time.Second)
+	defer cancel()
+
+	_ = s.ensureHashemCore(ctx)
+
+	status, _ := s.GetStatus()
+	currentPorts := []int{}
+	if status != nil && len(status.Ports) > 0 {
+		currentPorts = append(currentPorts, status.Ports...)
+	}
+
+	portExists := false
+	for _, p := range currentPorts {
+		if p == port {
+			portExists = true
+			break
+		}
+	}
+
+	if !portExists {
+		currentPorts = append(currentPorts, port)
+	}
+	sort.Ints(currentPorts)
+
+	if err := s.EditPorts(currentPorts); err != nil {
+		logger.Warningf("EditPorts failed during AddPort: %v", err)
+	}
+
+	if autoInbound && status != nil {
+		host := status.RemotePubIP
+		if host == "" {
+			host = status.LocalPubIP
+		}
+		_ = s.AutoCreateMatchingInbounds(strconv.Itoa(port), host, host)
+	}
+
+	iranCommand := fmt.Sprintf(
+		`bash -c 'PORT="%d"; `+
+			`for f in /etc/backhaul/config.toml /etc/backhaul/iran.toml /etc/backhaul/*.toml /root/backhaul-core/*.toml; do `+
+			`[ -f "$f" ] && ! grep -q "\"$PORT\"" "$f" && sed -i "/ports\s*=\s*\[/a \ \ \ \ \"$PORT\"," "$f" && systemctl restart backhaul-server backhaul-iran 2>/dev/null; done; `+
+			`if [ -f /etc/gre-panel/peers.json ]; then python3 -c "import json; p=\"/etc/gre-panel/peers.json\"; d=json.load(open(p)); [x.setdefault(\"ports\", []).append($PORT) for x in d.get(\"peers\", []) if $PORT not in x.get(\"ports\", [])]; json.dump(d, open(p, \"w\"), indent=2)" 2>/dev/null; fi; `+
+			`if [ -f /var/lib/gre-panel/panel.db ]; then python3 -c "import sqlite3; c=sqlite3.connect(\"/var/lib/gre-panel/panel.db\"); c.execute(\"INSERT OR IGNORE INTO RouteDestination (Port, IsEnabled) VALUES (?, 1)\", ($PORT,)); c.commit()" 2>/dev/null; fi; `+
+			`if ip link show gre1 >/dev/null 2>&1 || ip link show gre-tunnel >/dev/null 2>&1; then `+
+			`iptables -t nat -C PREROUTING -p tcp --dport ${PORT} -j DNAT --to-destination 10.10.10.2:${PORT} 2>/dev/null || iptables -t nat -A PREROUTING -p tcp --dport ${PORT} -j DNAT --to-destination 10.10.10.2:${PORT} 2>/dev/null || true; `+
+			`iptables -t nat -C PREROUTING -p udp --dport ${PORT} -j DNAT --to-destination 10.10.10.2:${PORT} 2>/dev/null || iptables -t nat -A PREROUTING -p udp --dport ${PORT} -j DNAT --to-destination 10.10.10.2:${PORT} 2>/dev/null || true; `+
+			`fi; `+
+			`ufw allow ${PORT}/tcp 2>/dev/null; ufw allow ${PORT}/udp 2>/dev/null; `+
+			`iptables -I INPUT -p tcp --dport ${PORT} -j ACCEPT 2>/dev/null; iptables -I INPUT -p udp --dport ${PORT} -j ACCEPT 2>/dev/null; `+
+			`echo "✔️ پورت $PORT بدون اختلال در پورت‌های قبلی با موفقیت به تانل سرور ایران متصل شد."'`,
+		port,
+	)
+
+	return &HashemPortActionResult{
+		Success:     true,
+		Port:        port,
+		Ports:       currentPorts,
+		IranCommand: iranCommand,
+		Message:     fmt.Sprintf("پورت %d با موفقیت به تانل خارج افزوده شد.", port),
+	}, nil
+}
+
+func (s *HashemService) RemovePort(port int) (*HashemPortActionResult, error) {
+	if port < 1 || port > 65535 {
+		return nil, fmt.Errorf("شماره پورت نامعتبر است: %d", port)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 25*time.Second)
+	defer cancel()
+
+	_ = s.ensureHashemCore(ctx)
+
+	status, _ := s.GetStatus()
+	var newPorts []int
+	if status != nil && len(status.Ports) > 0 {
+		for _, p := range status.Ports {
+			if p != port {
+				newPorts = append(newPorts, p)
+			}
+		}
+	}
+	sort.Ints(newPorts)
+
+	if len(newPorts) > 0 {
+		if err := s.EditPorts(newPorts); err != nil {
+			logger.Warningf("EditPorts failed during RemovePort: %v", err)
+		}
+	}
+
+	iranCommand := fmt.Sprintf(
+		`bash -c 'PORT="%d"; for f in /etc/backhaul/config.toml /root/backhaul-core/*.toml; do [ -f "$f" ] && sed -i "/\"$PORT\"/d" "$f" && systemctl restart backhaul-server 2>/dev/null; done; if [ -f /etc/gre-panel/peers.json ]; then python3 -c "import json; p=\"/etc/gre-panel/peers.json\"; d=json.load(open(p)); [x[\"ports\"].remove($PORT) for x in d.get(\"peers\", []) if \"ports\" in x and $PORT in x[\"ports\"]]; json.dump(d, open(p, \"w\"), indent=2)" 2>/dev/null; fi; if [ -f /var/lib/gre-panel/panel.db ]; then python3 -c "import sqlite3; c=sqlite3.connect(\"/var/lib/gre-panel/panel.db\"); c.execute(\"DELETE FROM RouteDestination WHERE Port = ?\", ($PORT,)); c.commit()" 2>/dev/null; fi; ufw delete allow ${PORT}/tcp 2>/dev/null; ufw delete allow ${PORT}/udp 2>/dev/null; echo "پورت $PORT با موفقیت از تانل حذف شد"'`,
+		port,
+	)
+
+	return &HashemPortActionResult{
+		Success:     true,
+		Port:        port,
+		Ports:       newPorts,
+		IranCommand: iranCommand,
+		Message:     fmt.Sprintf("پورت %d از تانل خارج حذف گردید.", port),
+	}, nil
 }
 
 func rewriteBackhaulPorts(content string, ports []int) string {
@@ -1542,7 +1695,7 @@ func (s *HashemService) SetupSSH(form HashemSSHSetupForm) (*HashemSSHSetupResult
 	if engine == "backhaul" {
 		iranCmd = fmt.Sprintf(
 			"export DEBIAN_FRONTEND=noninteractive; %s"+
-				"bash /tmp/hashem.sh setup-backhaul-iran --local-pub %s --remote-pub %s --port %d --transport %s --token %s --ports \"%s\" --force && rm -f /tmp/hashem.sh",
+				"bash /tmp/hashem.sh setup-backhaul-iran --local-pub %s --remote-pub %s --port %d --transport %s --token %s --ports \"%s\" --force; cp -f /tmp/hashem.sh /usr/local/bin/hashem.sh 2>/dev/null; ln -sf /usr/local/bin/hashem.sh /usr/local/bin/hashem 2>/dev/null; systemctl enable backhaul-server 2>/dev/null || true; rm -f /tmp/hashem.sh",
 			downloadPipeSSH, iranIP, foreignIP, bhPort, transport, token, ports,
 		)
 	} else if engine == "gre-backhaul" {
@@ -1550,7 +1703,7 @@ func (s *HashemService) SetupSSH(form HashemSSHSetupForm) (*HashemSSHSetupResult
 			"export DEBIAN_FRONTEND=noninteractive; %s"+
 				"bash /tmp/hashem.sh setup-gre-backhaul-iran --local-pub %s --remote-pub %s --port %d --transport %s --token %s --ports \"%s\" --force && "+
 				carrierCmd+
-				"%s; rm -f /tmp/hashem.sh",
+				"%s; cp -f /tmp/hashem.sh /usr/local/bin/hashem.sh 2>/dev/null; ln -sf /usr/local/bin/hashem.sh /usr/local/bin/hashem 2>/dev/null; systemctl enable gre-tunnel backhaul-server 2>/dev/null || true; rm -f /tmp/hashem.sh",
 			downloadPipeSSH, iranIP, foreignIP, bhPort, transport, token, ports, optimizeCmd,
 		)
 	} else {
@@ -1558,7 +1711,7 @@ func (s *HashemService) SetupSSH(form HashemSSHSetupForm) (*HashemSSHSetupResult
 			"export DEBIAN_FRONTEND=noninteractive; %s"+
 				"bash /tmp/hashem.sh setup-iran --local-pub %s --remote-pub %s --frp-port %d --token %s --local-gre 10.10.10.2 --peer-gre 10.10.10.1 --force && "+
 				carrierCmd+
-				"%s && %s; rm -f /tmp/hashem.sh",
+				"%s && %s; cp -f /tmp/hashem.sh /usr/local/bin/hashem.sh 2>/dev/null; ln -sf /usr/local/bin/hashem.sh /usr/local/bin/hashem 2>/dev/null; systemctl enable gre-tunnel frps 2>/dev/null || true; rm -f /tmp/hashem.sh",
 			downloadPipeSSH, iranIP, foreignIP, frpPort, token, peerJsonCmd, optimizeCmd,
 		)
 	}
@@ -1732,7 +1885,10 @@ func buildIranSetupCommands(iranIP, foreignIP string, frpPort, bhPort int, token
 		"curl -fsSL --connect-timeout 5 --max-time 30 https://ghproxy.cn/https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /tmp/hashem.sh 2>/dev/null || " +
 		"curl -fsSL --connect-timeout 5 --max-time 30 https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /tmp/hashem.sh 2>/dev/null || " +
 		"curl -sL https://raw.githubusercontent.com/pdnczone/hashem-panel/main/hashem.sh -o /tmp/hashem.sh; " +
-		"chmod +x /tmp/hashem.sh;"
+		"chmod +x /tmp/hashem.sh; " +
+		"cp -f /tmp/hashem.sh /usr/local/bin/hashem.sh 2>/dev/null || true; " +
+		"chmod +x /usr/local/bin/hashem.sh 2>/dev/null || true; " +
+		"ln -sf /usr/local/bin/hashem.sh /usr/local/bin/hashem 2>/dev/null || true;"
 
 	carrierCmd := ""
 	if carrier != "direct" && carrier != "" {
@@ -1742,12 +1898,12 @@ func buildIranSetupCommands(iranIP, foreignIP string, frpPort, bhPort int, token
 	var oneLiner string
 	if engine == "backhaul" {
 		oneLiner = fmt.Sprintf(
-			"%s bash /tmp/hashem.sh setup-backhaul-iran --local-pub %s --remote-pub %s --port %d --transport %s --token %s --ports \"%s\" --force && rm -f /tmp/hashem.sh",
+			"%s bash /tmp/hashem.sh setup-backhaul-iran --local-pub %s --remote-pub %s --port %d --transport %s --token %s --ports \"%s\" --force; systemctl enable backhaul-server 2>/dev/null || true; rm -f /tmp/hashem.sh",
 			downloadPipe, iranIP, foreignIP, bhPort, transport, token, portsSafe,
 		)
 	} else if engine == "gre-backhaul" {
 		oneLiner = fmt.Sprintf(
-			"%s bash /tmp/hashem.sh setup-gre-backhaul-iran --local-pub %s --remote-pub %s --port %d --transport %s --token %s --ports \"%s\" --force && %s%s && rm -f /tmp/hashem.sh",
+			"%s bash /tmp/hashem.sh setup-gre-backhaul-iran --local-pub %s --remote-pub %s --port %d --transport %s --token %s --ports \"%s\" --force && %s%s; systemctl enable gre-tunnel backhaul-server 2>/dev/null || true; rm -f /tmp/hashem.sh",
 			downloadPipe, iranIP, foreignIP, bhPort, transport, token, portsSafe, carrierCmd, optimizeCmd,
 		)
 	} else {
@@ -1756,7 +1912,7 @@ func buildIranSetupCommands(iranIP, foreignIP string, frpPort, bhPort int, token
 			portsArg = fmt.Sprintf(" --ports \"%s\"", portsSafe)
 		}
 		oneLiner = fmt.Sprintf(
-			"%s bash /tmp/hashem.sh setup-iran --local-pub %s --remote-pub %s --frp-port %d --token %s%s --local-gre 10.10.10.2 --peer-gre 10.10.10.1 --force && %s%s && %s && rm -f /tmp/hashem.sh",
+			"%s bash /tmp/hashem.sh setup-iran --local-pub %s --remote-pub %s --frp-port %d --token %s%s --local-gre 10.10.10.2 --peer-gre 10.10.10.1 --force && %s%s && %s; systemctl enable gre-tunnel frps 2>/dev/null || true; rm -f /tmp/hashem.sh",
 			downloadPipe, iranIP, foreignIP, frpPort, token, portsArg, carrierCmd, peerJsonCmd, optimizeCmd,
 		)
 	}
@@ -1792,6 +1948,8 @@ func (s *HashemService) GenerateOneLiner(form HashemOneLinerForm) (*HashemOneLin
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
+
+	_ = s.ensureHashemCore(ctx)
 
 	var argsForeign []string
 	if engine == "backhaul" {

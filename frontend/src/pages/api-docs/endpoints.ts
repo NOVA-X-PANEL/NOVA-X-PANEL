@@ -3014,6 +3014,18 @@ export const sections: readonly Section[] = [
       },
       {
         method: 'POST',
+        path: '/panel/api/hashem/add-port',
+        summary: 'Add a new forwarded port to Hashem tunnel and return Iran server command.',
+        body: '{\n  "port": 8443,\n  "autoInbound": true\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/hashem/remove-port',
+        summary: 'Remove a forwarded port from Hashem tunnel.',
+        body: '{\n  "port": 8443\n}',
+      },
+      {
+        method: 'POST',
         path: '/panel/api/hashem/auto-create-inbound',
         summary:
           'Automatically create matching VLESS-WS inbounds for forwarded tunnel ports with host and path configured.',

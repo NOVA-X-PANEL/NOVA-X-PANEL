@@ -72,6 +72,14 @@ export interface HashemOneLinerResult {
   token: string;
 }
 
+export interface HashemPortActionResult {
+  port: number;
+  action: 'add' | 'remove';
+  ports: number[];
+  oneLinerCommand: string;
+  message: string;
+}
+
 export function useHashemMutations(customMessageApi?: MessageInstance) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -274,6 +282,40 @@ export function useHashemMutations(customMessageApi?: MessageInstance) {
     onError: (err: Error) => messageApi.error(err.message),
   });
 
+  const addPortMutation = useMutation({
+    mutationFn: async (payload: { port: number; autoInbound?: boolean }) => {
+      const res = await HttpUtil.post<HashemPortActionResult>('/panel/api/hashem/add-port', payload);
+      if (!res?.success) throw new Error(res?.msg || 'Failed to add port');
+      return res.obj;
+    },
+    onSuccess: () => {
+      messageApi.success(
+        t('pages.hashem.toasts.addPortSuccess', {
+          defaultValue: 'Port added to tunnel successfully',
+        }),
+      );
+      invalidate();
+    },
+    onError: (err: Error) => messageApi.error(err.message),
+  });
+
+  const removePortMutation = useMutation({
+    mutationFn: async (payload: { port: number }) => {
+      const res = await HttpUtil.post<HashemPortActionResult>('/panel/api/hashem/remove-port', payload);
+      if (!res?.success) throw new Error(res?.msg || 'Failed to remove port');
+      return res.obj;
+    },
+    onSuccess: () => {
+      messageApi.success(
+        t('pages.hashem.toasts.removePortSuccess', {
+          defaultValue: 'Port removed from tunnel successfully',
+        }),
+      );
+      invalidate();
+    },
+    onError: (err: Error) => messageApi.error(err.message),
+  });
+
   return {
     setCarrier: setCarrierMutation.mutateAsync,
     isSettingCarrier: setCarrierMutation.isPending,
@@ -285,6 +327,10 @@ export function useHashemMutations(customMessageApi?: MessageInstance) {
     isSyncingInbounds: syncInboundsMutation.isPending,
     editPorts: editPortsMutation.mutateAsync,
     isEditingPorts: editPortsMutation.isPending,
+    addPort: addPortMutation.mutateAsync,
+    isAddingPort: addPortMutation.isPending,
+    removePort: removePortMutation.mutateAsync,
+    isRemovingPort: removePortMutation.isPending,
     setup: setupMutation.mutateAsync,
     isSettingUp: setupMutation.isPending,
     setupSSH: setupSSHMutation.mutateAsync,

@@ -17035,6 +17035,93 @@
         }
       }
     },
+    "/panel/api/hashem/add-port": {
+      "post": {
+        "tags": [
+          "Hashem Tunnel"
+        ],
+        "summary": "Add a new forwarded port to Hashem tunnel and return Iran server command.",
+        "operationId": "post_panel_api_hashem_add_port",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "port": 8443,
+                "autoInbound": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/hashem/remove-port": {
+      "post": {
+        "tags": [
+          "Hashem Tunnel"
+        ],
+        "summary": "Remove a forwarded port from Hashem tunnel.",
+        "operationId": "post_panel_api_hashem_remove_port",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "port": 8443
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/panel/api/hashem/auto-create-inbound": {
       "post": {
         "tags": [

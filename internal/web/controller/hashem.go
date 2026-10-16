@@ -31,6 +31,8 @@ func (a *HashemController) initRouter(g *gin.RouterGroup) {
 	g.POST("/watchdog", requireOwnerRole(), a.watchdog)
 	g.POST("/sync-inbounds", requireOwnerRole(), a.syncInbounds)
 	g.POST("/edit-ports", requireOwnerRole(), a.editPorts)
+	g.POST("/add-port", requireOwnerRole(), a.addPort)
+	g.POST("/remove-port", requireOwnerRole(), a.removePort)
 	g.POST("/auto-create-inbound", requireOwnerRole(), a.autoCreateInbound)
 	g.POST("/install", requireOwnerRole(), a.install)
 	g.POST("/remove", requireOwnerRole(), a.remove)
@@ -102,6 +104,31 @@ func (a *HashemController) editPorts(c *gin.Context) {
 	}
 	err := a.hashemService.EditPorts(form.Ports)
 	jsonMsg(c, "hashem ports updated", err)
+}
+
+func (a *HashemController) addPort(c *gin.Context) {
+	var form struct {
+		Port        int  `json:"port"`
+		AutoInbound bool `json:"autoInbound"`
+	}
+	if err := c.ShouldBindJSON(&form); err != nil {
+		jsonMsg(c, "invalid add-port payload", err)
+		return
+	}
+	res, err := a.hashemService.AddPort(form.Port, form.AutoInbound)
+	jsonObj(c, res, err)
+}
+
+func (a *HashemController) removePort(c *gin.Context) {
+	var form struct {
+		Port int `json:"port"`
+	}
+	if err := c.ShouldBindJSON(&form); err != nil {
+		jsonMsg(c, "invalid remove-port payload", err)
+		return
+	}
+	res, err := a.hashemService.RemovePort(form.Port)
+	jsonObj(c, res, err)
 }
 
 func (a *HashemController) autoCreateInbound(c *gin.Context) {

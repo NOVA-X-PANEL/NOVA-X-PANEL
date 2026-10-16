@@ -423,6 +423,7 @@ export interface Client {
   id?: string;
   keepAlive?: number | null;
   limitIp: number;
+  ownerAdminId?: number;
   password?: string;
   preSharedKey?: string;
   privateKey?: string;
@@ -1096,6 +1097,7 @@ export interface User {
   dataLimit: number;
   id: number;
   password: string;
+  permissionOverrides: string;
   roleId: number;
   status: string;
   updatedAt: number;

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Layout,
@@ -73,7 +73,7 @@ export default function TelegramShopPage() {
     return classes.join(' ');
   }, [isDark, isUltra]);
 
-  const fetchStatus = async () => {
+  const fetchStatus = useCallback(async () => {
     try {
       setLoading(true);
       const res = await HttpUtil.get<TgShopStatus>('/panel/api/telegram-shop/status');
@@ -87,18 +87,19 @@ export default function TelegramShopPage() {
           });
         }
       }
-    } catch (err: any) {
-      message.error(err?.message || t('pages.telegramShop.toasts.fetchError'));
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : undefined;
+      message.error(msg || t('pages.telegramShop.toasts.fetchError'));
     } finally {
       setLoading(false);
     }
-  };
+  }, [form, t]);
 
   useEffect(() => {
-    fetchStatus();
-  }, []);
+    void fetchStatus();
+  }, [fetchStatus]);
 
-  const handleInstall = async (values: any) => {
+  const handleInstall = async (values: Record<string, unknown>) => {
     try {
       setInstalling(true);
       const res = await HttpUtil.post('/panel/api/telegram-shop/install', values, { silent: true });
@@ -108,8 +109,9 @@ export default function TelegramShopPage() {
       } else {
         message.error(res?.msg || t('pages.telegramShop.toasts.installError'));
       }
-    } catch (err: any) {
-      message.error(err?.message || t('pages.telegramShop.toasts.installError'));
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : undefined;
+      message.error(msg || t('pages.telegramShop.toasts.installError'));
     } finally {
       setInstalling(false);
     }
@@ -124,8 +126,9 @@ export default function TelegramShopPage() {
       } else {
         message.error(res?.msg || t('pages.telegramShop.installDepsError'));
       }
-    } catch (err: any) {
-      message.error(err?.message || t('pages.telegramShop.installDepsError'));
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : undefined;
+      message.error(msg || t('pages.telegramShop.installDepsError'));
     } finally {
       setInstallingDeps(false);
     }
@@ -146,8 +149,9 @@ export default function TelegramShopPage() {
       } else {
         message.error(res?.msg || t('pages.telegramShop.toasts.actionError'));
       }
-    } catch (err: any) {
-      message.error(err?.message || t('pages.telegramShop.toasts.actionError'));
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : undefined;
+      message.error(msg || t('pages.telegramShop.toasts.actionError'));
     } finally {
       setActionLoading(false);
     }

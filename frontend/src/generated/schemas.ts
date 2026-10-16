@@ -1737,6 +1737,11 @@ export const SCHEMAS: Record<string, unknown> = {
         "description": "IP limit for this client",
         "type": "integer"
       },
+      "ownerAdminId": {
+        "description": "OwnerAdminId binds this client to the panel admin (model.User) that created it.",
+        "format": "int64",
+        "type": "integer"
+      },
       "password": {
         "description": "Client password",
         "type": "string"
@@ -4777,6 +4782,10 @@ export const SCHEMAS: Record<string, unknown> = {
       "password": {
         "type": "string"
       },
+      "permissionOverrides": {
+        "description": "PermissionOverridesJSON stores per-account limit overrides (e.g. max_users,\ndata_limit_max, etc.) that take precedence over the role's default limits.",
+        "type": "string"
+      },
       "roleId": {
         "description": "RBAC (NOVA X PANEL): each panel account is bound to one AdminRole.",
         "type": "integer"
@@ -4802,6 +4811,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "dataLimit",
       "id",
       "password",
+      "permissionOverrides",
       "roleId",
       "status",
       "updatedAt",

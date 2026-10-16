@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import {
   Alert,
   Badge,
@@ -49,13 +50,13 @@ import {
 
 import { useTheme } from '@/hooks/useTheme';
 import AppSidebar from '@/layouts/AppSidebar';
-import { useHashemQuery } from '@/api/queries/useHashemQuery';
-import { useHashemMutations, type HashemSetupPayload } from '@/api/queries/useHashemMutations';
+import { useHashemQuery, type CarrierMetric } from '@/api/queries/useHashemQuery';
+import { useHashemMutations, type HashemSetupPayload, type HashemOneLinerPayload } from '@/api/queries/useHashemMutations';
 import './HashemPage.css';
 
 const { Title, Text, Paragraph } = Typography;
 
-const getBackhaulTransportOptions = (t: any) => [
+const getBackhaulTransportOptions = (t: TFunction) => [
   { label: t('pages.hashem.transports.tcpmux', { defaultValue: 'TCPMux (Multi-Channel High-Speed - Recommended)' }), value: 'tcpmux' },
   { label: t('pages.hashem.transports.xtcpmux', { defaultValue: 'X-TCPMux (Anti-Throttling Enhanced)' }), value: 'xtcpmux' },
   { label: t('pages.hashem.transports.anytls', { defaultValue: 'AnyTLS (Full Anti-DPI Obfuscation)' }), value: 'anytls' },
@@ -181,7 +182,7 @@ export default function HashemPage() {
     await install();
   };
 
-  const handleOneLinerSubmit = async (values: any) => {
+  const handleOneLinerSubmit = async (values: HashemOneLinerPayload) => {
     try {
       const res = await generateOneLiner({
         engine: values.engine || 'tunnel-panel',
@@ -210,8 +211,8 @@ export default function HashemPage() {
   const handleSetupSubmit = async (values: HashemSetupPayload) => {
     await setup({
       ...values,
-      autoCreateInbound: (values as any).autoCreateInbound ?? true,
-      inboundHost: (values as any).inboundHost || values.remotePub,
+      autoCreateInbound: values.autoCreateInbound ?? true,
+      inboundHost: values.inboundHost || values.remotePub,
     });
     setSetupModalOpen(false);
     form.resetFields();
@@ -380,13 +381,13 @@ export default function HashemPage() {
                       <div>
                         <Text type="secondary">{t('pages.hashem.localGreIp')}: </Text>
                         <Text code style={{ background: 'rgba(0,0,0,0.4)', borderColor: 'rgba(56,189,248,0.2)' }}>
-                          {(status as any).localGreIp || (status as any).localGreIP || '-'}
+                          {status.localGreIp || '-'}
                         </Text>
                       </div>
                       <div>
                         <Text type="secondary">{t('pages.hashem.peerGreIp')}: </Text>
                         <Text code style={{ background: 'rgba(0,0,0,0.4)', borderColor: 'rgba(56,189,248,0.2)' }}>
-                          {(status as any).remoteGreIp || (status as any).remoteGreIP || '-'}
+                          {status.remoteGreIp || '-'}
                         </Text>
                       </div>
                     </div>
@@ -452,7 +453,7 @@ export default function HashemPage() {
                         </Title>
                       )}
                     </div>
-                    <Text type="secondary">{t('pages.hashem.testedAgainst', { ip: (status as any).remoteGreIp || (status as any).remoteGreIP || 'Peer' })}</Text>
+                    <Text type="secondary">{t('pages.hashem.testedAgainst', { ip: status.remoteGreIp || 'Peer' })}</Text>
                   </Card>
                 </Col>
 
@@ -561,7 +562,7 @@ export default function HashemPage() {
                         title: t('pages.hashem.carrierName', { defaultValue: 'Carrier / Route' }),
                         dataIndex: 'name',
                         key: 'name',
-                        render: (_: any, record: any) => (
+                        render: (_: unknown, record: CarrierMetric) => (
                           <Space>
                             <Text strong style={{ color: 'var(--nc-text, #f1f5f9)' }}>
                               {record.name}
@@ -633,7 +634,7 @@ export default function HashemPage() {
                       {
                         title: t('pages.hashem.action', { defaultValue: 'Action' }),
                         key: 'action',
-                        render: (_: any, record: any) => (
+                        render: (_: unknown, record: CarrierMetric) => (
                           <Button
                             size="small"
                             type="dashed"
@@ -758,12 +759,12 @@ export default function HashemPage() {
                       </Descriptions.Item>
                       <Descriptions.Item label={t('pages.hashem.localPublicIp')}>
                         <Text code style={{ background: 'rgba(0,0,0,0.4)', borderColor: 'rgba(56,189,248,0.2)' }}>
-                          {(status as any).localPubIp || (status as any).localPubIP || '-'}
+                          {status.localPubIp || '-'}
                         </Text>
                       </Descriptions.Item>
                       <Descriptions.Item label={t('pages.hashem.remotePublicIp')}>
                         <Text code style={{ background: 'rgba(0,0,0,0.4)', borderColor: 'rgba(56,189,248,0.2)' }}>
-                          {(status as any).remotePubIp || (status as any).remotePubIP || '-'}
+                          {status.remotePubIp || '-'}
                         </Text>
                       </Descriptions.Item>
                     </Descriptions>
@@ -804,7 +805,7 @@ export default function HashemPage() {
         >
           <Tabs
             activeKey={setupTab}
-            onChange={(k) => setSetupTab(k as any)}
+            onChange={(k) => setSetupTab(k as 'advanced' | 'oneliner')}
             items={[
               {
                 key: 'oneliner',
@@ -1141,7 +1142,7 @@ export default function HashemPage() {
                 <Tag
                   key={p}
                   closable
-                  onClose={(e: any) => {
+                  onClose={(e: React.MouseEvent<HTMLElement>) => {
                     e.preventDefault();
                     handleRemovePortChip(p);
                   }}

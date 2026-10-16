@@ -548,11 +548,7 @@ body.dark .ant-drawer-body .drawer-menu .ant-menu-item-group-list {
 }
 
 .sider-brand .brand-text {
-  font-family:
-    'Rajdhani',
-    -apple-system,
-    BlinkMacSystemFont,
-    sans-serif !important;
+  font-family: 'Rajdhani', -apple-system, BlinkMacSystemFont, sans-serif !important;
   font-size: 17px !important;
   font-weight: 800 !important;
   letter-spacing: 0.12em !important;

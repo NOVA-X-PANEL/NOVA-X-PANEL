@@ -2139,11 +2139,7 @@ body.dark .ant-dropdown .ant-dropdown-menu-item,
 body.dark .cyber-action-dropdown .ant-dropdown-menu-item {
   border-radius: 8px !important;
   color: #cbd5e1 !important;
-  font-family:
-    'JetBrains Mono',
-    -apple-system,
-    BlinkMacSystemFont,
-    sans-serif !important;
+  font-family: 'JetBrains Mono', -apple-system, BlinkMacSystemFont, sans-serif !important;
   font-size: 12.5px !important;
   padding: 8px 12px !important;
   margin: 2px 0 !important;
@@ -2155,11 +2151,7 @@ body.light .ant-dropdown .ant-dropdown-menu-item,
 body.light .cyber-action-dropdown .ant-dropdown-menu-item {
   border-radius: 8px !important;
   color: #334155 !important;
-  font-family:
-    'JetBrains Mono',
-    -apple-system,
-    BlinkMacSystemFont,
-    sans-serif !important;
+  font-family: 'JetBrains Mono', -apple-system, BlinkMacSystemFont, sans-serif !important;
   font-size: 12.5px !important;
   padding: 8px 12px !important;
   margin: 2px 0 !important;
@@ -2385,11 +2377,7 @@ body.dark .ant-modal .ant-modal-header::before {
 }
 
 body.dark .ant-modal .ant-modal-title {
-  font-family:
-    'Rajdhani',
-    -apple-system,
-    BlinkMacSystemFont,
-    sans-serif !important;
+  font-family: 'Rajdhani', -apple-system, BlinkMacSystemFont, sans-serif !important;
   font-size: 20px !important;
   font-weight: 800 !important;
   letter-spacing: 0.8px !important;

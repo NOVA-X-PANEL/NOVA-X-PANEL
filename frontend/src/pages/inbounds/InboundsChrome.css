@@ -70,11 +70,7 @@
 }
 
 .inb-hud-title {
-  font-family:
-    'Rajdhani',
-    -apple-system,
-    BlinkMacSystemFont,
-    sans-serif;
+  font-family: 'Rajdhani', -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 24px;
   font-weight: 700;
   letter-spacing: 0.8px;
@@ -288,11 +284,7 @@
 }
 
 .inb-console-title {
-  font-family:
-    'Rajdhani',
-    -apple-system,
-    BlinkMacSystemFont,
-    sans-serif;
+  font-family: 'Rajdhani', -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.8px;

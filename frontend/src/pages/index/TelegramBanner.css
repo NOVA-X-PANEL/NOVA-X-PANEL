@@ -15,7 +15,9 @@
     0 10px 28px rgba(0, 0, 0, 0.35),
     0 0 20px rgba(0, 240, 255, 0.08);
   overflow: hidden;
-  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+  transition:
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
 }
 
 .ov-tg-banner:hover {
@@ -54,7 +56,9 @@
   border: 1px solid rgba(0, 240, 255, 0.35);
   box-shadow: 0 0 16px rgba(0, 240, 255, 0.25);
   color: #00f0ff;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
 }
 
 .ov-tg-banner:hover .ov-tg-icon-box {
@@ -121,7 +125,10 @@
   box-shadow: 0 0 16px rgba(0, 240, 255, 0.4);
   text-decoration: none !important;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    filter 0.2s ease;
 }
 
 .ov-tg-btn:hover {

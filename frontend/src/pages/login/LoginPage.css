@@ -64,7 +64,11 @@
     radial-gradient(circle at 10% 20%, rgba(34, 211, 238, 0.08), transparent 40%),
     linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-  background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+  background-size:
+    100% 100%,
+    100% 100%,
+    40px 40px,
+    40px 40px;
   color: var(--nx-text);
   font-family: var(--nx-font);
   overflow: hidden;
@@ -201,7 +205,8 @@
   -webkit-text-fill-color: transparent !important;
   color: transparent !important;
   animation: novaBrandFlow 4s linear infinite !important;
-  filter: drop-shadow(0 0 16px rgba(0, 240, 255, 0.4)) drop-shadow(0 0 24px rgba(139, 92, 246, 0.35)) !important;
+  filter: drop-shadow(0 0 16px rgba(0, 240, 255, 0.4))
+    drop-shadow(0 0 24px rgba(139, 92, 246, 0.35)) !important;
   display: inline-block;
 }
 
@@ -258,7 +263,7 @@
 }
 
 .nx-feature::before {
-  content: "";
+  content: '';
   position: absolute;
   top: 0;
   left: 0;
@@ -429,7 +434,8 @@
   -webkit-text-fill-color: transparent !important;
   color: transparent !important;
   animation: novaBrandFlow 4s linear infinite !important;
-  filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.45)) drop-shadow(0 0 16px rgba(139, 92, 246, 0.35)) !important;
+  filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.45))
+    drop-shadow(0 0 16px rgba(139, 92, 246, 0.35)) !important;
   display: inline-block;
 }
 
@@ -580,7 +586,7 @@
   transition: transform 0.2s ease;
 }
 
-[dir="rtl"] .nx-submit__arrow {
+[dir='rtl'] .nx-submit__arrow {
   transform: rotate(180deg);
 }
 
@@ -588,7 +594,7 @@
   transform: translateX(4px);
 }
 
-[dir="rtl"] .nx-submit:hover:not(:disabled) .nx-submit__arrow {
+[dir='rtl'] .nx-submit:hover:not(:disabled) .nx-submit__arrow {
   transform: rotate(180deg) translateX(4px);
 }
 

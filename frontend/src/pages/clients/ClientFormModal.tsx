@@ -985,7 +985,7 @@ export default function ClientFormModal({
                       </Row>
 
                       <Row gutter={16}>
-<Col xs={24} md={12}>
+                        <Col xs={24} md={12}>
                           <FormField
                             name="trafficReset"
                             label={t('pages.inbounds.periodicTrafficResetTitle')}
@@ -1071,7 +1071,14 @@ export default function ClientFormModal({
 
                       <Form.Item
                         label={
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                          <div
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              width: '100%',
+                            }}
+                          >
                             <span>{t('pages.clients.attachedInbounds')}</span>
                             <SelectAllClearButtons
                               options={inboundOptions}
@@ -1100,18 +1107,28 @@ export default function ClientFormModal({
                         />
                       </Form.Item>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 12, marginBottom: 8 }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 12,
+                          marginTop: 12,
+                          marginBottom: 8,
+                        }}
+                      >
                         <Switch
                           aria-label={t('enable')}
                           checked={enable}
                           onChange={(v) => methods.setValue('enable', v)}
                         />
-                        <span style={{
-                          color: enable ? '#34d399' : '#94a3b8',
-                          fontWeight: 700,
-                          fontFamily: "'JetBrains Mono', monospace",
-                          fontSize: 13,
-                        }}>
+                        <span
+                          style={{
+                            color: enable ? '#34d399' : '#94a3b8',
+                            fontWeight: 700,
+                            fontFamily: "'JetBrains Mono', monospace",
+                            fontSize: 13,
+                          }}
+                        >
                           {t('enable')}
                         </span>
                       </div>

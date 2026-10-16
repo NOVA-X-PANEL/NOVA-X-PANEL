@@ -2974,7 +2974,8 @@ export const sections: readonly Section[] = [
       {
         method: 'GET',
         path: '/panel/api/hashem/status',
-        summary: 'Get current status of Hashem tunnel, carrier mode, FRP reverse service, and ping latency.',
+        summary:
+          'Get current status of Hashem tunnel, carrier mode, FRP reverse service, and ping latency.',
       },
       {
         method: 'POST',
@@ -3007,25 +3008,29 @@ export const sections: readonly Section[] = [
       {
         method: 'POST',
         path: '/panel/api/hashem/edit-ports',
-        summary: 'Dynamically update forwarded ports in Hashem tunnel without dropping or restarting the tunnel.',
+        summary:
+          'Dynamically update forwarded ports in Hashem tunnel without dropping or restarting the tunnel.',
         body: '{\n  "ports": [443, 2083]\n}',
       },
       {
         method: 'POST',
         path: '/panel/api/hashem/auto-create-inbound',
-        summary: 'Automatically create matching VLESS-WS inbounds for forwarded tunnel ports with host and path configured.',
+        summary:
+          'Automatically create matching VLESS-WS inbounds for forwarded tunnel ports with host and path configured.',
         body: '{\n  "ports": "8080",\n  "host": "tunnel.example.com"\n}',
       },
       {
         method: 'POST',
         path: '/panel/api/hashem/setup-ssh',
-        summary: 'Direct SSH automatic setup: connect to Iran server via SSH and establish end-to-end Hashem tunnel.',
+        summary:
+          'Direct SSH automatic setup: connect to Iran server via SSH and establish end-to-end Hashem tunnel.',
         body: '{\n  "iranIp": "1.2.3.4",\n  "sshPort": 22,\n  "sshUser": "root",\n  "sshPassword": "secret",\n  "ports": "8080"\n}',
       },
       {
         method: 'POST',
         path: '/novapanel/api/hashem/generate-oneliner',
-        summary: 'Generate a one-liner command to be run on Iran server to establish Hashem tunnel.',
+        summary:
+          'Generate a one-liner command to be run on Iran server to establish Hashem tunnel.',
         body: '{\n  "iranIp": "1.2.3.4",\n  "ports": "8080"\n}',
       },
       {

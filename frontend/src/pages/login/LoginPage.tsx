@@ -163,7 +163,9 @@ export default function LoginPage() {
       try {
         const msg = await HttpUtil.post('/login', parsed.data);
         if (msg.success) {
-          try { sessionStorage.removeItem('nova_current_admin'); } catch {}
+          try {
+            sessionStorage.removeItem('nova_current_admin');
+          } catch {}
           localStorage.setItem(REMEMBER_KEY, remember ? '1' : '0');
           window.location.href = basePath + 'panel/';
         } else {
@@ -404,7 +406,9 @@ export default function LoginPage() {
                 <button type="submit" className="nx-submit" disabled={submitting}>
                   {submitting && <span className="nx-submit__spinner" aria-hidden="true" />}
                   <span>{t('login')}</span>
-                  <span aria-hidden="true" className="nx-submit__arrow">→</span>
+                  <span aria-hidden="true" className="nx-submit__arrow">
+                    →
+                  </span>
                 </button>
 
                 <div className="nx-form__meta">

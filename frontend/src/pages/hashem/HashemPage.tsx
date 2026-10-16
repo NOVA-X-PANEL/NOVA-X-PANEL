@@ -51,19 +51,52 @@ import {
 import { useTheme } from '@/hooks/useTheme';
 import AppSidebar from '@/layouts/AppSidebar';
 import { useHashemQuery, type CarrierMetric } from '@/api/queries/useHashemQuery';
-import { useHashemMutations, type HashemSetupPayload, type HashemOneLinerPayload } from '@/api/queries/useHashemMutations';
+import {
+  useHashemMutations,
+  type HashemSetupPayload,
+  type HashemOneLinerPayload,
+} from '@/api/queries/useHashemMutations';
 import './HashemPage.css';
 
 const { Title, Text, Paragraph } = Typography;
 
 const getBackhaulTransportOptions = (t: TFunction) => [
-  { label: t('pages.hashem.transports.tcpmux', { defaultValue: 'TCPMux (Multi-Channel High-Speed - Recommended)' }), value: 'tcpmux' },
-  { label: t('pages.hashem.transports.xtcpmux', { defaultValue: 'X-TCPMux (Anti-Throttling Enhanced)' }), value: 'xtcpmux' },
-  { label: t('pages.hashem.transports.anytls', { defaultValue: 'AnyTLS (Full Anti-DPI Obfuscation)' }), value: 'anytls' },
-  { label: t('pages.hashem.transports.wssmux', { defaultValue: 'WSSMux (Secure WebSocket + TLS)' }), value: 'wssmux' },
-  { label: t('pages.hashem.transports.ws', { defaultValue: 'WS (Standard WebSocket without TLS)' }), value: 'ws' },
-  { label: t('pages.hashem.transports.tcp', { defaultValue: 'TCP / TCPO (Direct Single-Connection)' }), value: 'tcp' },
-  { label: t('pages.hashem.transports.tun', { defaultValue: 'TUN (L3 Network Interface Tunnel)' }), value: 'tun' },
+  {
+    label: t('pages.hashem.transports.tcpmux', {
+      defaultValue: 'TCPMux (Multi-Channel High-Speed - Recommended)',
+    }),
+    value: 'tcpmux',
+  },
+  {
+    label: t('pages.hashem.transports.xtcpmux', {
+      defaultValue: 'X-TCPMux (Anti-Throttling Enhanced)',
+    }),
+    value: 'xtcpmux',
+  },
+  {
+    label: t('pages.hashem.transports.anytls', {
+      defaultValue: 'AnyTLS (Full Anti-DPI Obfuscation)',
+    }),
+    value: 'anytls',
+  },
+  {
+    label: t('pages.hashem.transports.wssmux', { defaultValue: 'WSSMux (Secure WebSocket + TLS)' }),
+    value: 'wssmux',
+  },
+  {
+    label: t('pages.hashem.transports.ws', { defaultValue: 'WS (Standard WebSocket without TLS)' }),
+    value: 'ws',
+  },
+  {
+    label: t('pages.hashem.transports.tcp', {
+      defaultValue: 'TCP / TCPO (Direct Single-Connection)',
+    }),
+    value: 'tcp',
+  },
+  {
+    label: t('pages.hashem.transports.tun', { defaultValue: 'TUN (L3 Network Interface Tunnel)' }),
+    value: 'tun',
+  },
 ];
 
 export default function HashemPage() {
@@ -141,11 +174,19 @@ export default function HashemPage() {
 
   const handleAddPortChip = () => {
     if (!newPortInput || newPortInput < 1 || newPortInput > 65535) {
-      message.warning(t('pages.hashem.portMustBeValid', { defaultValue: 'Port number must be between 1 and 65535' }));
+      message.warning(
+        t('pages.hashem.portMustBeValid', {
+          defaultValue: 'Port number must be between 1 and 65535',
+        }),
+      );
       return;
     }
     if (portChips.includes(newPortInput)) {
-      message.warning(t('pages.hashem.portAlreadyExists', { defaultValue: 'This port already exists in the list' }));
+      message.warning(
+        t('pages.hashem.portAlreadyExists', {
+          defaultValue: 'This port already exists in the list',
+        }),
+      );
       return;
     }
     setPortChips([...portChips, newPortInput].sort((a, b) => a - b));
@@ -154,7 +195,11 @@ export default function HashemPage() {
 
   const handleRemovePortChip = (portToRemove: number) => {
     if (portChips.length <= 1) {
-      message.warning(t('pages.hashem.atLeastOnePortRequired', { defaultValue: 'At least one port must remain in the list' }));
+      message.warning(
+        t('pages.hashem.atLeastOnePortRequired', {
+          defaultValue: 'At least one port must remain in the list',
+        }),
+      );
       return;
     }
     setPortChips(portChips.filter((p: number) => p !== portToRemove));
@@ -162,7 +207,11 @@ export default function HashemPage() {
 
   const handleSavePorts = async () => {
     if (portChips.length === 0) {
-      message.warning(t('pages.hashem.atLeastOnePortRequired', { defaultValue: 'At least one port must remain in the list' }));
+      message.warning(
+        t('pages.hashem.atLeastOnePortRequired', {
+          defaultValue: 'At least one port must remain in the list',
+        }),
+      );
       return;
     }
     try {
@@ -229,7 +278,9 @@ export default function HashemPage() {
   const isEngineBackhaul = status.engine === 'backhaul' || status.engine === 'gre-backhaul';
   const isHealthy = status.running && status.pingMs > 0;
   const engineStatus = isEngineTunnelPanel
-    ? (isHealthy ? 'active' : 'stopped')
+    ? isHealthy
+      ? 'active'
+      : 'stopped'
     : isEngineBackhaul
       ? status.backhaulStatus
       : status.frpStatus;
@@ -247,7 +298,9 @@ export default function HashemPage() {
             <div className="hashem-hero">
               <div>
                 <Title level={2} className="hashem-hero-title">
-                  <ThunderboltOutlined style={{ color: '#00f2fe', filter: 'drop-shadow(0 0 8px rgba(0,242,254,0.6))' }} />
+                  <ThunderboltOutlined
+                    style={{ color: '#00f2fe', filter: 'drop-shadow(0 0 8px rgba(0,242,254,0.6))' }}
+                  />
                   <span className="hashem-hero-title-text">{t('pages.hashem.title')}</span>
                   {status.installed ? (
                     <Tag
@@ -276,7 +329,13 @@ export default function HashemPage() {
                     </Tag>
                   )}
                 </Title>
-                <Text style={{ color: 'var(--nc-text-2, #94a3b8)', marginTop: 4, display: 'inline-block' }}>
+                <Text
+                  style={{
+                    color: 'var(--nc-text-2, #94a3b8)',
+                    marginTop: 4,
+                    display: 'inline-block',
+                  }}
+                >
                   {t('pages.hashem.subtitle')}
                 </Text>
               </div>
@@ -291,7 +350,10 @@ export default function HashemPage() {
                       icon={<DownloadOutlined />}
                       onClick={handleInstall}
                       loading={isInstalling}
-                      title={t('pages.hashem.updateScriptTooltip', { defaultValue: 'Download and update latest NOVA script and cores from GitHub' })}
+                      title={t('pages.hashem.updateScriptTooltip', {
+                        defaultValue:
+                          'Download and update latest NOVA script and cores from GitHub',
+                      })}
                     >
                       {t('pages.hashem.updateScriptBtn', { defaultValue: 'Update NOVA Script' })}
                     </Button>
@@ -372,7 +434,9 @@ export default function HashemPage() {
                         status={status.running ? 'processing' : 'error'}
                         text={
                           <Text strong style={{ color: status.running ? '#38bdf8' : '#ff4d4f' }}>
-                            {status.running ? t('pages.hashem.greInterfaceUp') : t('pages.hashem.greInterfaceDown')}
+                            {status.running
+                              ? t('pages.hashem.greInterfaceUp')
+                              : t('pages.hashem.greInterfaceDown')}
                           </Text>
                         }
                       />
@@ -380,13 +444,25 @@ export default function HashemPage() {
                     <div style={{ fontSize: 13, display: 'flex', flexDirection: 'column', gap: 6 }}>
                       <div>
                         <Text type="secondary">{t('pages.hashem.localGreIp')}: </Text>
-                        <Text code style={{ background: 'rgba(0,0,0,0.4)', borderColor: 'rgba(56,189,248,0.2)' }}>
+                        <Text
+                          code
+                          style={{
+                            background: 'rgba(0,0,0,0.4)',
+                            borderColor: 'rgba(56,189,248,0.2)',
+                          }}
+                        >
                           {status.localGreIp || '-'}
                         </Text>
                       </div>
                       <div>
                         <Text type="secondary">{t('pages.hashem.peerGreIp')}: </Text>
-                        <Text code style={{ background: 'rgba(0,0,0,0.4)', borderColor: 'rgba(56,189,248,0.2)' }}>
+                        <Text
+                          code
+                          style={{
+                            background: 'rgba(0,0,0,0.4)',
+                            borderColor: 'rgba(56,189,248,0.2)',
+                          }}
+                        >
                           {status.remoteGreIp || '-'}
                         </Text>
                       </div>
@@ -405,9 +481,21 @@ export default function HashemPage() {
                       </Space>
                     }
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                      <Text type="secondary" style={{ fontSize: 12 }}>{t('pages.hashem.activeMode', { defaultValue: 'Active Mode:' })}</Text>
-                      <Tag color="cyan" style={{ fontSize: 12, padding: '2px 8px', borderRadius: 6, margin: 0 }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        marginBottom: 12,
+                      }}
+                    >
+                      <Text type="secondary" style={{ fontSize: 12 }}>
+                        {t('pages.hashem.activeMode', { defaultValue: 'Active Mode:' })}
+                      </Text>
+                      <Tag
+                        color="cyan"
+                        style={{ fontSize: 12, padding: '2px 8px', borderRadius: 6, margin: 0 }}
+                      >
                         {status.activeCarrier || status.carrier || t('pages.hashem.unknown')}
                       </Tag>
                     </div>
@@ -430,7 +518,9 @@ export default function HashemPage() {
                     className="hashem-card"
                     title={
                       <Space>
-                        <WifiOutlined style={{ color: status.pingMs > 0 ? '#52c41a' : '#ff4d4f' }} />
+                        <WifiOutlined
+                          style={{ color: status.pingMs > 0 ? '#52c41a' : '#ff4d4f' }}
+                        />
                         <span>{t('pages.hashem.cardLatencyTitle')}</span>
                       </Space>
                     }
@@ -453,7 +543,9 @@ export default function HashemPage() {
                         </Title>
                       )}
                     </div>
-                    <Text type="secondary">{t('pages.hashem.testedAgainst', { ip: status.remoteGreIp || 'Peer' })}</Text>
+                    <Text type="secondary">
+                      {t('pages.hashem.testedAgainst', { ip: status.remoteGreIp || 'Peer' })}
+                    </Text>
                   </Card>
                 </Col>
 
@@ -464,7 +556,11 @@ export default function HashemPage() {
                     title={
                       <Space>
                         <SafetyCertificateOutlined style={{ color: '#00f2fe' }} />
-                        <span>{t('pages.hashem.cardTunnelPanelTitle', { defaultValue: 'GRETAP Kernel Tunnel' })}</span>
+                        <span>
+                          {t('pages.hashem.cardTunnelPanelTitle', {
+                            defaultValue: 'GRETAP Kernel Tunnel',
+                          })}
+                        </span>
                       </Space>
                     }
                   >
@@ -478,7 +574,11 @@ export default function HashemPage() {
                               color: isHealthy ? '#52c41a' : '#ff4d4f',
                             }}
                           >
-                            {isHealthy ? t('pages.hashem.statusRunning', { defaultValue: 'Active (Fast-Path)' }) : t('pages.hashem.frpStopped')}
+                            {isHealthy
+                              ? t('pages.hashem.statusRunning', {
+                                  defaultValue: 'Active (Fast-Path)',
+                                })
+                              : t('pages.hashem.frpStopped')}
                           </Text>
                         }
                       />
@@ -486,17 +586,24 @@ export default function HashemPage() {
                     <div style={{ fontSize: 13, display: 'flex', flexDirection: 'column', gap: 6 }}>
                       <div>
                         <Text type="secondary">
-                          {t('pages.hashem.tunnelRouting', { defaultValue: 'Routing Engine' })}:{' '}
+                          {t('pages.hashem.tunnelRouting', { defaultValue: 'Routing Engine' })}
+                          :{' '}
                         </Text>
-                        <Text code style={{ background: 'rgba(0,0,0,0.4)', borderColor: 'rgba(56,189,248,0.2)' }}>
+                        <Text
+                          code
+                          style={{
+                            background: 'rgba(0,0,0,0.4)',
+                            borderColor: 'rgba(56,189,248,0.2)',
+                          }}
+                        >
                           NFTables / Kernel L2 GRETAP
                         </Text>
                       </div>
                       <div>
-                        <Text type="secondary">{t('pages.hashem.engineLabel', { defaultValue: 'Engine Type' })}: </Text>
-                        <Tag color="cyan">
-                          🛡️ GRETAP
-                        </Tag>
+                        <Text type="secondary">
+                          {t('pages.hashem.engineLabel', { defaultValue: 'Engine Type' })}:{' '}
+                        </Text>
+                        <Tag color="cyan">🛡️ GRETAP</Tag>
                       </div>
                     </div>
                   </Card>
@@ -511,16 +618,20 @@ export default function HashemPage() {
                   <Space wrap>
                     <DashboardOutlined style={{ color: '#00f2fe' }} />
                     <span style={{ fontWeight: 600 }}>
-                      {t('pages.hashem.benchmarkCardTitle', { defaultValue: 'Carrier Benchmark & Real-time Metrics' })}
+                      {t('pages.hashem.benchmarkCardTitle', {
+                        defaultValue: 'Carrier Benchmark & Real-time Metrics',
+                      })}
                     </span>
                     {status.benchmark?.bestCarrier && (
                       <Tag color="success" style={{ borderRadius: 6, fontWeight: 600 }}>
-                        {t('pages.hashem.bestCarrier', { defaultValue: 'Best Route:' })} {status.benchmark.bestCarrier}
+                        {t('pages.hashem.bestCarrier', { defaultValue: 'Best Route:' })}{' '}
+                        {status.benchmark.bestCarrier}
                       </Tag>
                     )}
                     {status.benchmark?.updatedAt && (
                       <Text type="secondary" style={{ fontSize: 12 }}>
-                        ({t('pages.hashem.lastUpdated', { defaultValue: 'Last Check:' })} {status.benchmark.updatedAt})
+                        ({t('pages.hashem.lastUpdated', { defaultValue: 'Last Check:' })}{' '}
+                        {status.benchmark.updatedAt})
                       </Text>
                     )}
                   </Space>
@@ -551,7 +662,9 @@ export default function HashemPage() {
                   </Space>
                 }
               >
-                {status.benchmark && status.benchmark.metrics && status.benchmark.metrics.length > 0 ? (
+                {status.benchmark &&
+                status.benchmark.metrics &&
+                status.benchmark.metrics.length > 0 ? (
                   <Table
                     rowKey="id"
                     pagination={false}
@@ -568,7 +681,9 @@ export default function HashemPage() {
                               {record.name}
                             </Text>
                             {status.activeCarrier === record.id || status.carrier === record.id ? (
-                              <Tag color="cyan">{t('pages.hashem.active', { defaultValue: 'Active' })}</Tag>
+                              <Tag color="cyan">
+                                {t('pages.hashem.active', { defaultValue: 'Active' })}
+                              </Tag>
                             ) : null}
                           </Space>
                         ),
@@ -586,7 +701,8 @@ export default function HashemPage() {
                         render: (ms: number) => (
                           <Text
                             style={{
-                              color: ms > 0 && ms < 100 ? '#52c41a' : ms < 200 ? '#faad14' : '#ff4d4f',
+                              color:
+                                ms > 0 && ms < 100 ? '#52c41a' : ms < 200 ? '#faad14' : '#ff4d4f',
                               fontWeight: 600,
                             }}
                           >
@@ -599,7 +715,11 @@ export default function HashemPage() {
                         dataIndex: 'packetLoss',
                         key: 'packetLoss',
                         render: (loss: number) => (
-                          <Text style={{ color: loss === 0 ? '#52c41a' : loss < 10 ? '#faad14' : '#ff4d4f' }}>
+                          <Text
+                            style={{
+                              color: loss === 0 ? '#52c41a' : loss < 10 ? '#faad14' : '#ff4d4f',
+                            }}
+                          >
                             {loss.toFixed(1)}%
                           </Text>
                         ),
@@ -608,7 +728,9 @@ export default function HashemPage() {
                         title: t('pages.hashem.jitter', { defaultValue: 'Jitter' }),
                         dataIndex: 'jitterMs',
                         key: 'jitterMs',
-                        render: (jitter: number) => <Text>{jitter > 0 ? `${jitter.toFixed(1)} ms` : '-'}</Text>,
+                        render: (jitter: number) => (
+                          <Text>{jitter > 0 ? `${jitter.toFixed(1)} ms` : '-'}</Text>
+                        ),
                       },
                       {
                         title: t('pages.hashem.score', { defaultValue: 'Quality Score' }),
@@ -626,8 +748,16 @@ export default function HashemPage() {
                         key: 'status',
                         render: (st: string) => (
                           <Badge
-                            status={st === 'optimal' ? 'success' : st === 'good' ? 'processing' : 'error'}
-                            text={st === 'optimal' ? t('pages.hashem.optimal', { defaultValue: 'Optimal' }) : st === 'good' ? t('pages.hashem.good', { defaultValue: 'Good' }) : t('pages.hashem.poor', { defaultValue: 'Poor' })}
+                            status={
+                              st === 'optimal' ? 'success' : st === 'good' ? 'processing' : 'error'
+                            }
+                            text={
+                              st === 'optimal'
+                                ? t('pages.hashem.optimal', { defaultValue: 'Optimal' })
+                                : st === 'good'
+                                  ? t('pages.hashem.good', { defaultValue: 'Good' })
+                                  : t('pages.hashem.poor', { defaultValue: 'Poor' })
+                            }
                           />
                         ),
                       },
@@ -638,7 +768,9 @@ export default function HashemPage() {
                           <Button
                             size="small"
                             type="dashed"
-                            disabled={status.activeCarrier === record.id || status.carrier === record.id}
+                            disabled={
+                              status.activeCarrier === record.id || status.carrier === record.id
+                            }
                             loading={isSettingCarrier}
                             onClick={() => handleCarrierChange(record.id)}
                           >
@@ -652,7 +784,8 @@ export default function HashemPage() {
                   <div style={{ textAlign: 'center', padding: '24px 0' }}>
                     <Text type="secondary">
                       {t('pages.hashem.noBenchmarkYet', {
-                        defaultValue: 'No benchmark recorded yet. Click "Run Live Benchmark" to evaluate carrier latency.',
+                        defaultValue:
+                          'No benchmark recorded yet. Click "Run Live Benchmark" to evaluate carrier latency.',
                       })}
                     </Text>
                   </div>
@@ -669,11 +802,17 @@ export default function HashemPage() {
 
                     {status.setupCommand ? (
                       <div style={{ marginTop: 16 }}>
-                        <Text strong style={{ display: 'block', marginBottom: 8, color: '#38bdf8' }}>
+                        <Text
+                          strong
+                          style={{ display: 'block', marginBottom: 8, color: '#38bdf8' }}
+                        >
                           {t('pages.hashem.oneLinerIranCommand')}:
                         </Text>
                         <div className="hashem-code-snippet">
-                          <Text copyable={{ text: status.setupCommand }} style={{ color: '#00f2fe' }}>
+                          <Text
+                            copyable={{ text: status.setupCommand }}
+                            style={{ color: '#00f2fe' }}
+                          >
                             {status.setupCommand}
                           </Text>
                         </div>
@@ -682,7 +821,10 @@ export default function HashemPage() {
 
                     {status.bundle ? (
                       <div style={{ marginTop: 16 }}>
-                        <Text strong style={{ display: 'block', marginBottom: 8, color: '#38bdf8' }}>
+                        <Text
+                          strong
+                          style={{ display: 'block', marginBottom: 8, color: '#38bdf8' }}
+                        >
                           {t('pages.hashem.bundleString')}:
                         </Text>
                         <div className="hashem-code-snippet">
@@ -696,7 +838,13 @@ export default function HashemPage() {
                     <Divider style={{ borderColor: 'rgba(255,255,255,0.08)' }} />
 
                     <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                        }}
+                      >
                         <Text strong style={{ color: 'var(--nc-text, #f1f5f9)' }}>
                           {t('pages.hashem.forwardedPortsList')}:{' '}
                         </Text>
@@ -712,9 +860,16 @@ export default function HashemPage() {
                               })
                             }
                             loading={isAutoCreatingInbound}
-                            style={{ borderRadius: 6, fontSize: 12, borderColor: '#00f2fe', color: '#00f2fe' }}
+                            style={{
+                              borderRadius: 6,
+                              fontSize: 12,
+                              borderColor: '#00f2fe',
+                              color: '#00f2fe',
+                            }}
                           >
-                            {t('pages.hashem.autoCreateInboundBtn', { defaultValue: 'Auto-Create VLESS-WS Inbound' })}
+                            {t('pages.hashem.autoCreateInboundBtn', {
+                              defaultValue: 'Auto-Create VLESS-WS Inbound',
+                            })}
                           </Button>
                           <Button
                             size="small"
@@ -734,7 +889,12 @@ export default function HashemPage() {
                             <Tag
                               key={p}
                               color="blue"
-                              style={{ fontSize: 13, padding: '3px 10px', borderRadius: 8, marginBottom: 6 }}
+                              style={{
+                                fontSize: 13,
+                                padding: '3px 10px',
+                                borderRadius: 8,
+                                marginBottom: 6,
+                              }}
                             >
                               Port {p}
                             </Tag>
@@ -758,12 +918,24 @@ export default function HashemPage() {
                         />
                       </Descriptions.Item>
                       <Descriptions.Item label={t('pages.hashem.localPublicIp')}>
-                        <Text code style={{ background: 'rgba(0,0,0,0.4)', borderColor: 'rgba(56,189,248,0.2)' }}>
+                        <Text
+                          code
+                          style={{
+                            background: 'rgba(0,0,0,0.4)',
+                            borderColor: 'rgba(56,189,248,0.2)',
+                          }}
+                        >
                           {status.localPubIp || '-'}
                         </Text>
                       </Descriptions.Item>
                       <Descriptions.Item label={t('pages.hashem.remotePublicIp')}>
-                        <Text code style={{ background: 'rgba(0,0,0,0.4)', borderColor: 'rgba(56,189,248,0.2)' }}>
+                        <Text
+                          code
+                          style={{
+                            background: 'rgba(0,0,0,0.4)',
+                            borderColor: 'rgba(56,189,248,0.2)',
+                          }}
+                        >
                           {status.remotePubIp || '-'}
                         </Text>
                       </Descriptions.Item>
@@ -828,8 +1000,13 @@ export default function HashemPage() {
                     <Alert
                       type="info"
                       showIcon
-                      message={t('pages.hashem.oneLinerIranCommand', { defaultValue: 'Iran Server One-Liner Command' })}
-                      description={t('pages.hashem.oneLinerIranCommandDesc', { defaultValue: 'Enter Iran server IP and desired ports. Foreign server configuration will be applied immediately and a one-liner command will be generated to run on your Iran server.' })}
+                      message={t('pages.hashem.oneLinerIranCommand', {
+                        defaultValue: 'Iran Server One-Liner Command',
+                      })}
+                      description={t('pages.hashem.oneLinerIranCommandDesc', {
+                        defaultValue:
+                          'Enter Iran server IP and desired ports. Foreign server configuration will be applied immediately and a one-liner command will be generated to run on your Iran server.',
+                      })}
                       style={{ marginBottom: 16 }}
                     />
 
@@ -839,7 +1016,11 @@ export default function HashemPage() {
                       initialValue="tunnel-panel"
                     >
                       <Radio.Group buttonStyle="solid" style={{ width: '100%' }}>
-                        <Radio.Button value="tunnel-panel">{t('pages.hashem.tunnelPanelOption', { defaultValue: '🛡️ GRETAP (کرنل لینوکس + NFTables)' })}</Radio.Button>
+                        <Radio.Button value="tunnel-panel">
+                          {t('pages.hashem.tunnelPanelOption', {
+                            defaultValue: '🛡️ GRETAP (کرنل لینوکس + NFTables)',
+                          })}
+                        </Radio.Button>
                       </Radio.Group>
                     </Form.Item>
 
@@ -848,7 +1029,9 @@ export default function HashemPage() {
                         <Col span={14}>
                           <Form.Item
                             name="transport"
-                            label={t('pages.hashem.transportLabel', { defaultValue: 'Transport Protocol' })}
+                            label={t('pages.hashem.transportLabel', {
+                              defaultValue: 'Transport Protocol',
+                            })}
                             initialValue="tcpmux"
                           >
                             <Select options={backhaulTransportOptions} />
@@ -857,7 +1040,9 @@ export default function HashemPage() {
                         <Col span={10}>
                           <Form.Item
                             name="backhaulPort"
-                            label={t('pages.hashem.backhaulPortLabel', { defaultValue: 'Backhaul Server Port' })}
+                            label={t('pages.hashem.backhaulPortLabel', {
+                              defaultValue: 'Backhaul Server Port',
+                            })}
                             initialValue={3080}
                           >
                             <InputNumber style={{ width: '100%' }} min={1} max={65535} />
@@ -871,7 +1056,11 @@ export default function HashemPage() {
                       label={t('pages.hashem.iranIpLabel')}
                       rules={[{ required: true, message: t('pages.hashem.iranIpRequired') }]}
                     >
-                      <Input placeholder={t('pages.hashem.iranIpPlaceholder', { defaultValue: 'your iran server ip' })} />
+                      <Input
+                        placeholder={t('pages.hashem.iranIpPlaceholder', {
+                          defaultValue: 'your iran server ip',
+                        })}
+                      />
                     </Form.Item>
 
                     <Form.Item
@@ -887,25 +1076,38 @@ export default function HashemPage() {
                       valuePropName="checked"
                       initialValue={true}
                       extra={t('pages.hashem.autoCreateInboundExtra', {
-                        defaultValue: 'When enabled, creates a matching VLESS-WS inbound for the tunneled port (similar to port 8080) with automatic host header configuration.',
+                        defaultValue:
+                          'When enabled, creates a matching VLESS-WS inbound for the tunneled port (similar to port 8080) with automatic host header configuration.',
                       })}
                     >
                       <Checkbox style={{ color: '#38bdf8', fontWeight: 600 }}>
-                        ⚡ {t('pages.hashem.autoCreateInboundLabel', { defaultValue: 'Auto-create matching VLESS-WS inbound for tunnel port' })}
+                        ⚡{' '}
+                        {t('pages.hashem.autoCreateInboundLabel', {
+                          defaultValue: 'Auto-create matching VLESS-WS inbound for tunnel port',
+                        })}
                       </Checkbox>
                     </Form.Item>
 
                     <Form.Item
                       name="inboundHost"
-                      label={t('pages.hashem.inboundHostLabel', { defaultValue: 'WebSocket Host Header (WS Host Header)' })}
+                      label={t('pages.hashem.inboundHostLabel', {
+                        defaultValue: 'WebSocket Host Header (WS Host Header)',
+                      })}
                       extra={t('pages.hashem.inboundHostExtra', {
-                        defaultValue: 'Host domain or IP set in inbound WebSocket header (e.g. your iran domain or Iran server IP). If left blank, Iran server IP is used.',
+                        defaultValue:
+                          'Host domain or IP set in inbound WebSocket header (e.g. your iran domain or Iran server IP). If left blank, Iran server IP is used.',
                       })}
                     >
-                      <Input placeholder={t('pages.hashem.inboundHostPlaceholder', { defaultValue: 'your iran domain' })} />
+                      <Input
+                        placeholder={t('pages.hashem.inboundHostPlaceholder', {
+                          defaultValue: 'your iran domain',
+                        })}
+                      />
                     </Form.Item>
 
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
+                    <div
+                      style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}
+                    >
                       <Button
                         type="primary"
                         htmlType="submit"
@@ -973,7 +1175,11 @@ export default function HashemPage() {
                     onFinish={handleSetupSubmit}
                     style={{ marginTop: 12 }}
                   >
-                    <Form.Item name="role" label={t('pages.hashem.serverRole')} rules={[{ required: true }]}>
+                    <Form.Item
+                      name="role"
+                      label={t('pages.hashem.serverRole')}
+                      rules={[{ required: true }]}
+                    >
                       <Radio.Group buttonStyle="solid">
                         <Radio.Button value="foreign">{t('pages.hashem.roleForeign')}</Radio.Button>
                         <Radio.Button value="iran">{t('pages.hashem.roleIran')}</Radio.Button>
@@ -986,7 +1192,11 @@ export default function HashemPage() {
                       initialValue="tunnel-panel"
                     >
                       <Radio.Group buttonStyle="solid" style={{ width: '100%' }}>
-                        <Radio.Button value="tunnel-panel">{t('pages.hashem.tunnelPanelOption', { defaultValue: '🛡️ GRETAP (کرنل لینوکس + NFTables)' })}</Radio.Button>
+                        <Radio.Button value="tunnel-panel">
+                          {t('pages.hashem.tunnelPanelOption', {
+                            defaultValue: '🛡️ GRETAP (کرنل لینوکس + NFTables)',
+                          })}
+                        </Radio.Button>
                       </Radio.Group>
                     </Form.Item>
 
@@ -995,7 +1205,9 @@ export default function HashemPage() {
                         <Col span={14}>
                           <Form.Item
                             name="transport"
-                            label={t('pages.hashem.transportLabel', { defaultValue: 'Transport Protocol' })}
+                            label={t('pages.hashem.transportLabel', {
+                              defaultValue: 'Transport Protocol',
+                            })}
                             initialValue="tcpmux"
                           >
                             <Select options={backhaulTransportOptions} />
@@ -1004,7 +1216,9 @@ export default function HashemPage() {
                         <Col span={10}>
                           <Form.Item
                             name="backhaulPort"
-                            label={t('pages.hashem.backhaulPortLabel', { defaultValue: 'Backhaul Server Port' })}
+                            label={t('pages.hashem.backhaulPortLabel', {
+                              defaultValue: 'Backhaul Server Port',
+                            })}
                             initialValue={3080}
                           >
                             <InputNumber style={{ width: '100%' }} min={1} max={65535} />
@@ -1018,7 +1232,11 @@ export default function HashemPage() {
                       label={t('pages.hashem.peerPublicIp')}
                       rules={[{ required: true, message: t('pages.hashem.remotePubRequired') }]}
                     >
-                      <Input placeholder={t('pages.hashem.iranIpPlaceholder', { defaultValue: 'your iran server ip' })} />
+                      <Input
+                        placeholder={t('pages.hashem.iranIpPlaceholder', {
+                          defaultValue: 'your iran server ip',
+                        })}
+                      />
                     </Form.Item>
 
                     <Form.Item name="localPub" label={t('pages.hashem.thisServerPublicIp')}>
@@ -1032,14 +1250,23 @@ export default function HashemPage() {
                     <Form.Item name="carrier" label={t('pages.hashem.carrierModeLabel')}>
                       <Select
                         options={[
-                          { label: t('pages.hashem.directGreLabel', { defaultValue: 'Direct GRE (Raw IP proto 47 - Default & Stable)' }), value: 'direct' },
+                          {
+                            label: t('pages.hashem.directGreLabel', {
+                              defaultValue: 'Direct GRE (Raw IP proto 47 - Default & Stable)',
+                            }),
+                            value: 'direct',
+                          },
                           { label: 'FoU:443 (Foo-over-UDP Port 443)', value: 'fou:443' },
                           { label: 'WSS:8443 (WebSocket TLS)', value: 'wss:8443' },
                         ]}
                       />
                     </Form.Item>
 
-                    <Form.Item name="ports" label={t('pages.hashem.portsLabel')} extra={t('pages.hashem.portsExtra')}>
+                    <Form.Item
+                      name="ports"
+                      label={t('pages.hashem.portsLabel')}
+                      extra={t('pages.hashem.portsExtra')}
+                    >
                       <Input placeholder="8080" />
                     </Form.Item>
 
@@ -1048,22 +1275,33 @@ export default function HashemPage() {
                       valuePropName="checked"
                       initialValue={true}
                       extra={t('pages.hashem.autoCreateInboundExtra', {
-                        defaultValue: 'When enabled, creates a matching VLESS-WS inbound for the tunneled port (similar to port 8080) with automatic host header configuration.',
+                        defaultValue:
+                          'When enabled, creates a matching VLESS-WS inbound for the tunneled port (similar to port 8080) with automatic host header configuration.',
                       })}
                     >
                       <Checkbox style={{ color: '#38bdf8', fontWeight: 600 }}>
-                        ⚡ {t('pages.hashem.autoCreateInboundLabel', { defaultValue: 'Auto-create matching VLESS-WS inbound for tunnel port' })}
+                        ⚡{' '}
+                        {t('pages.hashem.autoCreateInboundLabel', {
+                          defaultValue: 'Auto-create matching VLESS-WS inbound for tunnel port',
+                        })}
                       </Checkbox>
                     </Form.Item>
 
                     <Form.Item
                       name="inboundHost"
-                      label={t('pages.hashem.inboundHostLabel', { defaultValue: 'WebSocket Host Header (WS Host Header)' })}
+                      label={t('pages.hashem.inboundHostLabel', {
+                        defaultValue: 'WebSocket Host Header (WS Host Header)',
+                      })}
                       extra={t('pages.hashem.inboundHostExtra', {
-                        defaultValue: 'Host domain or IP set in inbound WebSocket header (e.g. your iran domain or Iran server IP). If left blank, Iran server IP is used.',
+                        defaultValue:
+                          'Host domain or IP set in inbound WebSocket header (e.g. your iran domain or Iran server IP). If left blank, Iran server IP is used.',
                       })}
                     >
-                      <Input placeholder={t('pages.hashem.inboundHostPlaceholder', { defaultValue: 'your iran domain' })} />
+                      <Input
+                        placeholder={t('pages.hashem.inboundHostPlaceholder', {
+                          defaultValue: 'your iran domain',
+                        })}
+                      />
                     </Form.Item>
 
                     <Form.Item
@@ -1074,9 +1312,16 @@ export default function HashemPage() {
                       <Input placeholder="hsh1_..." />
                     </Form.Item>
 
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 24 }}>
+                    <div
+                      style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 24 }}
+                    >
                       <Button onClick={() => setSetupModalOpen(false)}>{t('cancel')}</Button>
-                      <Button type="primary" htmlType="submit" loading={isSettingUp} className="hashem-btn-setup">
+                      <Button
+                        type="primary"
+                        htmlType="submit"
+                        loading={isSettingUp}
+                        className="hashem-btn-setup"
+                      >
                         {t('pages.hashem.applyTunnelBtn')}
                       </Button>
                     </div>
@@ -1091,7 +1336,11 @@ export default function HashemPage() {
           title={
             <Space>
               <EditOutlined style={{ color: '#38bdf8' }} />
-              <span>{t('pages.hashem.editPortsModalTitle', { defaultValue: 'Edit Tunnel Forwarded Ports' })}</span>
+              <span>
+                {t('pages.hashem.editPortsModalTitle', {
+                  defaultValue: 'Edit Tunnel Forwarded Ports',
+                })}
+              </span>
             </Space>
           }
           open={editPortsModalOpen}
@@ -1115,14 +1364,20 @@ export default function HashemPage() {
           ]}
           className="hashem-modal"
         >
-          <Paragraph style={{ color: 'var(--nc-subtext, #94a3b8)', fontSize: 13, marginBottom: 16 }}>
+          <Paragraph
+            style={{ color: 'var(--nc-subtext, #94a3b8)', fontSize: 13, marginBottom: 16 }}
+          >
             {t('pages.hashem.editPortsDesc', {
-              defaultValue: 'Add, remove or save forwarded ports instantly without tunnel downtime.',
+              defaultValue:
+                'Add, remove or save forwarded ports instantly without tunnel downtime.',
             })}
           </Paragraph>
 
           <div style={{ marginBottom: 16 }}>
-            <Text strong style={{ display: 'block', marginBottom: 8, color: 'var(--nc-text, #f1f5f9)' }}>
+            <Text
+              strong
+              style={{ display: 'block', marginBottom: 8, color: 'var(--nc-text, #f1f5f9)' }}
+            >
               {t('pages.hashem.forwardedPortsList', { defaultValue: 'Current Ports' })}:
             </Text>
             <div

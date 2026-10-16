@@ -162,7 +162,11 @@ export default function TelegramShopPage() {
   const handleAction = async (action: 'start' | 'stop' | 'restart' | 'uninstall') => {
     try {
       setActionLoading(true);
-      const res = await HttpUtil.post('/panel/api/telegram-shop/action', { action }, { silent: true });
+      const res = await HttpUtil.post(
+        '/panel/api/telegram-shop/action',
+        { action },
+        { silent: true },
+      );
       if (res && res.success) {
         if (action === 'uninstall') {
           message.warning(t('pages.telegramShop.toasts.uninstalledSuccess'));
@@ -193,9 +197,21 @@ export default function TelegramShopPage() {
               <Row justify="space-between" align="middle" gutter={[16, 16]}>
                 <Col xs={24} md={16}>
                   <Space align="center" size="middle">
-                    <ShoppingCartOutlined style={{ fontSize: 36, color: '#06b6d4', flexShrink: 0 }} />
+                    <ShoppingCartOutlined
+                      style={{ fontSize: 36, color: '#06b6d4', flexShrink: 0 }}
+                    />
                     <div style={{ textAlign: 'start' }}>
-                      <Title level={2} className="tgshop-hero-title-text" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <Title
+                        level={2}
+                        className="tgshop-hero-title-text"
+                        style={{
+                          margin: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                          flexWrap: 'wrap',
+                        }}
+                      >
                         <span>{t('pages.telegramShop.title')}</span>
                         <span
                           style={{
@@ -212,7 +228,9 @@ export default function TelegramShopPage() {
                           beta
                         </span>
                       </Title>
-                      <Paragraph style={{ margin: 0, color: '#94a3b8', fontSize: 13, marginTop: 4 }}>
+                      <Paragraph
+                        style={{ margin: 0, color: '#94a3b8', fontSize: 13, marginTop: 4 }}
+                      >
                         {t('pages.telegramShop.subtitle')}
                       </Paragraph>
                     </div>
@@ -224,9 +242,16 @@ export default function TelegramShopPage() {
                       {t('pages.telegramShop.refreshStatus')}
                     </Button>
                     {status?.installed && (
-                      <span className={status.running ? 'tgshop-badge-online' : 'tgshop-badge-offline'}>
-                        <span className="tgshop-dot" style={{ backgroundColor: status.running ? '#10b981' : '#ef4444' }} />
-                        {status.running ? t('pages.telegramShop.statusOnline') : t('pages.telegramShop.statusOffline')}
+                      <span
+                        className={status.running ? 'tgshop-badge-online' : 'tgshop-badge-offline'}
+                      >
+                        <span
+                          className="tgshop-dot"
+                          style={{ backgroundColor: status.running ? '#10b981' : '#ef4444' }}
+                        />
+                        {status.running
+                          ? t('pages.telegramShop.statusOnline')
+                          : t('pages.telegramShop.statusOffline')}
                       </span>
                     )}
                   </Space>
@@ -237,7 +262,9 @@ export default function TelegramShopPage() {
             {loading ? (
               <div style={{ textAlign: 'center', padding: '60px 0' }}>
                 <Spin size="large" />
-                <div style={{ marginTop: 12, color: '#94a3b8' }}>{t('pages.telegramShop.loadingStatus')}</div>
+                <div style={{ marginTop: 12, color: '#94a3b8' }}>
+                  {t('pages.telegramShop.loadingStatus')}
+                </div>
               </div>
             ) : !status?.installed ? (
               /* INSTALLER VIEW (NOT INSTALLED) */
@@ -248,7 +275,9 @@ export default function TelegramShopPage() {
                     title={
                       <Space>
                         <ThunderboltOutlined style={{ color: '#06b6d4' }} />
-                        <span style={{ color: '#fff', fontWeight: 700 }}>{t('pages.telegramShop.installerTitle')}</span>
+                        <span style={{ color: '#fff', fontWeight: 700 }}>
+                          {t('pages.telegramShop.installerTitle')}
+                        </span>
                       </Space>
                     }
                   >
@@ -256,7 +285,11 @@ export default function TelegramShopPage() {
                       type="info"
                       showIcon
                       icon={<InfoCircleOutlined />}
-                      style={{ marginBottom: 20, background: 'rgba(6, 182, 212, 0.08)', borderColor: 'rgba(6, 182, 212, 0.2)' }}
+                      style={{
+                        marginBottom: 20,
+                        background: 'rgba(6, 182, 212, 0.08)',
+                        borderColor: 'rgba(6, 182, 212, 0.2)',
+                      }}
                       message={t('pages.telegramShop.installerAlertTitle')}
                       description={t('pages.telegramShop.installerAlertDesc')}
                     />
@@ -264,9 +297,15 @@ export default function TelegramShopPage() {
                     <Form form={form} layout="vertical" onFinish={handleInstall}>
                       <Form.Item
                         name="bot_token"
-                        label={<span style={{ color: '#e2e8f0' }}>{t('pages.telegramShop.botTokenLabel')}</span>}
+                        label={
+                          <span style={{ color: '#e2e8f0' }}>
+                            {t('pages.telegramShop.botTokenLabel')}
+                          </span>
+                        }
                         extra={t('pages.telegramShop.botTokenExtra')}
-                        rules={[{ required: true, message: t('pages.telegramShop.botTokenRequired') }]}
+                        rules={[
+                          { required: true, message: t('pages.telegramShop.botTokenRequired') },
+                        ]}
                       >
                         <Input
                           placeholder="8781465649:AAEEKMK_umrtGoi8..."
@@ -277,9 +316,15 @@ export default function TelegramShopPage() {
 
                       <Form.Item
                         name="admin_chat_id"
-                        label={<span style={{ color: '#e2e8f0' }}>{t('pages.telegramShop.adminChatIdLabel')}</span>}
+                        label={
+                          <span style={{ color: '#e2e8f0' }}>
+                            {t('pages.telegramShop.adminChatIdLabel')}
+                          </span>
+                        }
                         extra={t('pages.telegramShop.adminChatIdExtra')}
-                        rules={[{ required: true, message: t('pages.telegramShop.adminChatIdRequired') }]}
+                        rules={[
+                          { required: true, message: t('pages.telegramShop.adminChatIdRequired') },
+                        ]}
                       >
                         <Input
                           placeholder="123456789"
@@ -290,7 +335,11 @@ export default function TelegramShopPage() {
 
                       <Form.Item
                         name="domain"
-                        label={<span style={{ color: '#e2e8f0' }}>{t('pages.telegramShop.domainLabel')}</span>}
+                        label={
+                          <span style={{ color: '#e2e8f0' }}>
+                            {t('pages.telegramShop.domainLabel')}
+                          </span>
+                        }
                         extra={t('pages.telegramShop.domainExtra')}
                       >
                         <Input
@@ -319,7 +368,11 @@ export default function TelegramShopPage() {
                           icon={<SettingOutlined />}
                           loading={installingDeps}
                           onClick={handleInstallDeps}
-                          style={{ borderColor: 'rgba(6, 182, 212, 0.4)', color: '#06b6d4', background: 'rgba(6, 182, 212, 0.05)' }}
+                          style={{
+                            borderColor: 'rgba(6, 182, 212, 0.4)',
+                            color: '#06b6d4',
+                            background: 'rgba(6, 182, 212, 0.05)',
+                          }}
                         >
                           {t('pages.telegramShop.installDepsBtn')}
                         </Button>
@@ -329,31 +382,44 @@ export default function TelegramShopPage() {
                 </Col>
 
                 <Col xs={24} lg={9}>
-                  <Card className="tgshop-card" title={<span style={{ color: '#fff' }}>{t('pages.telegramShop.featuresTitle')}</span>}>
+                  <Card
+                    className="tgshop-card"
+                    title={
+                      <span style={{ color: '#fff' }}>{t('pages.telegramShop.featuresTitle')}</span>
+                    }
+                  >
                     <Space direction="vertical" size="middle" style={{ width: '100%' }}>
                       <div>
-                        <Text strong style={{ color: '#06b6d4' }}>{t('pages.telegramShop.feature1Title')}</Text>
+                        <Text strong style={{ color: '#06b6d4' }}>
+                          {t('pages.telegramShop.feature1Title')}
+                        </Text>
                         <Paragraph style={{ color: '#94a3b8', fontSize: 13, margin: 0 }}>
                           {t('pages.telegramShop.feature1Desc')}
                         </Paragraph>
                       </div>
 
                       <div>
-                        <Text strong style={{ color: '#10b981' }}>{t('pages.telegramShop.feature2Title')}</Text>
+                        <Text strong style={{ color: '#10b981' }}>
+                          {t('pages.telegramShop.feature2Title')}
+                        </Text>
                         <Paragraph style={{ color: '#94a3b8', fontSize: 13, margin: 0 }}>
                           {t('pages.telegramShop.feature2Desc')}
                         </Paragraph>
                       </div>
 
                       <div>
-                        <Text strong style={{ color: '#8b5cf6' }}>{t('pages.telegramShop.feature3Title')}</Text>
+                        <Text strong style={{ color: '#8b5cf6' }}>
+                          {t('pages.telegramShop.feature3Title')}
+                        </Text>
                         <Paragraph style={{ color: '#94a3b8', fontSize: 13, margin: 0 }}>
                           {t('pages.telegramShop.feature3Desc')}
                         </Paragraph>
                       </div>
 
                       <div>
-                        <Text strong style={{ color: '#ec4899' }}>{t('pages.telegramShop.feature4Title')}</Text>
+                        <Text strong style={{ color: '#ec4899' }}>
+                          {t('pages.telegramShop.feature4Title')}
+                        </Text>
                         <Paragraph style={{ color: '#94a3b8', fontSize: 13, margin: 0 }}>
                           {t('pages.telegramShop.feature4Desc')}
                         </Paragraph>
@@ -369,8 +435,16 @@ export default function TelegramShopPage() {
                   <Col xs={24} md={8}>
                     <Card className="tgshop-card">
                       <Statistic
-                        title={<span style={{ color: '#94a3b8' }}>{t('pages.telegramShop.connectedBot')}</span>}
-                        value={status.bot_username ? `@${status.bot_username}` : t('pages.telegramShop.connected')}
+                        title={
+                          <span style={{ color: '#94a3b8' }}>
+                            {t('pages.telegramShop.connectedBot')}
+                          </span>
+                        }
+                        value={
+                          status.bot_username
+                            ? `@${status.bot_username}`
+                            : t('pages.telegramShop.connected')
+                        }
                         prefix={<SendOutlined style={{ color: '#06b6d4' }} />}
                         valueStyle={{ color: '#22d3ee', fontSize: 18 }}
                       />
@@ -390,7 +464,11 @@ export default function TelegramShopPage() {
                   <Col xs={12} md={4}>
                     <Card className="tgshop-card">
                       <Statistic
-                        title={<span style={{ color: '#94a3b8' }}>{t('pages.telegramShop.freeTrials')}</span>}
+                        title={
+                          <span style={{ color: '#94a3b8' }}>
+                            {t('pages.telegramShop.freeTrials')}
+                          </span>
+                        }
                         value={status.total_trials}
                         prefix={<CheckCircleOutlined style={{ color: '#10b981' }} />}
                         valueStyle={{ color: '#10b981' }}
@@ -401,7 +479,11 @@ export default function TelegramShopPage() {
                   <Col xs={12} md={4}>
                     <Card className="tgshop-card">
                       <Statistic
-                        title={<span style={{ color: '#94a3b8' }}>{t('pages.telegramShop.ordersPlaced')}</span>}
+                        title={
+                          <span style={{ color: '#94a3b8' }}>
+                            {t('pages.telegramShop.ordersPlaced')}
+                          </span>
+                        }
                         value={status.total_orders}
                         prefix={<ShoppingCartOutlined style={{ color: '#ec4899' }} />}
                         valueStyle={{ color: '#ec4899' }}
@@ -412,7 +494,11 @@ export default function TelegramShopPage() {
                   <Col xs={24} md={8}>
                     <Card className="tgshop-card">
                       <Statistic
-                        title={<span style={{ color: '#94a3b8' }}>{t('pages.telegramShop.connectedAdminId')}</span>}
+                        title={
+                          <span style={{ color: '#94a3b8' }}>
+                            {t('pages.telegramShop.connectedAdminId')}
+                          </span>
+                        }
                         value={status.admin_chat_id || t('pages.telegramShop.unspecified')}
                         prefix={<SafetyCertificateOutlined style={{ color: '#8b5cf6' }} />}
                         valueStyle={{ color: '#818cf8', fontSize: 18 }}
@@ -424,7 +510,9 @@ export default function TelegramShopPage() {
                 {/* ACTION & CONTROLS */}
                 <Card
                   className="tgshop-card"
-                  title={<span style={{ color: '#fff' }}>{t('pages.telegramShop.actionsTitle')}</span>}
+                  title={
+                    <span style={{ color: '#fff' }}>{t('pages.telegramShop.actionsTitle')}</span>
+                  }
                   style={{ marginBottom: 24 }}
                 >
                   <Space wrap size="middle">
@@ -494,14 +582,20 @@ export default function TelegramShopPage() {
                 {/* CONFIG DETAILS */}
                 <Card
                   className="tgshop-card"
-                  title={<span style={{ color: '#fff' }}>{t('pages.telegramShop.configTitle')}</span>}
+                  title={
+                    <span style={{ color: '#fff' }}>{t('pages.telegramShop.configTitle')}</span>
+                  }
                 >
                   <Form form={form} layout="vertical" onFinish={handleInstall}>
                     <Row gutter={16}>
                       <Col xs={24} md={12}>
                         <Form.Item
                           name="bot_token"
-                          label={<span style={{ color: '#e2e8f0' }}>{t('pages.telegramShop.botTokenLabel')}</span>}
+                          label={
+                            <span style={{ color: '#e2e8f0' }}>
+                              {t('pages.telegramShop.botTokenLabel')}
+                            </span>
+                          }
                           rules={[{ required: true }]}
                         >
                           <Input prefix={<SendOutlined />} />
@@ -510,7 +604,11 @@ export default function TelegramShopPage() {
                       <Col xs={24} md={12}>
                         <Form.Item
                           name="admin_chat_id"
-                          label={<span style={{ color: '#e2e8f0' }}>{t('pages.telegramShop.adminChatIdLabel')}</span>}
+                          label={
+                            <span style={{ color: '#e2e8f0' }}>
+                              {t('pages.telegramShop.adminChatIdLabel')}
+                            </span>
+                          }
                           rules={[{ required: true }]}
                         >
                           <Input prefix={<UserOutlined />} />
@@ -519,15 +617,27 @@ export default function TelegramShopPage() {
                       <Col xs={24} md={24}>
                         <Form.Item
                           name="domain"
-                          label={<span style={{ color: '#e2e8f0' }}>{t('pages.telegramShop.domainLabel')}</span>}
+                          label={
+                            <span style={{ color: '#e2e8f0' }}>
+                              {t('pages.telegramShop.domainLabel')}
+                            </span>
+                          }
                           extra={t('pages.telegramShop.domainExtra')}
                         >
-                          <Input prefix={<GlobalOutlined style={{ color: '#10b981' }} />} placeholder="shop.example.com" />
+                          <Input
+                            prefix={<GlobalOutlined style={{ color: '#10b981' }} />}
+                            placeholder="shop.example.com"
+                          />
                         </Form.Item>
                       </Col>
                     </Row>
 
-                    <Button type="primary" htmlType="submit" loading={installing} className="tgshop-btn-install">
+                    <Button
+                      type="primary"
+                      htmlType="submit"
+                      loading={installing}
+                      className="tgshop-btn-install"
+                    >
                       {t('pages.telegramShop.saveChanges')}
                     </Button>
                   </Form>

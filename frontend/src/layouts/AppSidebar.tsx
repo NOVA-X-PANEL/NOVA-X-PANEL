@@ -294,7 +294,14 @@ export default function AppSidebar() {
         key: '/settings#telegram',
         icon: <MessageOutlined />,
         label: (
-          <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              width: '100%',
+            }}
+          >
             <span>{t('pages.settings.TGBotSettings')}</span>
             <span
               style={{
@@ -429,7 +436,14 @@ export default function AppSidebar() {
             key: tab.key,
             icon: <Icon />,
             label: (
-              <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  width: '100%',
+                }}
+              >
                 <span>{tab.title}</span>
                 <span
                   style={{

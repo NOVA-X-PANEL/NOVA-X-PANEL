@@ -167,7 +167,11 @@
   top: 14px;
   left: 14px;
   z-index: 1100;
-  background: linear-gradient(135deg, rgba(14, 165, 233, 0.25), rgba(99, 102, 241, 0.35)) !important;
+  background: linear-gradient(
+    135deg,
+    rgba(14, 165, 233, 0.25),
+    rgba(99, 102, 241, 0.35)
+  ) !important;
   color: #22d3ee !important;
   border: 1px solid rgba(56, 189, 248, 0.4) !important;
   width: 42px;
@@ -179,7 +183,9 @@
   align-items: center;
   justify-content: center;
   font-size: 20px;
-  box-shadow: 0 0 16px rgba(14, 165, 233, 0.35), 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+  box-shadow:
+    0 0 16px rgba(14, 165, 233, 0.35),
+    0 4px 12px rgba(0, 0, 0, 0.5) !important;
   transition: all 0.25s ease;
 }
 
@@ -202,12 +208,16 @@
   justify-content: space-between;
   padding: 16px 20px !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
-  background: linear-gradient(135deg, rgba(17, 24, 43, 0.85) 0%, rgba(11, 15, 28, 0.95) 100%) !important;
+  background: linear-gradient(
+    135deg,
+    rgba(17, 24, 43, 0.85) 0%,
+    rgba(11, 15, 28, 0.95) 100%
+  ) !important;
   position: relative;
 }
 
 .drawer-header::before {
-  content: "";
+  content: '';
   position: absolute;
   top: 0;
   left: 0;
@@ -245,7 +255,8 @@
   -webkit-text-fill-color: transparent !important;
   color: transparent !important;
   animation: novaBrandFlow 4s linear infinite !important;
-  filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.45)) drop-shadow(0 0 16px rgba(139, 92, 246, 0.35)) !important;
+  filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.45))
+    drop-shadow(0 0 16px rgba(139, 92, 246, 0.35)) !important;
   display: inline-block !important;
 }
 
@@ -438,10 +449,16 @@ body.dark .ant-drawer-body .drawer-menu .ant-menu-item-group-list {
 .sider-nav .ant-menu-item-selected,
 .sider-utility .ant-menu-item-selected,
 .drawer-menu .ant-menu-item-selected {
-  background: linear-gradient(90deg, rgba(34, 211, 238, 0.18) 0%, rgba(168, 85, 247, 0.22) 100%) !important;
+  background: linear-gradient(
+    90deg,
+    rgba(34, 211, 238, 0.18) 0%,
+    rgba(168, 85, 247, 0.22) 100%
+  ) !important;
   border-left: 3px solid #22d3ee !important;
   border-inline-start: 3px solid #22d3ee !important;
-  box-shadow: inset 0 0 16px rgba(34, 211, 238, 0.15), 0 0 14px rgba(34, 211, 238, 0.22) !important;
+  box-shadow:
+    inset 0 0 16px rgba(34, 211, 238, 0.15),
+    0 0 14px rgba(34, 211, 238, 0.22) !important;
 }
 
 .sider-nav .ant-menu-item-selected .anticon,
@@ -531,7 +548,11 @@ body.dark .ant-drawer-body .drawer-menu .ant-menu-item-group-list {
 }
 
 .sider-brand .brand-text {
-  font-family: 'Rajdhani', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-family:
+    'Rajdhani',
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif !important;
   font-size: 17px !important;
   font-weight: 800 !important;
   letter-spacing: 0.12em !important;
@@ -550,7 +571,8 @@ body.dark .ant-drawer-body .drawer-menu .ant-menu-item-group-list {
   -webkit-text-fill-color: transparent !important;
   color: transparent !important;
   animation: novaBrandFlow 4s linear infinite !important;
-  filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.45)) drop-shadow(0 0 16px rgba(139, 92, 246, 0.35)) !important;
+  filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.45))
+    drop-shadow(0 0 16px rgba(139, 92, 246, 0.35)) !important;
   display: inline-block !important;
 }
 
@@ -612,7 +634,11 @@ body.dark .ant-drawer-body .drawer-menu .ant-menu-item-group-list {
   padding: 11px 12px;
   border: 1px solid rgba(56, 189, 248, 0.2) !important;
   border-radius: 10px;
-  background: linear-gradient(135deg, rgba(11, 15, 25, 0.9) 0%, rgba(15, 23, 42, 0.8) 100%) !important;
+  background: linear-gradient(
+    135deg,
+    rgba(11, 15, 25, 0.9) 0%,
+    rgba(15, 23, 42, 0.8) 100%
+  ) !important;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4) !important;
 }
 
@@ -627,7 +653,9 @@ body.dark .ant-drawer-body .drawer-menu .ant-menu-item-group-list {
   height: 9px;
   border-radius: 50%;
   background: #10b981 !important;
-  box-shadow: 0 0 10px #10b981, 0 0 18px rgba(16, 185, 129, 0.5) !important;
+  box-shadow:
+    0 0 10px #10b981,
+    0 0 18px rgba(16, 185, 129, 0.5) !important;
   flex: none;
 }
 
@@ -708,7 +736,9 @@ body.dark .ant-drawer-body .drawer-menu .ant-menu-item-group-list {
   color: #fff;
   background: linear-gradient(135deg, #0ea5e9 0%, #a855f7 100%) !important;
   border: 1px solid rgba(56, 189, 248, 0.5) !important;
-  box-shadow: 0 0 20px rgba(14, 165, 233, 0.5), inset 0 0 8px rgba(255, 255, 255, 0.25) !important;
+  box-shadow:
+    0 0 20px rgba(14, 165, 233, 0.5),
+    inset 0 0 8px rgba(255, 255, 255, 0.25) !important;
 }
 
 .ant-layout-sider-collapsed .brand-mark {

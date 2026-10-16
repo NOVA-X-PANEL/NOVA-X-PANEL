@@ -29,36 +29,28 @@
   .action-buttons button,
   .ant-collapse-header
 ) {
-  transition: box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-              border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-              transform 0.2s ease,
-              filter 0.25s ease !important;
+  transition:
+    box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.2s ease,
+    filter 0.25s ease !important;
 }
 
 /* 2. Cards & Panels Hover Glow */
-:is(
-  .ant-card,
-  .nc-card,
-  .inbound-card,
-  .ov-card,
-  .ov-state,
-  .ov-hero
-):hover {
+:is(.ant-card, .nc-card, .inbound-card, .ov-card, .ov-state, .ov-hero):hover {
   border-color: rgba(168, 85, 247, 0.65) !important;
-  box-shadow: 0 0 25px rgba(168, 85, 247, 0.55),
-              0 0 50px rgba(147, 51, 234, 0.35),
-              inset 0 0 15px rgba(168, 85, 247, 0.12) !important;
+  box-shadow:
+    0 0 25px rgba(168, 85, 247, 0.55),
+    0 0 50px rgba(147, 51, 234, 0.35),
+    inset 0 0 15px rgba(168, 85, 247, 0.12) !important;
 }
 
 /* 3. Buttons & Action Links Hover Glow */
-:is(
-  .ant-btn,
-  .nc-action-flat,
-  .action-buttons button
-):hover {
+:is(.ant-btn, .nc-action-flat, .action-buttons button):hover {
   border-color: #c084fc !important;
-  box-shadow: 0 0 18px rgba(168, 85, 247, 0.75),
-              0 0 35px rgba(147, 51, 234, 0.45) !important;
+  box-shadow:
+    0 0 18px rgba(168, 85, 247, 0.75),
+    0 0 35px rgba(147, 51, 234, 0.45) !important;
   transform: translateY(-1px);
 }
 
@@ -76,16 +68,18 @@
   .ant-input-number-focused
 ) {
   border-color: #a855f7 !important;
-  box-shadow: 0 0 16px rgba(168, 85, 247, 0.65),
-              0 0 30px rgba(147, 51, 234, 0.3) !important;
+  box-shadow:
+    0 0 16px rgba(168, 85, 247, 0.65),
+    0 0 30px rgba(147, 51, 234, 0.3) !important;
 }
 
 /* 5. Sidebar Menu Items Hover */
 .sider-nav .ant-menu-item:hover,
 .sider-utility .ant-menu-item:hover,
 .drawer-menu .ant-menu-item:hover {
-  box-shadow: 0 0 20px rgba(168, 85, 247, 0.6),
-              inset 0 0 14px rgba(147, 51, 234, 0.25) !important;
+  box-shadow:
+    0 0 20px rgba(168, 85, 247, 0.6),
+    inset 0 0 14px rgba(147, 51, 234, 0.25) !important;
   border: 1px solid rgba(168, 85, 247, 0.5) !important;
   border-radius: 8px !important;
 }
@@ -93,8 +87,9 @@
 /* 6. Table Rows Hover */
 .ant-table-tbody > tr:hover > td {
   background: rgba(168, 85, 247, 0.12) !important;
-  box-shadow: inset 0 1px 0 rgba(168, 85, 247, 0.35),
-              inset 0 -1px 0 rgba(168, 85, 247, 0.35) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(168, 85, 247, 0.35),
+    inset 0 -1px 0 rgba(168, 85, 247, 0.35) !important;
 }
 
 /* 7. Tags, Badges & Toggles Hover */
@@ -111,7 +106,8 @@
 /* 8. Status Widget & Brand Mark Hover */
 .brand-mark:hover,
 .sider-status:hover {
-  box-shadow: 0 0 22px rgba(168, 85, 247, 0.75),
-              0 0 45px rgba(147, 51, 234, 0.4) !important;
+  box-shadow:
+    0 0 22px rgba(168, 85, 247, 0.75),
+    0 0 45px rgba(147, 51, 234, 0.4) !important;
   border-color: #a855f7 !important;
 }

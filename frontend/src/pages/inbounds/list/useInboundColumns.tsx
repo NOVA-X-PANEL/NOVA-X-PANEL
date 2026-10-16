@@ -298,10 +298,24 @@ export function useInboundColumns({
           const cc = clientCount[record.id] || fallbackClientCount(record);
           if (!cc) return null;
           return (
-            <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+                flexWrap: 'wrap',
+              }}
+            >
               <Tag
                 className="client-count-tag"
-                style={{ margin: 0, padding: '2px 8px', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                style={{
+                  margin: 0,
+                  padding: '2px 8px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                }}
               >
                 <TeamOutlined /> <span>{cc.clients}</span>
               </Tag>

@@ -63,7 +63,17 @@ export function OverviewHero({ panelVersion }: OverviewHeroProps) {
         <SmileOutlined />
       </span>
       <div className="nc-hero-text">
-        <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: '#38bdf8', letterSpacing: 1, textTransform: 'uppercase' }}>// CORE // SYSTEM_OVERVIEW // TELEMETRY</div>
+        <div
+          style={{
+            fontFamily: 'JetBrains Mono, monospace',
+            fontSize: 10,
+            color: '#38bdf8',
+            letterSpacing: 1,
+            textTransform: 'uppercase',
+          }}
+        >
+          // CORE // SYSTEM_OVERVIEW // TELEMETRY
+        </div>
         <div className="nc-hero-title">{t('menu.dashboard')}</div>
         <div className="nc-hero-sub">{t('pages.index.systemHistoryTitle')}</div>
       </div>
@@ -76,7 +86,10 @@ export function OverviewHero({ panelVersion }: OverviewHeroProps) {
         </div>
         <div className="nc-hero-metric">
           <div className="nc-hero-metric-label">{t('pages.index.currentPanelVersion')}</div>
-          <div className="nc-hero-metric-value">{formatPanelVersion(panelVersion) || (panelVersion && panelVersion !== '?' ? `v${panelVersion}` : 'v2.6.25')}</div>
+          <div className="nc-hero-metric-value">
+            {formatPanelVersion(panelVersion) ||
+              (panelVersion && panelVersion !== '?' ? `v${panelVersion}` : 'v2.6.25')}
+          </div>
         </div>
       </div>
     </div>
@@ -169,7 +182,13 @@ export function OverviewRail({ status, panelVersion }: OverviewRailProps) {
       label: 'Xray',
       value: status.xray.version || status.xray.state,
     },
-    { icon: <RocketOutlined />, label: t('menu.dashboard'), value: formatPanelVersion(panelVersion) || (panelVersion && panelVersion !== '?' ? `v${panelVersion}` : 'v2.6.25') },
+    {
+      icon: <RocketOutlined />,
+      label: t('menu.dashboard'),
+      value:
+        formatPanelVersion(panelVersion) ||
+        (panelVersion && panelVersion !== '?' ? `v${panelVersion}` : 'v2.6.25'),
+    },
     {
       icon: <ThunderboltOutlined />,
       label: t('pages.index.systemHistoryTitle'),

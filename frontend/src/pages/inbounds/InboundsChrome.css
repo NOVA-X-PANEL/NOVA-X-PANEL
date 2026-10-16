@@ -24,7 +24,7 @@
 }
 
 .inb-hud-banner::before {
-  content: "";
+  content: '';
   position: absolute;
   top: 0;
   left: 0;
@@ -70,7 +70,11 @@
 }
 
 .inb-hud-title {
-  font-family: 'Rajdhani', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family:
+    'Rajdhani',
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
   font-size: 24px;
   font-weight: 700;
   letter-spacing: 0.8px;
@@ -169,10 +173,18 @@
   height: 2px;
 }
 
-.inb-card-top-line.cyan { background: linear-gradient(90deg, transparent, #22d3ee, transparent); }
-.inb-card-top-line.purple { background: linear-gradient(90deg, transparent, #c084fc, transparent); }
-.inb-card-top-line.emerald { background: linear-gradient(90deg, transparent, #34d399, transparent); }
-.inb-card-top-line.amber { background: linear-gradient(90deg, transparent, #fbbf24, transparent); }
+.inb-card-top-line.cyan {
+  background: linear-gradient(90deg, transparent, #22d3ee, transparent);
+}
+.inb-card-top-line.purple {
+  background: linear-gradient(90deg, transparent, #c084fc, transparent);
+}
+.inb-card-top-line.emerald {
+  background: linear-gradient(90deg, transparent, #34d399, transparent);
+}
+.inb-card-top-line.amber {
+  background: linear-gradient(90deg, transparent, #fbbf24, transparent);
+}
 
 .inb-card-header {
   display: flex;
@@ -259,7 +271,7 @@
 }
 
 .inb-console-card::before {
-  content: "";
+  content: '';
   position: absolute;
   top: 0;
   left: 20px;
@@ -276,7 +288,11 @@
 }
 
 .inb-console-title {
-  font-family: 'Rajdhani', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family:
+    'Rajdhani',
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
   font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.8px;
@@ -306,7 +322,7 @@
 .inb-osc-grid {
   position: absolute;
   inset: 0;
-  background-image: 
+  background-image:
     linear-gradient(rgba(34, 211, 238, 0.05) 1px, transparent 1px),
     linear-gradient(90deg, rgba(34, 211, 238, 0.05) 1px, transparent 1px);
   background-size: 20px 20px;

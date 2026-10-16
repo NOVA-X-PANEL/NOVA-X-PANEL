@@ -125,11 +125,7 @@ export default function ArcTachometer({
             strokeLinecap="round"
             strokeDasharray={`${filled} ${arcLength}`}
             className={glow ? 'arc-tacho-path arc-tacho-glow' : 'arc-tacho-path'}
-            style={
-              glow
-                ? { filter: `drop-shadow(0 0 8px ${to})` }
-                : undefined
-            }
+            style={glow ? { filter: `drop-shadow(0 0 8px ${to})` } : undefined}
           />
         )}
       </svg>

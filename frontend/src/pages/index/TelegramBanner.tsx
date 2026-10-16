@@ -30,12 +30,7 @@ export const TelegramBanner: FC = () => {
         </div>
       </div>
 
-      <a
-        href={TELEGRAM_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="ov-tg-btn"
-      >
+      <a href={TELEGRAM_URL} target="_blank" rel="noopener noreferrer" className="ov-tg-btn">
         <span>{t('pages.index.telegramChannelBtn')}</span>
         <ExportOutlined className="ov-tg-btn-icon" />
       </a>

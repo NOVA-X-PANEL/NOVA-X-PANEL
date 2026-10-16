@@ -85,11 +85,12 @@ export function InboundsStats({ dbInbounds, totals, clients, online }: InboundsS
           </span>
         </div>
         <div className="inb-card-value" style={{ color: '#22d3ee' }}>
-          {String(totalCount).padStart(2, '0')}{' '}
-          <span className="inb-card-unit">PORTS</span>
+          {String(totalCount).padStart(2, '0')} <span className="inb-card-unit">PORTS</span>
         </div>
         <div className="inb-card-sub">
-          <span>{active} {t('pages.inbounds.enable')}</span>
+          <span>
+            {active} {t('pages.inbounds.enable')}
+          </span>
           <span style={{ color: '#34d399', fontFamily: 'JetBrains Mono, monospace' }}>
             {activePct}% OK
           </span>
@@ -112,11 +113,12 @@ export function InboundsStats({ dbInbounds, totals, clients, online }: InboundsS
           </span>
         </div>
         <div className="inb-card-value" style={{ color: '#c084fc' }}>
-          {String(clients).padStart(2, '0')}{' '}
-          <span className="inb-card-unit">USERS</span>
+          {String(clients).padStart(2, '0')} <span className="inb-card-unit">USERS</span>
         </div>
         <div className="inb-card-sub">
-          <span>{online} {t('pages.clients.online')}</span>
+          <span>
+            {online} {t('pages.clients.online')}
+          </span>
           <span style={{ color: '#38bdf8', fontFamily: 'JetBrains Mono, monospace' }}>
             {clientLoad}% Load
           </span>
@@ -155,10 +157,7 @@ export function InboundsStats({ dbInbounds, totals, clients, online }: InboundsS
           </span>
         </div>
         <div className="inb-micro-bar">
-          <div
-            className="inb-micro-fill"
-            style={{ width: '25%', background: '#34d399' }}
-          />
+          <div className="inb-micro-fill" style={{ width: '25%', background: '#34d399' }} />
         </div>
       </div>
 
@@ -181,10 +180,7 @@ export function InboundsStats({ dbInbounds, totals, clients, online }: InboundsS
           </span>
         </div>
         <div className="inb-micro-bar">
-          <div
-            className="inb-micro-fill"
-            style={{ width: '15%', background: '#fbbf24' }}
-          />
+          <div className="inb-micro-fill" style={{ width: '15%', background: '#fbbf24' }} />
         </div>
       </div>
     </div>

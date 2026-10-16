@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { message } from 'antd';
+import type { MessageInstance } from 'antd/es/message/interface';
 import { useTranslation } from 'react-i18next';
 
 import { HttpUtil } from '@/utils';
@@ -71,9 +72,11 @@ export interface HashemOneLinerResult {
   token: string;
 }
 
-export function useHashemMutations() {
+export function useHashemMutations(customMessageApi?: MessageInstance) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const [internalMessageApi] = message.useMessage();
+  const messageApi = customMessageApi || internalMessageApi;
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: keys.hashem.status() });
@@ -88,10 +91,10 @@ export function useHashemMutations() {
       return res;
     },
     onSuccess: () => {
-      message.success(t('pages.hashem.toasts.carrierSuccess'));
+      messageApi.success(t('pages.hashem.toasts.carrierSuccess'));
       invalidate();
     },
-    onError: (err: Error) => message.error(err.message),
+    onError: (err: Error) => messageApi.error(err.message),
   });
 
   const restartMutation = useMutation({
@@ -101,10 +104,10 @@ export function useHashemMutations() {
       return res;
     },
     onSuccess: () => {
-      message.success(t('pages.hashem.toasts.restartSuccess'));
+      messageApi.success(t('pages.hashem.toasts.restartSuccess'));
       invalidate();
     },
-    onError: (err: Error) => message.error(err.message),
+    onError: (err: Error) => messageApi.error(err.message),
   });
 
   const setWatchdogMutation = useMutation({
@@ -114,10 +117,10 @@ export function useHashemMutations() {
       return res;
     },
     onSuccess: () => {
-      message.success(t('pages.hashem.toasts.watchdogSuccess'));
+      messageApi.success(t('pages.hashem.toasts.watchdogSuccess'));
       invalidate();
     },
-    onError: (err: Error) => message.error(err.message),
+    onError: (err: Error) => messageApi.error(err.message),
   });
 
   const syncInboundsMutation = useMutation({
@@ -127,10 +130,10 @@ export function useHashemMutations() {
       return res.obj;
     },
     onSuccess: (ports) => {
-      message.success(t('pages.hashem.toasts.syncSuccess', { count: ports?.length || 0 }));
+      messageApi.success(t('pages.hashem.toasts.syncSuccess', { count: ports?.length || 0 }));
       invalidate();
     },
-    onError: (err: Error) => message.error(err.message),
+    onError: (err: Error) => messageApi.error(err.message),
   });
 
   const editPortsMutation = useMutation({
@@ -140,14 +143,14 @@ export function useHashemMutations() {
       return res;
     },
     onSuccess: () => {
-      message.success(
+      messageApi.success(
         t('pages.hashem.toasts.editPortsSuccess', {
           defaultValue: 'Tunnel ports updated successfully',
         }),
       );
       invalidate();
     },
-    onError: (err: Error) => message.error(err.message),
+    onError: (err: Error) => messageApi.error(err.message),
   });
 
   const setupMutation = useMutation({
@@ -157,10 +160,10 @@ export function useHashemMutations() {
       return res.obj;
     },
     onSuccess: () => {
-      message.success(t('pages.hashem.toasts.setupSuccess'));
+      messageApi.success(t('pages.hashem.toasts.setupSuccess'));
       invalidate();
     },
-    onError: (err: Error) => message.error(err.message),
+    onError: (err: Error) => messageApi.error(err.message),
   });
 
   const setupSSHMutation = useMutation({
@@ -174,10 +177,10 @@ export function useHashemMutations() {
       return res.obj;
     },
     onSuccess: (data) => {
-      message.success(data?.message || t('pages.hashem.toasts.setupSuccess'));
+      messageApi.success(data?.message || t('pages.hashem.toasts.setupSuccess'));
       invalidate();
     },
-    onError: (err: Error) => message.error(err.message),
+    onError: (err: Error) => messageApi.error(err.message),
   });
 
   const generateOneLinerMutation = useMutation({
@@ -193,7 +196,7 @@ export function useHashemMutations() {
     onSuccess: () => {
       invalidate();
     },
-    onError: (err: Error) => message.error(err.message),
+    onError: (err: Error) => messageApi.error(err.message),
   });
 
   const installMutation = useMutation({
@@ -203,10 +206,10 @@ export function useHashemMutations() {
       return res.obj;
     },
     onSuccess: () => {
-      message.success(t('pages.hashem.toasts.installSuccess'));
+      messageApi.success(t('pages.hashem.toasts.installSuccess'));
       invalidate();
     },
-    onError: (err: Error) => message.error(err.message),
+    onError: (err: Error) => messageApi.error(err.message),
   });
 
   const removeMutation = useMutation({
@@ -216,10 +219,10 @@ export function useHashemMutations() {
       return res;
     },
     onSuccess: () => {
-      message.success(t('pages.hashem.toasts.removeSuccess'));
+      messageApi.success(t('pages.hashem.toasts.removeSuccess'));
       invalidate();
     },
-    onError: (err: Error) => message.error(err.message),
+    onError: (err: Error) => messageApi.error(err.message),
   });
 
   const runBenchmarkMutation = useMutation({
@@ -229,14 +232,14 @@ export function useHashemMutations() {
       return res.obj;
     },
     onSuccess: () => {
-      message.success(
+      messageApi.success(
         t('pages.hashem.toasts.benchmarkSuccess', {
           defaultValue: 'Carrier benchmark completed successfully',
         }),
       );
       invalidate();
     },
-    onError: (err: Error) => message.error(err.message),
+    onError: (err: Error) => messageApi.error(err.message),
   });
 
   const setAutoPilotMutation = useMutation({
@@ -246,14 +249,14 @@ export function useHashemMutations() {
       return res;
     },
     onSuccess: () => {
-      message.success(
+      messageApi.success(
         t('pages.hashem.toasts.autoPilotSuccess', {
           defaultValue: 'Carrier auto-pilot status updated',
         }),
       );
       invalidate();
     },
-    onError: (err: Error) => message.error(err.message),
+    onError: (err: Error) => messageApi.error(err.message),
   });
 
   const autoCreateInboundMutation = useMutation({
@@ -261,14 +264,14 @@ export function useHashemMutations() {
       return HttpUtil.post('/panel/api/hashem/auto-create-inbound', payload);
     },
     onSuccess: () => {
-      message.success(
+      messageApi.success(
         t('pages.hashem.toasts.inboundCreated', {
           defaultValue: 'Matching inbounds created successfully.',
         }),
       );
       invalidate();
     },
-    onError: (err: Error) => message.error(err.message),
+    onError: (err: Error) => messageApi.error(err.message),
   });
 
   return {

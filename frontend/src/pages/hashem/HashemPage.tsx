@@ -102,6 +102,7 @@ const getBackhaulTransportOptions = (t: TFunction) => [
 export default function HashemPage() {
   const { t } = useTranslation();
   const { isDark, isUltra, antdThemeConfig } = useTheme();
+  const [messageApi, messageContextHolder] = message.useMessage();
   const { status, loading, refetch } = useHashemQuery();
   const backhaulTransportOptions = useMemo(() => getBackhaulTransportOptions(t), [t]);
   const {
@@ -129,7 +130,7 @@ export default function HashemPage() {
     isSettingAutoPilot,
     autoCreateInbound,
     isAutoCreatingInbound,
-  } = useHashemMutations();
+  } = useHashemMutations(messageApi);
 
   const [setupModalOpen, setSetupModalOpen] = useState(false);
   const [setupTab, setSetupTab] = useState<'oneliner' | 'advanced'>('oneliner');
@@ -174,7 +175,7 @@ export default function HashemPage() {
 
   const handleAddPortChip = () => {
     if (!newPortInput || newPortInput < 1 || newPortInput > 65535) {
-      message.warning(
+      messageApi.warning(
         t('pages.hashem.portMustBeValid', {
           defaultValue: 'Port number must be between 1 and 65535',
         }),
@@ -182,7 +183,7 @@ export default function HashemPage() {
       return;
     }
     if (portChips.includes(newPortInput)) {
-      message.warning(
+      messageApi.warning(
         t('pages.hashem.portAlreadyExists', {
           defaultValue: 'This port already exists in the list',
         }),
@@ -195,7 +196,7 @@ export default function HashemPage() {
 
   const handleRemovePortChip = (portToRemove: number) => {
     if (portChips.length <= 1) {
-      message.warning(
+      messageApi.warning(
         t('pages.hashem.atLeastOnePortRequired', {
           defaultValue: 'At least one port must remain in the list',
         }),
@@ -207,7 +208,7 @@ export default function HashemPage() {
 
   const handleSavePorts = async () => {
     if (portChips.length === 0) {
-      message.warning(
+      messageApi.warning(
         t('pages.hashem.atLeastOnePortRequired', {
           defaultValue: 'At least one port must remain in the list',
         }),
@@ -254,7 +255,7 @@ export default function HashemPage() {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    message.success(t('pages.hashem.commandCopied'));
+    messageApi.success(t('pages.hashem.commandCopied'));
   };
 
   const handleSetupSubmit = async (values: HashemSetupPayload) => {
@@ -289,6 +290,7 @@ export default function HashemPage() {
 
   return (
     <ConfigProvider theme={antdThemeConfig}>
+      {messageContextHolder}
       <Layout className={pageClass}>
         <AppSidebar />
 

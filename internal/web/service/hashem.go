@@ -806,7 +806,7 @@ func (s *HashemService) Setup(form HashemSetupForm) (string, error) {
 		bhPort = 3080
 	}
 
-	args := []string{}
+	var args []string
 	if form.Bundle != "" {
 		if strings.HasPrefix(form.Bundle, "bh1_") {
 			args = []string{"setup-backhaul-foreign", "--bundle", form.Bundle, "--force"}
@@ -994,7 +994,7 @@ except Exception:
 		if err := json.Unmarshal(tData, &doc); err == nil {
 			doc["ports"] = cleanPorts
 			if bs, err := json.MarshalIndent(doc, "", "  "); err == nil {
-				_ = os.WriteFile("/etc/x-ui/tunnel.json", bs, 0644)
+				_ = os.WriteFile("/etc/x-ui/tunnel.json", bs, 0o644)
 			}
 		}
 	}
@@ -1012,8 +1012,8 @@ except Exception:
 				doc.Peers[i]["ports"] = cleanPorts
 			}
 			if outData, err := json.MarshalIndent(doc, "", "  "); err == nil {
-				if err := os.WriteFile(peersPath, append(outData, '\n'), 0644); err != nil {
-					_ = s.writePrivilegedFile(peersPath, append(outData, '\n'), 0644)
+				if err := os.WriteFile(peersPath, append(outData, '\n'), 0o644); err != nil {
+					_ = s.writePrivilegedFile(peersPath, append(outData, '\n'), 0o644)
 				}
 				editedAny = true
 			}
@@ -1023,8 +1023,8 @@ except Exception:
 	// Foreign client toml (/etc/frp/frpc.toml)
 	if rawToml, err := os.ReadFile(frpcTomlPath); err == nil {
 		updated := rewriteTomlPorts(string(rawToml), cleanPorts)
-		if err := os.WriteFile(frpcTomlPath, []byte(updated), 0644); err != nil {
-			_ = s.writePrivilegedFile(frpcTomlPath, []byte(updated), 0644)
+		if err := os.WriteFile(frpcTomlPath, []byte(updated), 0o644); err != nil {
+			_ = s.writePrivilegedFile(frpcTomlPath, []byte(updated), 0o644)
 		}
 		c, cl := context.WithTimeout(context.Background(), 5*time.Second)
 		_, _ = s.execPrivileged(c, "systemctl", "reload-or-restart", "frpc")
@@ -1036,8 +1036,8 @@ except Exception:
 	if rawToml, err := os.ReadFile(frpsTomlPath); err == nil {
 		if strings.Contains(string(rawToml), "[[proxies]]") {
 			updated := rewriteTomlPorts(string(rawToml), cleanPorts)
-			if err := os.WriteFile(frpsTomlPath, []byte(updated), 0644); err != nil {
-				_ = s.writePrivilegedFile(frpsTomlPath, []byte(updated), 0644)
+			if err := os.WriteFile(frpsTomlPath, []byte(updated), 0o644); err != nil {
+				_ = s.writePrivilegedFile(frpsTomlPath, []byte(updated), 0o644)
 			}
 		}
 		c, cl := context.WithTimeout(context.Background(), 5*time.Second)
@@ -1049,8 +1049,8 @@ except Exception:
 	// Backhaul client toml (/etc/backhaul/client.toml)
 	if rawToml, err := os.ReadFile(backhaulClientTomlPath); err == nil {
 		updated := rewriteBackhaulPorts(string(rawToml), cleanPorts)
-		if err := os.WriteFile(backhaulClientTomlPath, []byte(updated), 0644); err != nil {
-			_ = s.writePrivilegedFile(backhaulClientTomlPath, []byte(updated), 0644)
+		if err := os.WriteFile(backhaulClientTomlPath, []byte(updated), 0o644); err != nil {
+			_ = s.writePrivilegedFile(backhaulClientTomlPath, []byte(updated), 0o644)
 		}
 		c, cl := context.WithTimeout(context.Background(), 5*time.Second)
 		_, _ = s.execPrivileged(c, "systemctl", "restart", "backhaul-client")
@@ -1061,8 +1061,8 @@ except Exception:
 	// Backhaul server toml (/etc/backhaul/config.toml)
 	if rawToml, err := os.ReadFile(backhaulServerTomlPath); err == nil {
 		updated := rewriteBackhaulPorts(string(rawToml), cleanPorts)
-		if err := os.WriteFile(backhaulServerTomlPath, []byte(updated), 0644); err != nil {
-			_ = s.writePrivilegedFile(backhaulServerTomlPath, []byte(updated), 0644)
+		if err := os.WriteFile(backhaulServerTomlPath, []byte(updated), 0o644); err != nil {
+			_ = s.writePrivilegedFile(backhaulServerTomlPath, []byte(updated), 0o644)
 		}
 		c, cl := context.WithTimeout(context.Background(), 5*time.Second)
 		_, _ = s.execPrivileged(c, "systemctl", "restart", "backhaul-server")
@@ -1077,9 +1077,9 @@ except Exception:
 				p := filepath.Join("/root/backhaul-core", e.Name())
 				if rawToml, err := os.ReadFile(p); err == nil {
 					updated := rewriteBackhaulPorts(string(rawToml), cleanPorts)
-					if err := os.WriteFile(p, []byte(updated), 0644); err == nil {
+					if err := os.WriteFile(p, []byte(updated), 0o644); err == nil {
 						svc := strings.TrimSuffix(e.Name(), ".toml")
-						exec.Command("systemctl", "restart", svc).CombinedOutput()
+						_, _ = exec.Command("systemctl", "restart", svc).CombinedOutput()
 						editedAny = true
 					}
 				}
@@ -1090,8 +1090,8 @@ except Exception:
 	// Allow UFW ports if active
 	if out, err := exec.Command("ufw", "status").CombinedOutput(); err == nil && strings.Contains(string(out), "Status: active") {
 		for _, p := range cleanPorts {
-			exec.Command("ufw", "allow", fmt.Sprintf("%d/tcp", p)).CombinedOutput()
-			exec.Command("ufw", "allow", fmt.Sprintf("%d/udp", p)).CombinedOutput()
+			_, _ = exec.Command("ufw", "allow", fmt.Sprintf("%d/tcp", p)).CombinedOutput()
+			_, _ = exec.Command("ufw", "allow", fmt.Sprintf("%d/udp", p)).CombinedOutput()
 		}
 	}
 
@@ -1502,7 +1502,7 @@ func (s *HashemService) SetupSSH(form HashemSSHSetupForm) (*HashemSSHSetupResult
 		if strings.Contains(errStr, "connection refused") {
 			return nil, fmt.Errorf("اتصال به سرور ایران رد شد (Connection Refused). لطفاً بررسی کنید سرویس SSH روی پورت %d فعال باشد.", sshPort)
 		}
-		return nil, fmt.Errorf("خطا در اتصال SSH به سرور ایران (%s): %v", addr, err)
+		return nil, fmt.Errorf("خطا در اتصال SSH به سرور ایران (%s): %w", addr, err)
 	}
 	defer client.Close()
 
@@ -1565,13 +1565,13 @@ func (s *HashemService) SetupSSH(form HashemSSHSetupForm) (*HashemSSHSetupResult
 
 	session, err := client.NewSession()
 	if err != nil {
-		return nil, fmt.Errorf("خطا در ایجاد نشست SSH روی سرور ایران: %v", err)
+		return nil, fmt.Errorf("خطا در ایجاد نشست SSH روی سرور ایران: %w", err)
 	}
 	defer session.Close()
 
 	iranOut, err := session.CombinedOutput(iranCmd)
 	if err != nil {
-		return nil, fmt.Errorf("اجرای تانل روی سرور ایران با خطا مواجه شد: %v\nخروجی: %s", err, string(iranOut))
+		return nil, fmt.Errorf("اجرای تانل روی سرور ایران با خطا مواجه شد: %w\nخروجی: %s", err, string(iranOut))
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
@@ -1579,7 +1579,8 @@ func (s *HashemService) SetupSSH(form HashemSSHSetupForm) (*HashemSSHSetupResult
 
 	var argsForeign []string
 	if engine == "backhaul" {
-		argsForeign = []string{"setup-backhaul-foreign",
+		argsForeign = []string{
+			"setup-backhaul-foreign",
 			"--local-pub", foreignIP,
 			"--remote-pub", iranIP,
 			"--port", strconv.Itoa(bhPort),
@@ -1588,7 +1589,8 @@ func (s *HashemService) SetupSSH(form HashemSSHSetupForm) (*HashemSSHSetupResult
 			"--force",
 		}
 	} else if engine == "gre-backhaul" {
-		argsForeign = []string{"setup-gre-backhaul-foreign",
+		argsForeign = []string{
+			"setup-gre-backhaul-foreign",
 			"--local-pub", foreignIP,
 			"--remote-pub", iranIP,
 			"--port", strconv.Itoa(bhPort),
@@ -1597,7 +1599,8 @@ func (s *HashemService) SetupSSH(form HashemSSHSetupForm) (*HashemSSHSetupResult
 			"--force",
 		}
 	} else {
-		argsForeign = []string{"setup-foreign",
+		argsForeign = []string{
+			"setup-foreign",
 			"--local-pub", foreignIP,
 			"--remote-pub", iranIP,
 			"--frp-port", strconv.Itoa(frpPort),
@@ -1649,8 +1652,8 @@ func (s *HashemService) optimizeForeignNetwork(ports string) {
 		}
 		reUdp := regexp.MustCompile(`(?s)\[\[proxies\]\]\s*\nname\s*=\s*"udp_[^"]+"\s*\ntype\s*=\s*"udp"[^\[]*`)
 		sData = reUdp.ReplaceAllString(sData, "")
-		if err := os.WriteFile(frpcTomlPath, []byte(sData), 0644); err != nil {
-			_ = s.writePrivilegedFile(frpcTomlPath, []byte(sData), 0644)
+		if err := os.WriteFile(frpcTomlPath, []byte(sData), 0o644); err != nil {
+			_ = s.writePrivilegedFile(frpcTomlPath, []byte(sData), 0o644)
 		}
 	}
 
@@ -1669,8 +1672,8 @@ ExecStart=/usr/local/bin/frpc -c /etc/frp/frpc.toml
 [Install]
 WantedBy=multi-user.target
 `
-	if err := os.WriteFile("/etc/systemd/system/frpc.service", []byte(fixFrpcService), 0644); err != nil {
-		_ = s.writePrivilegedFile("/etc/systemd/system/frpc.service", []byte(fixFrpcService), 0644)
+	if err := os.WriteFile("/etc/systemd/system/frpc.service", []byte(fixFrpcService), 0o644); err != nil {
+		_ = s.writePrivilegedFile("/etc/systemd/system/frpc.service", []byte(fixFrpcService), 0o644)
 	}
 
 	_, _ = s.execPrivileged(ctx, "systemctl", "daemon-reload")
@@ -1792,7 +1795,8 @@ func (s *HashemService) GenerateOneLiner(form HashemOneLinerForm) (*HashemOneLin
 
 	var argsForeign []string
 	if engine == "backhaul" {
-		argsForeign = []string{"setup-backhaul-foreign",
+		argsForeign = []string{
+			"setup-backhaul-foreign",
 			"--local-pub", foreignIP,
 			"--remote-pub", iranIP,
 			"--port", strconv.Itoa(bhPort),
@@ -1801,7 +1805,8 @@ func (s *HashemService) GenerateOneLiner(form HashemOneLinerForm) (*HashemOneLin
 			"--force",
 		}
 	} else if engine == "gre-backhaul" {
-		argsForeign = []string{"setup-gre-backhaul-foreign",
+		argsForeign = []string{
+			"setup-gre-backhaul-foreign",
 			"--local-pub", foreignIP,
 			"--remote-pub", iranIP,
 			"--port", strconv.Itoa(bhPort),
@@ -1810,7 +1815,8 @@ func (s *HashemService) GenerateOneLiner(form HashemOneLinerForm) (*HashemOneLin
 			"--force",
 		}
 	} else {
-		argsForeign = []string{"setup-foreign",
+		argsForeign = []string{
+			"setup-foreign",
 			"--local-pub", foreignIP,
 			"--remote-pub", iranIP,
 			"--frp-port", strconv.Itoa(frpPort),
@@ -1915,9 +1921,9 @@ func (s *HashemService) SetAutoPilot(enabled bool) error {
 		_ = json.Unmarshal(data, &cc)
 	}
 	cc.AutoPilot = enabled
-	_ = os.MkdirAll("/etc/gre-panel", 0755)
+	_ = os.MkdirAll("/etc/gre-panel", 0o755)
 	if data, err := json.MarshalIndent(cc, "", "  "); err == nil {
-		_ = os.WriteFile(carrierJsonPath, data, 0644)
+		_ = os.WriteFile(carrierJsonPath, data, 0o644)
 	}
 
 	rep, _ := s.GetBenchmark()
@@ -1927,7 +1933,7 @@ func (s *HashemService) SetAutoPilot(enabled bool) error {
 			rep.AutoPilot.LastTriggered = time.Now().Format("2006-01-02 15:04:05")
 		}
 		if data, err := json.MarshalIndent(rep, "", "  "); err == nil {
-			_ = os.WriteFile(benchmarkReportPath, data, 0644)
+			_ = os.WriteFile(benchmarkReportPath, data, 0o644)
 		}
 	}
 	return nil
@@ -1960,72 +1966,72 @@ func (s *HashemService) RunBenchmark() (*BenchmarkReport, error) {
 	}
 	sc := calculateScore(loss, avg, jit)
 	metrics = append(metrics, CarrierMetric{
-		ID:            "direct",
-		Name:          "Direct GRE (Layer-3)",
-		Type:          "gre",
-		Port:          0,
-		AvgRTTMs:      math.Round(avg*10) / 10,
-		MinRTTMs:      math.Round(minR*10) / 10,
-		MaxRTTMs:      math.Round(maxR*10) / 10,
-		PacketLoss:    math.Round(loss*10) / 10,
-		JitterMs:      math.Round(jit*10) / 10,
-		Score:         sc,
-		Status:        determineStatus(sc, loss),
-		IsActive:      status != nil && (status.ActiveCarrier == "direct" || status.Carrier == "direct"),
+		ID:         "direct",
+		Name:       "Direct GRE (Layer-3)",
+		Type:       "gre",
+		Port:       0,
+		AvgRTTMs:   math.Round(avg*10) / 10,
+		MinRTTMs:   math.Round(minR*10) / 10,
+		MaxRTTMs:   math.Round(maxR*10) / 10,
+		PacketLoss: math.Round(loss*10) / 10,
+		JitterMs:   math.Round(jit*10) / 10,
+		Score:      sc,
+		Status:     determineStatus(sc, loss),
+		IsActive:   status != nil && (status.ActiveCarrier == "direct" || status.Carrier == "direct"),
 	})
 
 	// 2. FoU 443
 	avg, minR, maxR, loss, jit, _ = probeTCP(net.JoinHostPort(targetPub, "443"), 3, 300*time.Millisecond)
 	sc = calculateScore(loss, avg, jit)
 	metrics = append(metrics, CarrierMetric{
-		ID:            "fou:443",
-		Name:          "FoU : 443 (Foo-over-UDP)",
-		Type:          "fou",
-		Port:          443,
-		AvgRTTMs:      math.Round(avg*10) / 10,
-		MinRTTMs:      math.Round(minR*10) / 10,
-		MaxRTTMs:      math.Round(maxR*10) / 10,
-		PacketLoss:    math.Round(loss*10) / 10,
-		JitterMs:      math.Round(jit*10) / 10,
-		Score:         sc,
-		Status:        determineStatus(sc, loss),
-		IsActive:      status != nil && (status.ActiveCarrier == "fou:443" || status.Carrier == "fou:443"),
+		ID:         "fou:443",
+		Name:       "FoU : 443 (Foo-over-UDP)",
+		Type:       "fou",
+		Port:       443,
+		AvgRTTMs:   math.Round(avg*10) / 10,
+		MinRTTMs:   math.Round(minR*10) / 10,
+		MaxRTTMs:   math.Round(maxR*10) / 10,
+		PacketLoss: math.Round(loss*10) / 10,
+		JitterMs:   math.Round(jit*10) / 10,
+		Score:      sc,
+		Status:     determineStatus(sc, loss),
+		IsActive:   status != nil && (status.ActiveCarrier == "fou:443" || status.Carrier == "fou:443"),
 	})
 
 	// 3. FoU 55555
 	avg, minR, maxR, loss, jit, _ = probeTCP(net.JoinHostPort(targetPub, "55555"), 3, 300*time.Millisecond)
 	sc = calculateScore(loss, avg, jit)
 	metrics = append(metrics, CarrierMetric{
-		ID:            "fou:55555",
-		Name:          "FoU : 55555 (Foo-over-UDP High)",
-		Type:          "fou",
-		Port:          55555,
-		AvgRTTMs:      math.Round(avg*10) / 10,
-		MinRTTMs:      math.Round(minR*10) / 10,
-		MaxRTTMs:      math.Round(maxR*10) / 10,
-		PacketLoss:    math.Round(loss*10) / 10,
-		JitterMs:      math.Round(jit*10) / 10,
-		Score:         sc,
-		Status:        determineStatus(sc, loss),
-		IsActive:      status != nil && (status.ActiveCarrier == "fou:55555" || status.Carrier == "fou:55555"),
+		ID:         "fou:55555",
+		Name:       "FoU : 55555 (Foo-over-UDP High)",
+		Type:       "fou",
+		Port:       55555,
+		AvgRTTMs:   math.Round(avg*10) / 10,
+		MinRTTMs:   math.Round(minR*10) / 10,
+		MaxRTTMs:   math.Round(maxR*10) / 10,
+		PacketLoss: math.Round(loss*10) / 10,
+		JitterMs:   math.Round(jit*10) / 10,
+		Score:      sc,
+		Status:     determineStatus(sc, loss),
+		IsActive:   status != nil && (status.ActiveCarrier == "fou:55555" || status.Carrier == "fou:55555"),
 	})
 
 	// 4. WSS 8443
 	avg, minR, maxR, loss, jit, _ = probeTLS(net.JoinHostPort(targetPub, "8443"), 3, 350*time.Millisecond)
 	sc = calculateScore(loss, avg, jit)
 	metrics = append(metrics, CarrierMetric{
-		ID:            "wss:8443",
-		Name:          "WSS : 8443 (Encrypted WebSocket)",
-		Type:          "wss",
-		Port:          8443,
-		AvgRTTMs:      math.Round(avg*10) / 10,
-		MinRTTMs:      math.Round(minR*10) / 10,
-		MaxRTTMs:      math.Round(maxR*10) / 10,
-		PacketLoss:    math.Round(loss*10) / 10,
-		JitterMs:      math.Round(jit*10) / 10,
-		Score:         sc,
-		Status:        determineStatus(sc, loss),
-		IsActive:      status != nil && (status.ActiveCarrier == "wss:8443" || status.Carrier == "wss:8443"),
+		ID:         "wss:8443",
+		Name:       "WSS : 8443 (Encrypted WebSocket)",
+		Type:       "wss",
+		Port:       8443,
+		AvgRTTMs:   math.Round(avg*10) / 10,
+		MinRTTMs:   math.Round(minR*10) / 10,
+		MaxRTTMs:   math.Round(maxR*10) / 10,
+		PacketLoss: math.Round(loss*10) / 10,
+		JitterMs:   math.Round(jit*10) / 10,
+		Score:      sc,
+		Status:     determineStatus(sc, loss),
+		IsActive:   status != nil && (status.ActiveCarrier == "wss:8443" || status.Carrier == "wss:8443"),
 	})
 
 	// 5. Backhaul Mux
@@ -2036,18 +2042,18 @@ func (s *HashemService) RunBenchmark() (*BenchmarkReport, error) {
 	avg, minR, maxR, loss, jit, _ = probeTCP(net.JoinHostPort(targetPub, strconv.Itoa(bhPort)), 3, 300*time.Millisecond)
 	sc = calculateScore(loss, avg, jit)
 	metrics = append(metrics, CarrierMetric{
-		ID:            "backhaul:tcp",
-		Name:          fmt.Sprintf("Backhaul Mux (Port %d)", bhPort),
-		Type:          "backhaul",
-		Port:          bhPort,
-		AvgRTTMs:      math.Round(avg*10) / 10,
-		MinRTTMs:      math.Round(minR*10) / 10,
-		MaxRTTMs:      math.Round(maxR*10) / 10,
-		PacketLoss:    math.Round(loss*10) / 10,
-		JitterMs:      math.Round(jit*10) / 10,
-		Score:         sc,
-		Status:        determineStatus(sc, loss),
-		IsActive:      status != nil && (status.Engine == "backhaul" || status.Engine == "gre-backhaul"),
+		ID:         "backhaul:tcp",
+		Name:       fmt.Sprintf("Backhaul Mux (Port %d)", bhPort),
+		Type:       "backhaul",
+		Port:       bhPort,
+		AvgRTTMs:   math.Round(avg*10) / 10,
+		MinRTTMs:   math.Round(minR*10) / 10,
+		MaxRTTMs:   math.Round(maxR*10) / 10,
+		PacketLoss: math.Round(loss*10) / 10,
+		JitterMs:   math.Round(jit*10) / 10,
+		Score:      sc,
+		Status:     determineStatus(sc, loss),
+		IsActive:   status != nil && (status.Engine == "backhaul" || status.Engine == "gre-backhaul"),
 	})
 
 	// Choose Best Carrier
@@ -2092,9 +2098,9 @@ func (s *HashemService) RunBenchmark() (*BenchmarkReport, error) {
 		report.ActiveCarrier = status.ActiveCarrier
 	}
 
-	_ = os.MkdirAll("/etc/gre-panel", 0755)
+	_ = os.MkdirAll("/etc/gre-panel", 0o755)
 	if data, err := json.MarshalIndent(report, "", "  "); err == nil {
-		_ = os.WriteFile(benchmarkReportPath, data, 0644)
+		_ = os.WriteFile(benchmarkReportPath, data, 0o644)
 	}
 
 	// Auto-pilot trigger
@@ -2462,7 +2468,7 @@ systemctl enable ${IFNAME}.service >/dev/null 2>&1 || true
 		"updated_at": time.Now().Unix(),
 	}
 	if bs, err := json.MarshalIndent(stateData, "", "  "); err == nil {
-		_ = os.WriteFile("/etc/x-ui/tunnel.json", bs, 0644)
+		_ = os.WriteFile("/etc/x-ui/tunnel.json", bs, 0o644)
 	}
 
 	// 3. Auto create matching inbounds

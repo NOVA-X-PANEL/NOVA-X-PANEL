@@ -27,6 +27,7 @@ function errorMessage(error: unknown): string {
 }
 
 export default function useDynamicErrorHandler() {
+  const [messageApi] = message.useMessage();
   return ({ error, fields, form }: DynamicErrorHandlerArgs) => {
     const description = errorMessage(error);
 
@@ -39,6 +40,6 @@ export default function useDynamicErrorHandler() {
       }
     }
 
-    message.error(description);
+    messageApi.error(description);
   };
 }

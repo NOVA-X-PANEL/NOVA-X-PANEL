@@ -2660,7 +2660,9 @@
       },
       "installDepsBtn": "📦 Auto-Install Bot Prerequisites (Python, Requests, QR)",
       "installDepsSuccess": "Bot prerequisites installed successfully.",
-      "installDepsError": "Failed to install bot prerequisites."
+      "installDepsError": "Failed to install bot prerequisites.",
+      "domainLabel": "Bot & Mini App Domain",
+      "domainExtra": "Domain pointed to this server for Mini App and Web Panel access (e.g. shop.example.com)"
     }
   },
   "tgbot": {

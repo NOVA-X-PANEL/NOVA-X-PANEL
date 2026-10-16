@@ -3028,7 +3028,7 @@ export const sections: readonly Section[] = [
       },
       {
         method: 'POST',
-        path: '/novapanel/api/hashem/generate-oneliner',
+        path: '/panel/api/hashem/generate-oneliner',
         summary:
           'Generate a one-liner command to be run on Iran server to establish Hashem tunnel.',
         body: '{\n  "iranIp": "1.2.3.4",\n  "ports": "8080"\n}',
@@ -3072,6 +3072,11 @@ export const sections: readonly Section[] = [
         method: 'GET',
         path: '/panel/api/telegram-shop/status',
         summary: 'Get operational status and configuration of Telegram Shop Bot.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/telegram-shop/install-deps',
+        summary: 'Install OS system dependencies (PHP, MySQL, Nginx, Composer) for Telegram Shop Bot.',
       },
       {
         method: 'POST',

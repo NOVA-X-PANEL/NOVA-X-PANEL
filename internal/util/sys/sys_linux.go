@@ -31,6 +31,13 @@ var SIGUSR1 = syscall.SIGUSR1
 // needs no parsing at all. The kernel's work of materialising /proc/net/* is the
 // larger cost and is not addressable from here; on a profile it appears as
 // syscall time, and it scales with the number of open connections.
+var countConnPool = sync.Pool{
+	New: func() any {
+		b := make([]byte, 32*1024)
+		return &b
+	},
+}
+
 func countConnections(path string) (int, error) {
 	f, err := os.Open(path)
 	if os.IsNotExist(err) {
@@ -41,8 +48,10 @@ func countConnections(path string) (int, error) {
 	}
 	defer f.Close()
 
-	const scratchSize = 32 * 1024
-	scratch := make([]byte, scratchSize)
+	bufPtr := countConnPool.Get().(*[]byte)
+	scratch := *bufPtr
+	defer countConnPool.Put(bufPtr)
+
 	newlines := 0
 	var lastByte byte
 	for {

@@ -67,7 +67,6 @@ func (a *ServerController) initRouter(g *gin.RouterGroup) {
 	g.GET("/clientIps", requirePanelPermission("inbounds", "view"), a.getClientIps)
 	g.GET("/fail2banStatus", a.getFail2banStatus)
 
-
 	g.POST("/stopXrayService", requirePanelPermission("cores", "update"), a.stopXrayService)
 	g.POST("/restartXrayService", requirePanelPermission("cores", "update"), a.restartXrayService)
 	g.POST("/installXray/:version", requireOwnerRole(), a.installXray)

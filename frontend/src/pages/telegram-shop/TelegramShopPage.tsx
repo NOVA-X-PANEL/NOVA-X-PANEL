@@ -59,6 +59,7 @@ export default function TelegramShopPage() {
   const { t } = useTranslation();
   const { isDark, isUltra, antdThemeConfig } = useTheme();
   const [form] = Form.useForm();
+  const [messageApi, messageContextHolder] = message.useMessage();
 
   const [loading, setLoading] = useState(true);
   const [installing, setInstalling] = useState(false);
@@ -89,11 +90,11 @@ export default function TelegramShopPage() {
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : undefined;
-      message.error(msg || t('pages.telegramShop.toasts.fetchError'));
+      messageApi.error(msg || t('pages.telegramShop.toasts.fetchError'));
     } finally {
       setLoading(false);
     }
-  }, [form, t]);
+  }, [form, messageApi, t]);
 
   useEffect(() => {
     let active = true;
@@ -114,7 +115,7 @@ export default function TelegramShopPage() {
       } catch (err: unknown) {
         if (!active) return;
         const msg = err instanceof Error ? err.message : undefined;
-        message.error(msg || t('pages.telegramShop.toasts.fetchError'));
+        messageApi.error(msg || t('pages.telegramShop.toasts.fetchError'));
       } finally {
         if (active) setLoading(false);
       }
@@ -122,21 +123,21 @@ export default function TelegramShopPage() {
     return () => {
       active = false;
     };
-  }, [form, t]);
+  }, [form, messageApi, t]);
 
   const handleInstall = async (values: Record<string, unknown>) => {
     try {
       setInstalling(true);
       const res = await HttpUtil.post('/panel/api/telegram-shop/install', values, { silent: true });
       if (res && res.success) {
-        message.success(t('pages.telegramShop.toasts.installedSuccess'));
+        messageApi.success(t('pages.telegramShop.toasts.installedSuccess'));
         fetchStatus();
       } else {
-        message.error(res?.msg || t('pages.telegramShop.toasts.installError'));
+        messageApi.error(res?.msg || t('pages.telegramShop.toasts.installError'));
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : undefined;
-      message.error(msg || t('pages.telegramShop.toasts.installError'));
+      messageApi.error(msg || t('pages.telegramShop.toasts.installError'));
     } finally {
       setInstalling(false);
     }
@@ -147,13 +148,13 @@ export default function TelegramShopPage() {
       setInstallingDeps(true);
       const res = await HttpUtil.post('/panel/api/telegram-shop/install-deps');
       if (res && res.success) {
-        message.success(t('pages.telegramShop.installDepsSuccess'));
+        messageApi.success(t('pages.telegramShop.installDepsSuccess'));
       } else {
-        message.error(res?.msg || t('pages.telegramShop.installDepsError'));
+        messageApi.error(res?.msg || t('pages.telegramShop.installDepsError'));
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : undefined;
-      message.error(msg || t('pages.telegramShop.installDepsError'));
+      messageApi.error(msg || t('pages.telegramShop.installDepsError'));
     } finally {
       setInstallingDeps(false);
     }
@@ -169,18 +170,18 @@ export default function TelegramShopPage() {
       );
       if (res && res.success) {
         if (action === 'uninstall') {
-          message.warning(t('pages.telegramShop.toasts.uninstalledSuccess'));
+          messageApi.warning(t('pages.telegramShop.toasts.uninstalledSuccess'));
           form.resetFields();
         } else {
-          message.success(t('pages.telegramShop.toasts.actionSuccess', { action }));
+          messageApi.success(t('pages.telegramShop.toasts.actionSuccess', { action }));
         }
         fetchStatus();
       } else {
-        message.error(res?.msg || t('pages.telegramShop.toasts.actionError'));
+        messageApi.error(res?.msg || t('pages.telegramShop.toasts.actionError'));
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : undefined;
-      message.error(msg || t('pages.telegramShop.toasts.actionError'));
+      messageApi.error(msg || t('pages.telegramShop.toasts.actionError'));
     } finally {
       setActionLoading(false);
     }
@@ -188,6 +189,7 @@ export default function TelegramShopPage() {
 
   return (
     <ConfigProvider theme={antdThemeConfig}>
+      {messageContextHolder}
       <Layout className={pageClass}>
         <AppSidebar />
         <Layout className="content-shell">

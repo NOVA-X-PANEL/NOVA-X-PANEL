@@ -17126,13 +17126,13 @@
         }
       }
     },
-    "/novapanel/api/hashem/generate-oneliner": {
+    "/panel/api/hashem/generate-oneliner": {
       "post": {
         "tags": [
           "Hashem Tunnel"
         ],
         "summary": "Generate a one-liner command to be run on Iran server to establish Hashem tunnel.",
-        "operationId": "post_novapanel_api_hashem_generate_oneliner",
+        "operationId": "post_panel_api_hashem_generate_oneliner",
         "requestBody": {
           "required": true,
           "content": {
@@ -17340,6 +17340,36 @@
         ],
         "summary": "Get operational status and configuration of Telegram Shop Bot.",
         "operationId": "get_panel_api_telegram_shop_status",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/telegram-shop/install-deps": {
+      "post": {
+        "tags": [
+          "Telegram Shop"
+        ],
+        "summary": "Install OS system dependencies (PHP, MySQL, Nginx, Composer) for Telegram Shop Bot.",
+        "operationId": "post_panel_api_telegram_shop_install_deps",
         "responses": {
           "200": {
             "description": "Successful response",

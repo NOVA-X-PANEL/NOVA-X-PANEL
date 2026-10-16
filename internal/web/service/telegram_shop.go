@@ -1,10 +1,10 @@
 package service
 
 import (
-	_ "embed"
 	"context"
 	"crypto/tls"
 	"database/sql"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -19,11 +19,11 @@ import (
 )
 
 const (
-	tgShopConfigPath  = "/etc/dark-shop/config.json"
-	mirzaBotDir       = "/var/www/mirzabot"
-	mirzaConfigPath   = "/var/www/mirzabot/config.php"
-	mirzaHelperPath   = "/usr/local/bin/mirzabot_helper.php"
-	mirzaPollerUnit   = "mirzabot-poller.service"
+	tgShopConfigPath = "/etc/dark-shop/config.json"
+	mirzaBotDir      = "/var/www/mirzabot"
+	mirzaConfigPath  = "/var/www/mirzabot/config.php"
+	mirzaHelperPath  = "/usr/local/bin/mirzabot_helper.php"
+	mirzaPollerUnit  = "mirzabot-poller.service"
 )
 
 //go:embed mirzabot.tar.gz
@@ -74,7 +74,7 @@ func (s *TelegramShopService) ensureMirzaHelper() {
 		return
 	}
 	tmpHelper := fmt.Sprintf("/tmp/mirza_helper_%d.php", time.Now().UnixNano())
-	if err := os.WriteFile(tmpHelper, defaultMirzaHelper, 0755); err == nil {
+	if err := os.WriteFile(tmpHelper, defaultMirzaHelper, 0o755); err == nil {
 		defer os.Remove(tmpHelper)
 		_, _ = s.execPrivilegedBash(context.Background(), fmt.Sprintf("cp -f %s %s && chmod 755 %s", tmpHelper, mirzaHelperPath, mirzaHelperPath))
 	}
@@ -86,7 +86,7 @@ func (s *TelegramShopService) ensureWebUnit() {
 	}
 	if len(defaultMirzaBotTarGz) > 0 {
 		tmpTar := fmt.Sprintf("/tmp/novabot_sync_%d.tar.gz", time.Now().UnixNano())
-		if err := os.WriteFile(tmpTar, defaultMirzaBotTarGz, 0644); err == nil {
+		if err := os.WriteFile(tmpTar, defaultMirzaBotTarGz, 0o644); err == nil {
 			defer os.Remove(tmpTar)
 			cmd := fmt.Sprintf("tar --exclude='config.php' -zxf %s -C /var/www/mirzabot >/dev/null 2>&1 || true", tmpTar)
 			_, _ = s.execPrivilegedBash(context.Background(), cmd)
@@ -359,11 +359,11 @@ func (s *TelegramShopService) installMirzaBotNativeStack(ctx context.Context, cf
 	token, port, inboundId := s.getPanelDetails()
 
 	// 1. Ensure /var/www/mirzabot directory
-	_ = os.MkdirAll(mirzaBotDir, 0755)
+	_ = os.MkdirAll(mirzaBotDir, 0o755)
 
 	// 2. Extract embedded Mirza Bot source archive directly from memory (100% offline, zero network dependencies)
 	tmpTar := fmt.Sprintf("/tmp/mirzabot_%d.tar.gz", time.Now().UnixNano())
-	if err := os.WriteFile(tmpTar, defaultMirzaBotTarGz, 0644); err != nil {
+	if err := os.WriteFile(tmpTar, defaultMirzaBotTarGz, 0o644); err != nil {
 		return fmt.Errorf("failed to write embedded mirzabot archive: %v", err)
 	}
 	defer os.Remove(tmpTar)
@@ -472,7 +472,7 @@ $domainhosts = '%s';
 $usernamebot = '';
 ?>
 `, cfg.BotToken, cfg.AdminChatID, s.formatBotDomain(cfg.Domain))
-	_ = os.WriteFile(mirzaConfigPath, []byte(configPHP), 0644)
+	_ = os.WriteFile(mirzaConfigPath, []byte(configPHP), 0o644)
 
 	// 6. Initialize database tables via table.php
 	initTablesScript := `
@@ -523,7 +523,7 @@ StandardError=journal
 WantedBy=multi-user.target
 `, phpBin)
 	tmpPoller := fmt.Sprintf("/tmp/poller_%d.service", time.Now().UnixNano())
-	if err := os.WriteFile(tmpPoller, []byte(pollerUnit), 0644); err == nil {
+	if err := os.WriteFile(tmpPoller, []byte(pollerUnit), 0o644); err == nil {
 		defer os.Remove(tmpPoller)
 		startScript := fmt.Sprintf(`
 cp -f %s /etc/systemd/system/mirzabot-poller.service
@@ -556,7 +556,7 @@ StandardError=journal
 WantedBy=multi-user.target
 `, phpBin)
 	tmpWeb := fmt.Sprintf("/tmp/novabot_web_%d.service", time.Now().UnixNano())
-	if err := os.WriteFile(tmpWeb, []byte(webUnit), 0644); err == nil {
+	if err := os.WriteFile(tmpWeb, []byte(webUnit), 0o644); err == nil {
 		defer os.Remove(tmpWeb)
 		startWebScript := fmt.Sprintf(`
 cp -f %s /etc/systemd/system/novabot-web.service
@@ -590,9 +590,9 @@ func (s *TelegramShopService) Install(cfg *TelegramShopConfig) error {
 	s.ensureMirzaHelper()
 
 	// Save persistent backup config
-	_ = os.MkdirAll("/etc/dark-shop", 0755)
+	_ = os.MkdirAll("/etc/dark-shop", 0o755)
 	if data, err := json.MarshalIndent(cfg, "", "  "); err == nil {
-		_ = os.WriteFile(tgShopConfigPath, data, 0644)
+		_ = os.WriteFile(tgShopConfigPath, data, 0o644)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 180*time.Second)

@@ -10,13 +10,28 @@ $pollScript = $botDir . '/poll.php';
 $pollerService = 'mirzabot-poller.service';
 
 function getDb(): ?PDO {
-    global $configPath;
+    global $configPath, $pdo;
     if (!is_file($configPath)) return null;
     try {
+        if ($pdo instanceof PDO) {
+            return $pdo;
+        }
+        global $dbhost, $dbname, $usernamedb, $passworddb;
         require_once $configPath;
-        global $pdo;
-        return $pdo instanceof PDO ? $pdo : null;
+        if ($pdo instanceof PDO) {
+            return $pdo;
+        }
+        if (!empty($dbhost) && !empty($dbname) && !empty($usernamedb)) {
+            $dsn = "mysql:host={$dbhost};dbname={$dbname};charset=utf8mb4";
+            $pdo = new PDO($dsn, $usernamedb, $passworddb ?? '', [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            ]);
+            return $pdo;
+        }
+        return null;
     } catch (\Throwable $e) {
+        error_log("getDb error: " . $e->getMessage());
         return null;
     }
 }
@@ -100,29 +115,20 @@ if ($cmd === 'install') {
     if ($db) {
         try {
             // Delete all previous/stale admins so ONLY the configured admin has administrator rights
-            $db->prepare("DELETE FROM admin WHERE id_admin != ?")->execute([$adminId]);
+            $db->exec("DELETE FROM admin");
 
-            // Upsert the new admin with administrator role
+            // Insert the new admin with administrator role
             $hashedPass = password_hash(bin2hex(random_bytes(16)), PASSWORD_BCRYPT);
-            $stmt = $db->prepare("INSERT INTO admin (id_admin, username, password, rule) VALUES (?, 'admin', ?, 'administrator') ON DUPLICATE KEY UPDATE rule = 'administrator'");
+            $stmt = $db->prepare("INSERT INTO admin (id_admin, username, password, rule) VALUES (?, 'admin', ?, 'administrator')");
             $stmt->execute([$adminId, $hashedPass]);
 
             // Ensure admin exists in user table with Active status
-            $checkUser = $db->prepare("SELECT id FROM user WHERE id = ?");
-            $checkUser->execute([$adminId]);
-            if (!$checkUser->fetchColumn()) {
-                $stmtUser = $db->prepare("INSERT INTO user (id, step, limit_usertest, User_Status, number, Balance, pagenumber, username, agent, message_count, last_message_time, affiliates, affiliatescount, cardpayment, number_username, namecustom, register, verify, codeInvitation, pricediscount, maxbuyagent, joinchannel, score, status_cron) VALUES (?, 'none', '0', 'Active', 'none', '0', '1', 'admin', 'f', '0', '0', '0', '0', '0', '100', 'none', UNIX_TIMESTAMP(), 1, SUBSTRING(MD5(RAND()), 1, 12), '0', '0', '0', '0', '1')");
-                $stmtUser->execute([$adminId]);
-            } else {
-                $db->prepare("UPDATE user SET User_Status = 'Active' WHERE id = ?")->execute([$adminId]);
-            }
+            $stmtUser = $db->prepare("INSERT INTO user (id, step, limit_usertest, roll_Status, Processing_value, Processing_value_one, Processing_value_tow, Processing_value_four, User_Status, number, Balance, pagenumber, username, agent, message_count, last_message_time, affiliates, affiliatescount, cardpayment, number_username, namecustom, register, verify, codeInvitation, pricediscount, maxbuyagent, joinchannel, score, status_cron) VALUES (?, 'none', '0', 0, '', '', '', '', 'Active', 'none', '0', '1', 'admin', 'f', '0', '0', '0', '0', '0', '100', 'none', UNIX_TIMESTAMP(), 1, SUBSTRING(MD5(RAND()), 1, 12), '0', '0', '0', '0', '1') ON DUPLICATE KEY UPDATE User_Status = 'Active'");
+            $stmtUser->execute([$adminId]);
 
             $db->exec("UPDATE setting SET Bot_Status = 'botstatuson', roll_Status = 'rolleoff'");
+            $db->prepare("UPDATE setting SET id_support = ?")->execute([$adminId]);
             $db->exec("UPDATE setting SET Channel_Report = '' WHERE Channel_Report LIKE '-%'");
-            if ($domain !== '') {
-                $cleanDomain = preg_replace('#^https?://#', '', rtrim($domain, '/'));
-                $db->prepare("UPDATE setting SET domainhosts = ?")->execute([$cleanDomain]);
-            }
         } catch (\Throwable $e) {
             error_log("mirzabot_helper install DB error: " . $e->getMessage());
         }

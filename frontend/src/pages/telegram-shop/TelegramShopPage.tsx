@@ -310,7 +310,7 @@ export default function TelegramShopPage() {
                         ]}
                       >
                         <Input
-                          placeholder="8781465649:AAEEKMK_umrtGoi8..."
+                          placeholder="1234567890:ABCdefGHIjklMNOpqrSTUvwxYZ..."
                           prefix={<SendOutlined style={{ color: '#06b6d4' }} />}
                           size="large"
                         />

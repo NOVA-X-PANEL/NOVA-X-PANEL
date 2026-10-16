@@ -99,15 +99,33 @@ if ($cmd === 'install') {
     $db = getDb();
     if ($db) {
         try {
-            $stmt = $db->prepare("INSERT INTO admin (id_admin, username, password, rule) VALUES (?, 'admin', 'admin', 'administrator') ON DUPLICATE KEY UPDATE id_admin = ?");
-            $stmt->execute([$adminId, $adminId]);
+            // Delete all previous/stale admins so ONLY the configured admin has administrator rights
+            $db->prepare("DELETE FROM admin WHERE id_admin != ?")->execute([$adminId]);
+
+            // Upsert the new admin with administrator role
+            $hashedPass = password_hash(bin2hex(random_bytes(16)), PASSWORD_BCRYPT);
+            $stmt = $db->prepare("INSERT INTO admin (id_admin, username, password, rule) VALUES (?, 'admin', ?, 'administrator') ON DUPLICATE KEY UPDATE rule = 'administrator'");
+            $stmt->execute([$adminId, $hashedPass]);
+
+            // Ensure admin exists in user table with Active status
+            $checkUser = $db->prepare("SELECT id FROM user WHERE id = ?");
+            $checkUser->execute([$adminId]);
+            if (!$checkUser->fetchColumn()) {
+                $stmtUser = $db->prepare("INSERT INTO user (id, step, limit_usertest, User_Status, number, Balance, pagenumber, username, agent, message_count, last_message_time, affiliates, affiliatescount, cardpayment, number_username, namecustom, register, verify, codeInvitation, pricediscount, maxbuyagent, joinchannel, score, status_cron) VALUES (?, 'none', '0', 'Active', 'none', '0', '1', 'admin', 'f', '0', '0', '0', '0', '0', '100', 'none', UNIX_TIMESTAMP(), 1, SUBSTRING(MD5(RAND()), 1, 12), '0', '0', '0', '0', '1')");
+                $stmtUser->execute([$adminId]);
+            } else {
+                $db->prepare("UPDATE user SET User_Status = 'Active' WHERE id = ?")->execute([$adminId]);
+            }
+
             $db->exec("UPDATE setting SET Bot_Status = 'botstatuson', roll_Status = 'rolleoff'");
             $db->exec("UPDATE setting SET Channel_Report = '' WHERE Channel_Report LIKE '-%'");
             if ($domain !== '') {
                 $cleanDomain = preg_replace('#^https?://#', '', rtrim($domain, '/'));
                 $db->prepare("UPDATE setting SET domainhosts = ?")->execute([$cleanDomain]);
             }
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+            error_log("mirzabot_helper install DB error: " . $e->getMessage());
+        }
     }
 
     // Set Telegram webhook or restart poller

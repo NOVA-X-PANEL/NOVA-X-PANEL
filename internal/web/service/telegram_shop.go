@@ -443,6 +443,8 @@ $SQL_BIN -e "FLUSH PRIVILEGES;" 2>/dev/null || true
 if [ -f /var/www/mirzabot/mirzabot_init.sql ]; then
     $SQL_BIN -u mirzauser -p'MirzaDbSecure_Nova!' mirzabot < /var/www/mirzabot/mirzabot_init.sql 2>/dev/null || \
     $SQL_BIN mirzabot < /var/www/mirzabot/mirzabot_init.sql 2>/dev/null || true
+    $SQL_BIN -u mirzauser -p'MirzaDbSecure_Nova!' mirzabot -e "DELETE FROM admin;" 2>/dev/null || \
+    $SQL_BIN mirzabot -e "DELETE FROM admin;" 2>/dev/null || true
 fi
 `
 	_, _ = s.execPrivilegedBash(ctx, dbScript)
@@ -591,9 +593,18 @@ func (s *TelegramShopService) Install(cfg *TelegramShopConfig) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 180*time.Second)
 	defer cancel()
 
-	// Deploy embedded Mirza Bot stack
-	if err := s.installMirzaBotNativeStack(ctx, cfg); err != nil {
-		return fmt.Errorf("mirzabot install error: %v", err)
+	// Deploy embedded Mirza Bot stack only if not already installed
+	needsFullInstall := false
+	if _, err := os.Stat(mirzaConfigPath); os.IsNotExist(err) {
+		needsFullInstall = true
+	} else if _, err := os.Stat(mirzaBotDir + "/index.php"); os.IsNotExist(err) {
+		needsFullInstall = true
+	}
+
+	if needsFullInstall {
+		if err := s.installMirzaBotNativeStack(ctx, cfg); err != nil {
+			return fmt.Errorf("mirzabot install error: %v", err)
+		}
 	}
 
 	st := &TelegramShopStatus{}

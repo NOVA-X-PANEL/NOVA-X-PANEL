@@ -528,6 +528,9 @@ start() {
             rc-service x-ui start
         else
             systemctl start x-ui
+            if [[ -f /etc/systemd/system/novabot-web.service ]]; then
+                systemctl start novabot-web.service 2>/dev/null || true
+            fi
         fi
         sleep 2
         check_status
@@ -602,6 +605,9 @@ restart() {
         rc-service x-ui restart
     else
         systemctl restart x-ui
+        if [[ -f /etc/systemd/system/novabot-web.service ]]; then
+            systemctl restart novabot-web.service 2>/dev/null || true
+        fi
     fi
     sleep 2
     check_status

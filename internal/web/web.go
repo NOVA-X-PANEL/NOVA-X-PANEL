@@ -127,6 +127,7 @@ type Server struct {
 	xrayService    service.XrayService
 	settingService service.SettingService
 	tgbotService   tgbot.Tgbot
+	shopService    service.TelegramShopService
 	discordService *discord.DiscordService
 	discordGateway *discord.GatewayClient
 
@@ -278,10 +279,14 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 		c.JSON(http.StatusOK, gin.H{})
 	})
 
+	// Ensure local web unit is running if Mirza Bot is installed
+	go s.shopService.EnsureWebUnit()
+
 	// Reverse proxy for NOVA-BOT Web Panel and Mini App to local port 9099
 	botTarget, _ := url.Parse("http://127.0.0.1:9099")
 	botProxy := httputil.NewSingleHostReverseProxy(botTarget)
 	botProxy.ModifyResponse = func(resp *http.Response) error {
+		resp.Header.Set("Content-Security-Policy", "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws: wss:; frame-ancestors 'self'")
 		loc := resp.Header.Get("Location")
 		if loc != "" {
 			if strings.HasPrefix(loc, "/panel/") {
@@ -295,9 +300,10 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 		return nil
 	}
 	botProxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
+		go s.shopService.EnsureWebUnit()
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.WriteHeader(http.StatusBadGateway)
-		_, _ = w.Write([]byte(`<!DOCTYPE html><html dir="rtl"><head><meta charset="utf-8"><title>NOVA-BOT</title></head><body style="background:#07090e;color:#00ffc4;font-family:sans-serif;text-align:center;padding:50px;"><h2>سرویس وب ربات نوا هنوز در دسترس نیست</h2><p style="color:#94a3b8;">لطفاً از منوی تلگرام شاپ در پنل نوا، وضعیت سرویس را بررسی کنید.</p></body></html>`))
+		_, _ = w.Write([]byte(`<!DOCTYPE html><html dir="rtl"><head><meta charset="utf-8"><title>NOVA-BOT</title></head><body style="background:#07090e;color:#00ffc4;font-family:sans-serif;text-align:center;padding:50px;"><h2>سرویس وب ربات نوا در حال راه‌اندازی است...</h2><p style="color:#94a3b8;">در حال اجرای خودکار سرویس محلی وب ربات. لطفاً چند لحظه بعد صفحه را رفرش کنید.</p><script>setTimeout(()=>location.reload(), 3000);</script></body></html>`))
 	}
 
 	botHandler := func(c *gin.Context) {
@@ -318,6 +324,7 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 		}
 		c.Request.URL.Path = p
 		c.Request.Header.Set("X-Forwarded-Prefix", "/botpanel")
+		c.Header("Content-Security-Policy", "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws: wss:; frame-ancestors 'self'")
 		botProxy.ServeHTTP(c.Writer, c.Request)
 	}
 

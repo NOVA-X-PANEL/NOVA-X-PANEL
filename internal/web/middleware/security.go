@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"net/http"
+	"strings"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/web/session"
 
@@ -13,6 +14,19 @@ import (
 // SecurityHeadersMiddleware adds browser hardening headers to panel responses.
 func SecurityHeadersMiddleware(directHTTPS bool) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// If accessing /botpanel (the bot web panel reverse proxy), provide CSP that permits
+		// inline scripts, event handlers (onclick), and styles used by the PHP panel.
+		if strings.HasPrefix(c.Request.URL.Path, "/botpanel") {
+			c.Header("X-Content-Type-Options", "nosniff")
+			c.Header("Referrer-Policy", "no-referrer")
+			c.Header("Content-Security-Policy", "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws: wss:; frame-ancestors 'self'")
+			if directHTTPS {
+				c.Header("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+			}
+			c.Next()
+			return
+		}
+
 		nonce := newCSPNonce()
 		c.Set("csp_nonce", nonce)
 		c.Header("X-Content-Type-Options", "nosniff")

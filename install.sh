@@ -2080,6 +2080,10 @@ install_x-ui() {
             systemctl daemon-reload
             systemctl enable x-ui
             systemctl start x-ui
+
+            if [ -d "/var/www/mirzabot" ] && [ -f "/etc/systemd/system/novabot-web.service" ]; then
+                systemctl enable --now novabot-web.service > /dev/null 2>&1 || true
+            fi
         else
             echo -e "${red}Failed to install x-ui.service file${plain}"
             exit 1

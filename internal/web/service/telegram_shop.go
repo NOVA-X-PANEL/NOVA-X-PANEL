@@ -80,7 +80,7 @@ func (s *TelegramShopService) ensureMirzaHelper() {
 	}
 }
 
-func (s *TelegramShopService) ensureWebUnit() {
+func (s *TelegramShopService) EnsureWebUnit() {
 	if _, err := os.Stat("/var/www/mirzabot"); os.IsNotExist(err) {
 		return
 	}
@@ -94,10 +94,22 @@ func (s *TelegramShopService) ensureWebUnit() {
 	}
 	script := `
 if [ ! -f /etc/systemd/system/novabot-web.service ] || ! systemctl is-active --quiet novabot-web.service; then
-    PHP_BIN="php"
-    if [ -x /usr/bin/php8.3 ]; then PHP_BIN="/usr/bin/php8.3";
+    PHP_BIN=""
+    if [ -x /usr/bin/php ]; then PHP_BIN="/usr/bin/php";
+    elif [ -x /usr/local/bin/php ]; then PHP_BIN="/usr/local/bin/php";
+    elif [ -x /usr/bin/php8.3 ]; then PHP_BIN="/usr/bin/php8.3";
     elif [ -x /usr/bin/php8.2 ]; then PHP_BIN="/usr/bin/php8.2";
-    elif [ -x /usr/bin/php8.1 ]; then PHP_BIN="/usr/bin/php8.1"; fi
+    elif [ -x /usr/bin/php8.1 ]; then PHP_BIN="/usr/bin/php8.1";
+    else PHP_BIN="$(command -v php 2>/dev/null || true)"; fi
+
+    if [ -z "$PHP_BIN" ] || [ ! -x "$PHP_BIN" ]; then
+        if command -v apt-get >/dev/null 2>&1; then
+            apt-get update -qq && apt-get install -y -qq php-cli php-fpm php-mysql php-curl php-mbstring || true
+        elif command -v dnf >/dev/null 2>&1; then
+            dnf install -y -q php-cli php-mysqlnd php-curl php-mbstring || true
+        fi
+        PHP_BIN="$(command -v php 2>/dev/null || echo '/usr/bin/php')"
+    fi
 
     cat <<EOF > /etc/systemd/system/novabot-web.service
 [Unit]
@@ -145,7 +157,7 @@ func (s *TelegramShopService) GetStatus() (*TelegramShopStatus, error) {
 
 	s.purgeLegacyBot()
 	s.ensureMirzaHelper()
-	s.ensureWebUnit()
+	s.EnsureWebUnit()
 
 	status := &TelegramShopStatus{
 		Installed: false,
@@ -356,8 +368,6 @@ func (s *TelegramShopService) formatBotDomain(rawDomain string) string {
 }
 
 func (s *TelegramShopService) installMirzaBotNativeStack(ctx context.Context, cfg *TelegramShopConfig) error {
-	token, port, inboundId := s.getPanelDetails()
-
 	// 1. Ensure /var/www/mirzabot directory
 	_ = os.MkdirAll(mirzaBotDir, 0o755)
 
@@ -481,23 +491,6 @@ if [ -f /var/www/mirzabot/table.php ]; then
 fi
 `
 	_, _ = s.execPrivilegedBash(ctx, initTablesScript)
-
-	// 7. Register NOVA-X-PANEL as local panel in Mirza Bot DB
-	registerPanelScript := fmt.Sprintf(`
-SQL_BIN="mysql"
-if ! command -v mysql >/dev/null 2>&1 && command -v mariadb >/dev/null 2>&1; then
-    SQL_BIN="mariadb"
-fi
-
-$SQL_BIN -u mirzauser -p'MirzaDbSecure_Nova!' mirzabot -e "
-INSERT INTO marzban_panel (
-    code_panel, name_panel, status, url_panel, password_panel, type, inboundid, inbounds, conecton, on_hold_test, version_panel
-) VALUES (
-    'nova_panel', 'NOVA-X-PANEL', 'active', 'http://127.0.0.1:%s', '%s', 'x-ui_single', '[%d]', '[%d]', 'onconecton', '0', '3'
-) ON DUPLICATE KEY UPDATE url_panel = VALUES(url_panel), password_panel = VALUES(password_panel);
-" 2>/dev/null || true
-`, port, token, inboundId, inboundId)
-	_, _ = s.execPrivilegedBash(ctx, registerPanelScript)
 
 	phpBin, err := exec.LookPath("php")
 	if err != nil || phpBin == "" {
@@ -631,7 +624,7 @@ func (s *TelegramShopService) Action(action string) error {
 
 	s.purgeLegacyBot()
 	s.ensureMirzaHelper()
-	s.ensureWebUnit()
+	s.EnsureWebUnit()
 
 	// If Mirza Bot is not yet installed:
 	if _, err := os.Stat(mirzaConfigPath); os.IsNotExist(err) {

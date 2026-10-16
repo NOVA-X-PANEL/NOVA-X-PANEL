@@ -114,6 +114,13 @@ if ($cmd === 'install') {
     $db = getDb();
     if ($db) {
         try {
+            // Ensure product table has all required columns and safe defaults
+            $db->exec("ALTER TABLE product ADD COLUMN IF NOT EXISTS limitip int(11) DEFAULT 0");
+            $db->exec("ALTER TABLE product ADD COLUMN IF NOT EXISTS status_product varchar(20) DEFAULT NULL");
+            $db->exec("ALTER TABLE product MODIFY one_buy_status varchar(20) DEFAULT '0'");
+            $db->exec("ALTER TABLE product MODIFY hide_panel text DEFAULT NULL");
+            $db->exec("ALTER TABLE product MODIFY limitip int(11) DEFAULT 0");
+
             // Delete all previous/stale admins so ONLY the configured admin has administrator rights
             $db->exec("DELETE FROM admin");
 

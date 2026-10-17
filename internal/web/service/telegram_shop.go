@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
@@ -81,10 +82,8 @@ func (s *TelegramShopService) ensureMirzaHelper() {
 }
 
 func (s *TelegramShopService) EnsureWebUnit() {
-	if _, err := os.Stat("/var/www/mirzabot"); os.IsNotExist(err) {
-		return
-	}
 	if _, err := os.Stat("/var/www/mirzabot/index.php"); os.IsNotExist(err) && len(defaultMirzaBotTarGz) > 0 {
+		_ = os.MkdirAll("/var/www/mirzabot", 0o755)
 		tmpTar := fmt.Sprintf("/tmp/novabot_sync_%d.tar.gz", time.Now().UnixNano())
 		if err := os.WriteFile(tmpTar, defaultMirzaBotTarGz, 0o644); err == nil {
 			defer os.Remove(tmpTar)
@@ -92,6 +91,43 @@ func (s *TelegramShopService) EnsureWebUnit() {
 			_, _ = s.execPrivilegedBash(context.Background(), cmd)
 		}
 	}
+	if _, err := os.Stat("/var/www/mirzabot"); os.IsNotExist(err) {
+		return
+	}
+
+	// Guarantee config.php exists so PHP never throws fatal error
+	if _, err := os.Stat("/var/www/mirzabot/config.php"); os.IsNotExist(err) {
+		defaultConfig := `<?php
+$request_exec_timeout = null;
+$dbhost = getenv('DB_HOST') ?: '127.0.0.1';
+$dbname = getenv('DB_NAME') ?: 'mirzabot';
+$usernamedb = getenv('DB_USER') ?: 'mirzauser';
+$passworddb = getenv('DB_PASS') ?: 'MirzaDbSecure_Nova!';
+
+$options = [
+    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    PDO::ATTR_EMULATE_PREPARES => false,
+    PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci",
+];
+$dsn = "mysql:host=$dbhost;dbname=$dbname;charset=utf8mb4";
+try {
+    $pdo = new PDO($dsn, $usernamedb, $passworddb, $options);
+} catch (\PDOException $e) {
+    try {
+        $pdo = new PDO("mysql:host=127.0.0.1;dbname=$dbname;charset=utf8mb4", 'root', '', $options);
+    } catch (\PDOException $e2) {
+        $pdo = null;
+    }
+}
+$APIKEY = '';
+$adminnumber = '';
+$domainhosts = '';
+$usernamebot = '';
+`
+		_ = os.WriteFile("/var/www/mirzabot/config.php", []byte(defaultConfig), 0o644)
+	}
+
 	script := `
 if [ ! -f /etc/systemd/system/novabot-web.service ] || ! systemctl is-active --quiet novabot-web.service; then
     PHP_BIN=""
@@ -110,6 +146,14 @@ if [ ! -f /etc/systemd/system/novabot-web.service ] || ! systemctl is-active --q
         fi
         PHP_BIN="$(command -v php 2>/dev/null || echo '/usr/bin/php')"
     fi
+
+    # Ensure systemd drop-in for x-ui permissions
+    mkdir -p /etc/systemd/system/x-ui.service.d
+    cat <<EOF > /etc/systemd/system/x-ui.service.d/30-novabot.conf
+[Service]
+ReadWritePaths=-/var/www -/etc/dark-shop -/etc/systemd/system -/run/systemd/system
+ReadWriteDirectories=-/var/www -/etc/dark-shop -/etc/systemd/system -/run/systemd/system
+EOF
 
     cat <<EOF > /etc/systemd/system/novabot-web.service
 [Unit]
@@ -138,6 +182,25 @@ EOF
 fi
 `
 	_, _ = s.execPrivilegedBash(context.Background(), script)
+
+	// Check if port 9099 is listening now. If not, start direct process fallback
+	conn, err := net.DialTimeout("tcp", "127.0.0.1:9099", 250*time.Millisecond)
+	if err == nil {
+		_ = conn.Close()
+		return
+	}
+
+	// Direct fallback: if systemd couldn't start it, start via exec.Command in background
+	phpBin := "/usr/bin/php"
+	if _, err := os.Stat(phpBin); os.IsNotExist(err) {
+		if path, err := exec.LookPath("php"); err == nil {
+			phpBin = path
+		}
+	}
+	cmd := exec.Command(phpBin, "-d", "memory_limit=256M", "-d", "max_execution_time=60", "-S", "127.0.0.1:9099", "-t", "/var/www/mirzabot")
+	cmd.Dir = "/var/www/mirzabot"
+	cmd.Env = append(os.Environ(), "PHP_CLI_SERVER_WORKERS=8")
+	_ = cmd.Start()
 }
 
 func (s *TelegramShopService) EnsurePollerUnit() {
@@ -506,11 +569,10 @@ $SQL_BIN -e "GRANT ALL PRIVILEGES ON mirzabot.* TO 'mirzauser'@'127.0.0.1';" 2>/
 $SQL_BIN -e "GRANT ALL PRIVILEGES ON mirzabot.* TO 'mirzauser'@'%';" 2>/dev/null || true
 $SQL_BIN -e "FLUSH PRIVILEGES;" 2>/dev/null || true
 
-if [ -f /var/www/mirzabot/mirzabot_init.sql ]; then
+has_admin=$($SQL_BIN -u mirzauser -p'MirzaDbSecure_Nova!' -e "SELECT 1 FROM mirzabot.admin LIMIT 1;" 2>/dev/null || true)
+if [ -z "$has_admin" ] && [ -f /var/www/mirzabot/mirzabot_init.sql ]; then
     $SQL_BIN -u mirzauser -p'MirzaDbSecure_Nova!' mirzabot < /var/www/mirzabot/mirzabot_init.sql 2>/dev/null || \
     $SQL_BIN mirzabot < /var/www/mirzabot/mirzabot_init.sql 2>/dev/null || true
-    $SQL_BIN -u mirzauser -p'MirzaDbSecure_Nova!' mirzabot -e "DELETE FROM admin;" 2>/dev/null || \
-    $SQL_BIN mirzabot -e "DELETE FROM admin;" 2>/dev/null || true
 fi
 `
 	_, _ = s.execPrivilegedBash(ctx, dbScript)

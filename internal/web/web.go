@@ -304,10 +304,10 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 		return nil
 	}
 	botProxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
-		go s.shopService.EnsureWebUnit()
+		s.shopService.EnsureWebUnit()
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.WriteHeader(http.StatusBadGateway)
-		_, _ = w.Write([]byte(`<!DOCTYPE html><html dir="rtl"><head><meta charset="utf-8"><title>NOVA-BOT</title></head><body style="background:#07090e;color:#00ffc4;font-family:sans-serif;text-align:center;padding:50px;"><h2>سرویس وب ربات نوا در حال راه‌اندازی است...</h2><p style="color:#94a3b8;">در حال اجرای خودکار سرویس محلی وب ربات. لطفاً چند لحظه بعد صفحه را رفرش کنید.</p><script>setTimeout(()=>location.reload(), 3000);</script></body></html>`))
+		_, _ = w.Write([]byte(`<!DOCTYPE html><html dir="rtl"><head><meta charset="utf-8"><title>NOVA-BOT</title></head><body style="background:#07090e;color:#00ffc4;font-family:sans-serif;text-align:center;padding:50px;"><h2 style="color:#ef4444;">خطا در برقراری ارتباط با وب‌پنل ربات</h2><p style="color:#94a3b8;">سرویس محلی ربات پاسخ نداد. در حال راه‌اندازی مجدد خودکار...</p><script>setTimeout(()=>location.reload(), 2000);</script></body></html>`))
 	}
 
 	botHandler := func(c *gin.Context) {
@@ -333,9 +333,9 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 		c.Request.Header.Set("X-Forwarded-Prefix", "/botpanel")
 		c.Header("Content-Security-Policy", "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws: wss:; frame-ancestors 'self'")
 
-		// Proactively ensure port 9099 is listening. If cold/starting, give it up to 1.5s
+		// Proactively ensure port 9099 is listening. Give it up to 4.5s
 		ready := false
-		for attempt := 0; attempt < 10; attempt++ {
+		for attempt := 0; attempt < 30; attempt++ {
 			conn, err := net.DialTimeout("tcp", "127.0.0.1:9099", 100*time.Millisecond)
 			if err == nil {
 				_ = conn.Close()
@@ -343,7 +343,7 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 				break
 			}
 			if attempt == 0 {
-				go s.shopService.EnsureWebUnit()
+				s.shopService.EnsureWebUnit()
 			}
 			time.Sleep(150 * time.Millisecond)
 		}
@@ -352,7 +352,7 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 			w := c.Writer
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 			w.WriteHeader(http.StatusBadGateway)
-			_, _ = w.Write([]byte(`<!DOCTYPE html><html dir="rtl"><head><meta charset="utf-8"><title>NOVA-BOT</title></head><body style="background:#07090e;color:#00ffc4;font-family:sans-serif;text-align:center;padding:50px;"><h2>سرویس وب ربات نوا در حال راه‌اندازی است...</h2><p style="color:#94a3b8;">در حال اجرای خودکار سرویس محلی وب ربات. لطفاً چند لحظه بعد صفحه را رفرش کنید.</p><script>setTimeout(()=>location.reload(), 3000);</script></body></html>`))
+			_, _ = w.Write([]byte(`<!DOCTYPE html><html dir="rtl"><head><meta charset="utf-8"><title>NOVA-BOT</title></head><body style="background:#07090e;color:#00ffc4;font-family:sans-serif;text-align:center;padding:50px;"><h2 style="color:#ef4444;">سرویس وب ربات در حال حاضر آماده پاسخگویی نیست</h2><p style="color:#94a3b8;">لطفاً مطمئن شوید بسته PHP روی سرور نصب شده است یا از منوی تلگرام شاپ روی دکمه «شروع مجدد» کلیک کنید.</p><br><a href="javascript:location.reload()" style="display:inline-block;padding:10px 24px;background:#6366f1;color:#fff;text-decoration:none;border-radius:8px;font-weight:bold;">تلاش مجدد</a></body></html>`))
 			return
 		}
 

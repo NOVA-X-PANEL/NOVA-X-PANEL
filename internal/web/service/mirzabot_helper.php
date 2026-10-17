@@ -9,6 +9,21 @@ $tableScript = $botDir . '/table.php';
 $pollScript = $botDir . '/poll.php';
 $pollerService = 'mirzabot-poller.service';
 
+function ensureNovabotWebService(): void {
+    $unitPath = '/etc/systemd/system/novabot-web.service';
+    if (!is_file($unitPath)) {
+        $phpBin = '/usr/bin/php';
+        if (!is_executable($phpBin)) {
+            $found = trim((string)@shell_exec('command -v php 2>/dev/null'));
+            if (!empty($found)) $phpBin = $found;
+        }
+        $unit = "[Unit]\nDescription=NOVA Bot Web Service (Local)\nAfter=network.target mariadb.service mysql.service\n\n[Service]\nType=simple\nUser=www-data\nGroup=www-data\nWorkingDirectory=/var/www/mirzabot\nEnvironment=\"PHP_CLI_SERVER_WORKERS=8\"\nExecStart={$phpBin} -d memory_limit=256M -d max_execution_time=60 -S 127.0.0.1:9099 -t /var/www/mirzabot\nRestart=always\nRestartSec=2\nStandardOutput=journal\nStandardError=journal\n\n[Install]\nWantedBy=multi-user.target\n";
+        @file_put_contents($unitPath, $unit);
+        @chmod($unitPath, 0644);
+        @shell_exec('systemctl daemon-reload 2>&1');
+    }
+}
+
 function getDb(): ?PDO {
     global $configPath, $pdo;
     if (!is_file($configPath)) return null;
@@ -132,11 +147,8 @@ if ($cmd === 'install') {
                 ? $existingAdmin['password']
                 : password_hash('admin1234', PASSWORD_BCRYPT, ['cost' => 12]);
 
-            // Delete all previous/stale admins so ONLY the configured admin has administrator rights
-            $db->exec("DELETE FROM admin");
-
-            // Insert the new admin with administrator role
-            $stmt = $db->prepare("INSERT INTO admin (id_admin, username, password, rule) VALUES (?, 'admin', ?, 'administrator')");
+            // Ensure the configured admin exists with administrator role without deleting others
+            $stmt = $db->prepare("INSERT INTO admin (id_admin, username, password, rule) VALUES (?, 'admin', ?, 'administrator') ON DUPLICATE KEY UPDATE rule = 'administrator'");
             $stmt->execute([$adminId, $hashedPass]);
 
             // Ensure admin exists in user table with Active status
@@ -155,6 +167,7 @@ if ($cmd === 'install') {
     if (is_file($tableScript)) {
         @shell_exec('php ' . escapeshellarg($tableScript) . ' 2>&1');
     }
+    ensureNovabotWebService();
     @shell_exec('systemctl daemon-reload 2>&1');
     @shell_exec('systemctl enable --now mirzabot-poller.service 2>&1');
     @shell_exec('systemctl restart mirzabot-poller.service 2>&1');
@@ -175,6 +188,7 @@ if ($cmd === 'action') {
                 $db->exec("UPDATE setting SET Bot_Status = 'botstatuson'");
             } catch (\Throwable $e) {}
         }
+        ensureNovabotWebService();
         @shell_exec('systemctl daemon-reload 2>&1');
         @shell_exec('systemctl enable --now mirzabot-poller.service 2>&1');
         @shell_exec('systemctl restart mirzabot-poller.service 2>&1');
@@ -194,6 +208,7 @@ if ($cmd === 'action') {
 
     if ($action === 'restart') {
         if (is_file($tableScript)) @shell_exec('php ' . escapeshellarg($tableScript) . ' 2>&1');
+        ensureNovabotWebService();
         @shell_exec('systemctl daemon-reload 2>&1');
         @shell_exec('systemctl enable --now mirzabot-poller.service 2>&1');
         @shell_exec('systemctl restart mirzabot-poller.service 2>&1');

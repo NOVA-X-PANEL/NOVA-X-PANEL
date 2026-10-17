@@ -39,6 +39,9 @@ Deploy, configure and monitor VLESS, VMess, Trojan, Shadowsocks, WireGuard, Amne
 
 ---
 
+> [!TIP]
+> 📢 **Official NOVA Telegram Channel:** Join our Telegram channel for latest updates, announcements, and support: [**@NOVA_X_PANELL (t.me/NOVA_X_PANELL)**](https://t.me/NOVA_X_PANELL)
+
 > [!IMPORTANT]
 > This project is intended for **personal use only**. Please do not use it for illegal purposes or in a production environment.
 

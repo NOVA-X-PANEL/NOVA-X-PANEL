@@ -165,8 +165,11 @@ if ($cmd === 'action') {
                 $db->exec("UPDATE setting SET Bot_Status = 'botstatuson'");
             } catch (\Throwable $e) {}
         }
+        @shell_exec('systemctl daemon-reload 2>&1');
         @shell_exec('systemctl enable --now mirzabot-poller.service 2>&1');
         @shell_exec('systemctl restart mirzabot-poller.service 2>&1');
+        @shell_exec('systemctl enable --now novabot-web.service 2>&1');
+        @shell_exec('systemctl restart novabot-web.service 2>&1');
         echo json_encode(['success' => true]);
         exit(0);
     }
@@ -174,13 +177,18 @@ if ($cmd === 'action') {
     if ($action === 'stop') {
         if ($db) $db->exec("UPDATE setting SET Bot_Status = 'botstatusoff'");
         @shell_exec('systemctl stop mirzabot-poller.service 2>&1');
+        @shell_exec('systemctl stop novabot-web.service 2>&1');
         echo json_encode(['success' => true]);
         exit(0);
     }
 
     if ($action === 'restart') {
         if (is_file($tableScript)) @shell_exec('php ' . escapeshellarg($tableScript) . ' 2>&1');
+        @shell_exec('systemctl daemon-reload 2>&1');
+        @shell_exec('systemctl enable --now mirzabot-poller.service 2>&1');
         @shell_exec('systemctl restart mirzabot-poller.service 2>&1');
+        @shell_exec('systemctl enable --now novabot-web.service 2>&1');
+        @shell_exec('systemctl restart novabot-web.service 2>&1');
         echo json_encode(['success' => true]);
         exit(0);
     }
@@ -188,6 +196,8 @@ if ($cmd === 'action') {
     if ($action === 'uninstall') {
         @shell_exec('systemctl stop mirzabot-poller.service 2>&1');
         @shell_exec('systemctl disable mirzabot-poller.service 2>&1');
+        @shell_exec('systemctl stop novabot-web.service 2>&1');
+        @shell_exec('systemctl disable novabot-web.service 2>&1');
         require_once $configPath;
         global $APIKEY;
         if (!empty($APIKEY) && $APIKEY !== '{API_KEY}') {

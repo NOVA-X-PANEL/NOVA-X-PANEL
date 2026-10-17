@@ -289,12 +289,16 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 		resp.Header.Set("Content-Security-Policy", "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws: wss:; frame-ancestors 'self'")
 		loc := resp.Header.Get("Location")
 		if loc != "" {
+			prefix := "/botpanel"
+			if basePath != "/" && basePath != "" {
+				prefix = strings.TrimSuffix(basePath, "/") + "/botpanel"
+			}
 			if strings.HasPrefix(loc, "/panel/") {
-				resp.Header.Set("Location", "/botpanel"+loc)
+				resp.Header.Set("Location", prefix+loc)
 			} else if loc == "/panel" {
-				resp.Header.Set("Location", "/botpanel/panel/")
+				resp.Header.Set("Location", prefix+"/panel/")
 			} else if strings.HasPrefix(loc, "/app/") {
-				resp.Header.Set("Location", "/botpanel"+loc)
+				resp.Header.Set("Location", prefix+loc)
 			}
 		}
 		return nil
@@ -328,6 +332,30 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 		c.Request.URL.Path = p
 		c.Request.Header.Set("X-Forwarded-Prefix", "/botpanel")
 		c.Header("Content-Security-Policy", "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws: wss:; frame-ancestors 'self'")
+
+		// Proactively ensure port 9099 is listening. If cold/starting, give it up to 1.5s
+		ready := false
+		for attempt := 0; attempt < 10; attempt++ {
+			conn, err := net.DialTimeout("tcp", "127.0.0.1:9099", 100*time.Millisecond)
+			if err == nil {
+				_ = conn.Close()
+				ready = true
+				break
+			}
+			if attempt == 0 {
+				go s.shopService.EnsureWebUnit()
+			}
+			time.Sleep(150 * time.Millisecond)
+		}
+
+		if !ready {
+			w := c.Writer
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusBadGateway)
+			_, _ = w.Write([]byte(`<!DOCTYPE html><html dir="rtl"><head><meta charset="utf-8"><title>NOVA-BOT</title></head><body style="background:#07090e;color:#00ffc4;font-family:sans-serif;text-align:center;padding:50px;"><h2>سرویس وب ربات نوا در حال راه‌اندازی است...</h2><p style="color:#94a3b8;">در حال اجرای خودکار سرویس محلی وب ربات. لطفاً چند لحظه بعد صفحه را رفرش کنید.</p><script>setTimeout(()=>location.reload(), 3000);</script></body></html>`))
+			return
+		}
+
 		botProxy.ServeHTTP(c.Writer, c.Request)
 	}
 

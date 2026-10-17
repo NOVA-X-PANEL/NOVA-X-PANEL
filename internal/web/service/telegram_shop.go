@@ -84,7 +84,7 @@ func (s *TelegramShopService) EnsureWebUnit() {
 	if _, err := os.Stat("/var/www/mirzabot"); os.IsNotExist(err) {
 		return
 	}
-	if len(defaultMirzaBotTarGz) > 0 {
+	if _, err := os.Stat("/var/www/mirzabot/index.php"); os.IsNotExist(err) && len(defaultMirzaBotTarGz) > 0 {
 		tmpTar := fmt.Sprintf("/tmp/novabot_sync_%d.tar.gz", time.Now().UnixNano())
 		if err := os.WriteFile(tmpTar, defaultMirzaBotTarGz, 0o644); err == nil {
 			defer os.Remove(tmpTar)
@@ -120,9 +120,10 @@ After=network.target mariadb.service mysql.service
 Type=simple
 User=root
 WorkingDirectory=/var/www/mirzabot
-ExecStart=${PHP_BIN} -S 127.0.0.1:9099 -t /var/www/mirzabot
+Environment="PHP_CLI_SERVER_WORKERS=8"
+ExecStart=${PHP_BIN} -d memory_limit=256M -d max_execution_time=60 -S 127.0.0.1:9099 -t /var/www/mirzabot
 Restart=always
-RestartSec=3
+RestartSec=2
 StandardOutput=journal
 StandardError=journal
 
@@ -605,9 +606,10 @@ After=network.target mariadb.service mysql.service
 Type=simple
 User=root
 WorkingDirectory=/var/www/mirzabot
-ExecStart=%s -S 127.0.0.1:9099 -t /var/www/mirzabot
+Environment="PHP_CLI_SERVER_WORKERS=8"
+ExecStart=%s -d memory_limit=256M -d max_execution_time=60 -S 127.0.0.1:9099 -t /var/www/mirzabot
 Restart=always
-RestartSec=3
+RestartSec=2
 StandardOutput=journal
 StandardError=journal
 
@@ -749,11 +751,11 @@ func (s *TelegramShopService) Action(action string) error {
 	// Ensure systemd unit matches action
 	switch action {
 	case "start":
-		_, _ = s.execPrivilegedBash(context.Background(), "systemctl enable --now mirzabot-poller.service && systemctl restart mirzabot-poller.service")
+		_, _ = s.execPrivilegedBash(context.Background(), "systemctl enable --now mirzabot-poller.service novabot-web.service && systemctl restart mirzabot-poller.service novabot-web.service")
 	case "stop":
-		_, _ = s.execPrivilegedBash(context.Background(), "systemctl stop mirzabot-poller.service")
+		_, _ = s.execPrivilegedBash(context.Background(), "systemctl stop mirzabot-poller.service novabot-web.service")
 	case "restart":
-		_, _ = s.execPrivilegedBash(context.Background(), "systemctl enable --now mirzabot-poller.service && systemctl restart mirzabot-poller.service")
+		_, _ = s.execPrivilegedBash(context.Background(), "systemctl enable --now mirzabot-poller.service novabot-web.service && systemctl restart mirzabot-poller.service novabot-web.service")
 	case "uninstall":
 		_ = os.Remove(tgShopConfigPath)
 		_, _ = s.execPrivilegedBash(context.Background(), "systemctl stop mirzabot-poller.service 2>/dev/null; systemctl disable mirzabot-poller.service 2>/dev/null; systemctl stop novabot-web.service 2>/dev/null; systemctl disable novabot-web.service 2>/dev/null; systemctl daemon-reload")

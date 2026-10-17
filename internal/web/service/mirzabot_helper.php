@@ -24,44 +24,60 @@ function ensureNovabotWebService(): void {
     }
 }
 
+function loadBotConfig(string $path): array {
+    if (!is_file($path)) return [];
+    $content = (string)file_get_contents($path);
+    $res = [];
+    if (preg_match('/\$APIKEY\s*=\s*[\'"]([^\'"]*)[\'"];/', $content, $m)) $res['APIKEY'] = $m[1];
+    if (preg_match('/\$adminnumber\s*=\s*[\'"]([^\'"]*)[\'"];/', $content, $m)) $res['adminnumber'] = $m[1];
+    if (preg_match('/\$usernamebot\s*=\s*[\'"]([^\'"]*)[\'"];/', $content, $m)) $res['usernamebot'] = $m[1];
+    if (preg_match('/\$domainhosts\s*=\s*[\'"]([^\'"]*)[\'"];/', $content, $m)) $res['domainhosts'] = $m[1];
+    if (preg_match('/\$dbhost\s*=\s*[\'"]([^\'"]*)[\'"];/', $content, $m)) $res['dbhost'] = $m[1];
+    if (preg_match('/\$dbname\s*=\s*[\'"]([^\'"]*)[\'"];/', $content, $m)) $res['dbname'] = $m[1];
+    if (preg_match('/\$usernamedb\s*=\s*[\'"]([^\'"]*)[\'"];/', $content, $m)) $res['usernamedb'] = $m[1];
+    if (preg_match('/\$passworddb\s*=\s*[\'"]([^\'"]*)[\'"];/', $content, $m)) $res['passworddb'] = $m[1];
+    return $res;
+}
+
 function getDb(): ?PDO {
     global $configPath, $pdo;
-    if (!is_file($configPath)) return null;
+    if ($pdo instanceof PDO) return $pdo;
+    $cfg = loadBotConfig($configPath);
+    $dbhost = $cfg['dbhost'] ?? '127.0.0.1';
+    $dbname = $cfg['dbname'] ?? 'mirzabot';
+    $usernamedb = $cfg['usernamedb'] ?? 'mirzauser';
+    $passworddb = $cfg['passworddb'] ?? 'MirzaDbSecure_Nova!';
     try {
-        if ($pdo instanceof PDO) {
-            return $pdo;
-        }
-        global $dbhost, $dbname, $usernamedb, $passworddb;
-        require_once $configPath;
-        if ($pdo instanceof PDO) {
-            return $pdo;
-        }
-        if (!empty($dbhost) && !empty($dbname) && !empty($usernamedb)) {
-            $dsn = "mysql:host={$dbhost};dbname={$dbname};charset=utf8mb4";
-            $pdo = new PDO($dsn, $usernamedb, $passworddb ?? '', [
+        $dsn = "mysql:host={$dbhost};dbname={$dbname};charset=utf8mb4";
+        $pdo = new PDO($dsn, $usernamedb, $passworddb, [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        ]);
+        return $pdo;
+    } catch (\Throwable $e) {
+        try {
+            $pdo = new PDO("mysql:host=localhost;dbname={$dbname};charset=utf8mb4", $usernamedb, $passworddb, [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             ]);
             return $pdo;
+        } catch (\Throwable $e2) {
+            error_log("getDb error: " . $e2->getMessage());
+            return null;
         }
-        return null;
-    } catch (\Throwable $e) {
-        error_log("getDb error: " . $e->getMessage());
-        return null;
     }
 }
 
 $cmd = $argv[1] ?? 'status';
 
 if ($cmd === 'status') {
-    if (!is_file($configPath)) {
-        echo json_encode(['installed' => false, 'running' => false]);
-        exit(0);
-    }
-    require_once $configPath;
-    global $APIKEY, $adminnumber, $usernamebot, $domainhosts;
+    $cfg = loadBotConfig($configPath);
+    $token = $cfg['APIKEY'] ?? '';
+    $adminId = $cfg['adminnumber'] ?? '';
+    $username = $cfg['usernamebot'] ?? '';
+    $domain = $cfg['domainhosts'] ?? '';
 
-    $installed = !empty($APIKEY) && $APIKEY !== '{API_KEY}';
+    $installed = !empty($token) && $token !== '{API_KEY}';
     $running = false;
     $users = 0;
     $orders = 0;
@@ -86,10 +102,10 @@ if ($cmd === 'status') {
     echo json_encode([
         'installed' => $installed,
         'running' => $running,
-        'bot_token' => $installed ? (string)$APIKEY : '',
-        'admin_chat_id' => $installed ? (string)$adminnumber : '',
-        'bot_username' => $installed ? (string)$usernamebot : '',
-        'domain' => (string)($domainhosts ?? ''),
+        'bot_token' => $installed ? (string)$token : '',
+        'admin_chat_id' => $installed ? (string)$adminId : '',
+        'bot_username' => $installed ? (string)$username : '',
+        'domain' => (string)$domain,
         'registered_users' => $users,
         'active_orders' => $orders,
     ]);

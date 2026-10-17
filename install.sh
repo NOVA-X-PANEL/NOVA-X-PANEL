@@ -1,5 +1,9 @@
 #!/bin/bash
 
+export DEBIAN_FRONTEND=noninteractive
+export NEEDRESTART_MODE=a
+export NEEDRESTART_SUSPEND=1
+
 red='\033[0;31m'
 green='\033[0;32m'
 blue='\033[0;34m'
@@ -159,7 +163,11 @@ is_port_in_use() {
 install_base() {
     case "${release}" in
         ubuntu | debian | armbian)
-            apt-get update && apt-get install -y -q cron curl tar tzdata socat ca-certificates openssl python3 python3-pip python3-requests python3-qrcode
+            if [ -d /etc/needrestart/conf.d ]; then
+                mkdir -p /etc/needrestart/conf.d
+                echo '$nrconf{restart} = "a";' > /etc/needrestart/conf.d/99-noninteractive.conf
+            fi
+            apt-get update -qq && apt-get install -y -qq -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" cron curl tar tzdata socat ca-certificates openssl python3 python3-pip python3-requests python3-qrcode
             ;;
         fedora | amzn | virtuozzo | rhel | almalinux | rocky | ol)
             dnf makecache -y && dnf install -y -q cronie curl tar tzdata socat ca-certificates openssl python3 python3-pip python3-requests python3-qrcode
@@ -480,7 +488,7 @@ ensure_pg_client() {
 install_acme() {
     echo -e "${green}Installing acme.sh for SSL certificate management...${plain}"
     cd ~ || return 1
-    curl -s https://get.acme.sh | sh > /dev/null 2>&1
+    curl -s --connect-timeout 10 --max-time 60 https://get.acme.sh | sh
     if [ $? -ne 0 ]; then
         echo -e "${red}Failed to install acme.sh${plain}"
         return 1
@@ -723,7 +731,7 @@ ssl_cert_issue() {
     if ! command -v ~/.acme.sh/acme.sh &> /dev/null; then
         echo "acme.sh could not be found. Installing now..."
         cd ~ || return 1
-        curl -s https://get.acme.sh | sh
+        curl -s --connect-timeout 10 --max-time 60 https://get.acme.sh | sh
         if [ $? -ne 0 ]; then
             echo -e "${red}Failed to install acme.sh${plain}"
             return 1

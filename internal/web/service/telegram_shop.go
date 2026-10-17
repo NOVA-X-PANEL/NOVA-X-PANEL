@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -276,41 +277,56 @@ func (s *TelegramShopService) GetStatus() (*TelegramShopStatus, error) {
 	if data, err := os.ReadFile(tgShopConfigPath); err == nil {
 		var cfg TelegramShopConfig
 		if json.Unmarshal(data, &cfg) == nil {
-			status.BotToken = cfg.BotToken
-			status.AdminChatID = cfg.AdminChatID
+			status.BotToken = strings.TrimSpace(cfg.BotToken)
+			status.AdminChatID = strings.TrimSpace(cfg.AdminChatID)
 			status.CardNumber = cfg.CardNumber
 			status.CardHolder = cfg.CardHolder
 			status.SupportUsername = cfg.SupportUsername
 			status.ChannelUsername = cfg.ChannelUsername
+			if cfg.Domain != "" {
+				status.Domain = strings.TrimSpace(cfg.Domain)
+			}
 		}
 	}
 
-	// Check if Mirza Bot is installed
-	if _, err := os.Stat(mirzaConfigPath); err != nil {
-		// Not installed
-		if status.BotToken != "" {
-			s.fetchBotInfo(status.BotToken, status)
+	// Directly parse config.php with regex if it exists
+	if cfgData, err := os.ReadFile(mirzaConfigPath); err == nil {
+		cfgStr := string(cfgData)
+		if m := regexp.MustCompile(`\$APIKEY\s*=\s*['"]([^'"]*)['"];`).FindStringSubmatch(cfgStr); len(m) > 1 {
+			token := strings.TrimSpace(m[1])
+			if token != "" && token != "{API_KEY}" {
+				status.BotToken = token
+				status.Installed = true
+			}
 		}
+		if m := regexp.MustCompile(`\$adminnumber\s*=\s*['"]([^'"]*)['"];`).FindStringSubmatch(cfgStr); len(m) > 1 {
+			admin := strings.TrimSpace(m[1])
+			if admin != "" {
+				status.AdminChatID = admin
+			}
+		}
+		if m := regexp.MustCompile(`\$domainhosts\s*=\s*['"]([^'"]*)['"];`).FindStringSubmatch(cfgStr); len(m) > 1 {
+			dom := strings.TrimSpace(m[1])
+			if dom != "" {
+				status.Domain = dom
+			}
+		}
+		if m := regexp.MustCompile(`\$usernamebot\s*=\s*['"]([^'"]*)['"];`).FindStringSubmatch(cfgStr); len(m) > 1 {
+			uname := strings.TrimSpace(m[1])
+			if uname != "" {
+				status.BotUsername = uname
+			}
+		}
+	}
+
+	// If no bot token configured, Mirza Bot is not installed
+	if status.BotToken == "" || status.BotToken == "{API_KEY}" {
+		status.Installed = false
+		status.Running = false
 		return status, nil
 	}
 
-	// Check if config.php contains real credentials or placeholder
-	if cfgData, err := os.ReadFile(mirzaConfigPath); err == nil {
-		cfgStr := string(cfgData)
-		if strings.Contains(cfgStr, "{API_KEY}") || strings.Contains(cfgStr, "$APIKEY = '';") {
-			status.Installed = false
-			status.Running = false
-			status.BotToken = ""
-			status.AdminChatID = ""
-			status.BotUsername = ""
-			return status, nil
-		}
-	}
-
-	// Mirza Bot IS installed
-	status.Installed = true
-
-	// Check systemd status
+	// Check systemd poller status
 	out, err := s.execPrivilegedBash(context.Background(), "systemctl is-active "+mirzaPollerUnit)
 	if err == nil && strings.TrimSpace(string(out)) == "active" {
 		status.Running = true
@@ -331,24 +347,13 @@ func (s *TelegramShopService) GetStatus() (*TelegramShopStatus, error) {
 				ActiveOrders    int    `json:"active_orders"`
 			}
 			if json.Unmarshal(out, &m) == nil {
-				status.Installed = m.Installed
-				if !status.Installed {
-					status.Running = false
-					status.BotToken = ""
-					status.AdminChatID = ""
-					status.BotUsername = ""
-					return status, nil
-				}
-				if m.BotToken != "" {
-					status.BotToken = m.BotToken
-				}
-				if m.AdminChatID != "" {
-					status.AdminChatID = m.AdminChatID
-				}
-				if m.BotUsername != "" {
+				if m.BotUsername != "" && status.BotUsername == "" {
 					status.BotUsername = m.BotUsername
 				}
-				if m.Domain != "" {
+				if m.AdminChatID != "" && status.AdminChatID == "" {
+					status.AdminChatID = m.AdminChatID
+				}
+				if m.Domain != "" && status.Domain == "" {
 					cleanDisp := m.Domain
 					if idx := strings.Index(cleanDisp, "/"); idx != -1 {
 						cleanDisp = cleanDisp[:idx]
@@ -373,7 +378,7 @@ func (s *TelegramShopService) GetStatus() (*TelegramShopStatus, error) {
 		}
 	}
 
-	if status.BotToken != "" && status.BotUsername == "" {
+	if status.BotToken != "" && (status.BotUsername == "" || status.BotFirstName == "") {
 		s.fetchBotInfo(status.BotToken, status)
 	}
 
@@ -723,18 +728,9 @@ func (s *TelegramShopService) Install(cfg *TelegramShopConfig) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 180*time.Second)
 	defer cancel()
 
-	// Deploy embedded Mirza Bot stack only if not already installed
-	needsFullInstall := false
-	if _, err := os.Stat(mirzaConfigPath); os.IsNotExist(err) {
-		needsFullInstall = true
-	} else if _, err := os.Stat(mirzaBotDir + "/index.php"); os.IsNotExist(err) {
-		needsFullInstall = true
-	}
-
-	if needsFullInstall {
-		if err := s.installMirzaBotNativeStack(ctx, cfg); err != nil {
-			return fmt.Errorf("mirzabot install error: %v", err)
-		}
+	// Deploy embedded Mirza Bot stack, MariaDB, and tables
+	if err := s.installMirzaBotNativeStack(ctx, cfg); err != nil {
+		return fmt.Errorf("mirzabot install error: %v", err)
 	}
 
 	// Always guarantee systemd units exist

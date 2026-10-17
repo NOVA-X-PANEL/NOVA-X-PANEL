@@ -81,10 +81,11 @@ export default function TelegramShopPage() {
       if (res && res.obj) {
         setStatus(res.obj);
         if (res.obj.installed) {
+          const cur = form.getFieldsValue();
           form.setFieldsValue({
-            bot_token: res.obj.bot_token,
-            admin_chat_id: res.obj.admin_chat_id,
-            domain: res.obj.domain,
+            bot_token: res.obj.bot_token || cur.bot_token,
+            admin_chat_id: res.obj.admin_chat_id || cur.admin_chat_id,
+            domain: res.obj.domain || cur.domain,
           });
         }
       }
@@ -105,10 +106,11 @@ export default function TelegramShopPage() {
         if (res && res.obj) {
           setStatus(res.obj);
           if (res.obj.installed) {
+            const cur = form.getFieldsValue();
             form.setFieldsValue({
-              bot_token: res.obj.bot_token,
-              admin_chat_id: res.obj.admin_chat_id,
-              domain: res.obj.domain,
+              bot_token: res.obj.bot_token || cur.bot_token,
+              admin_chat_id: res.obj.admin_chat_id || cur.admin_chat_id,
+              domain: res.obj.domain || cur.domain,
             });
           }
         }

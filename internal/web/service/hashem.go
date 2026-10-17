@@ -1236,7 +1236,14 @@ func (s *HashemService) RemovePort(port int) (*HashemPortActionResult, error) {
 		if err := s.EditPorts(newPorts); err != nil {
 			logger.Warningf("EditPorts failed during RemovePort: %v", err)
 		}
+	} else {
+		// If no ports remain in tunnel, tear down the whole tunnel cleanly
+		_ = s.Remove()
 	}
+
+	// Sever any active conntrack sessions on this port immediately
+	flushPortCmd := fmt.Sprintf("conntrack -D -p tcp --dport %d 2>/dev/null || true; conntrack -D -p udp --dport %d 2>/dev/null || true", port, port)
+	_, _ = s.execPrivilegedBash(ctx, flushPortCmd)
 
 	iranCommand := fmt.Sprintf(
 		`bash -c 'PORT="%d"; for f in /etc/backhaul/config.toml /root/backhaul-core/*.toml; do [ -f "$f" ] && sed -i "/\"$PORT\"/d" "$f" && systemctl restart backhaul-server 2>/dev/null; done; if [ -f /etc/gre-panel/peers.json ]; then python3 -c "import json; p=\"/etc/gre-panel/peers.json\"; d=json.load(open(p)); [x[\"ports\"].remove($PORT) for x in d.get(\"peers\", []) if \"ports\" in x and $PORT in x[\"ports\"]]; json.dump(d, open(p, \"w\"), indent=2)" 2>/dev/null; fi; if [ -f /var/lib/gre-panel/panel.db ]; then python3 -c "import sqlite3; c=sqlite3.connect(\"/var/lib/gre-panel/panel.db\"); c.execute(\"DELETE FROM RouteDestination WHERE Port = ?\", ($PORT,)); c.commit()" 2>/dev/null; fi; ufw delete allow ${PORT}/tcp 2>/dev/null; ufw delete allow ${PORT}/udp 2>/dev/null; echo "پورت $PORT با موفقیت از تانل حذف شد"'`,
@@ -1997,7 +2004,7 @@ func (s *HashemService) GenerateOneLiner(form HashemOneLinerForm) (*HashemOneLin
 }
 
 func (s *HashemService) Remove() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 25*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	defer cancel()
 
 	// 1. If hashem core CLI is installed, trigger its native remove-tunnel
@@ -2005,30 +2012,21 @@ func (s *HashemService) Remove() error {
 		_, _ = s.execPrivileged(ctx, hashemBinPath, "remove-tunnel", "--force")
 	}
 
-	// 2. Stop and disable FRP services
-	_, _ = s.execPrivileged(ctx, "systemctl", "stop", "frpc")
-	_, _ = s.execPrivileged(ctx, "systemctl", "disable", "frpc")
-	_, _ = s.execPrivileged(ctx, "systemctl", "stop", "frps")
-	_, _ = s.execPrivileged(ctx, "systemctl", "disable", "frps")
+	// 2. Stop and disable all tunnel services
+	tunnelServices := []string{
+		"frpc", "frps",
+		"backhaul-client", "backhaul-server",
+		"gre-panel", "tunnel-panel",
+		"gre-tunnel", "rathole",
+	}
+	for _, svc := range tunnelServices {
+		_, _ = s.execPrivileged(ctx, "systemctl", "stop", svc)
+		_, _ = s.execPrivileged(ctx, "systemctl", "disable", svc)
+	}
 
-	// 3. Stop and disable Backhaul services
-	_, _ = s.execPrivileged(ctx, "systemctl", "stop", "backhaul-client")
-	_, _ = s.execPrivileged(ctx, "systemctl", "disable", "backhaul-client")
-	_, _ = s.execPrivileged(ctx, "systemctl", "stop", "backhaul-server")
-	_, _ = s.execPrivileged(ctx, "systemctl", "disable", "backhaul-server")
-
-	// 4. Delete all GRE and GRETAP tunnel network interfaces
-	greDelBash := `
-for dev in $(ip -o link show | awk -F': ' '{print $2}' | grep -E '^(gre-a-|gre-tunnel|gretap)'); do
-    ip link set dev "$dev" down 2>/dev/null || true
-    ip link del dev "$dev" 2>/dev/null || true
-done
-`
-	_, _ = s.execPrivilegedBash(ctx, greDelBash)
-
-	// 5. Stop, disable and remove all GRE/GRETAP systemd services
+	// 3. Stop, disable and remove all GRE/GRETAP/Backhaul/FRP systemd unit files
 	stopSvcBash := `
-for s in /etc/systemd/system/gre-*.service /etc/systemd/system/gretap*.service; do
+for s in /etc/systemd/system/gre-*.service /etc/systemd/system/gretap*.service /etc/systemd/system/bh-*.service /etc/systemd/system/backhaul*.service /etc/systemd/system/frp*.service; do
     [ -f "$s" ] || continue
     unit=$(basename "$s")
     systemctl stop "$unit" 2>/dev/null || true
@@ -2038,12 +2036,79 @@ done
 `
 	_, _ = s.execPrivilegedBash(ctx, stopSvcBash)
 
-	// 6. Remove FoU listeners
-	_, _ = s.execPrivileged(ctx, "ip", "fou", "del", "port", "443")
-	_, _ = s.execPrivileged(ctx, "ip", "fou", "del", "port", "19998")
-	_, _ = s.execPrivileged(ctx, "ip", "fou", "del", "port", "55555")
+	// 4. Forcefully terminate all tunnel processes
+	killBash := `
+pkill -9 -f "/usr/local/bin/gre-panel" 2>/dev/null || true
+pkill -9 -f "gre-panel" 2>/dev/null || true
+pkill -9 -f "frpc" 2>/dev/null || true
+pkill -9 -f "frps" 2>/dev/null || true
+pkill -9 -f "backhaul" 2>/dev/null || true
+pkill -9 -f "rathole" 2>/dev/null || true
+pkill -9 -f "tunnel-panel" 2>/dev/null || true
+`
+	_, _ = s.execPrivilegedBash(ctx, killBash)
 
-	// 7. Mark tunnels disabled/deleted in gre-panel SQLite database
+	// 5. Cleanly delete all virtual tunnel network interfaces (strip @NONE and @parent properly)
+	delIfBash := `
+for raw in $(ip -o link show 2>/dev/null | awk -F': ' '{print $2}'); do
+    dev=$(echo "$raw" | cut -d'@' -f1)
+    case "$dev" in
+        gre-a-*|gre-b-*|gre-tunnel*|gretap*|bh-*|backhaul*|tnp-*|hashem-*|fou*)
+            ip link set dev "$dev" down 2>/dev/null || true
+            ip link del dev "$dev" 2>/dev/null || true
+            ;;
+    esac
+done
+for d in gre-a-1 gre-a-2 gre-b-1 gre-b-2 gre-tunnel gretap0 gretap1 gretap2; do
+    ip link set dev "$d" down 2>/dev/null || true
+    ip link del dev "$d" 2>/dev/null || true
+done
+`
+	_, _ = s.execPrivilegedBash(ctx, delIfBash)
+
+	// 6. Delete FoU listeners
+	fouBash := `
+ip fou del port 443 2>/dev/null || true
+ip fou del port 19998 2>/dev/null || true
+ip fou del port 55555 2>/dev/null || true
+for p in $(ip fou show 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="port") print $(i+1)}'); do
+    ip fou del port "$p" 2>/dev/null || true
+done
+`
+	_, _ = s.execPrivilegedBash(ctx, fouBash)
+
+	// 7. Flush kernel routing table for tunnel subnets
+	routeBash := `
+ip route flush dev gre-a-1 2>/dev/null || true
+ip route flush dev gre-a-2 2>/dev/null || true
+ip route flush dev gre-tunnel 2>/dev/null || true
+for subnet in 10.10.10.0/24 10.10.1.0/30 10.10.2.0/30 10.10.3.0/30 10.10.4.0/30 10.10.0.0/16; do
+    ip route del "$subnet" 2>/dev/null || true
+done
+`
+	_, _ = s.execPrivilegedBash(ctx, routeBash)
+
+	// 8. Remove IPTables mangle TCPMSS, FORWARD, and NAT masquerade rules
+	iptablesBash := `
+iptables -t mangle -D POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1340 2>/dev/null || true
+iptables -t mangle -D FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1340 2>/dev/null || true
+for iface in $(ip -o link show 2>/dev/null | awk -F': ' '{print $2}' | cut -d'@' -f1 | grep -E '^gre'); do
+    iptables -t mangle -D POSTROUTING -o "$iface" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1340 2>/dev/null || true
+    iptables -t mangle -D FORWARD -o "$iface" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1340 2>/dev/null || true
+done
+iptables -t nat -D POSTROUTING -s 10.10.0.0/16 -j MASQUERADE 2>/dev/null || true
+`
+	_, _ = s.execPrivilegedBash(ctx, iptablesBash)
+
+	// 9. Flush kernel conntrack so existing TCP/UDP sessions drop immediately
+	conntrackBash := `
+if command -v conntrack >/dev/null 2>&1; then
+    conntrack -F 2>/dev/null || true
+fi
+`
+	_, _ = s.execPrivilegedBash(ctx, conntrackBash)
+
+	// 10. Mark tunnels disabled/deleted and wipe records in gre-panel SQLite database
 	dbCleanBash := `python3 -c '
 import sqlite3, os
 p = "/var/lib/gre-panel/panel.db"
@@ -2052,6 +2117,7 @@ if os.path.exists(p):
         c = sqlite3.connect(p)
         c.execute("UPDATE Tunnel SET IsEnabled=0, IsDeleted=1")
         c.execute("DELETE FROM RouteDestination")
+        c.execute("DELETE FROM Tunnel")
         c.commit()
         c.close()
     except Exception:
@@ -2059,17 +2125,17 @@ if os.path.exists(p):
 ' 2>/dev/null || true`
 	_, _ = s.execPrivilegedBash(ctx, dbCleanBash)
 
-	// 8. Clean up config files and service units via privileged bash
-	cleanCmd := "rm -rf /etc/frp /etc/backhaul /etc/gre-panel /etc/x-ui/tunnel.json " +
+	// 11. Clean up config files and service units via privileged bash
+	cleanCmd := "rm -rf /etc/frp /etc/backhaul /etc/gre-panel /etc/x-ui/tunnel.json /var/lib/gre-panel/* " +
 		"/etc/systemd/system/frpc.service /etc/systemd/system/frps.service " +
 		"/etc/systemd/system/backhaul-client.service /etc/systemd/system/backhaul-server.service " +
-		"/etc/systemd/system/gre-tunnel.service /etc/sysctl.d/99-nova-tunnel.conf"
+		"/etc/systemd/system/gre-tunnel.service /etc/systemd/system/gre-panel.service /etc/sysctl.d/99-nova-tunnel.conf /etc/sysctl.d/99-gre-panel.conf"
 	_, _ = s.execPrivilegedBash(ctx, cleanCmd)
 
-	// 9. Reload systemd daemon
+	// 12. Reload systemd daemon
 	_, _ = s.execPrivileged(ctx, "systemctl", "daemon-reload")
 
-	logger.Info("Hashem tunnel removed completely from host")
+	logger.Info("Hashem tunnel removed completely from host and all connections severed")
 	return nil
 }
 

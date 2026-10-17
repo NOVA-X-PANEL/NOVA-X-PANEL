@@ -118,7 +118,8 @@ After=network.target mariadb.service mysql.service
 
 [Service]
 Type=simple
-User=root
+User=www-data
+Group=www-data
 WorkingDirectory=/var/www/mirzabot
 Environment="PHP_CLI_SERVER_WORKERS=8"
 ExecStart=${PHP_BIN} -d memory_limit=256M -d max_execution_time=60 -S 127.0.0.1:9099 -t /var/www/mirzabot
@@ -604,7 +605,8 @@ After=network.target mariadb.service mysql.service
 
 [Service]
 Type=simple
-User=root
+User=www-data
+Group=www-data
 WorkingDirectory=/var/www/mirzabot
 Environment="PHP_CLI_SERVER_WORKERS=8"
 ExecStart=%s -d memory_limit=256M -d max_execution_time=60 -S 127.0.0.1:9099 -t /var/www/mirzabot

@@ -121,11 +121,21 @@ if ($cmd === 'install') {
             $db->exec("ALTER TABLE product MODIFY hide_panel text DEFAULT NULL");
             $db->exec("ALTER TABLE product MODIFY limitip int(11) DEFAULT 0");
 
+            // Check if admin already exists with an existing password hash, otherwise default to admin1234
+            $existingAdmin = null;
+            try {
+                $stmtExist = $db->query("SELECT password FROM admin WHERE username = 'admin' LIMIT 1");
+                if ($stmtExist) $existingAdmin = $stmtExist->fetch(PDO::FETCH_ASSOC);
+            } catch (\Throwable $e) {}
+
+            $hashedPass = (!empty($existingAdmin['password']) && str_starts_with($existingAdmin['password'], '$2'))
+                ? $existingAdmin['password']
+                : password_hash('admin1234', PASSWORD_BCRYPT, ['cost' => 12]);
+
             // Delete all previous/stale admins so ONLY the configured admin has administrator rights
             $db->exec("DELETE FROM admin");
 
             // Insert the new admin with administrator role
-            $hashedPass = password_hash(bin2hex(random_bytes(16)), PASSWORD_BCRYPT);
             $stmt = $db->prepare("INSERT INTO admin (id_admin, username, password, rule) VALUES (?, 'admin', ?, 'administrator')");
             $stmt->execute([$adminId, $hashedPass]);
 

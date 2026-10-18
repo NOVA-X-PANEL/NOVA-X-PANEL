@@ -191,6 +191,49 @@ if ($cmd === 'install') {
     @shell_exec('systemctl enable --now novabot-web.service 2>&1');
     @shell_exec('systemctl restart novabot-web.service 2>&1');
 
+    // Send proactive initial setup prompt to admin via Telegram
+    if (!empty($token) && !empty($adminId)) {
+        try {
+            $topicRights = [
+                'can_manage_chat' => true,
+                'can_manage_topics' => true,
+                'can_pin_messages' => true,
+            ];
+            $selectGroupKeyboard = json_encode([
+                'keyboard' => [
+                    [['text' => 'انتخاب گروه گزارشات', 'request_chat' => [
+                        'request_id' => 1,
+                        'chat_is_channel' => false,
+                        'chat_is_forum' => true,
+                        'user_administrator_rights' => $topicRights,
+                        'bot_administrator_rights' => $topicRights,
+                    ]]],
+                    [['text' => 'بازگشت']]
+                ],
+                'resize_keyboard' => true,
+            ]);
+            $installNotice = "🎉 <b>ربات تلگرام شاپ شما با موفقیت نصب شد!</b>\n\n" .
+                "⚠️ <b>مرحله الزامی راه‌اندازی:</b>\n" .
+                "برای فعال‌سازی و شروع به کار ربات، حتماً باید آن را به یک <b>سوپرگروه دارای تاپیک (Topics)</b> اضافه کرده و به آن دسترسی کامل ادمین بدهید.\n\n" .
+                "🔹 <b>روش اول:</b> دکمه «انتخاب گروه گزارشات» زیر را بزنید و گروه تاپیک‌دار خود را انتخاب نمایید.\n\n" .
+                "🔹 <b>روش دوم:</b> ربات را مستقیماً به سوپرگروه تاپیک‌دار خود اضافه کرده و ادمین نمایید (ربات خودکار متصل و فعال می‌شود).\n\n" .
+                "🔹 <b>روش سوم:</b> آیدی عددی گروه خود را (مانند <code>-100...</code>) به صورت پیام متنی ارسال فرمایید.";
+            $ch = curl_init("https://api.telegram.org/bot{$token}/sendMessage");
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, [
+                'chat_id' => $adminId,
+                'text' => $installNotice,
+                'parse_mode' => 'HTML',
+                'reply_markup' => $selectGroupKeyboard
+            ]);
+            curl_exec($ch);
+            curl_close($ch);
+        } catch (\Throwable $ignored) {}
+    }
+
     echo json_encode(['success' => true]);
     exit(0);
 }

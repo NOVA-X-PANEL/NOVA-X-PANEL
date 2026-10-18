@@ -2,7 +2,11 @@ package controller
 
 import (
 	"fmt"
+	"io"
+	"os"
+	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
@@ -26,6 +30,8 @@ func (a *TelegramShopController) initRouter(g *gin.RouterGroup) {
 	g.POST("/install", requireOwnerOrTelegramShopAccess(), a.install)
 	g.POST("/install-deps", requireOwnerOrTelegramShopAccess(), a.installDeps)
 	g.POST("/action", requireOwnerOrTelegramShopAccess(), a.action)
+	g.POST("/restore", requireOwnerOrTelegramShopAccess(), a.restore)
+	g.GET("/backup", requireOwnerOrTelegramShopAccess(), a.backup)
 }
 
 func (a *TelegramShopController) getStatus(c *gin.Context) {
@@ -100,3 +106,60 @@ func (a *TelegramShopController) installDeps(c *gin.Context) {
 	err := a.shopService.InstallDependencies()
 	jsonMsg(c, "dependencies installed", err)
 }
+
+func (a *TelegramShopController) restore(c *gin.Context) {
+	file, header, err := c.Request.FormFile("file")
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.telegramShop.restoreFileRequired"), err)
+		return
+	}
+	defer file.Close()
+
+	filename := header.Filename
+	ext := strings.ToLower(filepath.Ext(filename))
+	isTarGz := strings.HasSuffix(strings.ToLower(filename), ".tar.gz") || ext == ".tgz"
+	if ext != ".sql" && !isTarGz {
+		jsonMsg(c, "Invalid file format. Only .sql or .tar.gz backups are supported.", fmt.Errorf("invalid extension"))
+		return
+	}
+
+	targetExt := ext
+	if isTarGz {
+		targetExt = ".tar.gz"
+	}
+
+	tmpFile, err := os.CreateTemp("", "tg_restore_*"+targetExt)
+	if err != nil {
+		jsonMsg(c, "Failed to create temporary file", err)
+		return
+	}
+	tmpPath := tmpFile.Name()
+	defer os.Remove(tmpPath)
+
+	if _, err := io.Copy(tmpFile, file); err != nil {
+		_ = tmpFile.Close()
+		jsonMsg(c, "Failed to write backup file", err)
+		return
+	}
+	_ = tmpFile.Close()
+
+	if err := a.shopService.RestoreBackup(c.Request.Context(), tmpPath); err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.telegramShop.restoreFailed"), err)
+		return
+	}
+
+	jsonMsg(c, I18nWeb(c, "pages.telegramShop.restoreSuccess"), nil)
+}
+
+func (a *TelegramShopController) backup(c *gin.Context) {
+	filePath, err := a.shopService.CreateBackup(c.Request.Context())
+	if err != nil {
+		jsonMsg(c, "Failed to create bot backup", err)
+		return
+	}
+	defer os.Remove(filePath)
+
+	timestamp := time.Now().Format("2006-01-02_15-04-05")
+	c.FileAttachment(filePath, fmt.Sprintf("mirzabot_backup_%s.sql", timestamp))
+}
+

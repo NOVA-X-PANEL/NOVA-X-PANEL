@@ -3102,6 +3102,16 @@ export const sections: readonly Section[] = [
         summary: 'Perform lifecycle action (start, stop, restart, uninstall).',
         body: '{\n  "action": "restart"\n}',
       },
+      {
+        method: 'POST',
+        path: '/panel/api/telegram-shop/restore',
+        summary: 'Upload and restore a database (.sql) or codebase (.tar.gz) backup for Telegram Shop Bot.',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/telegram-shop/backup',
+        summary: 'Download SQL dump backup of Telegram Shop database.',
+      },
     ],
   },
 

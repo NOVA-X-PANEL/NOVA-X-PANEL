@@ -2,6 +2,8 @@ package controller
 
 import (
 	"encoding/json"
+	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"strconv"
@@ -465,15 +467,51 @@ func (a *InboundController) pushClientTraffics(c *gin.Context) {
 
 // importInbound imports an inbound configuration from provided data.
 func (a *InboundController) importInbound(c *gin.Context) {
+	var rawData []byte
+
+	contentType := c.ContentType()
+	if strings.Contains(contentType, "application/json") {
+		body, err := io.ReadAll(c.Request.Body)
+		if err == nil && len(body) > 0 {
+			var wrapper struct {
+				Data any `json:"data"`
+			}
+			if err := json.Unmarshal(body, &wrapper); err == nil && wrapper.Data != nil {
+				switch v := wrapper.Data.(type) {
+				case string:
+					rawData = []byte(strings.TrimSpace(v))
+				default:
+					rawData, _ = json.Marshal(v)
+				}
+			} else {
+				rawData = body
+			}
+		}
+	}
+
+	if len(rawData) == 0 {
+		val := strings.TrimSpace(c.PostForm("data"))
+		if val != "" {
+			rawData = []byte(val)
+		}
+	}
+
+	if len(rawData) == 0 {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), fmt.Errorf("empty import payload"))
+		return
+	}
+
 	inbound := &model.Inbound{}
-	err := json.Unmarshal([]byte(c.PostForm("data")), inbound)
+	err := json.Unmarshal(rawData, inbound)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
 	user := session.GetLoginUser(c)
 	inbound.Id = 0
-	inbound.UserId = user.Id
+	if user != nil {
+		inbound.UserId = user.Id
+	}
 	// Node IDs are panel-local and not portable across panels. Drop a node
 	// reference that is zero or that points to a node which doesn't exist on
 	// this panel, so a cross-panel export imports as a local inbound instead of

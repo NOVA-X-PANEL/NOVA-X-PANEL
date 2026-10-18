@@ -1587,18 +1587,75 @@ func (s *ServerService) GetDb() ([]byte, error) {
 	return os.ReadFile(backupPath)
 }
 
+func copyFile(src, dst string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+
+	out, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, in)
+	return err
+}
+
 func (s *ServerService) backupSQLite() (string, func(), error) {
 	backupDir, err := os.MkdirTemp(filepath.Dir(config.GetDBPath()), ".x-ui-backup-")
 	if err != nil {
 		return "", nil, err
 	}
 	cleanup := func() { _ = os.RemoveAll(backupDir) }
-	backupPath := filepath.Join(backupDir, "backup.db")
-	if err := database.BackupSQLite(backupPath); err != nil {
+	dbPath := filepath.Join(backupDir, "x-ui.db")
+	if err := database.BackupSQLite(dbPath); err != nil {
 		cleanup()
 		return "", nil, err
 	}
-	return backupPath, cleanup, nil
+
+	botConfigPath := "/var/www/mirzabot/config.php"
+	botHelperPath := "/usr/local/bin/mirzabot_helper.php"
+	hasBot := false
+	if _, err := os.Stat(botConfigPath); err == nil {
+		hasBot = true
+	} else if _, err := os.Stat(botHelperPath); err == nil {
+		hasBot = true
+	}
+
+	if !hasBot {
+		return dbPath, cleanup, nil
+	}
+
+	// Dump mirzabot MySQL database
+	botSqlPath := filepath.Join(backupDir, "mirzabot.sql")
+	if _, err := os.Stat(botHelperPath); err == nil {
+		_ = exec.Command("php", botHelperPath, "backup", botSqlPath).Run()
+	}
+	if _, err := os.Stat(botSqlPath); err != nil {
+		_ = exec.Command("bash", "-c", fmt.Sprintf("mysqldump mirzabot > %s 2>/dev/null || true", shellQuote(botSqlPath))).Run()
+	}
+
+	if _, err := os.Stat(botConfigPath); err == nil {
+		_ = copyFile(botConfigPath, filepath.Join(backupDir, "config.php"))
+	}
+
+	manifestContent := fmt.Sprintf(`{"version":%q,"createdAt":%q,"hasBot":true}`, config.GetPanelVersion(), time.Now().UTC().Format(time.RFC3339))
+	_ = os.WriteFile(filepath.Join(backupDir, "manifest.json"), []byte(manifestContent), 0644)
+
+	tarGzPath := filepath.Join(backupDir, "nova_unified_backup.tar.gz")
+	tarCmd := exec.Command("tar", "-czf", tarGzPath, "-C", backupDir, "x-ui.db", "mirzabot.sql", "config.php", "manifest.json")
+	if _, err := tarCmd.CombinedOutput(); err != nil {
+		_ = exec.Command("bash", "-c", fmt.Sprintf("cd %s && tar -czf %s x-ui.db * 2>/dev/null", shellQuote(backupDir), shellQuote(tarGzPath))).Run()
+	}
+
+	if _, err := os.Stat(tarGzPath); err == nil {
+		return tarGzPath, cleanup, nil
+	}
+
+	return dbPath, cleanup, nil
 }
 
 // BackupFilename returns the filename for a database backup, named after the
@@ -1616,6 +1673,10 @@ func (s *ServerService) BackupFilename(requestHost string) string {
 	ext := ".db"
 	if database.IsPostgres() {
 		ext = ".dump"
+	} else if _, err := os.Stat("/var/www/mirzabot/config.php"); err == nil {
+		ext = ".tar.gz"
+	} else if _, err := os.Stat("/usr/local/bin/mirzabot_helper.php"); err == nil {
+		ext = ".tar.gz"
 	}
 	return s.backupHost(requestHost) + backupDateSuffix(time.Now()) + ext
 }
@@ -1804,11 +1865,11 @@ func (s *ServerService) ImportDB(file multipart.File, keepHostSettings bool) err
 		return common.NewErrorf("Error reading uploaded file: %v", err)
 	}
 	switch kind {
-	case importKindSQLiteDB, importKindSQLiteDump:
+	case importKindSQLiteDB, importKindSQLiteDump, importKindUnifiedTarGz:
 	case importKindPgDump:
 		return common.NewError("This file is a PostgreSQL backup; it can only be restored on a panel running PostgreSQL")
 	default:
-		return common.NewError("Invalid file: expected a SQLite database (.db) from Back Up or a SQLite migration dump (.dump)")
+		return common.NewError("Invalid file: expected a SQLite database (.db), unified backup (.tar.gz) or migration dump (.dump)")
 	}
 
 	tempPath := fmt.Sprintf("%s.temp", config.GetDBPath())
@@ -2035,6 +2096,7 @@ const (
 	importKindPgDump
 	importKindSQLiteDB
 	importKindSQLiteDump
+	importKindUnifiedTarGz
 )
 
 // sniffImportKind classifies an uploaded restore file by its leading bytes:
@@ -2046,7 +2108,10 @@ func sniffImportKind(header []byte) int {
 	if bytes.HasPrefix(header, []byte("SQLite format 3\x00")) {
 		return importKindSQLiteDB
 	}
-	text := bytes.TrimLeft(bytes.TrimPrefix(header, []byte("\xef\xbb\xbf")), " \t\r\n")
+	if bytes.HasPrefix(header, []byte("\x1f\x8b")) {
+		return importKindUnifiedTarGz
+	}
+	text := bytes.TrimLeft(bytes.TrimPrefix(header, []byte("\xef\xbb\xbf")), " 	\r\n")
 	if bytes.HasPrefix(text, []byte("PRAGMA")) || bytes.HasPrefix(text, []byte("BEGIN TRANSACTION")) {
 		return importKindSQLiteDump
 	}
@@ -2234,6 +2299,52 @@ func saveUploadedFile(file multipart.File, dstPath string) error {
 }
 
 func stageSQLiteUpload(file multipart.File, kind int, tempPath string) error {
+	if kind == importKindUnifiedTarGz {
+		tarPath := tempPath + ".tar.gz"
+		defer os.Remove(tarPath)
+		if err := saveUploadedFile(file, tarPath); err != nil {
+			return common.NewErrorf("Error saving unified backup archive: %v", err)
+		}
+		extractDir, err := os.MkdirTemp("", "nova-unified-restore-*")
+		if err != nil {
+			return err
+		}
+		defer os.RemoveAll(extractDir)
+
+		cmd := exec.Command("tar", "-xzf", tarPath, "-C", extractDir)
+		if out, err := cmd.CombinedOutput(); err != nil {
+			return common.NewErrorf("Error extracting unified backup archive: %s (%v)", string(out), err)
+		}
+
+		extractedDb := filepath.Join(extractDir, "x-ui.db")
+		if _, err := os.Stat(extractedDb); err != nil {
+			return common.NewError("Invalid unified backup: x-ui.db not found in archive")
+		}
+		if err := copyFile(extractedDb, tempPath); err != nil {
+			return common.NewErrorf("Failed to stage x-ui.db: %v", err)
+		}
+
+		// Restore bot MySQL database if present
+		extractedSql := filepath.Join(extractDir, "mirzabot.sql")
+		if _, err := os.Stat(extractedSql); err == nil {
+			helperPath := "/usr/local/bin/mirzabot_helper.php"
+			if _, err := os.Stat(helperPath); err == nil {
+				_ = exec.Command("php", helperPath, "restore", extractedSql).Run()
+			} else {
+				_ = exec.Command("bash", "-c", fmt.Sprintf("mysql mirzabot < %s 2>/dev/null || true", shellQuote(extractedSql))).Run()
+			}
+		}
+
+		// Restore bot config.php if present
+		extractedCfg := filepath.Join(extractDir, "config.php")
+		if _, err := os.Stat(extractedCfg); err == nil {
+			if _, err := os.Stat("/var/www/mirzabot"); err == nil {
+				_ = copyFile(extractedCfg, "/var/www/mirzabot/config.php")
+			}
+		}
+
+		return nil
+	}
 	if kind == importKindSQLiteDump {
 		dumpPath := tempPath + ".dump"
 		defer os.Remove(dumpPath)

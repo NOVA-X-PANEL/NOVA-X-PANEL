@@ -174,6 +174,7 @@ if ($cmd === 'install') {
             $db->exec("UPDATE setting SET Bot_Status = 'botstatuson', roll_Status = 'rolleoff'");
             $db->prepare("UPDATE setting SET id_support = ?")->execute([$adminId]);
             $db->exec("UPDATE setting SET Channel_Report = '' WHERE Channel_Report LIKE '-%'");
+            $db->exec("UPDATE topicid SET idreport = '0'");
         } catch (\Throwable $e) {
             error_log("mirzabot_helper install DB error: " . $e->getMessage());
         }
@@ -255,4 +256,90 @@ if ($cmd === 'action') {
 
     echo json_encode(['success' => false, 'error' => 'unknown action']);
     exit(1);
+}
+
+if ($cmd === 'restore') {
+    $filePath = trim($argv[2] ?? '');
+    if (empty($filePath) || !is_file($filePath)) {
+        fwrite(STDERR, "Backup file not found: {$filePath}\n");
+        echo json_encode(['success' => false, 'error' => 'Backup file not found']);
+        exit(1);
+    }
+    $cfg = loadBotConfig($configPath);
+    $dbhost = $cfg['dbhost'] ?? 'localhost';
+    $dbname = $cfg['dbname'] ?? 'mirzabot';
+    $usernamedb = $cfg['usernamedb'] ?? 'mirzauser';
+    $passworddb = $cfg['passworddb'] ?? 'MirzaDbSecure_Nova!';
+
+    $lower = strtolower($filePath);
+    if (str_ends_with($lower, '.sql')) {
+        $hostArg = ($dbhost === 'localhost' || empty($dbhost)) ? '' : ' -h ' . escapeshellarg($dbhost);
+        $mysqlCmd = sprintf("mysql%s -u %s -p%s %s < %s 2>&1",
+            $hostArg,
+            escapeshellarg($usernamedb),
+            escapeshellarg($passworddb),
+            escapeshellarg($dbname),
+            escapeshellarg($filePath)
+        );
+        exec($mysqlCmd, $out, $ret);
+        if ($ret !== 0) {
+            $err = implode("\n", $out);
+            fwrite(STDERR, "Restore failed: {$err}\n");
+            echo json_encode(['success' => false, 'error' => "Database restore failed: {$err}"]);
+            exit(1);
+        }
+        if (is_file($tableScript)) @shell_exec('php ' . escapeshellarg($tableScript) . ' 2>&1');
+        @shell_exec('systemctl restart mirzabot-poller.service 2>&1');
+        echo json_encode(['success' => true, 'message' => 'Database restored successfully']);
+        exit(0);
+    } elseif (str_ends_with($lower, '.tar.gz') || str_ends_with($lower, '.tgz')) {
+        $tarCmd = sprintf("tar -xzf %s -C /var/www 2>&1", escapeshellarg($filePath));
+        exec($tarCmd, $out, $ret);
+        if ($ret !== 0) {
+            $err = implode("\n", $out);
+            fwrite(STDERR, "Extraction failed: {$err}\n");
+            echo json_encode(['success' => false, 'error' => "Archive extraction failed: {$err}"]);
+            exit(1);
+        }
+        @shell_exec('chown -R www-data:www-data /var/www/mirzabot 2>/dev/null || true');
+        @shell_exec('systemctl restart mirzabot-poller.service novabot-web.service 2>&1');
+        echo json_encode(['success' => true, 'message' => 'Files extracted successfully']);
+        exit(0);
+    } else {
+        fwrite(STDERR, "Unsupported file format. Please upload .sql or .tar.gz\n");
+        echo json_encode(['success' => false, 'error' => 'Unsupported file format']);
+        exit(1);
+    }
+}
+
+if ($cmd === 'backup') {
+    $targetPath = trim($argv[2] ?? '');
+    if (empty($targetPath)) {
+        fwrite(STDERR, "Target backup path required\n");
+        echo json_encode(['success' => false, 'error' => 'Target backup path required']);
+        exit(1);
+    }
+    $cfg = loadBotConfig($configPath);
+    $dbhost = $cfg['dbhost'] ?? 'localhost';
+    $dbname = $cfg['dbname'] ?? 'mirzabot';
+    $usernamedb = $cfg['usernamedb'] ?? 'mirzauser';
+    $passworddb = $cfg['passworddb'] ?? 'MirzaDbSecure_Nova!';
+
+    $hostArg = ($dbhost === 'localhost' || empty($dbhost)) ? '' : ' -h ' . escapeshellarg($dbhost);
+    $dumpCmd = sprintf("mysqldump%s -u %s -p%s %s > %s 2>&1",
+        $hostArg,
+        escapeshellarg($usernamedb),
+        escapeshellarg($passworddb),
+        escapeshellarg($dbname),
+        escapeshellarg($targetPath)
+    );
+    exec($dumpCmd, $out, $ret);
+    if ($ret !== 0 || !is_file($targetPath) || filesize($targetPath) === 0) {
+        $err = implode("\n", $out);
+        fwrite(STDERR, "Backup failed: {$err}\n");
+        echo json_encode(['success' => false, 'error' => "Database backup failed: {$err}"]);
+        exit(1);
+    }
+    echo json_encode(['success' => true, 'message' => 'Database backup created successfully', 'path' => $targetPath]);
+    exit(0);
 }

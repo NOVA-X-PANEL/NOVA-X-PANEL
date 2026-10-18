@@ -17569,6 +17569,66 @@
         }
       }
     },
+    "/panel/api/telegram-shop/restore": {
+      "post": {
+        "tags": [
+          "Telegram Shop"
+        ],
+        "summary": "Upload and restore a database (.sql) or codebase (.tar.gz) backup for Telegram Shop Bot.",
+        "operationId": "post_panel_api_telegram_shop_restore",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/telegram-shop/backup": {
+      "get": {
+        "tags": [
+          "Telegram Shop"
+        ],
+        "summary": "Download SQL dump backup of Telegram Shop database.",
+        "operationId": "get_panel_api_telegram_shop_backup",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/ws": {
       "get": {
         "tags": [

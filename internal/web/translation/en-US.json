@@ -2662,7 +2662,15 @@
       },
       "installDepsBtn": "📦 Auto-Install Bot Prerequisites (Python, Requests, QR)",
       "installDepsSuccess": "Bot prerequisites installed successfully.",
-      "installDepsError": "Failed to install bot prerequisites."
+      "installDepsError": "Failed to install bot prerequisites.",
+      "restoreBtn": "Restore Bot Backup",
+      "restoring": "Restoring backup file and starting bot...",
+      "restoreSuccess": "✅ Bot backup restored successfully and service active.",
+      "restoreFailed": "❌ Failed to restore bot backup",
+      "restoreFileRequired": "Please select a valid backup file (.sql or .tar.gz).",
+      "backupBtn": "Export Bot Backup",
+      "backupStarted": "Bot database backup download initiated.",
+      "backupFailed": "❌ Failed to export bot backup"
     }
   },
   "tgbot": {

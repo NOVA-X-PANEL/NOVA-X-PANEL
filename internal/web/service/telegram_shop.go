@@ -851,3 +851,52 @@ systemctl enable --now mariadb 2>/dev/null || systemctl enable --now mysql 2>/de
 	}
 	return nil
 }
+
+// RestoreBackup restores a database (.sql) or code archive (.tar.gz) using mirzabot_helper.
+func (s *TelegramShopService) RestoreBackup(ctx context.Context, srcPath string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if _, err := os.Stat(srcPath); err != nil {
+		return fmt.Errorf("backup file not found: %w", err)
+	}
+
+	s.ensureMirzaHelper()
+	cmdStr := fmt.Sprintf("%s restore %q", mirzaHelperPath, srcPath)
+	out, err := s.execPrivilegedBash(ctx, cmdStr)
+	if err != nil {
+		return fmt.Errorf("restore error: %s (%v)", string(out), err)
+	}
+
+	_, _ = s.execPrivilegedBash(ctx, "systemctl restart mirzabot-poller.service novabot-web.service 2>/dev/null")
+	return nil
+}
+
+// CreateBackup exports the bot database using mysqldump via mirzabot_helper.
+func (s *TelegramShopService) CreateBackup(ctx context.Context) (string, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.ensureMirzaHelper()
+	tmpFile, err := os.CreateTemp("", "mirzabot_backup_*.sql")
+	if err != nil {
+		return "", err
+	}
+	tmpPath := tmpFile.Name()
+	_ = tmpFile.Close()
+
+	cmdStr := fmt.Sprintf("%s backup %q", mirzaHelperPath, tmpPath)
+	out, err := s.execPrivilegedBash(ctx, cmdStr)
+	if err != nil {
+		_ = os.Remove(tmpPath)
+		return "", fmt.Errorf("backup failed: %s (%v)", string(out), err)
+	}
+
+	if info, err := os.Stat(tmpPath); err != nil || info.Size() == 0 {
+		_ = os.Remove(tmpPath)
+		return "", fmt.Errorf("backup file was not created or empty: %s", string(out))
+	}
+
+	return tmpPath, nil
+}
+

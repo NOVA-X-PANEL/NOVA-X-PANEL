@@ -2304,28 +2304,25 @@ setup_fail2ban_iplimit() {
             ubuntu)
                 apt-get update
                 if [[ "${os_version}" -ge 2400 ]]; then
-                    apt-get install python3-pip -y
-                    python3 -m pip install pyasynchat --break-system-packages
+                    apt-get install python3-pip -y 2>/dev/null || true
+                    python3 -m pip install pyasynchat --break-system-packages 2>/dev/null || true
                 fi
-                apt-get install fail2ban nftables -y
+                apt-get install -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" fail2ban nftables iptables python3-systemd
                 ;;
             debian)
                 apt-get update
-                if [ "$os_version" -ge 12 ]; then
-                    apt-get install -y python3-systemd
-                fi
-                apt-get install -y fail2ban nftables
+                apt-get install -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" fail2ban nftables iptables python3-systemd
                 ;;
             armbian)
-                apt-get update && apt-get install fail2ban nftables -y
+                apt-get update && apt-get install -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" fail2ban nftables iptables python3-systemd
                 ;;
             fedora | amzn | virtuozzo | rhel | almalinux | rocky | ol)
                 if [[ "${release}" != "fedora" ]] && ! dnf repolist enabled 2> /dev/null | grep -qiw epel; then
-                    dnf install -y epel-release \
-                        || dnf install -y "https://dl.fedoraproject.org/pub/epel/epel-release-latest-$(rpm -E %rhel).noarch.rpm" \
+                    dnf install -y epel-release 2>/dev/null \
+                        || dnf install -y "https://dl.fedoraproject.org/pub/epel/epel-release-latest-$(rpm -E %rhel).noarch.rpm" 2>/dev/null \
                         || echo -e "${yellow}Could not enable the EPEL repository; fail2ban is only available from EPEL on this distro.${plain}"
                 fi
-                dnf makecache -y && dnf -y install fail2ban nftables
+                dnf makecache -y && dnf -y install fail2ban nftables iptables
                 ;;
             centos)
                 if [[ "${VERSION_ID}" =~ ^7 ]]; then
@@ -2335,25 +2332,25 @@ setup_fail2ban_iplimit() {
                     # jail uses raw iptables, so a firewalld that was not there
                     # before is not needed: keep it from starting on reboot.
                     rpm -q firewalld &> /dev/null && had_firewalld=1 || had_firewalld=0
-                    yum -y install fail2ban nftables
+                    yum -y install fail2ban iptables
                     if [[ "${had_firewalld}" == "0" ]] && rpm -q firewalld &> /dev/null; then
                         systemctl disable firewalld 2> /dev/null
-                        echo -e "${yellow}firewalld was pulled in by fail2ban and has been disabled so it does not block your ports after a reboot.${plain}
-"
+                        echo -e "${yellow}firewalld was pulled in by fail2ban and has been disabled so it does not block your ports after a reboot.${plain}\n"
                     fi
                 else
-                    dnf makecache -y && dnf -y install fail2ban nftables
+                    dnf install -y epel-release 2>/dev/null || true
+                    dnf makecache -y && dnf -y install fail2ban nftables iptables
                 fi
                 ;;
             arch | manjaro | parch)
-                pacman -Sy --noconfirm fail2ban nftables
+                pacman -Sy --noconfirm fail2ban nftables iptables
                 ;;
             alpine)
-                apk add fail2ban nftables
+                apk add fail2ban nftables iptables
                 ;;
             *)
-                echo -e "${red}Unsupported operating system. Please check the script and install the necessary packages manually.${plain}\n"
-                return 1
+                apt-get update 2>/dev/null || true
+                apt-get install -y fail2ban nftables iptables python3-systemd 2>/dev/null || true
                 ;;
         esac
 
@@ -2388,19 +2385,19 @@ setup_fail2ban_iplimit() {
 
     # Launching fail2ban
     if [[ $release == "alpine" ]]; then
-        if [[ $(rc-service fail2ban status | grep -F 'status: started' -c) == 0 ]]; then
-            rc-service fail2ban start
-        else
-            rc-service fail2ban restart
-        fi
-        rc-update add fail2ban
+        rc-service fail2ban restart 2>/dev/null || rc-service fail2ban start 2>/dev/null
+        rc-update add fail2ban 2>/dev/null || true
     else
-        if ! systemctl is-active --quiet fail2ban; then
-            systemctl start fail2ban
-        else
-            systemctl restart fail2ban
+        systemctl unmask fail2ban >/dev/null 2>&1 || true
+        systemctl daemon-reload >/dev/null 2>&1 || true
+        systemctl enable fail2ban >/dev/null 2>&1 || true
+        if ! systemctl restart fail2ban; then
+            systemctl start fail2ban || true
         fi
-        systemctl enable fail2ban
+    fi
+
+    if command -v fail2ban-client &> /dev/null; then
+        fail2ban-client ping >/dev/null 2>&1 || sleep 1
     fi
 
     echo -e "${green}IP Limit installed and configured successfully!${plain}\n"

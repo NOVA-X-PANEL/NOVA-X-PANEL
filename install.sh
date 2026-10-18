@@ -167,29 +167,33 @@ install_base() {
                 mkdir -p /etc/needrestart/conf.d
                 echo '$nrconf{restart} = "a";' > /etc/needrestart/conf.d/99-noninteractive.conf
             fi
-            apt-get update -qq && apt-get install -y -qq -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" cron curl tar tzdata socat ca-certificates openssl python3 python3-pip python3-requests python3-qrcode
+            apt-get update -qq && apt-get install -y -qq -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" cron curl tar tzdata socat ca-certificates openssl python3 python3-pip python3-requests python3-qrcode fail2ban nftables iptables python3-systemd
             ;;
         fedora | amzn | virtuozzo | rhel | almalinux | rocky | ol)
-            dnf makecache -y && dnf install -y -q cronie curl tar tzdata socat ca-certificates openssl python3 python3-pip python3-requests python3-qrcode
+            if [[ "${release}" != "fedora" ]] && ! dnf repolist enabled 2> /dev/null | grep -qiw epel; then
+                dnf install -y epel-release 2>/dev/null || true
+            fi
+            dnf makecache -y && dnf install -y -q cronie curl tar tzdata socat ca-certificates openssl python3 python3-pip python3-requests python3-qrcode fail2ban nftables iptables
             ;;
         centos)
             if [[ "${VERSION_ID}" =~ ^7 ]]; then
-                yum makecache -y && yum install -y cronie curl tar tzdata socat ca-certificates openssl python3
+                yum makecache -y && yum install -y epel-release cronie curl tar tzdata socat ca-certificates openssl python3 fail2ban iptables
             else
-                dnf makecache -y && dnf install -y -q cronie curl tar tzdata socat ca-certificates openssl python3 python3-pip python3-requests python3-qrcode
+                dnf install -y epel-release 2>/dev/null || true
+                dnf makecache -y && dnf install -y -q cronie curl tar tzdata socat ca-certificates openssl python3 python3-pip python3-requests python3-qrcode fail2ban nftables iptables
             fi
             ;;
         arch | manjaro | parch)
-            pacman -Sy --noconfirm cronie curl tar tzdata socat ca-certificates openssl python python-requests python-qrcode
+            pacman -Sy --noconfirm cronie curl tar tzdata socat ca-certificates openssl python python-requests python-qrcode fail2ban nftables iptables
             ;;
         opensuse-tumbleweed | opensuse-leap)
-            zypper refresh && zypper -q install -y cron curl tar timezone socat ca-certificates openssl python3 python3-requests
+            zypper refresh && zypper -q install -y cron curl tar timezone socat ca-certificates openssl python3 python3-requests fail2ban iptables
             ;;
         alpine)
-            apk update && apk add dcron curl tar tzdata socat ca-certificates openssl python3 py3-requests py3-qrcode
+            apk update && apk add dcron curl tar tzdata socat ca-certificates openssl python3 py3-requests py3-qrcode fail2ban nftables iptables
             ;;
         *)
-            apt-get update && apt-get install -y -q cron curl tar tzdata socat ca-certificates openssl python3 python3-requests python3-qrcode
+            apt-get update && apt-get install -y -q cron curl tar tzdata socat ca-certificates openssl python3 python3-requests python3-qrcode fail2ban nftables iptables python3-systemd
             ;;
     esac
 }

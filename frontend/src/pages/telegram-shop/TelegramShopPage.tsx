@@ -31,8 +31,6 @@ import {
   InfoCircleOutlined,
   GlobalOutlined,
   SettingOutlined,
-  UploadOutlined,
-  DownloadOutlined,
 } from '@ant-design/icons';
 import { HttpUtil } from '@/utils';
 import { useTheme } from '@/hooks/useTheme';
@@ -67,8 +65,6 @@ export default function TelegramShopPage() {
   const [installing, setInstalling] = useState(false);
   const [installingDeps, setInstallingDeps] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
-  const [restoring, setRestoring] = useState(false);
-  const [backingUp, setBackingUp] = useState(false);
   const [status, setStatus] = useState<TgShopStatus | null>(null);
 
   const pageClass = useMemo(() => {
@@ -190,54 +186,6 @@ export default function TelegramShopPage() {
       messageApi.error(msg || t('pages.telegramShop.toasts.actionError'));
     } finally {
       setActionLoading(false);
-    }
-  };
-
-  const handleRestore = () => {
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = '.sql,.tar.gz,.tgz';
-    fileInput.addEventListener('change', async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (!file) return;
-
-      try {
-        setRestoring(true);
-        messageApi.loading({ content: t('pages.telegramShop.restoring'), key: 'tg_restore' });
-
-        const formData = new FormData();
-        formData.append('file', file);
-
-        const res = await HttpUtil.post('/panel/api/telegram-shop/restore', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-          silent: true,
-        });
-
-        if (res && res.success) {
-          messageApi.success({ content: t('pages.telegramShop.restoreSuccess'), key: 'tg_restore' });
-          fetchStatus();
-        } else {
-          messageApi.error({ content: res?.msg || t('pages.telegramShop.restoreFailed'), key: 'tg_restore' });
-        }
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : undefined;
-        messageApi.error({ content: msg || t('pages.telegramShop.restoreFailed'), key: 'tg_restore' });
-      } finally {
-        setRestoring(false);
-      }
-    });
-    fileInput.click();
-  };
-
-  const handleBackup = () => {
-    try {
-      setBackingUp(true);
-      window.location.href = '/panel/api/telegram-shop/backup';
-      messageApi.success({ content: t('pages.telegramShop.backupStarted', 'دانلود فایل بک‌آپ دیتابیس ربات آغاز شد.'), key: 'tg_backup' });
-    } catch {
-      messageApi.error({ content: t('pages.telegramShop.backupFailed', 'خطا در دریافت بک‌آپ ربات.'), key: 'tg_backup' });
-    } finally {
-      setTimeout(() => setBackingUp(false), 2000);
     }
   };
 
@@ -588,24 +536,6 @@ export default function TelegramShopPage() {
                       loading={actionLoading}
                     >
                       {t('pages.telegramShop.restartBtn')}
-                    </Button>
-
-                    <Button
-                      icon={<UploadOutlined />}
-                      loading={restoring}
-                      onClick={handleRestore}
-                      style={{ borderColor: 'rgba(168, 85, 247, 0.45)', color: '#c084fc' }}
-                    >
-                      {t('pages.telegramShop.restoreBtn')}
-                    </Button>
-
-                    <Button
-                      icon={<DownloadOutlined />}
-                      loading={backingUp}
-                      onClick={handleBackup}
-                      style={{ borderColor: 'rgba(52, 211, 153, 0.45)', color: '#34d399' }}
-                    >
-                      {t('pages.telegramShop.backupBtn')}
                     </Button>
 
                     <Button

@@ -39,7 +39,7 @@ export default function BackupModal({
   function importDb() {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
-    fileInput.accept = '.dump,.db,.tar.gz,.tgz';
+    fileInput.accept = '*/*,.dump,.db,.tar.gz,.tgz';
     fileInput.addEventListener('change', async (e) => {
       const dbFile = (e.target as HTMLInputElement).files?.[0];
       if (!dbFile) return;

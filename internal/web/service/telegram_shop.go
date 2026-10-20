@@ -18,6 +18,7 @@ import (
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/mhsanaei/3x-ui/v3/internal/config"
 )
 
 const (
@@ -83,13 +84,27 @@ func (s *TelegramShopService) ensureMirzaHelper() {
 }
 
 func (s *TelegramShopService) EnsureWebUnit() {
-	if _, err := os.Stat("/var/www/mirzabot/index.php"); os.IsNotExist(err) && len(defaultMirzaBotTarGz) > 0 {
+	if len(defaultMirzaBotTarGz) > 0 {
 		_ = os.MkdirAll("/var/www/mirzabot", 0o755)
-		tmpTar := fmt.Sprintf("/tmp/novabot_sync_%d.tar.gz", time.Now().UnixNano())
-		if err := os.WriteFile(tmpTar, defaultMirzaBotTarGz, 0o644); err == nil {
-			defer os.Remove(tmpTar)
-			cmd := fmt.Sprintf("tar --exclude='config.php' -zxf %s -C /var/www/mirzabot >/dev/null 2>&1 && chown -R www-data:www-data /var/www/mirzabot && php /var/www/mirzabot/table.php >/dev/null 2>&1 || true", tmpTar)
-			_, _ = s.execPrivilegedBash(context.Background(), cmd)
+		shouldSync := false
+		if _, err := os.Stat("/var/www/mirzabot/index.php"); os.IsNotExist(err) {
+			shouldSync = true
+		} else {
+			verFile := "/var/www/mirzabot/.nova_bot_version"
+			curVer, _ := os.ReadFile(verFile)
+			if strings.TrimSpace(string(curVer)) != config.GetBaseVersion() {
+				shouldSync = true
+			}
+		}
+
+		if shouldSync {
+			tmpTar := fmt.Sprintf("/tmp/novabot_sync_%d.tar.gz", time.Now().UnixNano())
+			if err := os.WriteFile(tmpTar, defaultMirzaBotTarGz, 0o644); err == nil {
+				defer os.Remove(tmpTar)
+				cmd := fmt.Sprintf("tar --exclude='config.php' -zxf %s -C /var/www/mirzabot >/dev/null 2>&1 && echo '%s' > /var/www/mirzabot/.nova_bot_version && chown -R www-data:www-data /var/www/mirzabot && php /var/www/mirzabot/table.php >/dev/null 2>&1 || true", tmpTar, config.GetBaseVersion())
+				_, _ = s.execPrivilegedBash(context.Background(), cmd)
+				_, _ = s.execPrivilegedBash(context.Background(), "systemctl restart mirzabot-poller.service novabot-web.service 2>/dev/null || true")
+			}
 		}
 	}
 	if _, err := os.Stat("/var/www/mirzabot"); os.IsNotExist(err) {

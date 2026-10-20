@@ -257,10 +257,6 @@ func shellQuote(value string) string {
 }
 
 func (s *HashemService) execPrivileged(ctx context.Context, name string, args ...string) ([]byte, error) {
-	if os.Geteuid() == 0 {
-		cmd := exec.CommandContext(ctx, name, args...)
-		return cmd.CombinedOutput()
-	}
 	if systemdRun, err := exec.LookPath("systemd-run"); err == nil {
 		sdArgs := append([]string{"--quiet", "--pipe", "--wait", name}, args...)
 		cmd := exec.CommandContext(ctx, systemdRun, sdArgs...)
@@ -279,10 +275,6 @@ func (s *HashemService) execPrivileged(ctx context.Context, name string, args ..
 }
 
 func (s *HashemService) execPrivilegedBash(ctx context.Context, script string) ([]byte, error) {
-	if os.Geteuid() == 0 {
-		cmd := exec.CommandContext(ctx, "bash", "-c", script)
-		return cmd.CombinedOutput()
-	}
 	if systemdRun, err := exec.LookPath("systemd-run"); err == nil {
 		cmd := exec.CommandContext(ctx, systemdRun, "--quiet", "--pipe", "--wait", "bash", "-c", script)
 		out, err := cmd.CombinedOutput()

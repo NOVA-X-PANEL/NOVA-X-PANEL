@@ -199,14 +199,16 @@ export default function SubPage() {
                   {t('subscription.updateInterval', { hours: updateHours })}
                 </span>
               )}
-              <a
-                href={subSupportUrl || 'https://t.me/dark_vpn_prroo'}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <CustomerServiceOutlined />
-                {subSupportUrl ? t('support') : `${t('support')} @dark_vpn_prroo`}
-              </a>
+              {subSupportUrl && (
+                <a
+                  href={subSupportUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <CustomerServiceOutlined />
+                  {t('support')}
+                </a>
+              )}
             </footer>
           </Card>
         </Layout.Content>

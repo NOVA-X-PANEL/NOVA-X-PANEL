@@ -160,6 +160,6 @@ func (a *TelegramShopController) backup(c *gin.Context) {
 	defer os.Remove(filePath)
 
 	timestamp := time.Now().Format("2006-01-02_15-04-05")
-	c.FileAttachment(filePath, fmt.Sprintf("mirzabot_backup_%s.sql", timestamp))
+	c.FileAttachment(filePath, fmt.Sprintf("novabot_backup_%s.sql", timestamp))
 }
 

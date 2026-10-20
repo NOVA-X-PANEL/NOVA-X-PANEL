@@ -878,7 +878,7 @@ func (s *TelegramShopService) CreateBackup(ctx context.Context) (string, error) 
 	defer s.mu.Unlock()
 
 	s.ensureMirzaHelper()
-	tmpFile, err := os.CreateTemp("", "mirzabot_backup_*.sql")
+	tmpFile, err := os.CreateTemp("", "novabot_backup_*.sql")
 	if err != nil {
 		return "", err
 	}

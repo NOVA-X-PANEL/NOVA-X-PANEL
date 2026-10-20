@@ -1629,8 +1629,8 @@ func (s *ServerService) backupSQLite() (string, func(), error) {
 		return dbPath, cleanup, nil
 	}
 
-	// Dump mirzabot MySQL database
-	botSqlPath := filepath.Join(backupDir, "mirzabot.sql")
+	// Dump bot MySQL database
+	botSqlPath := filepath.Join(backupDir, "novabot.sql")
 	if _, err := os.Stat(botHelperPath); err == nil {
 		_ = exec.Command("php", botHelperPath, "backup", botSqlPath).Run()
 	}
@@ -1646,7 +1646,7 @@ func (s *ServerService) backupSQLite() (string, func(), error) {
 	_ = os.WriteFile(filepath.Join(backupDir, "manifest.json"), []byte(manifestContent), 0644)
 
 	tarGzPath := filepath.Join(backupDir, "nova_unified_backup.tar.gz")
-	tarCmd := exec.Command("tar", "-czf", tarGzPath, "-C", backupDir, "x-ui.db", "mirzabot.sql", "config.php", "manifest.json")
+	tarCmd := exec.Command("tar", "-czf", tarGzPath, "-C", backupDir, "x-ui.db", "novabot.sql", "config.php", "manifest.json")
 	if _, err := tarCmd.CombinedOutput(); err != nil {
 		_ = exec.Command("bash", "-c", fmt.Sprintf("cd %s && tar -czf %s x-ui.db * 2>/dev/null", shellQuote(backupDir), shellQuote(tarGzPath))).Run()
 	}
@@ -2325,13 +2325,25 @@ func stageSQLiteUpload(file multipart.File, kind int, tempPath string) error {
 		}
 
 		// Restore bot MySQL database if present
-		extractedSql := filepath.Join(extractDir, "mirzabot.sql")
+		extractedSql := filepath.Join(extractDir, "novabot.sql")
 		if _, err := os.Stat(extractedSql); err == nil {
 			helperPath := "/usr/local/bin/mirzabot_helper.php"
 			if _, err := os.Stat(helperPath); err == nil {
 				_ = exec.Command("php", helperPath, "restore", extractedSql).Run()
 			} else {
 				_ = exec.Command("bash", "-c", fmt.Sprintf("mysql mirzabot < %s 2>/dev/null || true", shellQuote(extractedSql))).Run()
+			}
+		}
+		// Backward compatibility: also check for legacy mirzabot.sql
+		legacySql := filepath.Join(extractDir, "mirzabot.sql")
+		if _, errNew := os.Stat(extractedSql); errNew != nil {
+			if _, errOld := os.Stat(legacySql); errOld == nil {
+				helperPath := "/usr/local/bin/mirzabot_helper.php"
+				if _, err := os.Stat(helperPath); err == nil {
+					_ = exec.Command("php", helperPath, "restore", legacySql).Run()
+				} else {
+					_ = exec.Command("bash", "-c", fmt.Sprintf("mysql mirzabot < %s 2>/dev/null || true", shellQuote(legacySql))).Run()
+				}
 			}
 		}
 

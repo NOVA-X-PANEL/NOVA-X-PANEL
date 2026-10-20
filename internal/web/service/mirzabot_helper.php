@@ -383,6 +383,12 @@ if ($cmd === 'backup') {
         echo json_encode(['success' => false, 'error' => "Database backup failed: {$err}"]);
         exit(1);
     }
+    $sql = file_get_contents($targetPath);
+    $sql = preg_replace('/-- Current Database: `[^`]+`/', '-- Current Database: `novabot`', $sql);
+    $sql = preg_replace('/-- Host: [^\\s]+    Database: [^\\s]+/', '-- Host: localhost    Database: novabot', $sql);
+    $sql = preg_replace('/CREATE DATABASE [^;]+;/', '', $sql);
+    $sql = preg_replace('/USE `[^`]+`;/', '', $sql);
+    file_put_contents($targetPath, $sql);
     echo json_encode(['success' => true, 'message' => 'Database backup created successfully', 'path' => $targetPath]);
     exit(0);
 }

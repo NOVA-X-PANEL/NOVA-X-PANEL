@@ -16,6 +16,7 @@ import {
   Spin,
   Alert,
   Statistic,
+  Upload,
 } from 'antd';
 import {
   ShoppingCartOutlined,
@@ -31,6 +32,8 @@ import {
   InfoCircleOutlined,
   GlobalOutlined,
   SettingOutlined,
+  DownloadOutlined,
+  UploadOutlined,
 } from '@ant-design/icons';
 import { HttpUtil } from '@/utils';
 import { useTheme } from '@/hooks/useTheme';
@@ -65,6 +68,7 @@ export default function TelegramShopPage() {
   const [installing, setInstalling] = useState(false);
   const [installingDeps, setInstallingDeps] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [restoring, setRestoring] = useState(false);
   const [status, setStatus] = useState<TgShopStatus | null>(null);
 
   const pageClass = useMemo(() => {
@@ -160,6 +164,34 @@ export default function TelegramShopPage() {
     } finally {
       setInstallingDeps(false);
     }
+  };
+
+  const handleRestore = async (file: File) => {
+    const isSql = file.name.endsWith('.sql');
+    const isTar = file.name.endsWith('.tar.gz') || file.name.endsWith('.tgz');
+    if (!isSql && !isTar) {
+      messageApi.error(t('pages.telegramShop.restoreFileRequired'));
+      return false;
+    }
+    setRestoring(true);
+    messageApi.loading({ content: t('pages.telegramShop.restoring'), key: 'restore_bot', duration: 0 });
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await HttpUtil.post('/panel/api/telegram-shop/restore', formData, { silent: true });
+      if (res && res.success) {
+        messageApi.success({ content: t('pages.telegramShop.restoreSuccess'), key: 'restore_bot' });
+        fetchStatus();
+      } else {
+        messageApi.error({ content: `${t('pages.telegramShop.restoreFailed')}: ${res?.msg || ''}`, key: 'restore_bot' });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : '';
+      messageApi.error({ content: `${t('pages.telegramShop.restoreFailed')}: ${msg}`, key: 'restore_bot' });
+    } finally {
+      setRestoring(false);
+    }
+    return false;
   };
 
   const handleAction = async (action: 'start' | 'stop' | 'restart' | 'uninstall') => {
@@ -546,6 +578,29 @@ export default function TelegramShopPage() {
                     >
                       {t('pages.telegramShop.installDepsBtn')}
                     </Button>
+
+                    <Button
+                      icon={<DownloadOutlined />}
+                      href="/panel/api/telegram-shop/backup"
+                      target="_blank"
+                      style={{ borderColor: 'rgba(16, 185, 129, 0.4)', color: '#10b981' }}
+                    >
+                      {t('pages.telegramShop.backupBtn')}
+                    </Button>
+
+                    <Upload
+                      showUploadList={false}
+                      beforeUpload={handleRestore}
+                      accept=".sql,.tar.gz,.tgz"
+                    >
+                      <Button
+                        icon={<UploadOutlined />}
+                        loading={restoring}
+                        style={{ borderColor: 'rgba(245, 158, 11, 0.4)', color: '#f59e0b' }}
+                      >
+                        {t('pages.telegramShop.restoreBtn')}
+                      </Button>
+                    </Upload>
 
                     {status.running ? (
                       <Button

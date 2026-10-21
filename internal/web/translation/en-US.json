@@ -131,7 +131,8 @@
     "myApi": "My API",
     "brandTagline": "Fast • Secure • Free",
     "hashem": "NOVA-TUNELL",
-    "telegramShop": "Telegram Shop"
+    "telegramShop": "Telegram Shop",
+    "openvpn": "OpenVPN"
   },
   "pages": {
     "login": {

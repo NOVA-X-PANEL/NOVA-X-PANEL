@@ -176,6 +176,7 @@ func (s *ClientService) Create(inboundSvc *InboundService, payload *ClientCreate
 	if client.SubID == "" {
 		client.SubID = uuid.NewString()
 	}
+	payload.Client.SubID = client.SubID
 	// Enable: omit defaults true via ClientCreatePayload.UnmarshalJSON; explicit false kept.
 	now := time.Now().UnixMilli()
 	if client.CreatedAt == 0 {
@@ -1224,4 +1225,23 @@ func (s *ClientService) Detach(inboundSvc *InboundService, id int, inboundIds []
 		}})
 	}
 	return fanoutInboundApplies(applies)
+}
+
+// RevokeSubID generates a new random subId for a client and updates all associated inbounds.
+func (s *ClientService) RevokeSubID(inboundSvc *InboundService, email string) (string, bool, error) {
+	if strings.TrimSpace(email) == "" {
+		return "", false, common.NewError("client email is required")
+	}
+	rec, err := s.GetRecordByEmail(nil, email)
+	if err != nil {
+		return "", false, err
+	}
+	newSubId := uuid.NewString()
+	client := *rec.ToClient()
+	client.SubID = newSubId
+	needRestart, err := s.Update(inboundSvc, rec.Id, client, rec.LimitHwid)
+	if err != nil {
+		return "", false, err
+	}
+	return newSubId, needRestart, nil
 }

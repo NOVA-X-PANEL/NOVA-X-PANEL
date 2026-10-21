@@ -1923,6 +1923,32 @@ func (s *SettingService) BuildSubURIBase(host string) string {
 	return fmt.Sprintf("%s://%s:%d", scheme, subDomain, subPort)
 }
 
+// BuildFullSubURL constructs a client's full subscription URL based on subURI or host settings.
+func (s *SettingService) BuildFullSubURL(host string, subId string) string {
+	if subId == "" {
+		return ""
+	}
+	subURI, _ := s.GetSubURI()
+	if subURI != "" {
+		if !strings.Contains(subURI, "?") && !strings.HasSuffix(subURI, "/") {
+			subURI += "/"
+		}
+		return subURI + subId
+	}
+	base := s.BuildSubURIBase(host)
+	subPath, _ := s.GetSubPath()
+	if subPath == "" {
+		subPath = "/sub/"
+	}
+	if !strings.HasPrefix(subPath, "/") {
+		subPath = "/" + subPath
+	}
+	if !strings.HasSuffix(subPath, "/") {
+		subPath += "/"
+	}
+	return base + subPath + subId
+}
+
 func (s *SettingService) GetDefaultSettings(host string) (any, error) {
 	type settingFunc func() (any, error)
 	settings := map[string]settingFunc{
@@ -1991,6 +2017,10 @@ func (s *SettingService) GetDefaultSettings(host string) (any, error) {
 		if subClashEnable && result["subClashURI"].(string) == "" {
 			result["subClashURI"] = subURI + subClashPath
 		}
+	}
+
+	if str, ok := result["subURI"].(string); ok && str != "" && !strings.Contains(str, "?") && !strings.HasSuffix(str, "/") {
+		result["subURI"] = str + "/"
 	}
 
 	return result, nil

@@ -1173,6 +1173,7 @@ export const UserSchema = z.object({
   permissionOverrides: z.string(),
   roleId: z.number().int(),
   status: z.string(),
+  telegramShopAccess: z.boolean(),
   updatedAt: z.number().int(),
   usedBytes: z.number().int(),
   username: z.string(),

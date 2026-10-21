@@ -77,6 +77,7 @@ func (a *ClientController) initRouter(g *gin.RouterGroup) {
 	g.GET("/get/tgId/:tgId", clientsRead, a.getByTgId)
 	g.GET("/traffic/:email", clientsRead, a.getTrafficByEmail)
 	g.GET("/subLinks/:subId", clientsRead, a.getSubLinks)
+	g.GET("/subUrl/:subId", clientsRead, a.getSubUrl)
 	g.GET("/links/:email", clientsRead, a.getClientLinks)
 	g.POST("/happLink/:id", clientsRead, a.generateHappLink)
 
@@ -84,6 +85,7 @@ func (a *ClientController) initRouter(g *gin.RouterGroup) {
 	g.POST("/renewalPreview", clientsRead, a.renewalPreview)
 	g.POST("/update/:email", clientsUpdate, a.update)
 	g.POST("/del/:email", clientsDelete, a.delete)
+	g.POST("/:email/revokeSub", clientsUpdate, a.revokeSub)
 	g.POST("/:email/attach", clientsUpdate, a.attach)
 	g.POST("/:email/detach", clientsUpdate, a.detach)
 	g.POST("/:email/externalLinks", clientsUpdate, a.setExternalLinks)
@@ -285,7 +287,7 @@ func (a *ClientController) listPaged(c *gin.Context) {
 	jsonObj(c, resp, nil)
 }
 
-func (a *ClientController) buildClientPayload(rec *model.ClientRecord) (gin.H, error) {
+func (a *ClientController) buildClientPayload(host string, rec *model.ClientRecord) (gin.H, error) {
 	inboundIds, err := a.clientService.GetInboundIdsForRecord(rec.Id)
 	if err != nil {
 		return nil, err
@@ -307,12 +309,14 @@ func (a *ClientController) buildClientPayload(rec *model.ClientRecord) (gin.H, e
 	if err != nil {
 		return nil, err
 	}
+	subUrl := a.settingService.BuildFullSubURL(host, rec.SubID)
 	return gin.H{
 		"client":           rec,
 		"inboundIds":       inboundIds,
 		"externalLinks":    externalLinks,
 		"usedTraffic":      usedTraffic,
 		"tunnelAllowedIPs": tunnelAllowedIPs,
+		"subUrl":           subUrl,
 	}, nil
 }
 
@@ -326,7 +330,7 @@ func (a *ClientController) get(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.obtain"), err)
 		return
 	}
-	payload, err := a.buildClientPayload(rec)
+	payload, err := a.buildClientPayload(resolveHost(c), rec)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.obtain"), err)
 		return
@@ -350,8 +354,9 @@ func (a *ClientController) getByTgId(c *gin.Context) {
 	// than rejected: the caller sees the ones their role allows.
 	records = service.FilterRecordsForScope(a.clientScope(c, "view"), records)
 	results := make([]gin.H, 0, len(records))
+	host := resolveHost(c)
 	for _, rec := range records {
-		payload, err := a.buildClientPayload(rec)
+		payload, err := a.buildClientPayload(host, rec)
 		if err != nil {
 			jsonMsg(c, I18nWeb(c, "get"), err)
 			return
@@ -451,7 +456,24 @@ func (a *ClientController) create(c *gin.Context) {
 		}
 	}
 
-	jsonMsgObj(c, I18nWeb(c, "pages.inbounds.toasts.inboundClientAddSuccess"), pendingNodeObj(a.inboundService.AnyNodePending(payload.InboundIds)), nil)
+	subId := payload.Client.SubID
+	if subId == "" {
+		if rec, _ := a.clientService.GetRecordByEmail(nil, payload.Client.Email); rec != nil {
+			subId = rec.SubID
+		}
+	}
+	subUrl := a.settingService.BuildFullSubURL(resolveHost(c), subId)
+
+	respObj := gin.H{
+		"email":  payload.Client.Email,
+		"subId":  subId,
+		"subUrl": subUrl,
+	}
+	if a.inboundService.AnyNodePending(payload.InboundIds) {
+		respObj["nodePending"] = true
+	}
+
+	jsonMsgObj(c, I18nWeb(c, "pages.inbounds.toasts.inboundClientAddSuccess"), respObj, nil)
 }
 
 func (a *ClientController) update(c *gin.Context) {
@@ -1050,6 +1072,42 @@ func (a *ClientController) getSubLinks(c *gin.Context) {
 		return
 	}
 	jsonObj(c, links, nil)
+}
+
+func (a *ClientController) getSubUrl(c *gin.Context) {
+	subId := c.Param("subId")
+	if _, ok := a.requireClientInScopeBySubID(c, subId, "view"); !ok {
+		return
+	}
+	subUrl := a.settingService.BuildFullSubURL(resolveHost(c), subId)
+	jsonObj(c, gin.H{
+		"subId":  subId,
+		"subUrl": subUrl,
+	}, nil)
+}
+
+func (a *ClientController) revokeSub(c *gin.Context) {
+	email := c.Param("email")
+	if _, ok := a.requireClientInScope(c, email, "update"); !ok {
+		return
+	}
+	newSubId, needRestart, err := a.clientService.RevokeSubID(&a.inboundService, email)
+	if needRestart {
+		a.xrayService.SetToNeedRestart()
+	}
+	if needRestart || err == nil {
+		notifyClientsChanged()
+	}
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return
+	}
+	subUrl := a.settingService.BuildFullSubURL(resolveHost(c), newSubId)
+	jsonObj(c, gin.H{
+		"email":  email,
+		"subId":  newSubId,
+		"subUrl": subUrl,
+	}, nil)
 }
 
 func (a *ClientController) getClientLinks(c *gin.Context) {

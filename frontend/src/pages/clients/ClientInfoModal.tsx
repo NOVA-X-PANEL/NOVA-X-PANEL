@@ -176,14 +176,18 @@ export default function ClientInfoModal({
   }, [totalBytes, used]);
 
   const subId = client?.subId;
-  const subLink = subId && subSettings?.subURI ? subSettings.subURI + subId : '';
+  const joinSub = (base?: string) => {
+    if (!base || !subId) return '';
+    return base.endsWith('/') ? `${base}${subId}` : `${base}/${subId}`;
+  };
+  const subLink = subId && subSettings?.subURI ? joinSub(subSettings.subURI) : '';
   const subJsonLink =
     subId && subSettings?.subJsonEnable && subSettings?.subJsonURI
-      ? subSettings.subJsonURI + subId
+      ? joinSub(subSettings.subJsonURI)
       : '';
   const subClashLink =
     subId && subSettings?.subClashEnable && subSettings?.subClashURI
-      ? subSettings.subClashURI + subId
+      ? joinSub(subSettings.subClashURI)
       : '';
 
   const showSubscription = !!(subSettings?.enable && client?.subId);

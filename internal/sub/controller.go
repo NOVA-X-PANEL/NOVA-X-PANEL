@@ -550,13 +550,19 @@ func (a *SUBController) subs(c *gin.Context) {
 		logSubscriptionRoute(userAgent, "clash")
 		return
 	}
-	if shouldAutoServeJson(a.jsonAutoDetect, a.jsonEnabled, false, userAgent, a.jsonUserAgent) && a.serveJsonBody(c, true, "application/json; charset=utf-8", false) {
+	if (shouldAutoServeJson(a.jsonAutoDetect, a.jsonEnabled, false, userAgent, a.jsonUserAgent) || (a.jsonEnabled && isSingboxUserAgent(userAgent))) && a.serveJsonBody(c, true, "application/json; charset=utf-8", false) {
 		a.recordSubscriptionFetch(c)
 		logSubscriptionRoute(userAgent, "json")
 		return
 	}
 	logSubscriptionRoute(userAgent, "raw")
 	a.serveRawSubs(c, a.subEncrypt)
+}
+
+var singboxUARegex = regexp.MustCompile(`(?i)(sing-box|singbox|hiddify|nekobox|nekoray)`)
+
+func isSingboxUserAgent(userAgent string) bool {
+	return singboxUARegex.MatchString(userAgent)
 }
 
 func (a *SUBController) subPlain(c *gin.Context) {

@@ -174,20 +174,32 @@ export default function TelegramShopPage() {
       return false;
     }
     setRestoring(true);
-    messageApi.loading({ content: t('pages.telegramShop.restoring'), key: 'restore_bot', duration: 0 });
+    messageApi.loading({
+      content: t('pages.telegramShop.restoring'),
+      key: 'restore_bot',
+      duration: 0,
+    });
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const res = await HttpUtil.post('/panel/api/telegram-shop/restore', formData, { silent: true });
+      const res = await HttpUtil.post('/panel/api/telegram-shop/restore', formData, {
+        silent: true,
+      });
       if (res && res.success) {
         messageApi.success({ content: t('pages.telegramShop.restoreSuccess'), key: 'restore_bot' });
         fetchStatus();
       } else {
-        messageApi.error({ content: `${t('pages.telegramShop.restoreFailed')}: ${res?.msg || ''}`, key: 'restore_bot' });
+        messageApi.error({
+          content: `${t('pages.telegramShop.restoreFailed')}: ${res?.msg || ''}`,
+          key: 'restore_bot',
+        });
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : '';
-      messageApi.error({ content: `${t('pages.telegramShop.restoreFailed')}: ${msg}`, key: 'restore_bot' });
+      messageApi.error({
+        content: `${t('pages.telegramShop.restoreFailed')}: ${msg}`,
+        key: 'restore_bot',
+      });
     } finally {
       setRestoring(false);
     }
@@ -249,20 +261,6 @@ export default function TelegramShopPage() {
                         }}
                       >
                         <span>{t('pages.telegramShop.title')}</span>
-                        <span
-                          style={{
-                            color: '#fbbf24',
-                            backgroundColor: 'rgba(245, 158, 11, 0.16)',
-                            border: '1px solid rgba(245, 158, 11, 0.45)',
-                            padding: '1px 8px',
-                            borderRadius: 4,
-                            fontSize: 12,
-                            fontWeight: 700,
-                            lineHeight: '18px',
-                          }}
-                        >
-                          beta
-                        </span>
                       </Title>
                       <Paragraph
                         style={{ margin: 0, color: '#94a3b8', fontSize: 13, marginTop: 4 }}

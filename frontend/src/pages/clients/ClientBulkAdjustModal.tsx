@@ -188,10 +188,10 @@ export default function ClientBulkAdjustModal({
         <FormProvider {...methods}>
           <Form layout="vertical">
             <FormField name="addDays" label={t('pages.clients.addDays')}>
-              <InputNumber style={{ width: '100%' }} step={1} precision={0} placeholder="0" />
+              <InputNumber style={{ width: '100%', direction: 'ltr' }} step={1} precision={0} placeholder="0" />
             </FormField>
             <FormField name="addGB" label={t('pages.clients.addTrafficGB')}>
-              <InputNumber style={{ width: '100%' }} step={1} placeholder="0" />
+              <InputNumber style={{ width: '100%', direction: 'ltr' }} step={1} placeholder="0" />
             </FormField>
 
             <div style={{ marginBottom: 16, marginTop: 8 }}>

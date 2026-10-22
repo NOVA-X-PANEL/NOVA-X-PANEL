@@ -431,44 +431,6 @@ export default function AppSidebar() {
             onMouseEnter: () => preloadRoute(tab.key),
           };
         }
-        if (tab.key === '/telegram-shop') {
-          return {
-            key: tab.key,
-            icon: <Icon />,
-            label: (
-              <span
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  width: '100%',
-                }}
-              >
-                <span>{tab.title}</span>
-                <span
-                  style={{
-                    color: '#fbbf24',
-                    backgroundColor: 'rgba(245, 158, 11, 0.16)',
-                    border: '1px solid rgba(245, 158, 11, 0.45)',
-                    padding: '0 5px',
-                    borderRadius: 4,
-                    fontSize: 10,
-                    fontWeight: 700,
-                    lineHeight: '16px',
-                    marginLeft: 6,
-                    marginRight: 6,
-                    flexShrink: 0,
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  beta
-                </span>
-              </span>
-            ),
-            title: '',
-            onMouseEnter: () => preloadRoute(tab.key),
-          };
-        }
         return {
           key: tab.key,
           icon: <Icon />,

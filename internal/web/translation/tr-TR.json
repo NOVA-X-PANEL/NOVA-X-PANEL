@@ -1039,7 +1039,15 @@
       "defaultLimitsHint": "Bundan sonra oluşturulan her istemciye otomatik uygulanır. Sınırsız için 0 girin.",
       "defaultLimits": "İstemci Varsayılanları",
       "renewIntervalDesc": "Süre dolduktan sonra önceki bitiş zamanına belirlenen sayıda 24 saatlik gün ekler ve istemci trafiğini sıfırlar. Ek bir sıfırlama istemiyorsanız bağımsız trafik sıfırlamalarını devre dışı bırakın.",
-      "renewWeeklyDesc": "Takvim yenilemesi panelin saat diliminde gece yarısı gerçekleşir ve istemci trafiğini de sıfırlar. Ek bir sıfırlama istemiyorsanız bağımsız trafik sıfırlamalarını devre dışı bırakın."
+      "renewWeeklyDesc": "Takvim yenilemesi panelin saat diliminde gece yarısı gerçekleşir ve istemci trafiğini de sıfırlar. Ek bir sıfırlama istemiyorsanız bağımsız trafik sıfırlamalarını devre dışı bırakın.",
+      "bulkAdjustAllTitle": "Bulk Adjust All Clients",
+      "adjustAll": "Bulk Adjust All Clients",
+      "bulkAdjustTarget": "Scope",
+      "bulkAdjustTargetSelected": "Selected clients ({count})",
+      "bulkAdjustTargetAll": "All clients ({count})",
+      "skipUnlimitedUsers": "Skip unlimited users (unlimited traffic or expiry)",
+      "skipUnlimitedUsersDesc": "Clients with unlimited traffic (Total=0) or unlimited expiry (Expiry=0) will not be modified.",
+      "bulkAdvancedSettings": "Advanced Settings (Flow, HWID, Proxy Tag)"
     },
     "groups": {
       "name": "İsim",

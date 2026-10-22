@@ -1039,7 +1039,15 @@
       "defaultLimitsHint": "Se aplica automáticamente a cada cliente creado a partir de ahora. Usa 0 para no limitar.",
       "defaultLimits": "Valores predeterminados del cliente",
       "renewIntervalDesc": "Tras expirar, añade el número configurado de días de 24 horas al vencimiento anterior y reinicia el tráfico del cliente. Mantén desactivados los reinicios de tráfico independientes salvo que quieras un reinicio adicional.",
-      "renewWeeklyDesc": "La renovación por calendario se realiza a medianoche en la zona horaria del panel y también reinicia el tráfico del cliente. Mantén desactivados los reinicios de tráfico independientes salvo que quieras un reinicio adicional."
+      "renewWeeklyDesc": "La renovación por calendario se realiza a medianoche en la zona horaria del panel y también reinicia el tráfico del cliente. Mantén desactivados los reinicios de tráfico independientes salvo que quieras un reinicio adicional.",
+      "bulkAdjustAllTitle": "Bulk Adjust All Clients",
+      "adjustAll": "Bulk Adjust All Clients",
+      "bulkAdjustTarget": "Scope",
+      "bulkAdjustTargetSelected": "Selected clients ({count})",
+      "bulkAdjustTargetAll": "All clients ({count})",
+      "skipUnlimitedUsers": "Skip unlimited users (unlimited traffic or expiry)",
+      "skipUnlimitedUsersDesc": "Clients with unlimited traffic (Total=0) or unlimited expiry (Expiry=0) will not be modified.",
+      "bulkAdvancedSettings": "Advanced Settings (Flow, HWID, Proxy Tag)"
     },
     "groups": {
       "name": "Nombre",

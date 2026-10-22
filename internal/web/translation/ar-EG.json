@@ -1039,7 +1039,15 @@
       "defaultLimitsHint": "يُطبَّق تلقائيًا على كل عميل يُنشأ من الآن. اجعل القيمة 0 لعدم وجود حد.",
       "defaultLimits": "إعدادات العميل الافتراضية",
       "renewIntervalDesc": "بعد انتهاء الصلاحية، يُضاف عدد الأيام المحدد (24 ساعة لكل يوم) إلى الموعد النهائي السابق ويُعاد تعيين استهلاك العميل. أبقِ إعادة تعيين الاستهلاك المستقلة معطلة ما لم تكن تريد إعادة تعيين إضافية.",
-      "renewWeeklyDesc": "يتم التجديد التقويمي عند منتصف الليل بتوقيت اللوحة ويُعاد أيضًا تعيين استهلاك العميل. أبقِ إعادة تعيين الاستهلاك المستقلة معطلة ما لم تكن تريد إعادة تعيين إضافية."
+      "renewWeeklyDesc": "يتم التجديد التقويمي عند منتصف الليل بتوقيت اللوحة ويُعاد أيضًا تعيين استهلاك العميل. أبقِ إعادة تعيين الاستهلاك المستقلة معطلة ما لم تكن تريد إعادة تعيين إضافية.",
+      "bulkAdjustAllTitle": "Bulk Adjust All Clients",
+      "adjustAll": "Bulk Adjust All Clients",
+      "bulkAdjustTarget": "Scope",
+      "bulkAdjustTargetSelected": "Selected clients ({count})",
+      "bulkAdjustTargetAll": "All clients ({count})",
+      "skipUnlimitedUsers": "Skip unlimited users (unlimited traffic or expiry)",
+      "skipUnlimitedUsersDesc": "Clients with unlimited traffic (Total=0) or unlimited expiry (Expiry=0) will not be modified.",
+      "bulkAdvancedSettings": "Advanced Settings (Flow, HWID, Proxy Tag)"
     },
     "groups": {
       "name": "الاسم",

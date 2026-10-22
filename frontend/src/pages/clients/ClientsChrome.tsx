@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { InputNumber, message } from 'antd';
 import {
+  ClockCircleOutlined,
   CloudDownloadOutlined,
   CloudUploadOutlined,
   DownOutlined,
@@ -83,10 +84,11 @@ interface ClientsActionsProps {
   onImport: () => void;
   onExport: () => void;
   onResetTraffic: () => void;
+  onAdjustAll?: () => void;
 }
 
-/** Full-width action bar: the four client actions, plus the default-limits editor. */
-export function ClientsActions({ onAdd, onImport, onExport, onResetTraffic }: ClientsActionsProps) {
+/** Full-width action bar: the client actions, plus the default-limits editor. */
+export function ClientsActions({ onAdd, onImport, onExport, onResetTraffic, onAdjustAll }: ClientsActionsProps) {
   const { t } = useTranslation();
   const [messageApi, messageContextHolder] = message.useMessage();
   const [open, setOpen] = useState(false);
@@ -113,6 +115,16 @@ export function ClientsActions({ onAdd, onImport, onExport, onResetTraffic }: Cl
       onClick: onAdd,
       cls: 'is-primary',
     },
+    ...(onAdjustAll
+      ? [
+          {
+            key: 'adjustAll',
+            icon: <ClockCircleOutlined />,
+            label: t('pages.clients.adjustAll'),
+            onClick: onAdjustAll,
+          },
+        ]
+      : []),
     {
       key: 'import',
       icon: <CloudUploadOutlined />,

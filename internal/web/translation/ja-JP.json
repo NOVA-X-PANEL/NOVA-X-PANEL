@@ -1039,7 +1039,15 @@
       "defaultLimitsHint": "今後作成されるすべてのクライアントに自動で適用されます。制限なしは 0 です。",
       "defaultLimits": "クライアントの既定値",
       "renewIntervalDesc": "期限切れ後、前回の期限に指定日数（1 日 24 時間）を加算し、クライアントの通信量をリセットします。追加のリセットが不要なら、独立した通信量リセットは無効にしてください。",
-      "renewWeeklyDesc": "カレンダー更新はパネルのタイムゾーンの午前 0 時に行われ、クライアントの通信量もリセットします。追加のリセットが不要なら、独立した通信量リセットは無効にしてください。"
+      "renewWeeklyDesc": "カレンダー更新はパネルのタイムゾーンの午前 0 時に行われ、クライアントの通信量もリセットします。追加のリセットが不要なら、独立した通信量リセットは無効にしてください。",
+      "bulkAdjustAllTitle": "Bulk Adjust All Clients",
+      "adjustAll": "Bulk Adjust All Clients",
+      "bulkAdjustTarget": "Scope",
+      "bulkAdjustTargetSelected": "Selected clients ({count})",
+      "bulkAdjustTargetAll": "All clients ({count})",
+      "skipUnlimitedUsers": "Skip unlimited users (unlimited traffic or expiry)",
+      "skipUnlimitedUsersDesc": "Clients with unlimited traffic (Total=0) or unlimited expiry (Expiry=0) will not be modified.",
+      "bulkAdvancedSettings": "Advanced Settings (Flow, HWID, Proxy Tag)"
     },
     "groups": {
       "name": "名前",

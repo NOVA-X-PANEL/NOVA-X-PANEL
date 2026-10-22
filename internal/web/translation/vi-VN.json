@@ -1039,7 +1039,15 @@
       "defaultLimitsHint": "Applied automatically to every client created from now on. Set a value to 0 for no limit.",
       "defaultLimits": "Client Defaults",
       "renewIntervalDesc": "Sau khi hết hạn, cộng số ngày đã đặt (mỗi ngày 24 giờ) vào thời điểm hết hạn trước đó và đặt lại lưu lượng của khách hàng. Tắt việc đặt lại lưu lượng độc lập trừ khi bạn muốn đặt lại thêm.",
-      "renewWeeklyDesc": "Gia hạn theo lịch diễn ra lúc nửa đêm theo múi giờ của bảng điều khiển và cũng đặt lại lưu lượng của khách hàng. Tắt việc đặt lại lưu lượng độc lập trừ khi bạn muốn đặt lại thêm."
+      "renewWeeklyDesc": "Gia hạn theo lịch diễn ra lúc nửa đêm theo múi giờ của bảng điều khiển và cũng đặt lại lưu lượng của khách hàng. Tắt việc đặt lại lưu lượng độc lập trừ khi bạn muốn đặt lại thêm.",
+      "bulkAdjustAllTitle": "Bulk Adjust All Clients",
+      "adjustAll": "Bulk Adjust All Clients",
+      "bulkAdjustTarget": "Scope",
+      "bulkAdjustTargetSelected": "Selected clients ({count})",
+      "bulkAdjustTargetAll": "All clients ({count})",
+      "skipUnlimitedUsers": "Skip unlimited users (unlimited traffic or expiry)",
+      "skipUnlimitedUsersDesc": "Clients with unlimited traffic (Total=0) or unlimited expiry (Expiry=0) will not be modified.",
+      "bulkAdvancedSettings": "Advanced Settings (Flow, HWID, Proxy Tag)"
     },
     "groups": {
       "name": "Tên",

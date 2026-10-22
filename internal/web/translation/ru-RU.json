@@ -1039,7 +1039,15 @@
       "defaultLimitsHint": "Автоматически применяется ко всем новым клиентам. 0 — без ограничений.",
       "defaultLimits": "Значения по умолчанию",
       "renewIntervalDesc": "После истечения срока добавляет указанное число 24-часовых дней к предыдущему сроку и сбрасывает трафик клиента. Оставьте независимый сброс трафика выключенным, если дополнительный сброс не нужен.",
-      "renewWeeklyDesc": "Календарное продление выполняется в полночь по часовому поясу панели и также сбрасывает трафик клиента. Оставьте независимый сброс трафика выключенным, если дополнительный сброс не нужен."
+      "renewWeeklyDesc": "Календарное продление выполняется в полночь по часовому поясу панели и также сбрасывает трафик клиента. Оставьте независимый сброс трафика выключенным, если дополнительный сброс не нужен.",
+      "bulkAdjustAllTitle": "Bulk Adjust All Clients",
+      "adjustAll": "Bulk Adjust All Clients",
+      "bulkAdjustTarget": "Scope",
+      "bulkAdjustTargetSelected": "Selected clients ({count})",
+      "bulkAdjustTargetAll": "All clients ({count})",
+      "skipUnlimitedUsers": "Skip unlimited users (unlimited traffic or expiry)",
+      "skipUnlimitedUsersDesc": "Clients with unlimited traffic (Total=0) or unlimited expiry (Expiry=0) will not be modified.",
+      "bulkAdvancedSettings": "Advanced Settings (Flow, HWID, Proxy Tag)"
     },
     "groups": {
       "name": "Имя",

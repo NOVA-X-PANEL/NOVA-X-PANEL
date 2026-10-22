@@ -592,12 +592,14 @@ func (a *ClientController) resetAllTraffics(c *gin.Context) {
 }
 
 type bulkAdjustRequest struct {
-	Emails    []string `json:"emails"`
-	AddDays   int      `json:"addDays"`
-	AddBytes  int64    `json:"addBytes"`
-	Flow      string   `json:"flow"`
-	LimitHwid *int     `json:"limitHwid"`
-	AdTag     string   `json:"adTag"`
+	Emails        []string `json:"emails"`
+	All           bool     `json:"all"`
+	SkipUnlimited bool     `json:"skipUnlimited"`
+	AddDays       int      `json:"addDays"`
+	AddBytes      int64    `json:"addBytes"`
+	Flow          string   `json:"flow"`
+	LimitHwid     *int     `json:"limitHwid"`
+	AdTag         string   `json:"adTag"`
 }
 
 func (a *ClientController) bulkAdjust(c *gin.Context) {
@@ -613,8 +615,22 @@ func (a *ClientController) bulkAdjust(c *gin.Context) {
 			return
 		}
 	}
-	req.Emails = a.scopeEmails(c, req.Emails, "update")
-	result, needRestart, err := a.clientService.BulkAdjust(&a.inboundService, req.Emails, req.AddDays, req.AddBytes, req.Flow, req.LimitHwid, req.AdTag)
+	if req.All {
+		clients, err := a.clientService.ListForScope(a.clientScope(c, "update"))
+		if err != nil {
+			jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+			return
+		}
+		req.Emails = make([]string, 0, len(clients))
+		for _, cl := range clients {
+			if cl.Email != "" {
+				req.Emails = append(req.Emails, cl.Email)
+			}
+		}
+	} else {
+		req.Emails = a.scopeEmails(c, req.Emails, "update")
+	}
+	result, needRestart, err := a.clientService.BulkAdjust(&a.inboundService, req.Emails, req.AddDays, req.AddBytes, req.Flow, req.LimitHwid, req.AdTag, req.SkipUnlimited)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return

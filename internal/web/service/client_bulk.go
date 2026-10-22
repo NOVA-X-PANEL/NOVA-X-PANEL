@@ -332,7 +332,7 @@ var bulkFlowAllowed = map[string]struct{}{
 // Like BulkDelete, the work is grouped by inbound so each inbound's
 // settings JSON is parsed and written exactly once regardless of how
 // many target emails it contains.
-func (s *ClientService) BulkAdjust(inboundSvc *InboundService, emails []string, addDays int, addBytes int64, flow string, limitHwid *int, adTag string) (BulkAdjustResult, bool, error) {
+func (s *ClientService) BulkAdjust(inboundSvc *InboundService, emails []string, addDays int, addBytes int64, flow string, limitHwid *int, adTag string, skipUnlimited ...bool) (BulkAdjustResult, bool, error) {
 	result := BulkAdjustResult{}
 	if len(emails) == 0 {
 		return result, false, nil
@@ -377,8 +377,21 @@ func (s *ClientService) BulkAdjust(inboundSvc *InboundService, emails []string, 
 		}
 	}
 
+	skipUnlim := len(skipUnlimited) > 0 && skipUnlimited[0]
 	plan := map[string]*bulkAdjustEntry{}
 	for email, rec := range recordsByEmail {
+		if skipUnlim && (rec.TotalGB == 0 || rec.ExpiryTime == 0) {
+			if _, exists := skippedReasons[email]; !exists {
+				if rec.TotalGB == 0 && rec.ExpiryTime == 0 {
+					skippedReasons[email] = "unlimited traffic and expiry"
+				} else if rec.TotalGB == 0 {
+					skippedReasons[email] = "unlimited traffic"
+				} else {
+					skippedReasons[email] = "unlimited expiry"
+				}
+			}
+			continue
+		}
 		entry := &bulkAdjustEntry{record: rec}
 		if addDays != 0 {
 			switch {

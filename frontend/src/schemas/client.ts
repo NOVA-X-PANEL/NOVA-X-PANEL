@@ -348,6 +348,8 @@ export const ClientCreateFormSchema = ClientFormSchema.extend({
 
 export const ClientBulkAdjustFormSchema = z
   .object({
+    all: z.boolean().optional().default(false),
+    skipUnlimited: z.boolean().optional().default(true),
     addDays: z.number().int(),
     addGB: z.number(),
     flow: z.string().optional().default(''),

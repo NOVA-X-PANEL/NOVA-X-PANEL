@@ -419,6 +419,8 @@ export function useClients(options: UseClientsOptions = {}) {
   const bulkAdjustMut = useMutation({
     mutationFn: async (payload: {
       emails: string[];
+      all?: boolean;
+      skipUnlimited?: boolean;
       addDays: number;
       addBytes: number;
       flow?: string;
@@ -599,9 +601,11 @@ export function useClients(options: UseClientsOptions = {}) {
       flow = '',
       limitHwid?: number | null,
       adTag?: string,
+      all = false,
+      skipUnlimited = true,
     ) => {
-      if (!Array.isArray(emails) || emails.length === 0) return Promise.resolve(null);
-      return bulkAdjustMut.mutateAsync({ emails, addDays, addBytes, flow, limitHwid, adTag });
+      if (!all && (!Array.isArray(emails) || emails.length === 0)) return Promise.resolve(null);
+      return bulkAdjustMut.mutateAsync({ emails, addDays, addBytes, flow, limitHwid, adTag, all, skipUnlimited });
     },
     [bulkAdjustMut],
   );

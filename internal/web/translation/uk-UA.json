@@ -1039,7 +1039,15 @@
       "defaultLimitsHint": "Автоматично застосовується до кожного нового клієнта. 0 — без обмежень.",
       "defaultLimits": "Типові значення клієнта",
       "renewIntervalDesc": "Після завершення строку додає вказану кількість 24-годинних днів до попереднього терміну та скидає трафік клієнта. Залиште незалежне скидання трафіку вимкненим, якщо додаткове скидання не потрібне.",
-      "renewWeeklyDesc": "Календарне подовження відбувається опівночі за часовим поясом панелі й також скидає трафік клієнта. Залиште незалежне скидання трафіку вимкненим, якщо додаткове скидання не потрібне."
+      "renewWeeklyDesc": "Календарне подовження відбувається опівночі за часовим поясом панелі й також скидає трафік клієнта. Залиште незалежне скидання трафіку вимкненим, якщо додаткове скидання не потрібне.",
+      "bulkAdjustAllTitle": "Bulk Adjust All Clients",
+      "adjustAll": "Bulk Adjust All Clients",
+      "bulkAdjustTarget": "Scope",
+      "bulkAdjustTargetSelected": "Selected clients ({count})",
+      "bulkAdjustTargetAll": "All clients ({count})",
+      "skipUnlimitedUsers": "Skip unlimited users (unlimited traffic or expiry)",
+      "skipUnlimitedUsersDesc": "Clients with unlimited traffic (Total=0) or unlimited expiry (Expiry=0) will not be modified.",
+      "bulkAdvancedSettings": "Advanced Settings (Flow, HWID, Proxy Tag)"
     },
     "groups": {
       "name": "Назва",

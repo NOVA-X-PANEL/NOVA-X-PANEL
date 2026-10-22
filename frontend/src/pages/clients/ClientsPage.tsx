@@ -453,6 +453,7 @@ export default function ClientsPage() {
   );
   const [bulkAddOpen, setBulkAddOpen] = useState(false);
   const [bulkAdjustOpen, setBulkAdjustOpen] = useState(false);
+  const [bulkAdjustIsAll, setBulkAdjustIsAll] = useState(false);
   const [subLinksOpen, setSubLinksOpen] = useState(false);
   const [bulkGroupOpen, setBulkGroupOpen] = useState(false);
   const [bulkAttachOpen, setBulkAttachOpen] = useState(false);
@@ -1459,6 +1460,10 @@ export default function ClientsPage() {
                       onImport={onImportClients}
                       onExport={onExportClients}
                       onResetTraffic={onResetAllTraffics}
+                      onAdjustAll={() => {
+                        setBulkAdjustIsAll(true);
+                        setBulkAdjustOpen(true);
+                      }}
                     />
                     <div className="nc-full">
                       <Card
@@ -1536,7 +1541,10 @@ export default function ClientsPage() {
                                           key: 'adjust',
                                           icon: <ClockCircleOutlined />,
                                           label: t('pages.clients.adjust'),
-                                          onClick: () => setBulkAdjustOpen(true),
+                                          onClick: () => {
+                                            setBulkAdjustIsAll(false);
+                                            setBulkAdjustOpen(true);
+                                          },
                                         },
                                         {
                                           key: 'subLinks',
@@ -1551,6 +1559,15 @@ export default function ClientsPage() {
                                           icon: <UsergroupAddOutlined />,
                                           label: t('pages.clients.bulk'),
                                           onClick: () => setBulkAddOpen(true),
+                                        },
+                                        {
+                                          key: 'adjustAll',
+                                          icon: <ClockCircleOutlined />,
+                                          label: t('pages.clients.adjustAll'),
+                                          onClick: () => {
+                                            setBulkAdjustIsAll(true);
+                                            setBulkAdjustOpen(true);
+                                          },
                                         },
                                         {
                                           key: 'export',
@@ -2044,18 +2061,25 @@ export default function ClientsPage() {
           <ClientBulkAdjustModal
             open={bulkAdjustOpen}
             count={selectedRowKeys.length}
-            onOpenChange={setBulkAdjustOpen}
-            onSubmit={async (addDays, addBytes, flow, limitHwid, adTag) => {
+            isAll={bulkAdjustIsAll}
+            totalCount={clients.length}
+            onOpenChange={(v) => {
+              setBulkAdjustOpen(v);
+              if (!v) setBulkAdjustIsAll(false);
+            }}
+            onSubmit={async (addDays, addBytes, flow, limitHwid, adTag, all, skipUnlimited) => {
               const msg = await bulkAdjust(
-                [...selectedRowKeys],
+                all ? [] : [...selectedRowKeys],
                 addDays,
                 addBytes,
                 flow,
                 limitHwid,
                 adTag,
+                all,
+                skipUnlimited,
               );
               if (msg?.success) {
-                setSelectedRowKeys([]);
+                if (!all) setSelectedRowKeys([]);
                 return msg.obj ?? { adjusted: 0 };
               }
               return null;

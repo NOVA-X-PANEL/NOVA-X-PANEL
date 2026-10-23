@@ -131,6 +131,9 @@ func (s *OpenVPNService) KillClient(name string) error {
 	if name == "" {
 		return nil
 	}
+
+	sessions, _ := s.QueryManagementSessions()
+
 	conn, err := net.DialTimeout("tcp", mgmtAddress, 1*time.Second)
 	if err != nil {
 		return err
@@ -141,9 +144,14 @@ func (s *OpenVPNService) KillClient(name string) error {
 	reader := bufio.NewReader(conn)
 	_, _ = reader.ReadString('\n') // read banner
 
-	_, err = fmt.Fprintf(conn, "kill %s\n", name)
-	if err != nil {
-		return err
+	// 1. Kill by common name
+	_, _ = fmt.Fprintf(conn, "kill %s\n", name)
+
+	// 2. Kill by exact IP:port for all matching sessions
+	for _, sess := range sessions {
+		if strings.EqualFold(sess.CommonName, name) && sess.RealAddress != "" {
+			_, _ = fmt.Fprintf(conn, "kill %s\n", sess.RealAddress)
+		}
 	}
 	return nil
 }
@@ -206,6 +214,13 @@ sysctl -w net.ipv4.ip_forward=1 >/dev/null 2>&1
 iptables -t nat -C POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE 2>/dev/null || iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE
 iptables -C FORWARD -s 10.8.0.0/24 -j ACCEPT 2>/dev/null || iptables -A FORWARD -s 10.8.0.0/24 -j ACCEPT
 iptables -C FORWARD -d 10.8.0.0/24 -m state --state RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || iptables -A FORWARD -d 10.8.0.0/24 -m state --state RELATED,ESTABLISHED -j ACCEPT
+
+# Ensure tls-verify hook is in server.conf for immediate revocation/disable enforcement
+for c in /etc/openvpn/server/server.conf /etc/openvpn/server.conf; do
+    if [ -f "$c" ] && ! grep -q "tls-verify" "$c"; then
+        sed -i '/script-security 2/a tls-verify /usr/local/x-ui/bin/openvpn-verify.py' "$c"
+    fi
+done
 `
 	_, _ = s.execPrivilegedBash(ctx, script)
 }
@@ -806,6 +821,7 @@ verb 3
 management 127.0.0.1 7505
 
 script-security 2
+tls-verify /usr/local/x-ui/bin/openvpn-verify.py
 client-connect /usr/local/x-ui/bin/openvpn-auth.py
 client-disconnect /usr/local/x-ui/bin/openvpn-auth.py
 

@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mhsanaei/3x-ui/v3/internal/database"
+	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 )
 
@@ -71,17 +73,22 @@ func (a *OpenVPNController) addClient(c *gin.Context) {
 }
 
 type openVPNUpdateForm struct {
-	Name       string `json:"name" form:"name"`
-	Password   string `json:"password" form:"password"`
-	TotalGB    int64  `json:"totalGB" form:"totalGB"`
-	ExpiryTime int64  `json:"expiryTime" form:"expiryTime"`
-	LimitIP    int    `json:"limitIp" form:"limitIp"`
-	Enable     *bool  `json:"enable" form:"enable"`
+	Name          string `json:"name" form:"name"`
+	Password      string `json:"password" form:"password"`
+	TotalGB       int64  `json:"totalGB" form:"totalGB"`
+	TotalGBAlt    int64  `json:"total_gb" form:"total_gb"`
+	ExpiryTime    int64  `json:"expiryTime" form:"expiryTime"`
+	ExpiryTimeAlt int64  `json:"expiry_time" form:"expiry_time"`
+	LimitIP       int    `json:"limitIp" form:"limitIp"`
+	LimitIPAlt    int    `json:"limit_ip" form:"limit_ip"`
+	Enable        *bool  `json:"enable" form:"enable"`
 }
 
 func (a *OpenVPNController) updateClient(c *gin.Context) {
 	var form openVPNUpdateForm
-	_ = c.ShouldBind(&form)
+	if err := c.ShouldBindJSON(&form); err != nil {
+		_ = c.ShouldBind(&form)
+	}
 
 	name := strings.TrimSpace(form.Name)
 	if name == "" {
@@ -93,14 +100,33 @@ func (a *OpenVPNController) updateClient(c *gin.Context) {
 		password = strings.TrimSpace(c.PostForm("password"))
 	}
 
-	enable := true
+	totalGB := form.TotalGB
+	if totalGB == 0 && form.TotalGBAlt != 0 {
+		totalGB = form.TotalGBAlt
+	}
+	expiryTime := form.ExpiryTime
+	if expiryTime == 0 && form.ExpiryTimeAlt != 0 {
+		expiryTime = form.ExpiryTimeAlt
+	}
+	limitIP := form.LimitIP
+	if limitIP == 0 && form.LimitIPAlt != 0 {
+		limitIP = form.LimitIPAlt
+	}
+
+	db := database.GetDB()
+	var existingUser model.OpenVPNUser
+	if db != nil && name != "" {
+		_ = db.Where("name = ?", name).First(&existingUser)
+	}
+
+	enable := existingUser.Enable
 	if form.Enable != nil {
 		enable = *form.Enable
 	} else if enableStr := c.PostForm("enable"); enableStr != "" {
 		enable = enableStr == "true" || enableStr == "1"
 	}
 
-	err := a.openvpnService.UpdateClient(name, password, form.TotalGB, form.ExpiryTime, form.LimitIP, enable)
+	err := a.openvpnService.UpdateClient(name, password, totalGB, expiryTime, limitIP, enable)
 	jsonMsg(c, fmt.Sprintf("Client '%s' updated successfully", name), err)
 }
 

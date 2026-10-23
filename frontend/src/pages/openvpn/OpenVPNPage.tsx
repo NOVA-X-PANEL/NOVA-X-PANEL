@@ -45,6 +45,7 @@ import {
   DashboardOutlined,
   StopOutlined,
   ShareAltOutlined,
+  SaveOutlined,
 } from '@ant-design/icons';
 import { HttpUtil } from '@/utils';
 import { useTheme } from '@/hooks/useTheme';
@@ -91,6 +92,8 @@ interface OpenVPNStatus {
   subnet: string;
   direct_ip: string;
   iran_ip: string;
+  remote_host?: string;
+  remote_port?: number;
   total_clients: number;
   online_clients: number;
   connected_clients: OpenVPNConnectedClient[];
@@ -180,20 +183,57 @@ export default function OpenVPNPage() {
     localStorage.setItem('nova_openvpn_endpoint_port', p.toString());
   };
 
+  const [savingSettings, setSavingSettings] = useState(false);
+
+  const handleSaveSettings = async () => {
+    if (!endpointHost) {
+      messageApi.warning('لطفاً آدرس یا آی‌پی ریموت را وارد کنید');
+      return;
+    }
+    setSavingSettings(true);
+    try {
+      const res = await HttpUtil.post('/panel/api/openvpn/settings', {
+        remote_host: endpointHost.trim(),
+        remote_port: endpointPort,
+        server_port: status?.port || 2083,
+      });
+      if (res && res.success) {
+        messageApi.success('تنظیمات OpenVPN با موفقیت در پایگاه داده سرور ذخیره شد و پایدار ماند');
+        fetchStatus();
+      } else {
+        messageApi.error(res?.msg || 'خطا در ذخیره تنظیمات');
+      }
+    } catch (e: unknown) {
+      const err = e as { message?: string };
+      messageApi.error(err?.message || 'خطا در ارتباط با سرور');
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
   const fetchStatus = useCallback(async () => {
     setLoading(true);
     try {
       const res = await HttpUtil.get<OpenVPNStatus>('/panel/api/openvpn/status');
       if (res && res.obj) {
         setStatus(res.obj);
-        setEndpointHost((prev) => {
-          if (!prev) {
-            const initial = res.obj?.iran_ip || res.obj?.direct_ip || '91.107.165.105';
-            localStorage.setItem('nova_openvpn_endpoint_host', initial);
-            return initial;
-          }
-          return prev;
-        });
+        if (res.obj.remote_host) {
+          setEndpointHost(res.obj.remote_host);
+          localStorage.setItem('nova_openvpn_endpoint_host', res.obj.remote_host);
+        } else {
+          setEndpointHost((prev) => {
+            if (!prev) {
+              const initial = res.obj?.iran_ip || res.obj?.direct_ip || '';
+              if (initial) localStorage.setItem('nova_openvpn_endpoint_host', initial);
+              return initial;
+            }
+            return prev;
+          });
+        }
+        if (res.obj.remote_port && res.obj.remote_port > 0) {
+          setEndpointPort(res.obj.remote_port);
+          localStorage.setItem('nova_openvpn_endpoint_port', res.obj.remote_port.toString());
+        }
       }
     } catch {
       messageApi.error('خطا در دریافت وضعیت OpenVPN');
@@ -206,8 +246,9 @@ export default function OpenVPNPage() {
     fetchStatus();
   }, [fetchStatus]);
 
-  const activeHost = endpointHost || status?.iran_ip || status?.direct_ip || '91.107.165.105';
-  const activePort = endpointPort > 0 ? endpointPort : (status?.port || 2083);
+  const activeHost =
+    endpointHost || status?.remote_host || status?.iran_ip || status?.direct_ip || '';
+  const activePort = endpointPort > 0 ? endpointPort : status?.remote_port || status?.port || 2083;
 
   // Add client submit handler
   const handleAddClient = async (values: {
@@ -470,7 +511,8 @@ export default function OpenVPNPage() {
   };
 
   const copyAccountDetails = () => {
-    const text = `🌐 مشخصات اکانت OpenVPN:\n` +
+    const text =
+      `🌐 مشخصات اکانت OpenVPN:\n` +
       `👤 نام کاربری: ${configModal.clientName}\n` +
       (configModal.password ? `🔑 رمز عبور: ${configModal.password}\n` : '') +
       `🌍 آدرس سرور: ${configModal.host}\n` +
@@ -505,7 +547,9 @@ export default function OpenVPNPage() {
           {record.password ? (
             <Space size={4} align="center">
               <KeyOutlined style={{ fontSize: 11, color: '#f59e0b' }} />
-              <Text type="secondary" style={{ fontSize: 11 }}>رمز:</Text>
+              <Text type="secondary" style={{ fontSize: 11 }}>
+                رمز:
+              </Text>
               <Text code style={{ fontSize: 11, letterSpacing: '0.5px' }}>
                 {showPasswords[record.name] ? record.password : '••••••••'}
               </Text>
@@ -513,7 +557,13 @@ export default function OpenVPNPage() {
                 type="text"
                 size="small"
                 style={{ padding: '0 4px', height: 20 }}
-                icon={showPasswords[record.name] ? <EyeInvisibleOutlined style={{ fontSize: 11 }} /> : <EyeOutlined style={{ fontSize: 11 }} />}
+                icon={
+                  showPasswords[record.name] ? (
+                    <EyeInvisibleOutlined style={{ fontSize: 11 }} />
+                  ) : (
+                    <EyeOutlined style={{ fontSize: 11 }} />
+                  )
+                }
                 onClick={() => toggleShowPassword(record.name)}
               />
               <Button
@@ -574,7 +624,15 @@ export default function OpenVPNPage() {
           </Space>
         ) : (
           <div className="openvpn-offline-badge">
-            <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: '#64748b', display: 'inline-block' }} />
+            <span
+              style={{
+                width: 7,
+                height: 7,
+                borderRadius: '50%',
+                backgroundColor: '#64748b',
+                display: 'inline-block',
+              }}
+            />
             <span>آفلاین</span>
           </div>
         ),
@@ -586,7 +644,14 @@ export default function OpenVPNPage() {
         const isUnlimited = record.total_gb <= 0;
         return (
           <div style={{ minWidth: 140 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 2 }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                fontSize: 12,
+                marginBottom: 2,
+              }}
+            >
               <Text strong>{record.traffic_used_str}</Text>
               <Text type="secondary">{record.traffic_limit_str}</Text>
             </div>
@@ -594,8 +659,20 @@ export default function OpenVPNPage() {
               <Progress
                 percent={Math.round(record.traffic_percent)}
                 size="small"
-                status={record.is_traffic_exceeded ? 'exception' : record.traffic_percent > 85 ? 'normal' : 'active'}
-                strokeColor={record.is_traffic_exceeded ? '#ef4444' : record.traffic_percent > 85 ? '#f59e0b' : '#00e5ff'}
+                status={
+                  record.is_traffic_exceeded
+                    ? 'exception'
+                    : record.traffic_percent > 85
+                      ? 'normal'
+                      : 'active'
+                }
+                strokeColor={
+                  record.is_traffic_exceeded
+                    ? '#ef4444'
+                    : record.traffic_percent > 85
+                      ? '#f59e0b'
+                      : '#00e5ff'
+                }
               />
             ) : (
               <span className="openvpn-unlimited-tag">نامحدود</span>
@@ -624,17 +701,19 @@ export default function OpenVPNPage() {
           return (
             <Space direction="vertical" size={2}>
               <Tag color="error">منقضی شده</Tag>
-              <Text type="secondary" style={{ fontSize: 11 }}>{formatted}</Text>
+              <Text type="secondary" style={{ fontSize: 11 }}>
+                {formatted}
+              </Text>
             </Space>
           );
         }
 
         return (
           <Space direction="vertical" size={2}>
-            <Tag color={diffDays <= 3 ? 'warning' : 'success'}>
-              {diffDays} روز باقیمانده
-            </Tag>
-            <Text type="secondary" style={{ fontSize: 11 }}>{formatted}</Text>
+            <Tag color={diffDays <= 3 ? 'warning' : 'success'}>{diffDays} روز باقیمانده</Tag>
+            <Text type="secondary" style={{ fontSize: 11 }}>
+              {formatted}
+            </Text>
           </Space>
         );
       },
@@ -665,11 +744,7 @@ export default function OpenVPNPage() {
             </Button>
 
             <Tooltip title="ویرایش اطلاعات و پسورد">
-              <Button
-                size="small"
-                icon={<EditOutlined />}
-                onClick={() => openEditModal(record)}
-              />
+              <Button size="small" icon={<EditOutlined />} onClick={() => openEditModal(record)} />
             </Tooltip>
 
             <Tooltip title="ریست ترافیک مصرفی">
@@ -724,7 +799,11 @@ export default function OpenVPNPage() {
               <div className="openvpn-hero-left">
                 <Title level={2} className="openvpn-hero-title">
                   <SafetyOutlined
-                    style={{ fontSize: 28, color: '#00f2fe', filter: 'drop-shadow(0 0 10px rgba(0, 242, 254, 0.7))' }}
+                    style={{
+                      fontSize: 28,
+                      color: '#00f2fe',
+                      filter: 'drop-shadow(0 0 10px rgba(0, 242, 254, 0.7))',
+                    }}
                   />
                   <span className="openvpn-hero-title-text">مدیریت OpenVPN</span>
                   <Tag
@@ -733,8 +812,12 @@ export default function OpenVPNPage() {
                       fontSize: 12,
                       padding: '2px 10px',
                       borderRadius: 12,
-                      border: status?.running ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid rgba(239, 68, 68, 0.4)',
-                      background: status?.running ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                      border: status?.running
+                        ? '1px solid rgba(16, 185, 129, 0.4)'
+                        : '1px solid rgba(239, 68, 68, 0.4)',
+                      background: status?.running
+                        ? 'rgba(16, 185, 129, 0.15)'
+                        : 'rgba(239, 68, 68, 0.15)',
                       color: status?.running ? '#10b981' : '#ef4444',
                     }}
                   >
@@ -742,7 +825,8 @@ export default function OpenVPNPage() {
                   </Tag>
                 </Title>
                 <Text className="openvpn-hero-subtitle">
-                  مدیریت کاربران، نام کاربری و رمز عبور، کنترل ترافیک، محدودیت آی‌پی و صدور کانفیگ تانل‌شده
+                  مدیریت کاربران، نام کاربری و رمز عبور، کنترل ترافیک، محدودیت آی‌پی و صدور کانفیگ
+                  تانل‌شده
                 </Text>
               </div>
               <div className="openvpn-hero-actions">
@@ -782,7 +866,15 @@ export default function OpenVPNPage() {
               <Col xs={24} sm={12} md={6}>
                 <Card className="openvpn-card openvpn-stat-card">
                   <Text type="secondary">وضعیت هسته OpenVPN</Text>
-                  <div className="openvpn-stat-value" style={{ color: status?.running ? '#10b981' : '#ef4444', display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div
+                    className="openvpn-stat-value"
+                    style={{
+                      color: status?.running ? '#10b981' : '#ef4444',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                    }}
+                  >
                     <span
                       className="openvpn-pulse-dot"
                       style={{
@@ -800,14 +892,24 @@ export default function OpenVPNPage() {
                 <Card className="openvpn-card openvpn-stat-card">
                   <Text type="secondary">پورت لیسن هسته سرور</Text>
                   <div className="openvpn-stat-value">
-                    {status?.port || 2083} <span style={{ fontSize: 14, fontWeight: 500, color: '#94a3b8' }}>{status?.proto?.toUpperCase() || 'TCP'}</span>
+                    {status?.port || 2083}{' '}
+                    <span style={{ fontSize: 14, fontWeight: 500, color: '#94a3b8' }}>
+                      {status?.proto?.toUpperCase() || 'TCP'}
+                    </span>
                   </div>
                 </Card>
               </Col>
               <Col xs={24} sm={12} md={6}>
                 <Card className="openvpn-card openvpn-stat-card">
                   <Text type="secondary">کاربران متصل آنلاین</Text>
-                  <div className="openvpn-stat-value" style={{ background: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                  <div
+                    className="openvpn-stat-value"
+                    style={{
+                      background: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                    }}
+                  >
                     {status?.online_clients || 0}
                   </div>
                 </Card>
@@ -815,7 +917,14 @@ export default function OpenVPNPage() {
               <Col xs={24} sm={12} md={6}>
                 <Card className="openvpn-card openvpn-stat-card">
                   <Text type="secondary">کل کاربران</Text>
-                  <div className="openvpn-stat-value" style={{ background: 'linear-gradient(135deg, #e2e8f0 0%, #94a3b8 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                  <div
+                    className="openvpn-stat-value"
+                    style={{
+                      background: 'linear-gradient(135deg, #e2e8f0 0%, #94a3b8 100%)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                    }}
+                  >
                     {status?.total_clients || 0}
                   </div>
                 </Card>
@@ -830,12 +939,16 @@ export default function OpenVPNPage() {
                 <Space align="center">
                   <SettingOutlined style={{ color: '#00e5ff' }} />
                   <span>تنظیمات آدرس، دامنه و پورت تانل برای کانفیگ‌های خروجی</span>
-                  <span dir="ltr" className="openvpn-ovpn-tag">.ovpn</span>
+                  <span dir="ltr" className="openvpn-ovpn-tag">
+                    .ovpn
+                  </span>
                 </Space>
               }
             >
               <Paragraph type="secondary" style={{ marginBottom: 16 }}>
-                آدرس و پورتی که می‌خواهید در خط <Text code>remote</Text> کانفیگ‌ها قرار بگیرد را اینجا مشخص کنید. می‌توانید از آی‌پی سرور ایران، پورت تانل‌شده، یا دامنه دلخواه خود استفاده نمایید:
+                آدرس و پورتی که می‌خواهید در خط <Text code>remote</Text> کانفیگ‌ها قرار بگیرد را اینجا
+                مشخص کنید. می‌توانید از آی‌پی سرور ایران، پورت تانل‌شده، یا دامنه دلخواه خود استفاده
+                نمایید:
               </Paragraph>
 
               <Row gutter={[16, 16]} align="middle">
@@ -913,501 +1026,613 @@ export default function OpenVPNPage() {
                 </Col>
               </Row>
 
-            <div style={{ marginTop: 14 }}>
-              <Tag color="cyan" style={{ padding: '4px 10px', fontSize: 13 }}>
-                دستور ریموت فعال: <strong style={{ letterSpacing: '0.5px' }}>remote {activeHost} {activePort}</strong>
-              </Tag>
-              <Text type="secondary" style={{ fontSize: 12, marginRight: 8 }}>
-                (تمام کانفیگ‌های خروجی و دانلودها با این هاست و پورت تولید خواهند شد)
-              </Text>
-            </div>
-          </Card>
-
-          {/* Clients Table */}
-          <Card className="openvpn-card" title="لیست کلاینت‌ها و کاربران OpenVPN">
-            <Table
-              dataSource={status?.clients || []}
-              columns={columns}
-              rowKey="name"
-              loading={loading}
-              pagination={{ pageSize: 15 }}
-              locale={{ emptyText: 'هیچ کلاینتی هنوز ساخته نشده است' }}
-            />
-          </Card>
-
-          {/* Add Client Modal */}
-          <Modal
-            title={
-              <Space>
-                <UserOutlined style={{ color: '#00e5ff' }} />
-                <span>ساخت کاربر جدید OpenVPN</span>
-              </Space>
-            }
-            open={isAddModalOpen}
-            onCancel={() => setIsAddModalOpen(false)}
-            footer={null}
-            destroyOnClose
-            width={620}
-          >
-            <Form form={addForm} layout="vertical" onFinish={handleAddClient} initialValues={{ totalGB: 0, limitIp: 0 }}>
-              <Form.Item
-                name="name"
-                label="نام کاربری (حروف انگلیسی بدون فاصله)"
-                rules={[
-                  { required: true, message: 'لطفاً نام کاربر را وارد کنید' },
-                  {
-                    pattern: /^[a-zA-Z0-9_-]{1,32}$/,
-                    message: 'فقط حروف انگلیسی، عدد، خط فاصله و زیرخط مجاز است',
-                  },
-                ]}
+              <div
+                style={{
+                  marginTop: 16,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: 12,
+                }}
               >
-                <Input placeholder="مثال: user1" autoFocus />
-              </Form.Item>
-
-              {/* Password */}
-              <Form.Item
-                name="password"
-                label={
-                  <Space>
-                    <KeyOutlined style={{ color: '#f59e0b' }} />
-                    <span>رمز عبور (Password)</span>
-                  </Space>
-                }
-              >
-                <Space.Compact style={{ width: '100%' }}>
-                  <Input
-                    placeholder="رمز عبور کاربر (برای احراز هویت با پسورد)"
-                  />
-                  <Button
-                    onClick={() => addForm.setFieldsValue({ password: generateRandomPassword() })}
-                  >
-                    تولید رمز تصادفی
-                  </Button>
-                </Space.Compact>
-              </Form.Item>
-
-              {/* Traffic Limit (GB) */}
-              <Form.Item
-                name="totalGB"
-                label={
-                  <Space>
-                    <DashboardOutlined style={{ color: '#00e5ff' }} />
-                    <span>محدودیت حجم کل (گیگابایت - 0 به معنی نامحدود است)</span>
-                  </Space>
-                }
-              >
-                <InputNumber style={{ width: '100%' }} min={0} placeholder="0 = نامحدود" />
-              </Form.Item>
-              <div style={{ marginTop: -14, marginBottom: 16 }}>
-                <Space wrap size="small">
-                  <Text type="secondary" style={{ fontSize: 12 }}>انتخاب سریع حجم:</Text>
-                  {[0, 10, 20, 30, 50, 100].map((gb) => (
-                    <Button
-                      key={gb}
-                      size="small"
-                      onClick={() => addForm.setFieldsValue({ totalGB: gb })}
-                    >
-                      {gb === 0 ? 'نامحدود' : `${gb} GB`}
-                    </Button>
-                  ))}
-                </Space>
+                <div>
+                  <Tag color="cyan" style={{ padding: '6px 12px', fontSize: 13 }}>
+                    دستور ریموت فعال:{' '}
+                    <strong style={{ letterSpacing: '0.5px' }}>
+                      remote {activeHost} {activePort}
+                    </strong>
+                  </Tag>
+                  <Text type="secondary" style={{ fontSize: 12, marginRight: 8 }}>
+                    (تمام کانفیگ‌های خروجی با این آدرس و پورت تولید خواهند شد)
+                  </Text>
+                </div>
+                <Button
+                  type="primary"
+                  icon={<SaveOutlined />}
+                  loading={savingSettings}
+                  onClick={handleSaveSettings}
+                  style={{
+                    background: 'linear-gradient(135deg, #00e5ff 0%, #7928ca 100%)',
+                    border: 'none',
+                    fontWeight: 600,
+                    boxShadow: '0 0 12px rgba(0, 229, 255, 0.35)',
+                  }}
+                >
+                  ذخیره دائمی تنظیمات در پنل
+                </Button>
               </div>
+            </Card>
 
-              {/* Expiry Date */}
-              <Form.Item
-                name="expiryDate"
-                label={
-                  <Space>
-                    <ClockCircleOutlined style={{ color: '#10b981' }} />
-                    <span>تاریخ انقضا (خالی = نامحدود)</span>
-                  </Space>
-                }
-              >
-                <DatePicker
-                  showTime
-                  style={{ width: '100%' }}
-                  placeholder="انتخاب تاریخ و ساعت انقضا"
-                />
-              </Form.Item>
-              <div style={{ marginTop: -14, marginBottom: 16 }}>
-                <Space wrap size="small">
-                  <Text type="secondary" style={{ fontSize: 12 }}>انتخاب سریع زمان:</Text>
-                  <Button size="small" onClick={() => addForm.setFieldsValue({ expiryDate: null })}>
-                    نامحدود
-                  </Button>
-                  <Button size="small" onClick={() => addForm.setFieldsValue({ expiryDate: dayjs().add(15, 'day') })}>
-                    15 روز
-                  </Button>
-                  <Button size="small" onClick={() => addForm.setFieldsValue({ expiryDate: dayjs().add(30, 'day') })}>
-                    1 ماه (30 روز)
-                  </Button>
-                  <Button size="small" onClick={() => addForm.setFieldsValue({ expiryDate: dayjs().add(60, 'day') })}>
-                    2 ماه
-                  </Button>
-                  <Button size="small" onClick={() => addForm.setFieldsValue({ expiryDate: dayjs().add(90, 'day') })}>
-                    3 ماه
-                  </Button>
-                </Space>
-              </div>
+            {/* Clients Table */}
+            <Card className="openvpn-card" title="لیست کلاینت‌ها و کاربران OpenVPN">
+              <Table
+                dataSource={status?.clients || []}
+                columns={columns}
+                rowKey="name"
+                loading={loading}
+                pagination={{ pageSize: 15 }}
+                locale={{ emptyText: 'هیچ کلاینتی هنوز ساخته نشده است' }}
+              />
+            </Card>
 
-              {/* IP Limit */}
-              <Form.Item
-                name="limitIp"
-                label={
-                  <Space>
-                    <GlobalOutlined style={{ color: '#f59e0b' }} />
-                    <span>محدودیت تعداد آی‌پی همزمان (0 = نامحدود)</span>
-                  </Space>
-                }
-              >
-                <InputNumber style={{ width: '100%' }} min={0} placeholder="0 = نامحدود" />
-              </Form.Item>
-              <div style={{ marginTop: -14, marginBottom: 24 }}>
-                <Space wrap size="small">
-                  <Text type="secondary" style={{ fontSize: 12 }}>پیش‌فرض سریع:</Text>
-                  {[0, 1, 2, 3, 5].map((ip) => (
-                    <Button
-                      key={ip}
-                      size="small"
-                      onClick={() => addForm.setFieldsValue({ limitIp: ip })}
-                    >
-                      {ip === 0 ? 'نامحدود' : `${ip} دستگاه`}
-                    </Button>
-                  ))}
-                </Space>
-              </div>
-
-              <div style={{ textAlign: 'left' }}>
+            {/* Add Client Modal */}
+            <Modal
+              title={
                 <Space>
-                  <Button onClick={() => setIsAddModalOpen(false)}>انصراف</Button>
-                  <Button
-                    type="primary"
-                    htmlType="submit"
-                    loading={addingClient}
-                    className="openvpn-btn-add"
-                  >
-                    ساخت کاربر
-                  </Button>
+                  <UserOutlined style={{ color: '#00e5ff' }} />
+                  <span>ساخت کاربر جدید OpenVPN</span>
                 </Space>
-              </div>
-            </Form>
-          </Modal>
-
-          {/* Edit Client Modal */}
-          <Modal
-            title={
-              <Space>
-                <EditOutlined style={{ color: '#00e5ff' }} />
-                <span>ویرایش کاربر: <strong style={{ color: '#00e5ff' }}>{editingClient?.name}</strong></span>
-              </Space>
-            }
-            open={isEditModalOpen}
-            onCancel={() => setIsEditModalOpen(false)}
-            footer={null}
-            destroyOnClose
-            width={620}
-          >
-            <Form form={editForm} layout="vertical" onFinish={handleSaveEdit}>
-              {/* Password */}
-              <Form.Item
-                name="password"
-                label={
-                  <Space>
-                    <KeyOutlined style={{ color: '#f59e0b' }} />
-                    <span>رمز عبور (Password)</span>
-                  </Space>
-                }
-              >
-                <Space.Compact style={{ width: '100%' }}>
-                  <Input
-                    placeholder="رمز عبور کاربر"
-                  />
-                  <Button
-                    onClick={() => editForm.setFieldsValue({ password: generateRandomPassword() })}
-                  >
-                    تولید رمز جدید
-                  </Button>
-                </Space.Compact>
-              </Form.Item>
-
-              {/* Enable Toggle */}
-              <Form.Item name="enable" label="وضعیت فعال بودن اکانت" valuePropName="checked">
-                <Switch checkedChildren="فعال" unCheckedChildren="مسدود" />
-              </Form.Item>
-
-              {/* Total GB */}
-              <Form.Item
-                name="totalGB"
-                label={
-                  <Space>
-                    <DashboardOutlined style={{ color: '#00e5ff' }} />
-                    <span>سقف حجم کل (گیگابایت - 0 به معنی نامحدود است)</span>
-                  </Space>
-                }
-              >
-                <InputNumber style={{ width: '100%' }} min={0} placeholder="0 = نامحدود" />
-              </Form.Item>
-              <div style={{ marginTop: -14, marginBottom: 16 }}>
-                <Space wrap size="small">
-                  <Text type="secondary" style={{ fontSize: 12 }}>انتخاب سریع حجم:</Text>
-                  {[0, 10, 20, 30, 50, 100].map((gb) => (
-                    <Button
-                      key={gb}
-                      size="small"
-                      onClick={() => editForm.setFieldsValue({ totalGB: gb })}
-                    >
-                      {gb === 0 ? 'نامحدود' : `${gb} GB`}
-                    </Button>
-                  ))}
-                </Space>
-              </div>
-
-              {/* Expiry Date */}
-              <Form.Item
-                name="expiryDate"
-                label={
-                  <Space>
-                    <ClockCircleOutlined style={{ color: '#10b981' }} />
-                    <span>تاریخ انقضا (خالی = نامحدود)</span>
-                  </Space>
-                }
-              >
-                <DatePicker
-                  showTime
-                  style={{ width: '100%' }}
-                  placeholder="انتخاب تاریخ و ساعت انقضا"
-                />
-              </Form.Item>
-              <div style={{ marginTop: -14, marginBottom: 16 }}>
-                <Space wrap size="small">
-                  <Text type="secondary" style={{ fontSize: 12 }}>انتخاب سریع زمان:</Text>
-                  <Button size="small" onClick={() => editForm.setFieldsValue({ expiryDate: null })}>
-                    نامحدود
-                  </Button>
-                  <Button size="small" onClick={() => editForm.setFieldsValue({ expiryDate: dayjs().add(15, 'day') })}>
-                    15 روز
-                  </Button>
-                  <Button size="small" onClick={() => editForm.setFieldsValue({ expiryDate: dayjs().add(30, 'day') })}>
-                    1 ماه
-                  </Button>
-                  <Button size="small" onClick={() => editForm.setFieldsValue({ expiryDate: dayjs().add(60, 'day') })}>
-                    2 ماه
-                  </Button>
-                  <Button size="small" onClick={() => editForm.setFieldsValue({ expiryDate: dayjs().add(90, 'day') })}>
-                    3 ماه
-                  </Button>
-                </Space>
-              </div>
-
-              {/* IP Limit */}
-              <Form.Item
-                name="limitIp"
-                label={
-                  <Space>
-                    <GlobalOutlined style={{ color: '#f59e0b' }} />
-                    <span>محدودیت تعداد آی‌پی همزمان (0 = نامحدود)</span>
-                  </Space>
-                }
-              >
-                <InputNumber style={{ width: '100%' }} min={0} placeholder="0 = نامحدود" />
-              </Form.Item>
-              <div style={{ marginTop: -14, marginBottom: 24 }}>
-                <Space wrap size="small">
-                  <Text type="secondary" style={{ fontSize: 12 }}>پیش‌فرض سریع:</Text>
-                  {[0, 1, 2, 3, 5].map((ip) => (
-                    <Button
-                      key={ip}
-                      size="small"
-                      onClick={() => editForm.setFieldsValue({ limitIp: ip })}
-                    >
-                      {ip === 0 ? 'نامحدود' : `${ip} دستگاه`}
-                    </Button>
-                  ))}
-                </Space>
-              </div>
-
-              <div style={{ textAlign: 'left' }}>
-                <Space>
-                  <Button onClick={() => setIsEditModalOpen(false)}>انصراف</Button>
-                  <Button
-                    type="primary"
-                    htmlType="submit"
-                    loading={savingEdit}
-                    className="openvpn-btn-add"
-                  >
-                    ذخیره تغییرات
-                  </Button>
-                </Space>
-              </div>
-            </Form>
-          </Modal>
-
-          {/* Config & Download Modal */}
-          <Modal
-            title={
-              <Space>
-                <DownloadOutlined style={{ color: '#00e5ff' }} />
-                <span>دریافت کانفیگ کاربر: <strong style={{ color: '#00e5ff' }}>{configModal.clientName}</strong></span>
-              </Space>
-            }
-            open={configModal.open}
-            onCancel={() => setConfigModal((prev) => ({ ...prev, open: false }))}
-            width={720}
-            footer={[
-              <Button
-                key="share"
-                icon={<ShareAltOutlined />}
-                onClick={copyAccountDetails}
-              >
-                کپی مشخصات اکانت
-              </Button>,
-              <Button
-                key="copy"
-                icon={<CopyOutlined />}
-                onClick={() => copyConfigText(configModal.clientName, configModal.host, configModal.port, configModal.inlineAuth)}
-              >
-                کپی محتوای .ovpn
-              </Button>,
-              <Button
-                key="download"
-                type="primary"
-                icon={<DownloadOutlined />}
-                className="openvpn-btn-download"
-                onClick={() => triggerDownload(configModal.clientName, configModal.host, configModal.port, configModal.inlineAuth)}
-              >
-                دانلود فایل .ovpn
-              </Button>,
-              <Button key="close" onClick={() => setConfigModal((prev) => ({ ...prev, open: false }))}>
-                بستن
-              </Button>,
-            ]}
-          >
-            {/* Account Credentials Card */}
-            <Card
-              size="small"
-              style={{
-                background: 'rgba(0, 229, 255, 0.05)',
-                borderColor: 'rgba(0, 229, 255, 0.25)',
-                marginBottom: 16,
-              }}
+              }
+              open={isAddModalOpen}
+              onCancel={() => setIsAddModalOpen(false)}
+              footer={null}
+              destroyOnClose
+              width={620}
             >
-              <Row gutter={[16, 8]} align="middle">
-                <Col xs={24} sm={12}>
-                  <Space align="center">
-                    <UserOutlined style={{ color: '#00e5ff' }} />
-                    <Text type="secondary">نام کاربری (Username): </Text>
-                    <Text strong style={{ color: '#00e5ff' }}>{configModal.clientName}</Text>
-                    <Button
-                      type="text"
-                      size="small"
-                      icon={<CopyOutlined />}
-                      onClick={() => {
-                        navigator.clipboard.writeText(configModal.clientName);
-                        messageApi.success('نام کاربری کپی شد');
-                      }}
-                    />
-                  </Space>
-                </Col>
-                <Col xs={24} sm={12}>
-                  {configModal.password ? (
-                    <Space align="center">
+              <Form
+                form={addForm}
+                layout="vertical"
+                onFinish={handleAddClient}
+                initialValues={{ totalGB: 0, limitIp: 0 }}
+              >
+                <Form.Item
+                  name="name"
+                  label="نام کاربری (حروف انگلیسی بدون فاصله)"
+                  rules={[
+                    { required: true, message: 'لطفاً نام کاربر را وارد کنید' },
+                    {
+                      pattern: /^[a-zA-Z0-9_-]{1,32}$/,
+                      message: 'فقط حروف انگلیسی، عدد، خط فاصله و زیرخط مجاز است',
+                    },
+                  ]}
+                >
+                  <Input placeholder="مثال: user1" autoFocus />
+                </Form.Item>
+
+                {/* Password */}
+                <Form.Item
+                  name="password"
+                  label={
+                    <Space>
                       <KeyOutlined style={{ color: '#f59e0b' }} />
-                      <Text type="secondary">رمز عبور (Password): </Text>
-                      <Text code>{configModal.password}</Text>
+                      <span>رمز عبور (Password)</span>
+                    </Space>
+                  }
+                >
+                  <Space.Compact style={{ width: '100%' }}>
+                    <Input placeholder="رمز عبور کاربر (برای احراز هویت با پسورد)" />
+                    <Button
+                      onClick={() => addForm.setFieldsValue({ password: generateRandomPassword() })}
+                    >
+                      تولید رمز تصادفی
+                    </Button>
+                  </Space.Compact>
+                </Form.Item>
+
+                {/* Traffic Limit (GB) */}
+                <Form.Item
+                  name="totalGB"
+                  label={
+                    <Space>
+                      <DashboardOutlined style={{ color: '#00e5ff' }} />
+                      <span>محدودیت حجم کل (گیگابایت - 0 به معنی نامحدود است)</span>
+                    </Space>
+                  }
+                >
+                  <InputNumber style={{ width: '100%' }} min={0} placeholder="0 = نامحدود" />
+                </Form.Item>
+                <div style={{ marginTop: -14, marginBottom: 16 }}>
+                  <Space wrap size="small">
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      انتخاب سریع حجم:
+                    </Text>
+                    {[0, 10, 20, 30, 50, 100].map((gb) => (
+                      <Button
+                        key={gb}
+                        size="small"
+                        onClick={() => addForm.setFieldsValue({ totalGB: gb })}
+                      >
+                        {gb === 0 ? 'نامحدود' : `${gb} GB`}
+                      </Button>
+                    ))}
+                  </Space>
+                </div>
+
+                {/* Expiry Date */}
+                <Form.Item
+                  name="expiryDate"
+                  label={
+                    <Space>
+                      <ClockCircleOutlined style={{ color: '#10b981' }} />
+                      <span>تاریخ انقضا (خالی = نامحدود)</span>
+                    </Space>
+                  }
+                >
+                  <DatePicker
+                    showTime
+                    style={{ width: '100%' }}
+                    placeholder="انتخاب تاریخ و ساعت انقضا"
+                  />
+                </Form.Item>
+                <div style={{ marginTop: -14, marginBottom: 16 }}>
+                  <Space wrap size="small">
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      انتخاب سریع زمان:
+                    </Text>
+                    <Button
+                      size="small"
+                      onClick={() => addForm.setFieldsValue({ expiryDate: null })}
+                    >
+                      نامحدود
+                    </Button>
+                    <Button
+                      size="small"
+                      onClick={() => addForm.setFieldsValue({ expiryDate: dayjs().add(15, 'day') })}
+                    >
+                      15 روز
+                    </Button>
+                    <Button
+                      size="small"
+                      onClick={() => addForm.setFieldsValue({ expiryDate: dayjs().add(30, 'day') })}
+                    >
+                      1 ماه (30 روز)
+                    </Button>
+                    <Button
+                      size="small"
+                      onClick={() => addForm.setFieldsValue({ expiryDate: dayjs().add(60, 'day') })}
+                    >
+                      2 ماه
+                    </Button>
+                    <Button
+                      size="small"
+                      onClick={() => addForm.setFieldsValue({ expiryDate: dayjs().add(90, 'day') })}
+                    >
+                      3 ماه
+                    </Button>
+                  </Space>
+                </div>
+
+                {/* IP Limit */}
+                <Form.Item
+                  name="limitIp"
+                  label={
+                    <Space>
+                      <GlobalOutlined style={{ color: '#f59e0b' }} />
+                      <span>محدودیت تعداد آی‌پی همزمان (0 = نامحدود)</span>
+                    </Space>
+                  }
+                >
+                  <InputNumber style={{ width: '100%' }} min={0} placeholder="0 = نامحدود" />
+                </Form.Item>
+                <div style={{ marginTop: -14, marginBottom: 24 }}>
+                  <Space wrap size="small">
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      پیش‌فرض سریع:
+                    </Text>
+                    {[0, 1, 2, 3, 5].map((ip) => (
+                      <Button
+                        key={ip}
+                        size="small"
+                        onClick={() => addForm.setFieldsValue({ limitIp: ip })}
+                      >
+                        {ip === 0 ? 'نامحدود' : `${ip} دستگاه`}
+                      </Button>
+                    ))}
+                  </Space>
+                </div>
+
+                <div style={{ textAlign: 'left' }}>
+                  <Space>
+                    <Button onClick={() => setIsAddModalOpen(false)}>انصراف</Button>
+                    <Button
+                      type="primary"
+                      htmlType="submit"
+                      loading={addingClient}
+                      className="openvpn-btn-add"
+                    >
+                      ساخت کاربر
+                    </Button>
+                  </Space>
+                </div>
+              </Form>
+            </Modal>
+
+            {/* Edit Client Modal */}
+            <Modal
+              title={
+                <Space>
+                  <EditOutlined style={{ color: '#00e5ff' }} />
+                  <span>
+                    ویرایش کاربر:{' '}
+                    <strong style={{ color: '#00e5ff' }}>{editingClient?.name}</strong>
+                  </span>
+                </Space>
+              }
+              open={isEditModalOpen}
+              onCancel={() => setIsEditModalOpen(false)}
+              footer={null}
+              destroyOnClose
+              width={620}
+            >
+              <Form form={editForm} layout="vertical" onFinish={handleSaveEdit}>
+                {/* Password */}
+                <Form.Item
+                  name="password"
+                  label={
+                    <Space>
+                      <KeyOutlined style={{ color: '#f59e0b' }} />
+                      <span>رمز عبور (Password)</span>
+                    </Space>
+                  }
+                >
+                  <Space.Compact style={{ width: '100%' }}>
+                    <Input placeholder="رمز عبور کاربر" />
+                    <Button
+                      onClick={() =>
+                        editForm.setFieldsValue({ password: generateRandomPassword() })
+                      }
+                    >
+                      تولید رمز جدید
+                    </Button>
+                  </Space.Compact>
+                </Form.Item>
+
+                {/* Enable Toggle */}
+                <Form.Item name="enable" label="وضعیت فعال بودن اکانت" valuePropName="checked">
+                  <Switch checkedChildren="فعال" unCheckedChildren="مسدود" />
+                </Form.Item>
+
+                {/* Total GB */}
+                <Form.Item
+                  name="totalGB"
+                  label={
+                    <Space>
+                      <DashboardOutlined style={{ color: '#00e5ff' }} />
+                      <span>سقف حجم کل (گیگابایت - 0 به معنی نامحدود است)</span>
+                    </Space>
+                  }
+                >
+                  <InputNumber style={{ width: '100%' }} min={0} placeholder="0 = نامحدود" />
+                </Form.Item>
+                <div style={{ marginTop: -14, marginBottom: 16 }}>
+                  <Space wrap size="small">
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      انتخاب سریع حجم:
+                    </Text>
+                    {[0, 10, 20, 30, 50, 100].map((gb) => (
+                      <Button
+                        key={gb}
+                        size="small"
+                        onClick={() => editForm.setFieldsValue({ totalGB: gb })}
+                      >
+                        {gb === 0 ? 'نامحدود' : `${gb} GB`}
+                      </Button>
+                    ))}
+                  </Space>
+                </div>
+
+                {/* Expiry Date */}
+                <Form.Item
+                  name="expiryDate"
+                  label={
+                    <Space>
+                      <ClockCircleOutlined style={{ color: '#10b981' }} />
+                      <span>تاریخ انقضا (خالی = نامحدود)</span>
+                    </Space>
+                  }
+                >
+                  <DatePicker
+                    showTime
+                    style={{ width: '100%' }}
+                    placeholder="انتخاب تاریخ و ساعت انقضا"
+                  />
+                </Form.Item>
+                <div style={{ marginTop: -14, marginBottom: 16 }}>
+                  <Space wrap size="small">
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      انتخاب سریع زمان:
+                    </Text>
+                    <Button
+                      size="small"
+                      onClick={() => editForm.setFieldsValue({ expiryDate: null })}
+                    >
+                      نامحدود
+                    </Button>
+                    <Button
+                      size="small"
+                      onClick={() =>
+                        editForm.setFieldsValue({ expiryDate: dayjs().add(15, 'day') })
+                      }
+                    >
+                      15 روز
+                    </Button>
+                    <Button
+                      size="small"
+                      onClick={() =>
+                        editForm.setFieldsValue({ expiryDate: dayjs().add(30, 'day') })
+                      }
+                    >
+                      1 ماه
+                    </Button>
+                    <Button
+                      size="small"
+                      onClick={() =>
+                        editForm.setFieldsValue({ expiryDate: dayjs().add(60, 'day') })
+                      }
+                    >
+                      2 ماه
+                    </Button>
+                    <Button
+                      size="small"
+                      onClick={() =>
+                        editForm.setFieldsValue({ expiryDate: dayjs().add(90, 'day') })
+                      }
+                    >
+                      3 ماه
+                    </Button>
+                  </Space>
+                </div>
+
+                {/* IP Limit */}
+                <Form.Item
+                  name="limitIp"
+                  label={
+                    <Space>
+                      <GlobalOutlined style={{ color: '#f59e0b' }} />
+                      <span>محدودیت تعداد آی‌پی همزمان (0 = نامحدود)</span>
+                    </Space>
+                  }
+                >
+                  <InputNumber style={{ width: '100%' }} min={0} placeholder="0 = نامحدود" />
+                </Form.Item>
+                <div style={{ marginTop: -14, marginBottom: 24 }}>
+                  <Space wrap size="small">
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      پیش‌فرض سریع:
+                    </Text>
+                    {[0, 1, 2, 3, 5].map((ip) => (
+                      <Button
+                        key={ip}
+                        size="small"
+                        onClick={() => editForm.setFieldsValue({ limitIp: ip })}
+                      >
+                        {ip === 0 ? 'نامحدود' : `${ip} دستگاه`}
+                      </Button>
+                    ))}
+                  </Space>
+                </div>
+
+                <div style={{ textAlign: 'left' }}>
+                  <Space>
+                    <Button onClick={() => setIsEditModalOpen(false)}>انصراف</Button>
+                    <Button
+                      type="primary"
+                      htmlType="submit"
+                      loading={savingEdit}
+                      className="openvpn-btn-add"
+                    >
+                      ذخیره تغییرات
+                    </Button>
+                  </Space>
+                </div>
+              </Form>
+            </Modal>
+
+            {/* Config & Download Modal */}
+            <Modal
+              title={
+                <Space>
+                  <DownloadOutlined style={{ color: '#00e5ff' }} />
+                  <span>
+                    دریافت کانفیگ کاربر:{' '}
+                    <strong style={{ color: '#00e5ff' }}>{configModal.clientName}</strong>
+                  </span>
+                </Space>
+              }
+              open={configModal.open}
+              onCancel={() => setConfigModal((prev) => ({ ...prev, open: false }))}
+              width={720}
+              footer={[
+                <Button key="share" icon={<ShareAltOutlined />} onClick={copyAccountDetails}>
+                  کپی مشخصات اکانت
+                </Button>,
+                <Button
+                  key="copy"
+                  icon={<CopyOutlined />}
+                  onClick={() =>
+                    copyConfigText(
+                      configModal.clientName,
+                      configModal.host,
+                      configModal.port,
+                      configModal.inlineAuth,
+                    )
+                  }
+                >
+                  کپی محتوای .ovpn
+                </Button>,
+                <Button
+                  key="download"
+                  type="primary"
+                  icon={<DownloadOutlined />}
+                  className="openvpn-btn-download"
+                  onClick={() =>
+                    triggerDownload(
+                      configModal.clientName,
+                      configModal.host,
+                      configModal.port,
+                      configModal.inlineAuth,
+                    )
+                  }
+                >
+                  دانلود فایل .ovpn
+                </Button>,
+                <Button
+                  key="close"
+                  onClick={() => setConfigModal((prev) => ({ ...prev, open: false }))}
+                >
+                  بستن
+                </Button>,
+              ]}
+            >
+              {/* Account Credentials Card */}
+              <Card
+                size="small"
+                style={{
+                  background: 'rgba(0, 229, 255, 0.05)',
+                  borderColor: 'rgba(0, 229, 255, 0.25)',
+                  marginBottom: 16,
+                }}
+              >
+                <Row gutter={[16, 8]} align="middle">
+                  <Col xs={24} sm={12}>
+                    <Space align="center">
+                      <UserOutlined style={{ color: '#00e5ff' }} />
+                      <Text type="secondary">نام کاربری (Username): </Text>
+                      <Text strong style={{ color: '#00e5ff' }}>
+                        {configModal.clientName}
+                      </Text>
                       <Button
                         type="text"
                         size="small"
                         icon={<CopyOutlined />}
                         onClick={() => {
-                          navigator.clipboard.writeText(configModal.password);
-                          messageApi.success('رمز عبور کپی شد');
+                          navigator.clipboard.writeText(configModal.clientName);
+                          messageApi.success('نام کاربری کپی شد');
                         }}
                       />
                     </Space>
-                  ) : (
-                    <Text type="secondary" style={{ fontStyle: 'italic' }}>
-                      بدون رمز عبور (فقط گواهی)
+                  </Col>
+                  <Col xs={24} sm={12}>
+                    {configModal.password ? (
+                      <Space align="center">
+                        <KeyOutlined style={{ color: '#f59e0b' }} />
+                        <Text type="secondary">رمز عبور (Password): </Text>
+                        <Text code>{configModal.password}</Text>
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={<CopyOutlined />}
+                          onClick={() => {
+                            navigator.clipboard.writeText(configModal.password);
+                            messageApi.success('رمز عبور کپی شد');
+                          }}
+                        />
+                      </Space>
+                    ) : (
+                      <Text type="secondary" style={{ fontStyle: 'italic' }}>
+                        بدون رمز عبور (فقط گواهی)
+                      </Text>
+                    )}
+                  </Col>
+                </Row>
+              </Card>
+
+              <div style={{ marginBottom: 16 }}>
+                <Paragraph type="secondary" style={{ marginBottom: 10 }}>
+                  می‌توانید برای این کاربر آدرس ریموت (دامنه یا آی‌پی تانل) و پورت اتصال را تغییر
+                  دهید:
+                </Paragraph>
+                <Row gutter={[12, 12]} align="middle">
+                  <Col xs={24} sm={14}>
+                    <Text strong style={{ display: 'block', marginBottom: 4 }}>
+                      آدرس ریموت (دامنه یا آی‌پی):
                     </Text>
-                  )}
-                </Col>
-              </Row>
-            </Card>
-
-            <div style={{ marginBottom: 16 }}>
-              <Paragraph type="secondary" style={{ marginBottom: 10 }}>
-                می‌توانید برای این کاربر آدرس ریموت (دامنه یا آی‌پی تانل) و پورت اتصال را تغییر دهید:
-              </Paragraph>
-              <Row gutter={[12, 12]} align="middle">
-                <Col xs={24} sm={14}>
-                  <Text strong style={{ display: 'block', marginBottom: 4 }}>
-                    آدرس ریموت (دامنه یا آی‌پی):
-                  </Text>
-                  <Input
-                    value={configModal.host}
-                    placeholder="دامنه یا آی‌پی سرور"
-                    onChange={(e) => {
-                      const h = e.target.value.trim();
-                      setConfigModal((prev) => ({ ...prev, host: h }));
-                    }}
-                  />
-                </Col>
-                <Col xs={16} sm={6}>
-                  <Text strong style={{ display: 'block', marginBottom: 4 }}>
-                    پورت تانل/سرور:
-                  </Text>
-                  <InputNumber
-                    style={{ width: '100%' }}
-                    min={1}
-                    max={65535}
-                    value={configModal.port}
-                    onChange={(val) => {
-                      const p = val && val > 0 ? val : 2083;
-                      setConfigModal((prev) => ({ ...prev, port: p }));
-                    }}
-                  />
-                </Col>
-                <Col xs={8} sm={4}>
-                  <Button
-                    style={{ marginTop: 22, width: '100%' }}
-                    icon={<EyeOutlined />}
-                    loading={configModal.loadingPreview}
-                    onClick={() => refreshModalPreview(configModal.host, configModal.port, configModal.inlineAuth)}
-                  >
-                    اعمال
-                  </Button>
-                </Col>
-              </Row>
-            </div>
-
-            {configModal.password && (
-              <div style={{ marginBottom: 12 }}>
-                <Checkbox
-                  checked={configModal.inlineAuth}
-                  onChange={(e) => {
-                    const checked = e.target.checked;
-                    setConfigModal((prev) => ({ ...prev, inlineAuth: checked }));
-                    refreshModalPreview(configModal.host, configModal.port, checked);
-                  }}
-                >
-                  <Text strong style={{ color: '#00e5ff' }}>
-                    قرار دادن نام کاربری و رمز عبور داخل فایل .ovpn (اتصال سریع و خودکار)
-                  </Text>
-                </Checkbox>
-                <div style={{ fontSize: 12, color: '#94a3b8', marginRight: 24, marginTop: 2 }}>
-                  در صورت فعال بودن این گزینه، رمز عبور مستقیماً در تگ &lt;auth-user-pass&gt; داخل فایل قرار می‌گیرد و نرم‌افزار هنگام اتصال پسورد را نمی‌پرسد.
-                </div>
+                    <Input
+                      value={configModal.host}
+                      placeholder="دامنه یا آی‌پی سرور"
+                      onChange={(e) => {
+                        const h = e.target.value.trim();
+                        setConfigModal((prev) => ({ ...prev, host: h }));
+                      }}
+                    />
+                  </Col>
+                  <Col xs={16} sm={6}>
+                    <Text strong style={{ display: 'block', marginBottom: 4 }}>
+                      پورت تانل/سرور:
+                    </Text>
+                    <InputNumber
+                      style={{ width: '100%' }}
+                      min={1}
+                      max={65535}
+                      value={configModal.port}
+                      onChange={(val) => {
+                        const p = val && val > 0 ? val : 2083;
+                        setConfigModal((prev) => ({ ...prev, port: p }));
+                      }}
+                    />
+                  </Col>
+                  <Col xs={8} sm={4}>
+                    <Button
+                      style={{ marginTop: 22, width: '100%' }}
+                      icon={<EyeOutlined />}
+                      loading={configModal.loadingPreview}
+                      onClick={() =>
+                        refreshModalPreview(
+                          configModal.host,
+                          configModal.port,
+                          configModal.inlineAuth,
+                        )
+                      }
+                    >
+                      اعمال
+                    </Button>
+                  </Col>
+                </Row>
               </div>
-            )}
 
-            <div style={{ marginTop: 12 }}>
-              <Text strong style={{ display: 'block', marginBottom: 6 }}>
-                پیش‌نمایش سورس کانفیگ (.ovpn):
-              </Text>
-              <pre className="openvpn-code-snippet">
-                {configModal.loadingPreview ? 'در حال دریافت پیش‌نمایش...' : configModal.previewContent}
-              </pre>
-            </div>
-          </Modal>
+              {configModal.password && (
+                <div style={{ marginBottom: 12 }}>
+                  <Checkbox
+                    checked={configModal.inlineAuth}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      setConfigModal((prev) => ({ ...prev, inlineAuth: checked }));
+                      refreshModalPreview(configModal.host, configModal.port, checked);
+                    }}
+                  >
+                    <Text strong style={{ color: '#00e5ff' }}>
+                      قرار دادن نام کاربری و رمز عبور داخل فایل .ovpn (اتصال سریع و خودکار)
+                    </Text>
+                  </Checkbox>
+                  <div style={{ fontSize: 12, color: '#94a3b8', marginRight: 24, marginTop: 2 }}>
+                    در صورت فعال بودن این گزینه، رمز عبور مستقیماً در تگ &lt;auth-user-pass&gt; داخل
+                    فایل قرار می‌گیرد و نرم‌افزار هنگام اتصال پسورد را نمی‌پرسد.
+                  </div>
+                </div>
+              )}
+
+              <div style={{ marginTop: 12 }}>
+                <Text strong style={{ display: 'block', marginBottom: 6 }}>
+                  پیش‌نمایش سورس کانفیگ (.ovpn):
+                </Text>
+                <pre className="openvpn-code-snippet">
+                  {configModal.loadingPreview
+                    ? 'در حال دریافت پیش‌نمایش...'
+                    : configModal.previewContent}
+                </pre>
+              </div>
+            </Modal>
           </Layout.Content>
         </Layout>
       </Layout>

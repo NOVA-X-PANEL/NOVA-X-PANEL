@@ -3,8 +3,11 @@ package service
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -78,6 +81,8 @@ type OpenVPNStatus struct {
 	Subnet           string                   `json:"subnet"`
 	DirectIP         string                   `json:"direct_ip"`
 	IranIP           string                   `json:"iran_ip"`
+	RemoteHost       string                   `json:"remote_host"`
+	RemotePort       int                      `json:"remote_port"`
 	TotalClients     int                      `json:"total_clients"`
 	OnlineClients    int                      `json:"online_clients"`
 	ConnectedClients []OpenVPNConnectedClient `json:"connected_clients"`
@@ -206,6 +211,69 @@ iptables -C FORWARD -d 10.8.0.0/24 -m state --state RELATED,ESTABLISHED -j ACCEP
 }
 
 // GetStatus checks server state, active connections, database records, and issued client certs.
+func getOpenVPNSetting(key, fallback string) string {
+	db := database.GetDB()
+	if db == nil {
+		return fallback
+	}
+	var s model.Setting
+	if err := db.Where("key = ?", key).First(&s).Error; err == nil && s.Value != "" {
+		return s.Value
+	}
+	return fallback
+}
+
+func setOpenVPNSetting(key, val string) error {
+	db := database.GetDB()
+	if db == nil {
+		return fmt.Errorf("database not initialized")
+	}
+	var s model.Setting
+	if err := db.Where("key = ?", key).First(&s).Error; err == nil {
+		return db.Model(&s).Update("value", val).Error
+	}
+	return db.Create(&model.Setting{Key: key, Value: val}).Error
+}
+
+func detectServerIP() string {
+	client := http.Client{Timeout: 2 * time.Second}
+	for _, u := range []string{"https://api.ipify.org", "https://ifconfig.me/ip", "https://icanhazip.com"} {
+		if resp, err := client.Get(u); err == nil {
+			b, _ := io.ReadAll(resp.Body)
+			_ = resp.Body.Close()
+			ip := strings.TrimSpace(string(b))
+			if net.ParseIP(ip) != nil {
+				return ip
+			}
+		}
+	}
+	if conn, err := net.Dial("udp", "1.1.1.1:80"); err == nil {
+		defer conn.Close()
+		if addr, ok := conn.LocalAddr().(*net.UDPAddr); ok {
+			return addr.IP.String()
+		}
+	}
+	return "127.0.0.1"
+}
+
+func getIranTunnelIP() string {
+	if data, err := os.ReadFile("/etc/x-ui/tunnel.json"); err == nil {
+		var tj struct {
+			RemotePub string `json:"remote_pub"`
+		}
+		if err := json.Unmarshal(data, &tj); err == nil && tj.RemotePub != "" {
+			return tj.RemotePub
+		}
+	}
+	if data, err := os.ReadFile("/etc/frp/frpc.toml"); err == nil {
+		re := regexp.MustCompile(`serverAddr\s*=\s*"([^"]+)"`)
+		if m := re.FindStringSubmatch(string(data)); len(m) > 1 {
+			return m[1]
+		}
+	}
+	return ""
+}
+
 func (s *OpenVPNService) GetStatus() (*OpenVPNStatus, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -216,8 +284,8 @@ func (s *OpenVPNService) GetStatus() (*OpenVPNStatus, error) {
 		Port:             2083,
 		Proto:            "tcp",
 		Subnet:           "10.8.0.0/24",
-		DirectIP:         "91.107.165.105",
-		IranIP:           "37.202.234.149",
+		DirectIP:         detectServerIP(),
+		IranIP:           getIranTunnelIP(),
 		ConnectedClients: []OpenVPNConnectedClient{},
 		Clients:          []OpenVPNClientInfo{},
 	}
@@ -260,6 +328,30 @@ func (s *OpenVPNService) GetStatus() (*OpenVPNStatus, error) {
 			}
 		}
 	}
+
+	savedHost := getOpenVPNSetting("openvpn_remote_host", "")
+	savedPortStr := getOpenVPNSetting("openvpn_remote_port", "")
+	savedPort, _ := strconv.Atoi(savedPortStr)
+
+	if savedHost == "" {
+		if status.IranIP != "" {
+			savedHost = status.IranIP
+		} else {
+			savedHost = status.DirectIP
+		}
+		_ = setOpenVPNSetting("openvpn_remote_host", savedHost)
+	}
+
+	if savedPort <= 0 {
+		savedPort = status.Port
+		if savedPort <= 0 {
+			savedPort = 2083
+		}
+		_ = setOpenVPNSetting("openvpn_remote_port", strconv.Itoa(savedPort))
+	}
+
+	status.RemoteHost = savedHost
+	status.RemotePort = savedPort
 
 	// Read live sessions via management socket
 	liveSessions, _ := s.QueryManagementSessions()
@@ -521,10 +613,14 @@ func (s *OpenVPNService) GetClientConfig(name string, remoteIP string, remotePor
 	_ = db.Where("name = ?", name).First(&user)
 
 	if remoteIP == "" {
-		remoteIP = "91.107.165.105"
+		remoteIP = getOpenVPNSetting("openvpn_remote_host", detectServerIP())
 	}
 	if remotePort <= 0 {
-		remotePort = 2083
+		savedPort, _ := strconv.Atoi(getOpenVPNSetting("openvpn_remote_port", "2083"))
+		if savedPort <= 0 {
+			savedPort = 2083
+		}
+		remotePort = savedPort
 	}
 
 	caPath := filepath.Join(defaultServerDir, "ca.crt")
@@ -603,5 +699,135 @@ func (s *OpenVPNService) RestartService() error {
 	if err != nil {
 		return fmt.Errorf("restart failed: %v (output: %s)", err, string(out))
 	}
+	return nil
+}
+
+// SaveSettings permanently stores endpoint and core port settings in DB and updates server.conf if port changed.
+func (s *OpenVPNService) SaveSettings(remoteHost string, remotePort int, serverPort int) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	remoteHost = strings.TrimSpace(remoteHost)
+	if remoteHost != "" {
+		if err := setOpenVPNSetting("openvpn_remote_host", remoteHost); err != nil {
+			return fmt.Errorf("failed to save remote host: %w", err)
+		}
+	}
+
+	if remotePort > 0 && remotePort <= 65535 {
+		if err := setOpenVPNSetting("openvpn_remote_port", strconv.Itoa(remotePort)); err != nil {
+			return fmt.Errorf("failed to save remote port: %w", err)
+		}
+	}
+
+	if serverPort > 0 && serverPort <= 65535 {
+		_ = setOpenVPNSetting("openvpn_server_port", strconv.Itoa(serverPort))
+		confPath := defaultServerConf
+		if _, err := os.Stat(confPath); os.IsNotExist(err) {
+			confPath = "/etc/openvpn/server.conf"
+		}
+		if data, err := os.ReadFile(confPath); err == nil {
+			content := string(data)
+			re := regexp.MustCompile(`(?m)^port\s+\d+`)
+			if re.MatchString(content) {
+				newContent := re.ReplaceAllString(content, fmt.Sprintf("port %d", serverPort))
+				_ = os.WriteFile(confPath, []byte(newContent), 0644)
+			}
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			defer cancel()
+			s.EnsureNAT()
+			_, _ = s.execPrivileged(ctx, "systemctl", "restart", openvpnUnitName)
+		}
+	}
+
+	return nil
+}
+
+// AutoInstallOpenVPN performs a one-click automated installation of OpenVPN and Easy-RSA on fresh servers.
+func (s *OpenVPNService) AutoInstallOpenVPN(port int, proto string) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	if port <= 0 || port > 65535 {
+		port = 2083
+	}
+	if proto == "" {
+		proto = "tcp"
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+
+	script := fmt.Sprintf(`
+export DEBIAN_FRONTEND=noninteractive
+apt-get update -y && apt-get install -y openvpn easy-rsa iptables
+mkdir -p /etc/openvpn/easy-rsa
+cp -rf /usr/share/easy-rsa/* /etc/openvpn/easy-rsa/ 2>/dev/null || true
+cd /etc/openvpn/easy-rsa
+if [ ! -d "pki" ]; then
+    ./easyrsa init-pki
+    echo -e "\n" | ./easyrsa --batch build-ca nopass
+    ./easyrsa --batch build-server-full server nopass
+    ./easyrsa gen-dh
+fi
+mkdir -p /etc/openvpn/server
+cp -f pki/ca.crt /etc/openvpn/server/
+cp -f pki/issued/server.crt /etc/openvpn/server/
+cp -f pki/private/server.key /etc/openvpn/server/
+cp -f pki/dh.pem /etc/openvpn/server/
+cat << 'EOF_CONF' > /etc/openvpn/server/server.conf
+port %d
+proto %s-server
+dev tun
+topology subnet
+
+ca /etc/openvpn/server/ca.crt
+cert /etc/openvpn/server/server.crt
+key /etc/openvpn/server/server.key
+dh /etc/openvpn/server/dh.pem
+
+server 10.8.0.0 255.255.255.0
+ifconfig-pool-persist /etc/openvpn/server/ipp.txt
+
+push "redirect-gateway def1 bypass-dhcp"
+push "dhcp-option DNS 1.1.1.1"
+push "dhcp-option DNS 8.8.8.8"
+
+keepalive 10 60
+data-ciphers AES-256-GCM:AES-128-GCM:AES-256-CBC:AES-128-CBC
+cipher AES-256-GCM
+auth SHA256
+
+persist-key
+persist-tun
+status /var/log/openvpn-status.log
+log /var/log/openvpn.log
+verb 3
+management 127.0.0.1 7505
+
+script-security 2
+client-connect /usr/local/x-ui/bin/openvpn-auth.py
+client-disconnect /usr/local/x-ui/bin/openvpn-auth.py
+
+verify-client-cert optional
+username-as-common-name
+auth-user-pass-verify /usr/local/x-ui/bin/openvpn-verify.py via-file
+auth-user-pass-optional
+EOF_CONF
+
+sysctl -w net.ipv4.ip_forward=1
+sed -i '/net.ipv4.ip_forward/d' /etc/sysctl.conf
+echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
+
+systemctl daemon-reload
+systemctl enable --now openvpn-server@server
+`, port, proto)
+
+	out, err := s.execPrivilegedBash(ctx, script)
+	if err != nil {
+		return fmt.Errorf("auto-install failed: %v (output: %s)", err, string(out))
+	}
+
+	s.EnsureNAT()
 	return nil
 }

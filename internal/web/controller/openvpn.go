@@ -25,6 +25,8 @@ func NewOpenVPNController(g *gin.RouterGroup) *OpenVPNController {
 
 func (a *OpenVPNController) initRouter(g *gin.RouterGroup) {
 	g.GET("/status", requireOwnerRole(), a.status)
+	g.POST("/settings", requireOwnerRole(), a.saveSettings)
+	g.POST("/install", requireOwnerRole(), a.install)
 	g.POST("/client/add", requireOwnerRole(), a.addClient)
 	g.POST("/client/update", requireOwnerRole(), a.updateClient)
 	g.POST("/client/reset", requireOwnerRole(), a.resetTraffic)
@@ -181,4 +183,32 @@ func (a *OpenVPNController) clientConfig(c *gin.Context) {
 func (a *OpenVPNController) restart(c *gin.Context) {
 	err := a.openvpnService.RestartService()
 	jsonMsg(c, "OpenVPN service restarted successfully", err)
+}
+
+type openVPNSettingsForm struct {
+	RemoteHost string `json:"remote_host" form:"remote_host"`
+	RemotePort int    `json:"remote_port" form:"remote_port"`
+	ServerPort int    `json:"server_port" form:"server_port"`
+}
+
+func (a *OpenVPNController) saveSettings(c *gin.Context) {
+	var form openVPNSettingsForm
+	_ = c.ShouldBind(&form)
+	if form.RemoteHost == "" {
+		form.RemoteHost = c.PostForm("remote_host")
+	}
+	err := a.openvpnService.SaveSettings(form.RemoteHost, form.RemotePort, form.ServerPort)
+	jsonMsg(c, "OpenVPN settings saved successfully", err)
+}
+
+type openVPNInstallForm struct {
+	Port  int    `json:"port" form:"port"`
+	Proto string `json:"proto" form:"proto"`
+}
+
+func (a *OpenVPNController) install(c *gin.Context) {
+	var form openVPNInstallForm
+	_ = c.ShouldBind(&form)
+	err := a.openvpnService.AutoInstallOpenVPN(form.Port, form.Proto)
+	jsonMsg(c, "OpenVPN installed and initialized successfully", err)
 }

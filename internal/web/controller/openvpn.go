@@ -86,9 +86,7 @@ type openVPNUpdateForm struct {
 
 func (a *OpenVPNController) updateClient(c *gin.Context) {
 	var form openVPNUpdateForm
-	if err := c.ShouldBindJSON(&form); err != nil {
-		_ = c.ShouldBind(&form)
-	}
+	_ = c.ShouldBind(&form)
 
 	name := strings.TrimSpace(form.Name)
 	if name == "" {

@@ -1260,6 +1260,18 @@ export const sections: readonly Section[] = [
       },
       {
         method: 'POST',
+        path: '/panel/api/clients/:email/revokeSub',
+        summary: 'Revoke and regenerate subscription ID for a client across all inbounds.',
+        description:
+          'Generates a fresh random UUID subId for the client, updates the client record and all attached inbounds, and returns the new subId and full subscription URL.',
+        params: [
+          { name: 'email', in: 'path', type: 'string', desc: 'Client email (unique identifier).' },
+        ],
+        response:
+          '{\n  "success": true,\n  "obj": {\n    "email": "user@example.com",\n    "subId": "b1a2c3d4-...",\n    "subUrl": "https://domain:2096/sub/b1a2c3d4-..."\n  }\n}',
+      },
+      {
+        method: 'POST',
         path: '/panel/api/clients/:email/attach',
         summary: 'Attach an existing client to one or more additional inbounds. Body is JSON.',
         description:
@@ -1633,6 +1645,23 @@ export const sections: readonly Section[] = [
         ],
         response:
           '{\n  "success": true,\n  "obj": [\n    "vless://uuid@host:443?security=reality&...#user1",\n    "vmess://eyJ2IjoyLC..."\n  ]\n}',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/clients/subUrl/:subId',
+        summary: 'Get the full subscription URL for a given subscription ID.',
+        description:
+          'Constructs and returns the full subscription URL using the configured subURI or panel domain/port.',
+        params: [
+          {
+            name: 'subId',
+            in: 'path',
+            type: 'string',
+            desc: 'Subscription ID.',
+          },
+        ],
+        response:
+          '{\n  "success": true,\n  "obj": {\n    "subId": "b1a2c3d4-...",\n    "subUrl": "https://domain:2096/sub/b1a2c3d4-..."\n  }\n}',
       },
       {
         method: 'POST',
@@ -3111,6 +3140,60 @@ export const sections: readonly Section[] = [
         method: 'GET',
         path: '/panel/api/telegram-shop/backup',
         summary: 'Download SQL dump backup of Telegram Shop database.',
+      },
+    ],
+  },
+
+  {
+    id: 'openvpn',
+    title: 'OpenVPN Management',
+    description:
+      'Manage OpenVPN server daemon, easy-rsa client certificates, traffic statistics, and .ovpn configurations.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/openvpn/status',
+        summary: 'Get OpenVPN server status, port, proto, online clients, and list of issued certificates.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/openvpn/client/add',
+        summary: 'Create a new OpenVPN client certificate with optional traffic/expiry/IP limits.',
+        body: '{\n  "name": "client1",\n  "totalGB": 50,\n  "expiryTime": 1792520000000,\n  "limitIp": 2\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/openvpn/client/update',
+        summary: 'Update OpenVPN client limits (totalGB, expiryTime, limitIp, enable).',
+        body: '{\n  "name": "client1",\n  "totalGB": 100,\n  "expiryTime": 1792520000000,\n  "limitIp": 1,\n  "enable": true\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/openvpn/client/reset',
+        summary: 'Reset cumulative traffic usage (up and down) for an OpenVPN client.',
+        body: '{\n  "name": "client1"\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/openvpn/client/del',
+        summary: 'Revoke and delete an OpenVPN client certificate.',
+        body: '{\n  "name": "client1"\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/openvpn/client/kill',
+        summary: 'Disconnect active session for an OpenVPN client.',
+        body: '{\n  "name": "client1"\n}',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/openvpn/client/config',
+        summary: 'Download or retrieve raw .ovpn client profile configuration.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/openvpn/restart',
+        summary: 'Restart OpenVPN server service and re-apply iptables NAT forwarding.',
       },
     ],
   },

@@ -4819,6 +4819,10 @@
           "status": {
             "type": "string"
           },
+          "telegramShopAccess": {
+            "description": "TelegramShopAccess gates access to the Telegram Shop management page for this admin.",
+            "type": "boolean"
+          },
           "updatedAt": {
             "format": "int64",
             "type": "integer"
@@ -4840,6 +4844,7 @@
           "permissionOverrides",
           "roleId",
           "status",
+          "telegramShopAccess",
           "updatedAt",
           "usedBytes",
           "username"
@@ -4952,6 +4957,10 @@
     {
       "name": "Telegram Shop",
       "description": "Mirza-style automated Telegram shop bot installer and lifecycle manager. Manages bot installation, status, and control."
+    },
+    {
+      "name": "OpenVPN Management",
+      "description": "Manage OpenVPN server daemon, easy-rsa client certificates, traffic statistics, and .ovpn configurations."
     },
     {
       "name": "WebSocket",
@@ -8893,6 +8902,56 @@
         }
       }
     },
+    "/panel/api/clients/{email}/revokeSub": {
+      "post": {
+        "tags": [
+          "Clients"
+        ],
+        "summary": "Revoke and regenerate subscription ID for a client across all inbounds.",
+        "operationId": "post_panel_api_clients_email_revokeSub",
+        "description": "Generates a fresh random UUID subId for the client, updates the client record and all attached inbounds, and returns the new subId and full subscription URL.",
+        "parameters": [
+          {
+            "name": "email",
+            "in": "path",
+            "required": true,
+            "description": "Client email (unique identifier).",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "email": "user@example.com",
+                    "subId": "b1a2c3d4-...",
+                    "subUrl": "https://domain:2096/sub/b1a2c3d4-..."
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/panel/api/clients/{email}/attach": {
       "post": {
         "tags": [
@@ -10893,6 +10952,55 @@
                     "vless://uuid@host:443?security=reality&...#user1",
                     "vmess://eyJ2IjoyLC..."
                   ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/clients/subUrl/{subId}": {
+      "get": {
+        "tags": [
+          "Clients"
+        ],
+        "summary": "Get the full subscription URL for a given subscription ID.",
+        "operationId": "get_panel_api_clients_subUrl_subId",
+        "description": "Constructs and returns the full subscription URL using the configured subURI or panel domain/port.",
+        "parameters": [
+          {
+            "name": "subId",
+            "in": "path",
+            "required": true,
+            "description": "Subscription ID.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "subId": "b1a2c3d4-...",
+                    "subUrl": "https://domain:2096/sub/b1a2c3d4-..."
+                  }
                 }
               }
             }
@@ -17606,6 +17714,318 @@
         ],
         "summary": "Download SQL dump backup of Telegram Shop database.",
         "operationId": "get_panel_api_telegram_shop_backup",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/openvpn/status": {
+      "get": {
+        "tags": [
+          "OpenVPN Management"
+        ],
+        "summary": "Get OpenVPN server status, port, proto, online clients, and list of issued certificates.",
+        "operationId": "get_panel_api_openvpn_status",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/openvpn/client/add": {
+      "post": {
+        "tags": [
+          "OpenVPN Management"
+        ],
+        "summary": "Create a new OpenVPN client certificate with optional traffic/expiry/IP limits.",
+        "operationId": "post_panel_api_openvpn_client_add",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "name": "client1",
+                "totalGB": 50,
+                "expiryTime": 1792520000000,
+                "limitIp": 2
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/openvpn/client/update": {
+      "post": {
+        "tags": [
+          "OpenVPN Management"
+        ],
+        "summary": "Update OpenVPN client limits (totalGB, expiryTime, limitIp, enable).",
+        "operationId": "post_panel_api_openvpn_client_update",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "name": "client1",
+                "totalGB": 100,
+                "expiryTime": 1792520000000,
+                "limitIp": 1,
+                "enable": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/openvpn/client/reset": {
+      "post": {
+        "tags": [
+          "OpenVPN Management"
+        ],
+        "summary": "Reset cumulative traffic usage (up and down) for an OpenVPN client.",
+        "operationId": "post_panel_api_openvpn_client_reset",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "name": "client1"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/openvpn/client/del": {
+      "post": {
+        "tags": [
+          "OpenVPN Management"
+        ],
+        "summary": "Revoke and delete an OpenVPN client certificate.",
+        "operationId": "post_panel_api_openvpn_client_del",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "name": "client1"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/openvpn/client/kill": {
+      "post": {
+        "tags": [
+          "OpenVPN Management"
+        ],
+        "summary": "Disconnect active session for an OpenVPN client.",
+        "operationId": "post_panel_api_openvpn_client_kill",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "name": "client1"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/openvpn/client/config": {
+      "get": {
+        "tags": [
+          "OpenVPN Management"
+        ],
+        "summary": "Download or retrieve raw .ovpn client profile configuration.",
+        "operationId": "get_panel_api_openvpn_client_config",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/openvpn/restart": {
+      "post": {
+        "tags": [
+          "OpenVPN Management"
+        ],
+        "summary": "Restart OpenVPN server service and re-apply iptables NAT forwarding.",
+        "operationId": "post_panel_api_openvpn_restart",
         "responses": {
           "200": {
             "description": "Successful response",

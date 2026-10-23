@@ -330,11 +330,38 @@ func NewSUBController(g *gin.RouterGroup, options ...SUBControllerOption) *SUBCo
 // initRouter registers HTTP routes for subscription links and JSON endpoints
 // on the provided router group.
 func (a *SUBController) initRouter(g *gin.RouterGroup) {
+	registerFormatRoutes := func(rg *gin.RouterGroup) {
+		rg.GET(":subid", a.subs)
+		rg.HEAD(":subid", a.subs)
+		rg.GET(":subid/hwid-status", a.hwidStatus)
+		rg.HEAD(":subid/hwid-status", a.hwidStatus)
+		rg.GET(":subid/clash", a.subClashs)
+		rg.HEAD(":subid/clash", a.subClashs)
+		rg.GET(":subid/singbox", a.subJsons)
+		rg.HEAD(":subid/singbox", a.subJsons)
+		rg.GET(":subid/xray", a.subJsons)
+		rg.HEAD(":subid/xray", a.subJsons)
+		rg.GET(":subid/json", a.subJsons)
+		rg.HEAD(":subid/json", a.subJsons)
+		rg.GET(":subid/plain", a.subPlain)
+		rg.HEAD(":subid/plain", a.subPlain)
+		rg.GET(":subid/info", a.subInfo)
+		rg.HEAD(":subid/info", a.subInfo)
+		rg.GET(":subid/page", a.subPage)
+		rg.HEAD(":subid/page", a.subPage)
+	}
+
 	gLink := g.Group(a.subPath)
-	gLink.GET(":subid", a.subs)
-	gLink.HEAD(":subid", a.subs)
-	gLink.GET(":subid/hwid-status", a.hwidStatus)
-	gLink.HEAD(":subid/hwid-status", a.hwidStatus)
+	registerFormatRoutes(gLink)
+
+	// Universal /sub/ route alias (Nexora-compatible master path)
+	if !sameSubscriptionPath(a.subPath, "/sub/") &&
+		(!a.jsonEnabled || !sameSubscriptionPath(a.subJsonPath, "/sub/")) &&
+		(!a.clashEnabled || !sameSubscriptionPath(a.subClashPath, "/sub/")) {
+		gSub := g.Group("/sub/")
+		registerFormatRoutes(gSub)
+	}
+
 	if a.jsonEnabled {
 		gJson := g.Group(a.subJsonPath)
 		gJson.GET(":subid", a.subJsons)
@@ -463,6 +490,50 @@ func dedupeEmails(emails []string) []string {
 // subs handles HTTP requests for subscription links, returning either HTML page or base64-encoded subscription data.
 func (a *SUBController) subs(c *gin.Context) {
 	userAgent := c.GetHeader("User-Agent")
+	format := strings.ToLower(strings.TrimSpace(c.Query("format")))
+	switch format {
+	case "info":
+		a.subInfo(c)
+		logSubscriptionRoute(userAgent, "info")
+		return
+	case "html", "page":
+		a.subPage(c)
+		logSubscriptionRoute(userAgent, "html")
+		return
+	case "clash", "meta", "mihomo":
+		if !a.enforceHwid(c) {
+			return
+		}
+		if a.serveClashBody(c, false, false) {
+			a.recordSubscriptionFetch(c)
+			logSubscriptionRoute(userAgent, "clash")
+			return
+		}
+	case "singbox", "sing-box", "json", "xray":
+		if !a.enforceHwid(c) {
+			return
+		}
+		if a.serveJsonBody(c, true, "application/json; charset=utf-8", false) {
+			a.recordSubscriptionFetch(c)
+			logSubscriptionRoute(userAgent, "json")
+			return
+		}
+	case "plain", "raw":
+		if !a.enforceHwid(c) {
+			return
+		}
+		a.serveRawSubs(c, false)
+		logSubscriptionRoute(userAgent, "plain")
+		return
+	case "base64", "b64":
+		if !a.enforceHwid(c) {
+			return
+		}
+		a.serveRawSubs(c, true)
+		logSubscriptionRoute(userAgent, "base64")
+		return
+	}
+
 	if a.maybeServeSubInfo(c) {
 		logSubscriptionRoute(userAgent, "info")
 		return
@@ -479,12 +550,50 @@ func (a *SUBController) subs(c *gin.Context) {
 		logSubscriptionRoute(userAgent, "clash")
 		return
 	}
-	if shouldAutoServeJson(a.jsonAutoDetect, a.jsonEnabled, false, userAgent, a.jsonUserAgent) && a.serveJsonBody(c, true, "application/json; charset=utf-8", false) {
+	if (shouldAutoServeJson(a.jsonAutoDetect, a.jsonEnabled, false, userAgent, a.jsonUserAgent) || (a.jsonEnabled && isSingboxUserAgent(userAgent))) && a.serveJsonBody(c, true, "application/json; charset=utf-8", false) {
 		a.recordSubscriptionFetch(c)
 		logSubscriptionRoute(userAgent, "json")
 		return
 	}
 	logSubscriptionRoute(userAgent, "raw")
+	a.serveRawSubs(c, a.subEncrypt)
+}
+
+var singboxUARegex = regexp.MustCompile(`(?i)(sing-box|singbox|hiddify|nekobox|nekoray)`)
+
+func isSingboxUserAgent(userAgent string) bool {
+	return singboxUARegex.MatchString(userAgent)
+}
+
+func (a *SUBController) subPlain(c *gin.Context) {
+	if !a.enforceHwid(c) {
+		return
+	}
+	a.serveRawSubs(c, false)
+}
+
+func (a *SUBController) subInfo(c *gin.Context) {
+	page, ok := a.buildSubPageData(c)
+	if !ok {
+		return
+	}
+	info := a.subPageContext(page)
+	delete(info, "links")
+	info["emails"] = dedupeEmails(page.Emails)
+	setNoCacheHeaders(c)
+	c.JSON(http.StatusOK, info)
+}
+
+func (a *SUBController) subPage(c *gin.Context) {
+	page, ok := a.buildSubPageData(c)
+	if !ok {
+		return
+	}
+	a.serveSubPage(c, page.BasePath, page)
+}
+
+func (a *SUBController) serveRawSubs(c *gin.Context, encrypt bool) {
+	userAgent := c.GetHeader("User-Agent")
 	subId := c.Param("subid")
 	scheme, host, hostWithPort, _ := a.subService.ResolveRequest(c)
 	subReq := a.subService.ForRequest(host)
@@ -492,37 +601,34 @@ func (a *SUBController) subs(c *gin.Context) {
 	subs, _, _, traffic, err := subReq.getSubs(subId)
 	if err != nil || subs == nil {
 		writeSubError(c, err)
-	} else {
-		var result strings.Builder
-		for _, sub := range subs {
-			result.WriteString(sub)
-			result.WriteString("\n")
-		}
-
-		// Add headers
-		header := subReq.subscriptionUserinfo(traffic)
-		metadata := a.metadataForSubRequest(func() *SubService { return subReq }, subId, builtinProfileURL(c, scheme, hostWithPort))
-		a.ApplyCommonHeaders(c, header, a.updateInterval, metadata.Title, metadata.SupportURL, metadata.ProfileURL, metadata.Announce, a.subEnableRouting, a.subRoutingRules, a.subHideSettings)
-
-		// Incy's profile rides the raw body; other clients must not see that line (#6062).
-		if IsIncyClient(userAgent) && a.subIncyEnableRouting && a.subIncyRoutingRules != "" {
-			incyRules, _, err := resolveIncyRoutingSource(a.subIncyRoutingRules)
-			if err == nil && strings.TrimSpace(incyRules) != "" {
-				result.WriteString(incyRules)
-				result.WriteString("\n")
-				// INCY ranks a Routing header above a body line, so the shared
-				// profile must not override INCY's own one here.
-				c.Writer.Header().Del("Routing")
-			}
-		}
-
-		if a.subEncrypt {
-			c.String(200, base64.StdEncoding.EncodeToString([]byte(result.String())))
-		} else {
-			c.String(200, result.String())
-		}
-		a.recordSubscriptionFetch(c)
+		return
 	}
+
+	var result strings.Builder
+	for _, sub := range subs {
+		result.WriteString(sub)
+		result.WriteString("\n")
+	}
+
+	header := subReq.subscriptionUserinfo(traffic)
+	metadata := a.metadataForSubRequest(func() *SubService { return subReq }, subId, builtinProfileURL(c, scheme, hostWithPort))
+	a.ApplyCommonHeaders(c, header, a.updateInterval, metadata.Title, metadata.SupportURL, metadata.ProfileURL, metadata.Announce, a.subEnableRouting, a.subRoutingRules, a.subHideSettings)
+
+	if IsIncyClient(userAgent) && a.subIncyEnableRouting && a.subIncyRoutingRules != "" {
+		incyRules, _, err := resolveIncyRoutingSource(a.subIncyRoutingRules)
+		if err == nil && strings.TrimSpace(incyRules) != "" {
+			result.WriteString(incyRules)
+			result.WriteString("\n")
+			c.Writer.Header().Del("Routing")
+		}
+	}
+
+	if encrypt {
+		c.String(200, base64.StdEncoding.EncodeToString([]byte(result.String())))
+	} else {
+		c.String(200, result.String())
+	}
+	a.recordSubscriptionFetch(c)
 }
 
 func (a *SUBController) recordSubscriptionFetch(c *gin.Context) {

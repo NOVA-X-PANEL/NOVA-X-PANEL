@@ -1100,6 +1100,7 @@ export interface User {
   permissionOverrides: string;
   roleId: number;
   status: string;
+  telegramShopAccess: boolean;
   updatedAt: number;
   usedBytes: number;
   username: string;

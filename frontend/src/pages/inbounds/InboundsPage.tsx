@@ -376,9 +376,12 @@ export default function InboundsPage() {
       };
       const clients = settings.clients || [];
       const subLinks: string[] = [];
+      const subBase = subSettings.subURI
+        ? (subSettings.subURI.endsWith('/') ? subSettings.subURI : `${subSettings.subURI}/`)
+        : '';
       for (const c of clients) {
-        if (c.subId && subSettings.subURI) {
-          subLinks.push(subSettings.subURI + c.subId);
+        if (c.subId && subBase) {
+          subLinks.push(subBase + c.subId);
         }
       }
       openText({
@@ -408,9 +411,12 @@ export default function InboundsPage() {
     for (const ib of hydrated) {
       const settings = coerceInboundJsonField(ib.settings) as { clients?: { subId?: string }[] };
       const clients = settings.clients || [];
+      const subBase = subSettings.subURI
+        ? (subSettings.subURI.endsWith('/') ? subSettings.subURI : `${subSettings.subURI}/`)
+        : '';
       for (const c of clients) {
-        if (c.subId && subSettings.subURI) {
-          out.push(subSettings.subURI + c.subId);
+        if (c.subId && subBase) {
+          out.push(subBase + c.subId);
         }
       }
     }

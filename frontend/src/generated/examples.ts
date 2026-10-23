@@ -1193,6 +1193,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "permissionOverrides": "",
     "roleId": 0,
     "status": "",
+    "telegramShopAccess": false,
     "updatedAt": 0,
     "usedBytes": 0,
     "username": ""

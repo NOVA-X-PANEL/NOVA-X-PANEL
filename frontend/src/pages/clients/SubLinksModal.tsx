@@ -46,6 +46,9 @@ export default function SubLinksModal({
     if (!enabled) return [];
     const byEmail = new Map(clients.map((c) => [c.email, c]));
     const out: Row[] = [];
+    const norm = (u: string) => (u.endsWith('/') ? u : `${u}/`);
+    const baseUri = norm(subSettings!.subURI);
+    const jsonBaseUri = jsonEnabled ? norm(subSettings!.subJsonURI) : '';
     for (const email of emails) {
       const c = byEmail.get(email);
       if (!c?.subId) continue;
@@ -53,8 +56,8 @@ export default function SubLinksModal({
         key: email,
         email,
         subId: c.subId,
-        link: subSettings!.subURI + c.subId,
-        jsonLink: jsonEnabled ? subSettings!.subJsonURI + c.subId : '',
+        link: baseUri + c.subId,
+        jsonLink: jsonEnabled ? jsonBaseUri + c.subId : '',
       });
     }
     return out;

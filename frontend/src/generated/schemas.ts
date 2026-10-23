@@ -4793,6 +4793,10 @@ export const SCHEMAS: Record<string, unknown> = {
       "status": {
         "type": "string"
       },
+      "telegramShopAccess": {
+        "description": "TelegramShopAccess gates access to the Telegram Shop management page for this admin.",
+        "type": "boolean"
+      },
       "updatedAt": {
         "format": "int64",
         "type": "integer"
@@ -4814,6 +4818,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "permissionOverrides",
       "roleId",
       "status",
+      "telegramShopAccess",
       "updatedAt",
       "usedBytes",
       "username"

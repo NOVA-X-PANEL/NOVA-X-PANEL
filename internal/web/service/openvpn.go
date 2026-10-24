@@ -597,6 +597,27 @@ func (s *OpenVPNService) UpdateClient(name string, password string, totalGB int6
 	// If disabled, expired, or over traffic, kick active session immediately
 	if !user.Enable || isExpired || isTrafficExceeded {
 		_ = s.KillClient(name)
+	} else if user.LimitIP > 0 {
+		// Enforce concurrent limit immediately on active sessions
+		if sessions, err := s.QueryManagementSessions(); err == nil {
+			var matching []OpenVPNLiveSession
+			for _, sess := range sessions {
+				if strings.EqualFold(sess.CommonName, name) {
+					matching = append(matching, sess)
+				}
+			}
+			if len(matching) > user.LimitIP {
+				conn, dialErr := net.DialTimeout("tcp", mgmtAddress, 1*time.Second)
+				if dialErr == nil {
+					for i := user.LimitIP; i < len(matching); i++ {
+						if matching[i].RealAddress != "" {
+							_, _ = fmt.Fprintf(conn, "kill %s\n", matching[i].RealAddress)
+						}
+					}
+					_ = conn.Close()
+				}
+			}
+		}
 	}
 
 	return nil

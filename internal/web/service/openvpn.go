@@ -205,11 +205,16 @@ func (s *OpenVPNService) QueryManagementSessions() ([]OpenVPNLiveSession, error)
 	return sessions, nil
 }
 
-// EnsureNAT enables IPv4 forwarding and adds iptables MASQUERADE for the VPN subnet.
+// EnsureNAT enables IPv4 forwarding and adds iptables MASQUERADE for the VPN subnet,
+// plus dynamic port redirection for remote/tunnel ports to the OpenVPN server port.
 func (s *OpenVPNService) EnsureNAT() {
 	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
 	defer cancel()
-	script := `
+
+	serverPortStr := getOpenVPNSetting("openvpn_server_port", "2083")
+	remotePortStr := getOpenVPNSetting("openvpn_remote_port", "")
+
+	script := fmt.Sprintf(`
 sysctl -w net.ipv4.ip_forward=1 >/dev/null 2>&1
 iptables -t nat -C POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE 2>/dev/null || iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE
 iptables -C FORWARD -s 10.8.0.0/24 -j ACCEPT 2>/dev/null || iptables -A FORWARD -s 10.8.0.0/24 -j ACCEPT
@@ -221,7 +226,24 @@ for c in /etc/openvpn/server/server.conf /etc/openvpn/server.conf; do
         sed -i '/script-security 2/a tls-verify /usr/local/x-ui/bin/openvpn-verify.py' "$c"
     fi
 done
-`
+
+# Dynamic port redirection for tunnel/remote port to OpenVPN server port
+SPORT="%s"
+RPORT="%s"
+if [ -n "$RPORT" ] && [ "$RPORT" != "$SPORT" ] && [ "$RPORT" != "0" ]; then
+    iptables -t nat -C PREROUTING -p tcp --dport "$RPORT" -j REDIRECT --to-ports "$SPORT" 2>/dev/null || \
+    iptables -t nat -A PREROUTING -p tcp --dport "$RPORT" -j REDIRECT --to-ports "$SPORT"
+    iptables -t nat -C PREROUTING -p udp --dport "$RPORT" -j REDIRECT --to-ports "$SPORT" 2>/dev/null || \
+    iptables -t nat -A PREROUTING -p udp --dport "$RPORT" -j REDIRECT --to-ports "$SPORT"
+
+    if ip link show gre-a-1 >/dev/null 2>&1; then
+        iptables -t nat -C PREROUTING -i gre-a-1 -p tcp --dport "$RPORT" -j REDIRECT --to-ports "$SPORT" 2>/dev/null || \
+        iptables -t nat -A PREROUTING -i gre-a-1 -p tcp --dport "$RPORT" -j REDIRECT --to-ports "$SPORT"
+        iptables -t nat -C PREROUTING -i gre-a-1 -p udp --dport "$RPORT" -j REDIRECT --to-ports "$SPORT" 2>/dev/null || \
+        iptables -t nat -A PREROUTING -i gre-a-1 -p udp --dport "$RPORT" -j REDIRECT --to-ports "$SPORT"
+    fi
+fi
+`, serverPortStr, remotePortStr)
 	_, _ = s.execPrivilegedBash(ctx, script)
 }
 
@@ -754,6 +776,9 @@ func (s *OpenVPNService) SaveSettings(remoteHost string, remotePort int, serverP
 			_, _ = s.execPrivileged(ctx, "systemctl", "restart", openvpnUnitName)
 		}
 	}
+
+	// Always refresh NAT & port redirects whenever settings are saved
+	s.EnsureNAT()
 
 	return nil
 }

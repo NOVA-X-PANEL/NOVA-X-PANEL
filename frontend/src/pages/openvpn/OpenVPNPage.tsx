@@ -773,7 +773,7 @@ export default function OpenVPNPage() {
               type="primary"
               icon={<DownloadOutlined />}
               className="openvpn-btn-action-download"
-              onClick={() => triggerDownload(record.name, activeHost, activePort, Boolean(record.password))}
+              onClick={() => triggerDownload(record.name, activeHost, activePort, false)}
             >
               دانلود فایل .ovpn
             </Button>
@@ -1210,14 +1210,14 @@ export default function OpenVPNPage() {
                           </div>
                         </div>
 
-                        {/* Direct Download Button on Mobile */}
+                        {/* Direct Download Button (Mobile Hero Action) */}
                         <Button
                           type="primary"
                           block
                           size="large"
                           icon={<DownloadOutlined />}
                           className="openvpn-mobile-btn-download"
-                          onClick={() => triggerDownload(client.name, activeHost, activePort, Boolean(client.password))}
+                          onClick={() => triggerDownload(client.name, activeHost, activePort, false)}
                         >
                           ⬇️ دانلود مستقیم فایل کانفیگ .ovpn
                         </Button>

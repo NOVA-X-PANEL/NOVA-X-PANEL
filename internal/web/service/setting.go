@@ -101,11 +101,11 @@ var defaultValueMap = map[string]string{
 	"twoFactorToken":              "",
 	"happLinkEnable":              "false",
 	"subEnable":                   "true",
-	"subJsonEnable":               "true",
-	"subJsonAutoDetect":           "true",
+	"subJsonEnable":               "false",
+	"subJsonAutoDetect":           "false",
 	"subJsonAlwaysArray":          "false",
 	"subJsonUserAgentRegex":       "",
-	"subClashAutoDetect":          "true",
+	"subClashAutoDetect":          "false",
 	"subClashUserAgentRegex":      "",
 	"subTitle":                    "",
 	"subSupportUrl":               "",
@@ -1947,6 +1947,15 @@ func (s *SettingService) BuildFullSubURL(host string, subId string) string {
 		subPath += "/"
 	}
 	return base + subPath + subId
+}
+
+// BuildShopSubURL constructs the canonical shop subscription URL (/sub/<subId>) for a client.
+func (s *SettingService) BuildShopSubURL(host string, subId string) string {
+	if subId == "" {
+		return ""
+	}
+	base := s.BuildSubURIBase(host)
+	return base + "/sub/" + subId
 }
 
 func (s *SettingService) GetDefaultSettings(host string) (any, error) {

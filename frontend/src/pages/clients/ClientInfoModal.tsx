@@ -180,7 +180,17 @@ export default function ClientInfoModal({
     if (!base || !subId) return '';
     return base.endsWith('/') ? `${base}${subId}` : `${base}/${subId}`;
   };
-  const subLink = subId && subSettings?.subURI ? joinSub(subSettings.subURI) : '';
+  const subURI = subSettings?.subURI;
+  const subLink = subId && subURI ? joinSub(subURI) : '';
+  const shopSubLink = useMemo(() => {
+    if (!subId || !subURI) return '';
+    try {
+      const u = new URL(subURI);
+      return `${u.protocol}//${u.host}/sub/${subId}`;
+    } catch {
+      return '';
+    }
+  }, [subId, subURI]);
   const subJsonLink =
     subId && subSettings?.subJsonEnable && subSettings?.subJsonURI
       ? joinSub(subSettings.subJsonURI)
@@ -632,6 +642,62 @@ export default function ClientInfoModal({
                     </Popover>
                   </div>
                 </div>
+                {shopSubLink && shopSubLink !== subLink && (
+                  <div className="link-row">
+                    <Tag color="cyan" className="link-row-tag">
+                      SHOP
+                    </Tag>
+                    <a
+                      href={shopSubLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="link-row-title link-row-title-anchor"
+                      title={shopSubLink}
+                    >
+                      {shopSubLink}
+                    </a>
+                    <div className="link-row-actions">
+                      <Tooltip title={t('copy')}>
+                        <Button
+                          size="small"
+                          icon={<CopyOutlined />}
+                          aria-label={t('copy')}
+                          onClick={() => copyValue(shopSubLink)}
+                        />
+                      </Tooltip>
+                      <Tooltip title={t('download')}>
+                        <Button
+                          size="small"
+                          icon={<DownloadOutlined />}
+                          aria-label={t('download')}
+                          loading={downloadingFormat === 'standard'}
+                          disabled={downloadingFormat !== null}
+                          onClick={() => void downloadSubscription(shopSubLink, 'standard')}
+                        />
+                      </Tooltip>
+                      <Popover
+                        trigger="click"
+                        placement="left"
+                        destroyOnHidden
+                        content={
+                          <QrPanel
+                            value={shopSubLink}
+                            remark={`${client.email} — Shop Universal`}
+                            size={220}
+                          />
+                        }
+                      >
+                        <Tooltip title={t('pages.clients.qrCode')}>
+                          <Button
+                            size="small"
+                            icon={<QrcodeOutlined />}
+                            aria-label={t('pages.clients.qrCode')}
+                          />
+                        </Tooltip>
+                      </Popover>
+                    </div>
+                  </div>
+                )}
                 {subJsonLink && (
                   <div className="link-row">
                     <Tag color="purple" className="link-row-tag">

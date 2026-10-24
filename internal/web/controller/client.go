@@ -463,11 +463,13 @@ func (a *ClientController) create(c *gin.Context) {
 		}
 	}
 	subUrl := a.settingService.BuildFullSubURL(resolveHost(c), subId)
+	shopSubUrl := a.settingService.BuildShopSubURL(resolveHost(c), subId)
 
 	respObj := gin.H{
-		"email":  payload.Client.Email,
-		"subId":  subId,
-		"subUrl": subUrl,
+		"email":      payload.Client.Email,
+		"subId":      subId,
+		"subUrl":     subUrl,
+		"shopSubUrl": shopSubUrl,
 	}
 	if a.inboundService.AnyNodePending(payload.InboundIds) {
 		respObj["nodePending"] = true
@@ -1096,9 +1098,11 @@ func (a *ClientController) getSubUrl(c *gin.Context) {
 		return
 	}
 	subUrl := a.settingService.BuildFullSubURL(resolveHost(c), subId)
+	shopSubUrl := a.settingService.BuildShopSubURL(resolveHost(c), subId)
 	jsonObj(c, gin.H{
-		"subId":  subId,
-		"subUrl": subUrl,
+		"subId":      subId,
+		"subUrl":     subUrl,
+		"shopSubUrl": shopSubUrl,
 	}, nil)
 }
 
@@ -1119,10 +1123,12 @@ func (a *ClientController) revokeSub(c *gin.Context) {
 		return
 	}
 	subUrl := a.settingService.BuildFullSubURL(resolveHost(c), newSubId)
+	shopSubUrl := a.settingService.BuildShopSubURL(resolveHost(c), newSubId)
 	jsonObj(c, gin.H{
-		"email":  email,
-		"subId":  newSubId,
-		"subUrl": subUrl,
+		"email":      email,
+		"subId":      newSubId,
+		"subUrl":     subUrl,
+		"shopSubUrl": shopSubUrl,
 	}, nil)
 }
 

@@ -407,6 +407,12 @@ func (a *SUBController) configuredSubscriptionPathOwner(candidate string) string
 	return ""
 }
 
+var knownVPNClientRegex = regexp.MustCompile(`(?i)(clash|meta|mihomo|stash|flclash|sing-box|singbox|sfa|sfi|hiddify|karing|nekobox|nekoray|v2rayng|v2ray|v2box|v2raytun|shadowrocket|streisand|happ|incy|loon|surge|quantumult|surfboard|foxray|sagernet|matsuri)`)
+
+func isKnownVPNClient(userAgent string) bool {
+	return knownVPNClientRegex.MatchString(userAgent)
+}
+
 // maybeServeSubPage renders the HTML info page when the request comes from a
 // browser (Accept: text/html) or explicitly asks for it (?html=1 or ?view=html).
 // It reports whether the request was handled. The remark template's per-client
@@ -414,8 +420,13 @@ func (a *SUBController) configuredSubscriptionPathOwner(candidate string) string
 // browser viewing the HTML info page gets clean, name-only remarks (usage is
 // shown in the page summary).
 func (a *SUBController) maybeServeSubPage(c *gin.Context) bool {
+	userAgent := c.GetHeader("User-Agent")
+	explicitHTML := c.Query("html") == "1" || strings.EqualFold(c.Query("view"), "html") || strings.EqualFold(c.Query("format"), "page")
+	if !explicitHTML && isKnownVPNClient(userAgent) {
+		return false
+	}
 	accept := c.GetHeader("Accept")
-	wantsHTML := strings.Contains(strings.ToLower(accept), "text/html") || c.Query("html") == "1" || strings.EqualFold(c.Query("view"), "html")
+	wantsHTML := explicitHTML || strings.Contains(strings.ToLower(accept), "text/html")
 	if !wantsHTML {
 		return false
 	}
@@ -559,7 +570,13 @@ func (a *SUBController) subs(c *gin.Context) {
 	a.serveRawSubs(c, a.subEncrypt)
 }
 
-var singboxUARegex = regexp.MustCompile(`(?i)(sing-box|singbox|hiddify|nekobox|nekoray)`)
+var clashUARegex = regexp.MustCompile(`(?i)(clash|meta|mihomo|stash|flclash)`)
+
+func isClashUserAgent(userAgent string) bool {
+	return clashUARegex.MatchString(userAgent)
+}
+
+var singboxUARegex = regexp.MustCompile(`(?i)(sing-box|singbox|sfa|sfi|hiddify|karing|nekobox|nekoray)`)
 
 func isSingboxUserAgent(userAgent string) bool {
 	return singboxUARegex.MatchString(userAgent)
@@ -1052,6 +1069,7 @@ func (a *SUBController) ApplyCommonHeaders(
 ) {
 	c.Writer.Header().Set("Subscription-Userinfo", header)
 	c.Writer.Header().Set("Profile-Update-Interval", updateInterval)
+	c.Writer.Header().Set("X-Robots-Tag", "noindex, nofollow")
 
 	// Basics
 	if profileTitle != "" {

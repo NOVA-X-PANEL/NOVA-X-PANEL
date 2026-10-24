@@ -412,6 +412,22 @@ func (s *OpenVPNService) GetStatus() (*OpenVPNStatus, error) {
 
 	// Fetch DB records
 	db := database.GetDB()
+	if db != nil {
+		if len(liveSessions) == 0 {
+			_ = db.Exec("DELETE FROM open_vpn_sessions").Error
+		} else {
+			var activePorts []string
+			for _, sess := range liveSessions {
+				if parts := strings.Split(sess.RealAddress, ":"); len(parts) >= 2 {
+					activePorts = append(activePorts, parts[len(parts)-1])
+				}
+			}
+			if len(activePorts) > 0 {
+				_ = db.Exec("DELETE FROM open_vpn_sessions WHERE real_port NOT IN (?)", activePorts).Error
+			}
+		}
+	}
+
 	var dbUsers []*model.OpenVPNUser
 	_ = db.Find(&dbUsers).Error
 	var userMap = make(map[string]*model.OpenVPNUser)

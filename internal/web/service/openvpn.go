@@ -220,10 +220,15 @@ iptables -t nat -C POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE 2>/dev/null 
 iptables -C FORWARD -s 10.8.0.0/24 -j ACCEPT 2>/dev/null || iptables -A FORWARD -s 10.8.0.0/24 -j ACCEPT
 iptables -C FORWARD -d 10.8.0.0/24 -m state --state RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || iptables -A FORWARD -d 10.8.0.0/24 -m state --state RELATED,ESTABLISHED -j ACCEPT
 
-# Ensure tls-verify hook is in server.conf for immediate revocation/disable enforcement
+# Ensure tls-verify hook and duplicate-cn are in server.conf for concurrent logins
 for c in /etc/openvpn/server/server.conf /etc/openvpn/server.conf; do
-    if [ -f "$c" ] && ! grep -q "tls-verify" "$c"; then
-        sed -i '/script-security 2/a tls-verify /usr/local/x-ui/bin/openvpn-verify.py' "$c"
+    if [ -f "$c" ]; then
+        if ! grep -q "tls-verify" "$c"; then
+            sed -i '/script-security 2/a tls-verify /usr/local/x-ui/bin/openvpn-verify.py' "$c"
+        fi
+        if ! grep -q "duplicate-cn" "$c"; then
+            echo "duplicate-cn" >> "$c"
+        fi
     fi
 done
 
@@ -231,10 +236,10 @@ done
 SPORT="%s"
 RPORT="%s"
 if [ -n "$RPORT" ] && [ "$RPORT" != "$SPORT" ] && [ "$RPORT" != "0" ]; then
-    iptables -t nat -C PREROUTING -p tcp --dport "$RPORT" -j REDIRECT --to-ports "$SPORT" 2>/dev/null || \
-    iptables -t nat -A PREROUTING -p tcp --dport "$RPORT" -j REDIRECT --to-ports "$SPORT"
-    iptables -t nat -C PREROUTING -p udp --dport "$RPORT" -j REDIRECT --to-ports "$SPORT" 2>/dev/null || \
-    iptables -t nat -A PREROUTING -p udp --dport "$RPORT" -j REDIRECT --to-ports "$SPORT"
+    iptables -t nat -C PREROUTING -i eth0 -p tcp --dport "$RPORT" -j REDIRECT --to-ports "$SPORT" 2>/dev/null || \
+    iptables -t nat -A PREROUTING -i eth0 -p tcp --dport "$RPORT" -j REDIRECT --to-ports "$SPORT"
+    iptables -t nat -C PREROUTING -i eth0 -p udp --dport "$RPORT" -j REDIRECT --to-ports "$SPORT" 2>/dev/null || \
+    iptables -t nat -A PREROUTING -i eth0 -p udp --dport "$RPORT" -j REDIRECT --to-ports "$SPORT"
 
     if ip link show gre-a-1 >/dev/null 2>&1; then
         iptables -t nat -C PREROUTING -i gre-a-1 -p tcp --dport "$RPORT" -j REDIRECT --to-ports "$SPORT" 2>/dev/null || \
@@ -854,6 +859,7 @@ verify-client-cert optional
 username-as-common-name
 auth-user-pass-verify /usr/local/x-ui/bin/openvpn-verify.py via-file
 auth-user-pass-optional
+duplicate-cn
 EOF_CONF
 
 sysctl -w net.ipv4.ip_forward=1

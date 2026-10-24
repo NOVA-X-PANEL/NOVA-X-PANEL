@@ -21,6 +21,8 @@ import {
   Progress,
   DatePicker,
   Checkbox,
+  Avatar,
+  Empty,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs, { type Dayjs } from 'dayjs';
@@ -136,9 +138,8 @@ export default function OpenVPNPage() {
   const [endpointHost, setEndpointHost] = useState<string>(() => {
     return localStorage.getItem('nova_openvpn_endpoint_host') || '';
   });
-  const [endpointPort, setEndpointPort] = useState<number>(() => {
-    const saved = localStorage.getItem('nova_openvpn_endpoint_port');
-    return saved ? parseInt(saved, 10) : 2083;
+  const [portInput, setPortInput] = useState<string>(() => {
+    return localStorage.getItem('nova_openvpn_endpoint_port') || '8443';
   });
 
   // Dedicated Config Modal for downloading/copying .ovpn
@@ -147,7 +148,7 @@ export default function OpenVPNPage() {
     clientName: string;
     password: string;
     host: string;
-    port: number;
+    portStr: string;
     inlineAuth: boolean;
     previewContent: string;
     loadingPreview: boolean;
@@ -156,7 +157,7 @@ export default function OpenVPNPage() {
     clientName: '',
     password: '',
     host: '',
-    port: 2083,
+    portStr: '',
     inlineAuth: false,
     previewContent: '',
     loadingPreview: false,
@@ -177,10 +178,18 @@ export default function OpenVPNPage() {
     localStorage.setItem('nova_openvpn_endpoint_host', trimmed);
   };
 
-  const handlePortChange = (val: number | null) => {
-    const p = val && val > 0 && val <= 65535 ? val : 2083;
-    setEndpointPort(p);
-    localStorage.setItem('nova_openvpn_endpoint_port', p.toString());
+  const handlePortInputChange = (val: string) => {
+    const digits = val.replace(/[^0-9]/g, '');
+    setPortInput(digits);
+    if (digits) {
+      localStorage.setItem('nova_openvpn_endpoint_port', digits);
+    }
+  };
+
+  const setPresetPort = (p: number) => {
+    const s = p.toString();
+    setPortInput(s);
+    localStorage.setItem('nova_openvpn_endpoint_port', s);
   };
 
   const [savingSettings, setSavingSettings] = useState(false);
@@ -190,11 +199,13 @@ export default function OpenVPNPage() {
       messageApi.warning('لطفاً آدرس یا آی‌پی ریموت را وارد کنید');
       return;
     }
+    const pNum = parseInt(portInput, 10);
+    const finalPort = (!isNaN(pNum) && pNum > 0 && pNum <= 65535) ? pNum : (status?.port || 2083);
     setSavingSettings(true);
     try {
       const res = await HttpUtil.post('/panel/api/openvpn/settings', {
         remote_host: endpointHost.trim(),
-        remote_port: endpointPort,
+        remote_port: finalPort,
         server_port: status?.port || 2083,
       });
       if (res && res.success) {
@@ -231,7 +242,7 @@ export default function OpenVPNPage() {
           });
         }
         if (res.obj.remote_port && res.obj.remote_port > 0) {
-          setEndpointPort(res.obj.remote_port);
+          setPortInput(res.obj.remote_port.toString());
           localStorage.setItem('nova_openvpn_endpoint_port', res.obj.remote_port.toString());
         }
       }
@@ -248,7 +259,13 @@ export default function OpenVPNPage() {
 
   const activeHost =
     endpointHost || status?.remote_host || status?.iran_ip || status?.direct_ip || '';
-  const activePort = endpointPort > 0 ? endpointPort : status?.remote_port || status?.port || 2083;
+  const activePort = useMemo(() => {
+    const p = parseInt(portInput, 10);
+    if (!isNaN(p) && p > 0 && p <= 65535) {
+      return p;
+    }
+    return status?.remote_port || status?.port || 2083;
+  }, [portInput, status]);
 
   // Add client submit handler
   const handleAddClient = async (values: {
@@ -478,7 +495,7 @@ export default function OpenVPNPage() {
       clientName: client.name,
       password: client.password || '',
       host: activeHost,
-      port: activePort,
+      portStr: activePort.toString(),
       inlineAuth: false,
       previewContent: '',
       loadingPreview: true,
@@ -501,20 +518,21 @@ export default function OpenVPNPage() {
     }
   };
 
-  const refreshModalPreview = async (host: string, port: number, inlineAuth: boolean) => {
+  const refreshModalPreview = async (host: string, portStr: string, inlineAuth: boolean) => {
     if (!configModal.clientName) return;
+    const p = parseInt(portStr, 10) || activePort;
     setConfigModal((prev) => ({ ...prev, loadingPreview: true }));
     try {
       const inlineParam = inlineAuth ? '&inline=1' : '';
       const res = await HttpUtil.get<{ config: string }>(
-        `/panel/api/openvpn/client/config?client=${encodeURIComponent(configModal.clientName)}&ip=${encodeURIComponent(host)}&port=${port}&raw=true${inlineParam}`,
+        `/panel/api/openvpn/client/config?client=${encodeURIComponent(configModal.clientName)}&ip=${encodeURIComponent(host)}&port=${p}&raw=true${inlineParam}`,
       );
       const conf = res?.obj?.config;
       if (conf) {
         setConfigModal((prev) => ({
           ...prev,
           host,
-          port,
+          portStr,
           inlineAuth,
           previewContent: conf,
           loadingPreview: false,
@@ -526,12 +544,13 @@ export default function OpenVPNPage() {
   };
 
   const copyAccountDetails = () => {
+    const port = parseInt(configModal.portStr, 10) || activePort;
     const text =
       `🌐 مشخصات اکانت OpenVPN:\n` +
       `👤 نام کاربری: ${configModal.clientName}\n` +
       (configModal.password ? `🔑 رمز عبور: ${configModal.password}\n` : '') +
       `🌍 آدرس سرور: ${configModal.host}\n` +
-      `🔌 پورت: ${configModal.port}\n` +
+      `🔌 پورت: ${port}\n` +
       `⚡ پروتکل: TCP`;
     navigator.clipboard.writeText(text);
     messageApi.success('اطلاعات اکانت برای ارسال کپی شد');
@@ -996,15 +1015,15 @@ export default function OpenVPNPage() {
                   <Text strong style={{ display: 'block', marginBottom: 6 }}>
                     پورت ریموت (پورت تانل‌شده یا پورت سرور)
                   </Text>
-                  <InputNumber
+                  <Input
                     dir="ltr"
+                    inputMode="numeric"
                     style={{ width: '100%', direction: 'ltr', textAlign: 'left' }}
                     prefix={<ThunderboltOutlined style={{ color: '#f59e0b' }} />}
-                    min={1}
-                    max={65535}
-                    value={endpointPort}
-                    placeholder="443 / 2083"
-                    onChange={handlePortChange}
+                    value={portInput}
+                    placeholder="مثلاً 8443 یا 443"
+                    onChange={(e) => handlePortInputChange(e.target.value)}
+                    allowClear
                   />
                 </Col>
                 <Col xs={24} md={8}>
@@ -1017,7 +1036,7 @@ export default function OpenVPNPage() {
                       className="openvpn-preset-chip"
                       onClick={() => {
                         if (status?.direct_ip) handleHostChange(status.direct_ip);
-                        handlePortChange(status?.port || 2083);
+                        setPresetPort(status?.port || 2083);
                       }}
                     >
                       ⚡ مستقیم ({status?.direct_ip || '91.107.165.105'}:2083)
@@ -1028,23 +1047,23 @@ export default function OpenVPNPage() {
                         className="openvpn-preset-chip"
                         onClick={() => {
                           handleHostChange(status.iran_ip);
-                          handlePortChange(status?.port || 2083);
+                          setPresetPort(8443);
                         }}
                       >
-                        🇮🇷 سرور ایران ({status.iran_ip}:2083)
+                        🇮🇷 سرور ایران ({status.iran_ip}:8443)
                       </Button>
                     )}
                     <Button
                       size="small"
                       className="openvpn-preset-chip"
-                      onClick={() => handlePortChange(443)}
+                      onClick={() => setPresetPort(443)}
                     >
                       پورت 443
                     </Button>
                     <Button
                       size="small"
                       className="openvpn-preset-chip"
-                      onClick={() => handlePortChange(8443)}
+                      onClick={() => setPresetPort(8443)}
                     >
                       پورت 8443
                     </Button>
@@ -1090,16 +1109,157 @@ export default function OpenVPNPage() {
               </div>
             </Card>
 
-            {/* Clients Table */}
-            <Card className="openvpn-card" title="لیست کلاینت‌ها و کاربران OpenVPN">
-              <Table
-                dataSource={status?.clients || []}
-                columns={columns}
-                rowKey="name"
-                loading={loading}
-                pagination={{ pageSize: 15 }}
-                locale={{ emptyText: 'هیچ کلاینتی هنوز ساخته نشده است' }}
-              />
+            {/* Clients Table (Desktop) & Cards (Mobile) */}
+            <Card
+              className="openvpn-card"
+              title="لیست کلاینت‌ها و کاربران OpenVPN"
+              extra={
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={() => setIsAddModalOpen(true)}
+                  style={{
+                    background: 'linear-gradient(135deg, #00f2fe 0%, #38bdf8 100%)',
+                    border: 'none',
+                    color: '#000',
+                    fontWeight: 600,
+                  }}
+                >
+                  افزودن کاربر
+                </Button>
+              }
+            >
+              {/* Desktop Table View */}
+              <div className="openvpn-desktop-table">
+                <Table
+                  dataSource={status?.clients || []}
+                  columns={columns}
+                  rowKey="name"
+                  loading={loading}
+                  pagination={{ pageSize: 15 }}
+                  scroll={{ x: 800 }}
+                  locale={{ emptyText: 'هیچ کلاینتی هنوز ساخته نشده است' }}
+                />
+              </div>
+
+              {/* Mobile Cards View */}
+              <div className="openvpn-mobile-cards">
+                {(!status?.clients || status.clients.length === 0) ? (
+                  <Empty description="هیچ کلاینتی هنوز ساخته نشده است" />
+                ) : (
+                  status.clients.map((client) => {
+                    const isUnlimited = client.total_gb <= 0;
+                    return (
+                      <div key={client.name} className="openvpn-mobile-client-card">
+                        <div className="openvpn-mobile-client-header">
+                          <div className="openvpn-mobile-client-user">
+                            <Avatar
+                              icon={<UserOutlined />}
+                              style={{ backgroundColor: '#00f2fe', color: '#000', fontWeight: 'bold' }}
+                            />
+                            <div>
+                              <span className="openvpn-mobile-username">{client.name}</span>
+                              <div style={{ marginTop: 2 }}>
+                                {client.is_connected ? (
+                                  <Tag color="success">🟢 آنلاین ({client.current_connections})</Tag>
+                                ) : (
+                                  <Tag color="default">⚫ آفلاین</Tag>
+                                )}
+                                {client.password && (
+                                  <Tag color="processing" style={{ fontSize: 10 }}>🔑 دارای رمز</Tag>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <Space direction="vertical" size={2} align="end">
+                            <Switch
+                              size="small"
+                              checked={client.enable}
+                              onChange={(checked) => handleToggleEnable(client, checked)}
+                            />
+                            <Text style={{ fontSize: 11, color: client.enable ? '#10b981' : '#ef4444' }}>
+                              {client.enable ? 'فعال' : 'مسدود'}
+                            </Text>
+                          </Space>
+                        </div>
+
+                        <div className="openvpn-mobile-client-stats">
+                          <div className="openvpn-mobile-stat-row">
+                            <span className="stat-label">📊 مصرف حجم:</span>
+                            <span className="stat-val">
+                              {client.traffic_used_str} / {isUnlimited ? 'نامحدود' : client.traffic_limit_str}
+                            </span>
+                          </div>
+                          {!isUnlimited && (
+                            <Progress
+                              percent={Math.round(client.traffic_percent)}
+                              size="small"
+                              status={client.is_traffic_exceeded ? 'exception' : 'active'}
+                              strokeColor={client.is_traffic_exceeded ? '#ef4444' : '#00f2fe'}
+                            />
+                          )}
+                          <div className="openvpn-mobile-stat-row" style={{ marginTop: 4 }}>
+                            <span className="stat-label">⏳ انقضا:</span>
+                            <span className="stat-val">
+                              {client.expiry_time <= 0
+                                ? 'نامحدود'
+                                : client.is_expired
+                                  ? 'منقضی شده'
+                                  : dayjs(client.expiry_time).format('YYYY-MM-DD')}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Direct Download Button on Mobile */}
+                        <Button
+                          type="primary"
+                          block
+                          size="large"
+                          icon={<DownloadOutlined />}
+                          className="openvpn-mobile-btn-download"
+                          onClick={() => triggerDownload(client.name, activeHost, activePort, Boolean(client.password))}
+                        >
+                          ⬇️ دانلود مستقیم فایل کانفیگ .ovpn
+                        </Button>
+
+                        {/* Secondary Actions on Mobile */}
+                        <div className="openvpn-mobile-actions-secondary">
+                          <Button
+                            icon={<EyeOutlined />}
+                            className="openvpn-mobile-btn-sub"
+                            onClick={() => openConfigModal(client)}
+                          >
+                            مشاهده / QR
+                          </Button>
+                          <Button
+                            icon={<EditOutlined />}
+                            className="openvpn-mobile-btn-sub"
+                            onClick={() => openEditModal(client)}
+                          >
+                            ویرایش
+                          </Button>
+                          <Popconfirm
+                            title="حذف کلاینت OpenVPN"
+                            description={`آیا از حذف ${client.name} مطمئن هستید؟`}
+                            onConfirm={() => handleDeleteClient(client.name)}
+                            okText="بله"
+                            cancelText="خیر"
+                            okButtonProps={{ danger: true }}
+                          >
+                            <Button
+                              danger
+                              icon={<DeleteOutlined />}
+                              className="openvpn-mobile-btn-sub"
+                            >
+                              حذف
+                            </Button>
+                          </Popconfirm>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
             </Card>
 
             {/* Add Client Modal */}
@@ -1490,7 +1650,7 @@ export default function OpenVPNPage() {
                     copyConfigText(
                       configModal.clientName,
                       configModal.host,
-                      configModal.port,
+                      parseInt(configModal.portStr, 10) || activePort,
                       configModal.inlineAuth,
                     )
                   }
@@ -1506,7 +1666,7 @@ export default function OpenVPNPage() {
                     triggerDownload(
                       configModal.clientName,
                       configModal.host,
-                      configModal.port,
+                      parseInt(configModal.portStr, 10) || activePort,
                       configModal.inlineAuth,
                     )
                   }
@@ -1597,15 +1757,17 @@ export default function OpenVPNPage() {
                     <Text strong style={{ display: 'block', marginBottom: 4 }}>
                       پورت تانل/سرور:
                     </Text>
-                    <InputNumber
-                      style={{ width: '100%' }}
-                      min={1}
-                      max={65535}
-                      value={configModal.port}
-                      onChange={(val) => {
-                        const p = val && val > 0 ? val : 2083;
-                        setConfigModal((prev) => ({ ...prev, port: p }));
+                    <Input
+                      dir="ltr"
+                      inputMode="numeric"
+                      style={{ width: '100%', direction: 'ltr', textAlign: 'left' }}
+                      value={configModal.portStr}
+                      placeholder="مثلاً 8443 یا 443"
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/[^0-9]/g, '');
+                        setConfigModal((prev) => ({ ...prev, portStr: val }));
                       }}
+                      allowClear
                     />
                   </Col>
                   <Col xs={8} sm={4}>
@@ -1616,7 +1778,7 @@ export default function OpenVPNPage() {
                       onClick={() =>
                         refreshModalPreview(
                           configModal.host,
-                          configModal.port,
+                          configModal.portStr,
                           configModal.inlineAuth,
                         )
                       }
@@ -1634,7 +1796,7 @@ export default function OpenVPNPage() {
                     onChange={(e) => {
                       const checked = e.target.checked;
                       setConfigModal((prev) => ({ ...prev, inlineAuth: checked }));
-                      refreshModalPreview(configModal.host, configModal.port, checked);
+                      refreshModalPreview(configModal.host, configModal.portStr, checked);
                     }}
                   >
                     <Text strong style={{ color: '#00e5ff' }}>

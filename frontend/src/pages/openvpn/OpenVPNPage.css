@@ -284,3 +284,87 @@
   border-radius: 10px !important;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
 }
+
+/* Mobile Client Cards & Responsive Views */
+.openvpn-mobile-cards {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .openvpn-desktop-table {
+    display: none;
+  }
+  .openvpn-mobile-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .openvpn-mobile-client-card {
+    background: rgba(15, 23, 42, 0.88);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    border-radius: 14px;
+    padding: 14px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .openvpn-mobile-client-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .openvpn-mobile-client-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .openvpn-mobile-username {
+    font-size: 16px;
+    font-weight: 700;
+    color: #00f2fe;
+    display: block;
+  }
+  .openvpn-mobile-client-stats {
+    background: rgba(0, 0, 0, 0.35);
+    border-radius: 10px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 13px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  .openvpn-mobile-stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .openvpn-mobile-stat-row .stat-label {
+    color: #94a3b8;
+  }
+  .openvpn-mobile-stat-row .stat-val {
+    color: #f1f5f9;
+    font-weight: 600;
+  }
+  .openvpn-mobile-btn-download {
+    background: linear-gradient(135deg, #00f2fe 0%, #38bdf8 100%) !important;
+    border: none !important;
+    color: #000 !important;
+    font-weight: 700 !important;
+    height: 44px !important;
+    font-size: 14px !important;
+    box-shadow: 0 0 16px rgba(0, 242, 254, 0.4) !important;
+    border-radius: 10px !important;
+  }
+  .openvpn-mobile-actions-secondary {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+  }
+  .openvpn-mobile-btn-sub {
+    font-size: 12px !important;
+    padding: 4px 6px !important;
+    height: 36px !important;
+  }
+}

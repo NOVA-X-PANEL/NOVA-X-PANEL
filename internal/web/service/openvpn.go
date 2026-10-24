@@ -185,10 +185,38 @@ func (s *OpenVPNService) QueryManagementSessions() ([]OpenVPNLiveSession, error)
 		}
 		if strings.HasPrefix(line, "CLIENT_LIST,") {
 			parts := strings.Split(line, ",")
-			// CLIENT_LIST,Common Name,Real Address,Virtual Address,Virtual IPv6 Address,Bytes Received,Bytes Sent,Connected Since,Connected Since (time_t)
+			// CLIENT_LIST,Common Name,Real Address,Virtual Address,Virtual IPv6 Address,Bytes Received,Bytes Sent,Connected Since,Connected Since (time_t),Username
 			if len(parts) >= 8 {
-				cn := parts[1]
-				realAddr := parts[2]
+				cn := strings.TrimSpace(parts[1])
+				realAddr := strings.TrimSpace(parts[2])
+				virtAddr := ""
+				if len(parts) >= 4 {
+					virtAddr = strings.TrimSpace(parts[3])
+				}
+				if (cn == "UNDEF" || cn == "") && len(parts) >= 10 {
+					uCol := strings.TrimSpace(parts[9])
+					if uCol != "" && uCol != "UNDEF" {
+						cn = uCol
+					}
+				}
+				if (cn == "UNDEF" || cn == "") {
+					if db := database.GetDB(); db != nil {
+						portPart := ""
+						if idx := strings.LastIndex(realAddr, ":"); idx != -1 {
+							portPart = realAddr[idx+1:]
+						}
+						var sName string
+						if portPart != "" {
+							_ = db.Raw("SELECT name FROM open_vpn_sessions WHERE real_port = ? LIMIT 1", portPart).Scan(&sName)
+						}
+						if sName == "" && virtAddr != "" {
+							_ = db.Raw("SELECT name FROM open_vpn_sessions WHERE virtual_ip = ? LIMIT 1", virtAddr).Scan(&sName)
+						}
+						if sName != "" {
+							cn = sName
+						}
+					}
+				}
 				rx, _ := strconv.ParseInt(parts[5], 10, 64)
 				tx, _ := strconv.ParseInt(parts[6], 10, 64)
 				since := parts[7]
@@ -229,6 +257,8 @@ for c in /etc/openvpn/server/server.conf /etc/openvpn/server.conf; do
         if ! grep -q "duplicate-cn" "$c"; then
             echo "duplicate-cn" >> "$c"
         fi
+        # Remove username-as-common-name so client cert CN is preserved and avoids UNDEF
+        sed -i '/username-as-common-name/d' "$c"
     fi
 done
 
@@ -399,7 +429,10 @@ func (s *OpenVPNService) GetStatus() (*OpenVPNStatus, error) {
 	liveSessions, _ := s.QueryManagementSessions()
 	var sessionsByCN = make(map[string][]OpenVPNLiveSession)
 	for _, sess := range liveSessions {
-		sessionsByCN[sess.CommonName] = append(sessionsByCN[sess.CommonName], sess)
+		key := strings.ToLower(strings.TrimSpace(sess.CommonName))
+		if key != "" {
+			sessionsByCN[key] = append(sessionsByCN[key], sess)
+		}
 		status.ConnectedClients = append(status.ConnectedClients, OpenVPNConnectedClient{
 			CommonName:     sess.CommonName,
 			RealAddress:    sess.RealAddress,
@@ -469,7 +502,8 @@ func (s *OpenVPNService) GetStatus() (*OpenVPNStatus, error) {
 			createdAt = time.UnixMilli(u.CreatedAt).Format("2006-01-02 15:04")
 		}
 
-		sessList := sessionsByCN[u.Name]
+		nameKey := strings.ToLower(strings.TrimSpace(u.Name))
+		sessList := sessionsByCN[nameKey]
 		isConnected := len(sessList) > 0
 		var liveRx, liveTx int64
 		var connectedIPs []string
@@ -893,7 +927,6 @@ client-connect /usr/local/x-ui/bin/openvpn-auth.py
 client-disconnect /usr/local/x-ui/bin/openvpn-auth.py
 
 verify-client-cert optional
-username-as-common-name
 auth-user-pass-verify /usr/local/x-ui/bin/openvpn-verify.py via-file
 auth-user-pass-optional
 duplicate-cn

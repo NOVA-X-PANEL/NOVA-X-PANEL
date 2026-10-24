@@ -424,18 +424,33 @@ export default function OpenVPNPage() {
     }
   };
 
-  const triggerDownload = (name: string, host: string, port: number, inlineAuth = false) => {
+  const triggerDownload = async (name: string, host: string, port: number, inlineAuth = false) => {
     const h = host.trim() || activeHost;
     const p = port > 0 ? port : activePort;
     const inlineParam = inlineAuth ? '&inline=1' : '';
-    const url = `/panel/api/openvpn/client/config?client=${encodeURIComponent(name)}&ip=${encodeURIComponent(h)}&port=${p}${inlineParam}`;
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${name}_${h}_${p}.ovpn`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    messageApi.success(`دانلود کانفیگ (${h}:${p}) آغاز شد`);
+    try {
+      messageApi.loading({ content: `در حال دریافت فایل کانفیگ ${name}...`, key: `dl-${name}` });
+      const res = await HttpUtil.get<{ config: string }>(
+        `/panel/api/openvpn/client/config?client=${encodeURIComponent(name)}&ip=${encodeURIComponent(h)}&port=${p}&raw=true${inlineParam}`,
+      );
+      const conf = res?.obj?.config;
+      if (conf) {
+        const blob = new Blob([conf], { type: 'application/x-openvpn-profile' });
+        const blobUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = `${name}_${h}_${p}.ovpn`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(blobUrl);
+        messageApi.success({ content: `فایل ${name}_${h}_${p}.ovpn با موفقیت دانلود شد ✨`, key: `dl-${name}` });
+      } else {
+        messageApi.error({ content: 'خطا: فایل کانفیگ خالی است یا تولید نشد', key: `dl-${name}` });
+      }
+    } catch {
+      messageApi.error({ content: 'خطا در دانلود فایل کانفیگ OpenVPN', key: `dl-${name}` });
+    }
   };
 
   const copyConfigText = async (name: string, host: string, port: number, inlineAuth = false) => {
@@ -736,12 +751,23 @@ export default function OpenVPNPage() {
           <Space wrap size="small">
             <Button
               size="small"
+              type="primary"
               icon={<DownloadOutlined />}
               className="openvpn-btn-action-download"
-              onClick={() => openConfigModal(record)}
+              onClick={() => triggerDownload(record.name, activeHost, activePort, Boolean(record.password))}
             >
-              کانفیگ .ovpn
+              دانلود فایل .ovpn
             </Button>
+
+            <Tooltip title="مشاهده کانفیگ، تنظیمات IP و پورت، و کپی جزئیات">
+              <Button
+                size="small"
+                icon={<EyeOutlined />}
+                onClick={() => openConfigModal(record)}
+              >
+                کانفیگ
+              </Button>
+            </Tooltip>
 
             <Tooltip title="ویرایش اطلاعات و پسورد">
               <Button size="small" icon={<EditOutlined />} onClick={() => openEditModal(record)} />

@@ -1815,11 +1815,11 @@ WantedBy=multi-user.target
 	_, _ = s.execPrivileged(ctx, "systemctl", "restart", "frpc")
 
 	greIf := getGreInterface()
-	_, _ = s.execPrivileged(ctx, "ip", "link", "set", "dev", greIf, "mtu", "1380")
-	_, _ = s.execPrivileged(ctx, "iptables", "-t", "mangle", "-C", "POSTROUTING", "-o", greIf, "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--set-mss", "1340")
-	_, _ = s.execPrivileged(ctx, "iptables", "-t", "mangle", "-A", "POSTROUTING", "-o", greIf, "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--set-mss", "1340")
-	_, _ = s.execPrivileged(ctx, "iptables", "-t", "mangle", "-C", "FORWARD", "-o", greIf, "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--set-mss", "1340")
-	_, _ = s.execPrivileged(ctx, "iptables", "-t", "mangle", "-A", "FORWARD", "-o", greIf, "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--set-mss", "1340")
+	_, _ = s.execPrivileged(ctx, "ip", "link", "set", "dev", greIf, "mtu", "1280")
+	_, _ = s.execPrivileged(ctx, "iptables", "-t", "mangle", "-C", "POSTROUTING", "-o", greIf, "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--set-mss", "1240")
+	_, _ = s.execPrivileged(ctx, "iptables", "-t", "mangle", "-A", "POSTROUTING", "-o", greIf, "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--set-mss", "1240")
+	_, _ = s.execPrivileged(ctx, "iptables", "-t", "mangle", "-C", "FORWARD", "-o", greIf, "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--set-mss", "1240")
+	_, _ = s.execPrivileged(ctx, "iptables", "-t", "mangle", "-A", "FORWARD", "-o", greIf, "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--set-mss", "1240")
 	if out, err := s.execPrivileged(ctx, hashemBinPath, "optimize"); err != nil {
 		logger.Warningf("hashem optimize failed: %v, out: %s", err, string(out))
 	}
@@ -1853,9 +1853,9 @@ func buildIranSetupCommands(iranIP, foreignIP string, frpPort, bhPort int, token
 	)
 
 	optimizeCmd := fmt.Sprintf(
-		"ip link set dev %s mtu 1380 2>/dev/null || true; "+
-			"iptables -t mangle -C POSTROUTING -o %s -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1340 2>/dev/null || iptables -t mangle -A POSTROUTING -o %s -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1340 2>/dev/null || true; "+
-			"iptables -t mangle -C FORWARD -o %s -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1340 2>/dev/null || iptables -t mangle -A FORWARD -o %s -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1340 2>/dev/null || true; "+
+		"ip link set dev %s mtu 1280 2>/dev/null || true; "+
+			"iptables -t mangle -C POSTROUTING -o %s -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || iptables -t mangle -A POSTROUTING -o %s -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || true; "+
+			"iptables -t mangle -C FORWARD -o %s -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || iptables -t mangle -A FORWARD -o %s -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || true; "+
 			"bash /tmp/hashem.sh optimize 2>/dev/null || true",
 		greIf, greIf, greIf, greIf, greIf,
 	)
@@ -2092,9 +2092,13 @@ done
 	iptablesBash := `
 iptables -t mangle -D POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1340 2>/dev/null || true
 iptables -t mangle -D FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1340 2>/dev/null || true
-for iface in $(ip -o link show 2>/dev/null | awk -F': ' '{print $2}' | cut -d'@' -f1 | grep -E '^gre'); do
+iptables -t mangle -D POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || true
+iptables -t mangle -D FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || true
+for iface in $(ip -o link show 2>/dev/null | awk -F': ' '{print $2}' | cut -d'@' -f1 | grep -E '^(gre|tun)'); do
     iptables -t mangle -D POSTROUTING -o "$iface" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1340 2>/dev/null || true
     iptables -t mangle -D FORWARD -o "$iface" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1340 2>/dev/null || true
+    iptables -t mangle -D POSTROUTING -o "$iface" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || true
+    iptables -t mangle -D FORWARD -o "$iface" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || true
 done
 iptables -t nat -D POSTROUTING -s 10.10.0.0/16 -j MASQUERADE 2>/dev/null || true
 `
@@ -2667,8 +2671,10 @@ IFNAME="%s"
 ip link del $IFNAME 2>/dev/null || true
 ip link add name $IFNAME type gretap local %s remote %s ttl 255 tos inherit ikey 2749365187 okey 2749365187 nopmtudisc 2>/dev/null || ip link add name $IFNAME type gretap remote %s ttl 255 tos inherit ikey 2749365187 okey 2749365187 nopmtudisc
 ip addr add %s/30 dev $IFNAME
-ip link set dev $IFNAME mtu 1372
+ip link set dev $IFNAME mtu 1280
 ip link set dev $IFNAME up
+iptables -t mangle -C POSTROUTING -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || iptables -t mangle -A POSTROUTING -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || true
+iptables -t mangle -C FORWARD -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || iptables -t mangle -A FORWARD -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || true
 
 cat << "UNIT_EOF" > /etc/systemd/system/${IFNAME}.service
 [Unit]
@@ -2683,10 +2689,14 @@ ExecStartPre=-/usr/sbin/modprobe ip_gre
 ExecStartPre=-/usr/sbin/ip link del $IFNAME
 ExecStart=/usr/sbin/ip link add name $IFNAME type gretap remote %s ttl 255 tos inherit ikey 2749365187 okey 2749365187 nopmtudisc
 ExecStart=/usr/sbin/ip addr add %s/30 dev $IFNAME
-ExecStart=/usr/sbin/ip link set dev $IFNAME mtu 1372
+ExecStart=/usr/sbin/ip link set dev $IFNAME mtu 1280
 ExecStart=/usr/sbin/ip link set dev $IFNAME up
+ExecStartPost=-/usr/sbin/iptables -t mangle -A POSTROUTING -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240
+ExecStartPost=-/usr/sbin/iptables -t mangle -A FORWARD -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240
 ExecStop=-/usr/sbin/ip link set dev $IFNAME down
 ExecStop=-/usr/sbin/ip link del $IFNAME
+ExecStopPost=-/usr/sbin/iptables -t mangle -D POSTROUTING -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240
+ExecStopPost=-/usr/sbin/iptables -t mangle -D FORWARD -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240
 
 [Install]
 WantedBy=multi-user.target
@@ -2783,7 +2793,7 @@ func buildTunnelPanelIranScript(iranIP, foreignIP, iranGreIP, foreignGreIP, port
 	iptablesStr := strings.Join(iptablesRules, "\n")
 	portsDisplay := strings.Join(portList, ", ")
 
-	return fmt.Sprintf(`bash -c 'set -e; echo "=== NOVA-X-PANEL NOVA-TUNELL Fast Setup ==="; sysctl -w net.ipv4.ip_forward=1 >/dev/null 2>&1 || true; sysctl -w net.ipv4.conf.all.rp_filter=2 >/dev/null 2>&1 || true; sysctl -w net.ipv4.conf.default.rp_filter=2 >/dev/null 2>&1 || true; echo "net.ipv4.ip_forward=1" > /etc/sysctl.d/99-nova-tunnel.conf 2>/dev/null || true; echo "net.ipv4.conf.all.rp_filter=2" >> /etc/sysctl.d/99-nova-tunnel.conf 2>/dev/null || true; modprobe ip_gre 2>/dev/null || true; IFNAME="gre-b-1"; ip link del $IFNAME 2>/dev/null || true; ip link add name $IFNAME type gretap local %s remote %s ttl 255 tos inherit ikey 2749365187 okey 2749365187 nopmtudisc 2>/dev/null || ip link add name $IFNAME type gretap remote %s ttl 255 tos inherit ikey 2749365187 okey 2749365187 nopmtudisc; ip addr add %s/30 dev $IFNAME; ip link set dev $IFNAME mtu 1372; ip link set dev $IFNAME up; cat << "UNIT_EOF" > /etc/systemd/system/${IFNAME}.service
+	return fmt.Sprintf(`bash -c 'set -e; echo "=== NOVA-X-PANEL NOVA-TUNELL Fast Setup ==="; sysctl -w net.ipv4.ip_forward=1 >/dev/null 2>&1 || true; sysctl -w net.ipv4.conf.all.rp_filter=2 >/dev/null 2>&1 || true; sysctl -w net.ipv4.conf.default.rp_filter=2 >/dev/null 2>&1 || true; echo "net.ipv4.ip_forward=1" > /etc/sysctl.d/99-nova-tunnel.conf 2>/dev/null || true; echo "net.ipv4.conf.all.rp_filter=2" >> /etc/sysctl.d/99-nova-tunnel.conf 2>/dev/null || true; modprobe ip_gre 2>/dev/null || true; IFNAME="gre-b-1"; ip link del $IFNAME 2>/dev/null || true; ip link add name $IFNAME type gretap local %s remote %s ttl 255 tos inherit ikey 2749365187 okey 2749365187 nopmtudisc 2>/dev/null || ip link add name $IFNAME type gretap remote %s ttl 255 tos inherit ikey 2749365187 okey 2749365187 nopmtudisc; ip addr add %s/30 dev $IFNAME; ip link set dev $IFNAME mtu 1280; ip link set dev $IFNAME up; iptables -t mangle -C POSTROUTING -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || iptables -t mangle -A POSTROUTING -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || true; iptables -t mangle -C FORWARD -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || iptables -t mangle -A FORWARD -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || true; cat << "UNIT_EOF" > /etc/systemd/system/${IFNAME}.service
 [Unit]
 Description=GRETAP Tunnel $IFNAME (NOVA-X-PANEL)
 After=network-online.target
@@ -2796,10 +2806,14 @@ ExecStartPre=-/usr/sbin/modprobe ip_gre
 ExecStartPre=-/usr/sbin/ip link del $IFNAME
 ExecStart=/usr/sbin/ip link add name $IFNAME type gretap remote %s ttl 255 tos inherit ikey 2749365187 okey 2749365187 nopmtudisc
 ExecStart=/usr/sbin/ip addr add %s/30 dev $IFNAME
-ExecStart=/usr/sbin/ip link set dev $IFNAME mtu 1372
+ExecStart=/usr/sbin/ip link set dev $IFNAME mtu 1280
 ExecStart=/usr/sbin/ip link set dev $IFNAME up
+ExecStartPost=-/usr/sbin/iptables -t mangle -A POSTROUTING -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240
+ExecStartPost=-/usr/sbin/iptables -t mangle -A FORWARD -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240
 ExecStop=-/usr/sbin/ip link set dev $IFNAME down
 ExecStop=-/usr/sbin/ip link del $IFNAME
+ExecStopPost=-/usr/sbin/iptables -t mangle -D POSTROUTING -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240
+ExecStopPost=-/usr/sbin/iptables -t mangle -D FORWARD -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240
 
 [Install]
 WantedBy=multi-user.target
@@ -2824,7 +2838,7 @@ table inet gre_panel {
     }
     chain mss_clamp {
         type filter hook forward priority mangle; policy accept;
-        oifname "gre-b-1" tcp flags syn / syn,rst tcp option maxseg size set rt mtu
+        oifname "gre-b-1" tcp flags syn / syn,rst tcp option maxseg size set 1240
     }
 }
 NFT_EOF
@@ -2848,6 +2862,8 @@ iptables -t nat -A POSTROUTING -o gre-b-1 -j MASQUERADE 2>/dev/null || true
 iptables -A FORWARD -o gre-b-1 -j ACCEPT 2>/dev/null || true
 iptables -A FORWARD -i gre-b-1 -j ACCEPT 2>/dev/null || true
 iptables -A FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT 2>/dev/null || true
+iptables -t mangle -C POSTROUTING -o gre-b-1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || iptables -t mangle -A POSTROUTING -o gre-b-1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || true
+iptables -t mangle -C FORWARD -o gre-b-1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || iptables -t mangle -A FORWARD -o gre-b-1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || true
 echo "=========================================="; echo "[✓] تانل با موفقیت برقرار شد! پورت‌های فعال: %s"; echo "پینگ به سرور خارج (%s):"; ping -c 3 -W 2 %s || true; echo "=========================================="'`,
 		iranIP, foreignIP, foreignIP, iranGreIP,
 		foreignIP, iranGreIP,

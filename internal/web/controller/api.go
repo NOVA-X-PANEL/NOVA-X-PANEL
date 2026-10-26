@@ -248,10 +248,6 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 	tgShop := api.Group("/telegram-shop")
 	NewTelegramShopController(tgShop)
 
-	// OpenVPN Management (NOVA X PANEL)
-	openvpn := api.Group("/openvpn")
-	NewOpenVPNController(openvpn)
-
 	// Extra routes
 	api.POST("/backuptotgbot", requireOwnerRole(), a.BackuptoTgbot)
 }

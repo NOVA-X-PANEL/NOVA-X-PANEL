@@ -50,8 +50,8 @@ func TestSubscriptionAutoDetectDefaultsWithoutStoredRows(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if clashEnabled || jsonEnabled || jsonAlwaysArray {
-		t.Fatalf("missing subscription flags must default off: clashAuto=%v jsonAuto=%v jsonAlwaysArray=%v", clashEnabled, jsonEnabled, jsonAlwaysArray)
+	if !clashEnabled || !jsonEnabled || jsonAlwaysArray {
+		t.Fatalf("missing subscription flags defaults unexpected: clashAuto=%v jsonAuto=%v jsonAlwaysArray=%v", clashEnabled, jsonEnabled, jsonAlwaysArray)
 	}
 	if clashRegex != "" {
 		t.Fatalf("missing Clash regex = %q, want empty inherited value", clashRegex)
@@ -102,11 +102,11 @@ func TestUpdateAllSettingPersistsClashSubscriptionSettings(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if settings.SubClashAutoDetect {
-		t.Fatal("subClashAutoDetect default = true, want false")
+	if !settings.SubClashAutoDetect {
+		t.Fatal("subClashAutoDetect default = false, want true")
 	}
-	if settings.SubJsonAutoDetect {
-		t.Fatal("subJsonAutoDetect default = true, want false")
+	if !settings.SubJsonAutoDetect {
+		t.Fatal("subJsonAutoDetect default = false, want true")
 	}
 	if settings.SubJsonAlwaysArray {
 		t.Fatal("subJsonAlwaysArray default = true, want false")

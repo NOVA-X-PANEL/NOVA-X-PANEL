@@ -131,8 +131,7 @@
     "hashem": "NOVA-TUNELL",
     "telegramShop": "Telegram Mağazası",
     "admins": "Admins",
-    "adminRoles": "Admin Roles",
-    "openvpn": "OpenVPN"
+    "adminRoles": "Admin Roles"
   },
   "pages": {
     "login": {

@@ -51,7 +51,6 @@ func (a *XUIController) initRouter(g *gin.RouterGroup) {
 	g.GET("/telegram-shop", a.panelSPA)
 	g.GET("/my-api", a.panelSPA)
 	g.GET("/hosts", a.panelSPA)
-	g.GET("/openvpn", a.panelSPA)
 
 	// SPA pages built by Vite don't have a server-rendered <meta name="csrf-token">,
 	// so they fetch the session token via this endpoint at startup and replay it

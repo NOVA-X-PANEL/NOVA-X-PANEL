@@ -3145,6 +3145,70 @@ export const sections: readonly Section[] = [
   },
 
   {
+    id: 'openvpn',
+    title: 'OpenVPN Management',
+    description:
+      'Manage OpenVPN server daemon, easy-rsa client certificates, traffic statistics, and .ovpn configurations.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/openvpn/status',
+        summary: 'Get OpenVPN server status, port, proto, online clients, and list of issued certificates.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/openvpn/settings',
+        summary: 'Save OpenVPN server settings such as port, protocol, network subnet, and DNS.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/openvpn/install',
+        summary: 'Install and initialize OpenVPN server packages and certificates.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/openvpn/client/add',
+        summary: 'Create a new OpenVPN client certificate with optional traffic/expiry/IP limits.',
+        body: '{\n  "name": "client1",\n  "totalGB": 50,\n  "expiryTime": 1792520000000,\n  "limitIp": 2\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/openvpn/client/update',
+        summary: 'Update OpenVPN client limits (totalGB, expiryTime, limitIp, enable).',
+        body: '{\n  "name": "client1",\n  "totalGB": 100,\n  "expiryTime": 1792520000000,\n  "limitIp": 1,\n  "enable": true\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/openvpn/client/reset',
+        summary: 'Reset cumulative traffic usage (up and down) for an OpenVPN client.',
+        body: '{\n  "name": "client1"\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/openvpn/client/del',
+        summary: 'Revoke and delete an OpenVPN client certificate.',
+        body: '{\n  "name": "client1"\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/openvpn/client/kill',
+        summary: 'Disconnect active session for an OpenVPN client.',
+        body: '{\n  "name": "client1"\n}',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/openvpn/client/config',
+        summary: 'Download or retrieve raw .ovpn client profile configuration.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/openvpn/restart',
+        summary: 'Restart OpenVPN server service and re-apply iptables NAT forwarding.',
+      },
+    ],
+  },
+
+  {
     id: 'websocket',
     title: 'WebSocket',
     description:

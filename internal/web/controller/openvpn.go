@@ -36,6 +36,7 @@ func (a *OpenVPNController) initRouter(g *gin.RouterGroup) {
 	g.POST("/client/kill", requireOwnerRole(), a.killClient)
 	g.GET("/client/config", requireOwnerRole(), a.clientConfig)
 	g.POST("/restart", requireOwnerRole(), a.restart)
+	g.GET("/log", requireOwnerRole(), a.log)
 }
 
 func (a *OpenVPNController) status(c *gin.Context) {
@@ -235,4 +236,9 @@ func (a *OpenVPNController) install(c *gin.Context) {
 	_ = c.ShouldBind(&form)
 	err := a.openvpnService.AutoInstallOpenVPN(form.Port, form.Proto)
 	jsonMsg(c, "OpenVPN installed and initialized successfully", err)
+}
+
+func (a *OpenVPNController) log(c *gin.Context) {
+	logContent, err := a.openvpnService.GetLog()
+	jsonObj(c, gin.H{"log": logContent}, err)
 }

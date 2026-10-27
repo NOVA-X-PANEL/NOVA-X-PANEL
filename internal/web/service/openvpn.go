@@ -392,21 +392,28 @@ func (s *OpenVPNService) GetStatus() (*OpenVPNStatus, error) {
 
 	hasOpenvpn := false
 	if _, err := exec.LookPath("openvpn"); err == nil {
-		status.Installed = true
 		hasOpenvpn = true
 	} else if _, err := os.Stat("/usr/sbin/openvpn"); err == nil {
-		status.Installed = true
 		hasOpenvpn = true
 	}
-	hasEasyRsa := false
-	if _, err := os.Stat(filepath.Join(defaultEasyRsaDir, "easyrsa")); err == nil {
-		hasEasyRsa = true
-	} else if _, err := os.Stat("/usr/share/easy-rsa/easyrsa"); err == nil {
-		hasEasyRsa = true
-	} else if _, err := os.Stat("/usr/local/share/easy-rsa/easyrsa"); err == nil {
-		hasEasyRsa = true
+
+	hasServerConf := false
+	if _, err := os.Stat(defaultServerConf); err == nil {
+		hasServerConf = true
+	} else if _, err := os.Stat("/etc/openvpn/server.conf"); err == nil {
+		hasServerConf = true
 	}
-	status.Installed = hasOpenvpn && hasEasyRsa
+
+	hasCerts := false
+	if _, err := os.Stat(filepath.Join(defaultServerDir, "ca.crt")); err == nil {
+		if _, err2 := os.Stat(filepath.Join(defaultServerDir, "server.crt")); err2 == nil {
+			hasCerts = true
+		}
+	} else if _, err := os.Stat(filepath.Join(defaultEasyRsaDir, "pki", "ca.crt")); err == nil {
+		hasCerts = true
+	}
+
+	status.Installed = hasOpenvpn && hasServerConf && hasCerts
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -642,8 +649,20 @@ func (s *OpenVPNService) AddClient(name string, password string, totalGB int64, 
 
 	cmd := fmt.Sprintf("cd %s && ./easyrsa --batch build-client-full %s nopass", defaultEasyRsaDir, name)
 	out, err := s.execPrivilegedBash(ctx, cmd)
-	if err != nil {
-		return fmt.Errorf("failed to create client: %v (output: %s)", err, string(out))
+	if err != nil || func() bool { _, e := os.Stat(crtFile); return e != nil }() {
+		opensslCmd := fmt.Sprintf(`
+mkdir -p /etc/openvpn/easy-rsa/pki/issued /etc/openvpn/easy-rsa/pki/private
+openssl req -new -nodes -newkey rsa:2048 \
+    -keyout /etc/openvpn/easy-rsa/pki/private/%s.key \
+    -out /tmp/%s.csr -subj "/CN=%s" >/dev/null 2>&1
+openssl x509 -req -in /tmp/%s.csr \
+    -CA /etc/openvpn/server/ca.crt -CAkey /etc/openvpn/server/ca.key \
+    -CAcreateserial -out /etc/openvpn/easy-rsa/pki/issued/%s.crt -days 3650 >/dev/null 2>&1
+rm -f /tmp/%s.csr
+`, name, name, name, name, name, name)
+		if outOss, errOss := s.execPrivilegedBash(ctx, opensslCmd); errOss != nil {
+			return fmt.Errorf("failed to create client: %v (output: %s / openssl: %s)", err, string(out), string(outOss))
+		}
 	}
 
 	if _, err := os.Stat(crtFile); err != nil {
@@ -854,16 +873,23 @@ func (s *OpenVPNService) RestartService() error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	// Ensure certificates and server.conf exist BEFORE attempting restart
+	if err := s.ensureEasyRSALocked(); err != nil {
+		return fmt.Errorf("failed to prepare OpenVPN configuration: %w", err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 
 	s.EnsureNAT()
 
-	out, err := s.execPrivileged(ctx, "systemctl", "restart", openvpnUnitName)
+	_, err := s.execPrivileged(ctx, "systemctl", "restart", openvpnUnitName)
 	if err != nil {
-		outAlt, errAlt := s.execPrivileged(ctx, "systemctl", "restart", "openvpn@server.service")
+		_, errAlt := s.execPrivileged(ctx, "systemctl", "restart", "openvpn@server.service")
 		if errAlt != nil {
-			return fmt.Errorf("restart failed: %v (output: %s / alt: %s)", err, string(out), string(outAlt))
+			diagCmd := "journalctl -u openvpn-server@server -u openvpn@server -n 12 --no-pager 2>&1 || cat /var/log/openvpn/openvpn.log 2>&1 | tail -n 12"
+			diagOut, _ := s.execPrivilegedBash(ctx, diagCmd)
+			return fmt.Errorf("restart failed: %v\nDiagnostic logs:\n%s", errAlt, strings.TrimSpace(string(diagOut)))
 		}
 	}
 	return nil
@@ -914,22 +940,26 @@ func (s *OpenVPNService) SaveSettings(remoteHost string, remotePort int, serverP
 }
 
 func (s *OpenVPNService) ensureEasyRSALocked() error {
-	pkiDir := filepath.Join(defaultEasyRsaDir, "pki")
-	easyrsaBin := filepath.Join(defaultEasyRsaDir, "easyrsa")
-	caCrt := filepath.Join(defaultServerDir, "ca.crt")
 	serverConf := defaultServerConf
+	caCrt := filepath.Join(defaultServerDir, "ca.crt")
+	serverCrt := filepath.Join(defaultServerDir, "server.crt")
+	serverKey := filepath.Join(defaultServerDir, "server.key")
 
-	if _, err1 := os.Stat(easyrsaBin); err1 == nil {
-		if _, err2 := os.Stat(pkiDir); err2 == nil {
-			if _, err3 := os.Stat(caCrt); err3 == nil {
-				if _, err4 := os.Stat(serverConf); err4 == nil {
+	if _, err1 := os.Stat(serverConf); err1 == nil {
+		if _, err2 := os.Stat(caCrt); err2 == nil {
+			if _, err3 := os.Stat(serverCrt); err3 == nil {
+				if _, err4 := os.Stat(serverKey); err4 == nil {
 					return nil
 				}
 			}
 		}
 	}
 
-	return s.autoInstallOpenVPNInternal(2083, "tcp")
+	savedPort, _ := strconv.Atoi(getOpenVPNSetting("openvpn_server_port", "2083"))
+	if savedPort <= 0 {
+		savedPort = 2083
+	}
+	return s.autoInstallOpenVPNInternal(savedPort, "tcp")
 }
 
 // AutoInstallOpenVPN performs a one-click automated installation of OpenVPN and Easy-RSA on fresh servers.
@@ -947,30 +977,37 @@ func (s *OpenVPNService) autoInstallOpenVPNInternal(port int, proto string) erro
 		proto = "tcp"
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 	defer cancel()
 
 	script := fmt.Sprintf(`
 export DEBIAN_FRONTEND=noninteractive
 
 # 1. Install required packages if missing
-if ! command -v openvpn >/dev/null 2>&1 || [ ! -d "/usr/share/easy-rsa" -a ! -d "/usr/local/share/easy-rsa" ]; then
+if ! command -v openvpn >/dev/null 2>&1 || ! command -v openssl >/dev/null 2>&1; then
     if command -v apt-get >/dev/null 2>&1; then
         apt-get update -y || true
-        apt-get install -y openvpn easy-rsa iptables
+        apt-get install -y openvpn easy-rsa openssl iptables || true
     elif command -v dnf >/dev/null 2>&1; then
         dnf install -y epel-release || true
-        dnf install -y openvpn easy-rsa iptables
+        dnf install -y openvpn easy-rsa openssl iptables || true
     elif command -v yum >/dev/null 2>&1; then
         yum install -y epel-release || true
-        yum install -y openvpn easy-rsa iptables
+        yum install -y openvpn easy-rsa openssl iptables || true
     elif command -v pacman >/dev/null 2>&1; then
-        pacman -Sy --noconfirm openvpn easy-rsa iptables
+        pacman -Sy --noconfirm openvpn easy-rsa openssl iptables || true
     fi
 fi
 
-# 2. Setup easy-rsa folder
-mkdir -p /etc/openvpn/easy-rsa
+# 2. Ensure system folders & TUN device
+mkdir -p /etc/openvpn/server /etc/openvpn/easy-rsa/pki/issued /etc/openvpn/easy-rsa/pki/private /run/openvpn /run/openvpn-server /var/log/openvpn
+if [ ! -c /dev/net/tun ]; then
+    mkdir -p /dev/net
+    mknod /dev/net/tun c 10 200 2>/dev/null || true
+    chmod 666 /dev/net/tun 2>/dev/null || true
+fi
+
+# 3. Setup easy-rsa folder if available
 if [ ! -f "/etc/openvpn/easy-rsa/easyrsa" ]; then
     if [ -d "/usr/share/easy-rsa" ]; then
         cp -rf /usr/share/easy-rsa/* /etc/openvpn/easy-rsa/ 2>/dev/null || true
@@ -979,51 +1016,37 @@ if [ ! -f "/etc/openvpn/easy-rsa/easyrsa" ]; then
     fi
 fi
 
-# 3. Fallback download standalone Easy-RSA if missing
-if [ ! -f "/etc/openvpn/easy-rsa/easyrsa" ]; then
-    curl -fsSL "https://github.com/OpenVPN/easy-rsa/releases/download/v3.2.1/EasyRSA-3.2.1.tgz" -o /tmp/easyrsa.tgz || true
-    if [ -s /tmp/easyrsa.tgz ]; then
-        tar -xzf /tmp/easyrsa.tgz --strip-components=1 -C /etc/openvpn/easy-rsa/ 2>/dev/null || true
-        rm -f /tmp/easyrsa.tgz
-    fi
+# 4. Generate CA + Server Cert using OpenSSL (instant, bulletproof, zero prompts)
+if [ ! -f "/etc/openvpn/server/ca.crt" ] || [ ! -f "/etc/openvpn/server/server.crt" ] || [ ! -f "/etc/openvpn/server/server.key" ]; then
+    openssl req -new -x509 -days 3650 -nodes -newkey rsa:2048 \
+        -keyout /etc/openvpn/server/ca.key -out /etc/openvpn/server/ca.crt \
+        -subj "/CN=OpenVPN-CA" >/dev/null 2>&1
+    openssl req -new -nodes -newkey rsa:2048 \
+        -keyout /etc/openvpn/server/server.key -out /tmp/ovpn_server.csr \
+        -subj "/CN=server" >/dev/null 2>&1
+    openssl x509 -req -in /tmp/ovpn_server.csr -CA /etc/openvpn/server/ca.crt -CAkey /etc/openvpn/server/ca.key \
+        -CAcreateserial -out /etc/openvpn/server/server.crt -days 3650 >/dev/null 2>&1
+    rm -f /tmp/ovpn_server.csr
 fi
 
-# 4. Initialize PKI and generate CA + Server Cert
-cd /etc/openvpn/easy-rsa
-if [ -f "./easyrsa" ]; then
-    chmod +x ./easyrsa 2>/dev/null || true
-    if [ ! -d "pki" ]; then
-        ./easyrsa init-pki
-        echo -e "\n" | ./easyrsa --batch build-ca nopass
-        ./easyrsa --batch build-server-full server nopass
-        ./easyrsa gen-dh
-    elif [ ! -f "pki/ca.crt" ]; then
-        echo -e "\n" | ./easyrsa --batch build-ca nopass
-        ./easyrsa --batch build-server-full server nopass
-        ./easyrsa gen-dh
-    fi
-fi
+# Sync certs into Easy-RSA PKI directory so client generation and verify work
+mkdir -p /etc/openvpn/easy-rsa/pki/issued /etc/openvpn/easy-rsa/pki/private
+cp -f /etc/openvpn/server/ca.crt /etc/openvpn/easy-rsa/pki/ca.crt 2>/dev/null || true
+cp -f /etc/openvpn/server/ca.key /etc/openvpn/easy-rsa/pki/private/ca.key 2>/dev/null || true
+cp -f /etc/openvpn/server/server.crt /etc/openvpn/easy-rsa/pki/issued/server.crt 2>/dev/null || true
+cp -f /etc/openvpn/server/server.key /etc/openvpn/easy-rsa/pki/private/server.key 2>/dev/null || true
 
-# 5. Copy certificates to /etc/openvpn/server
-mkdir -p /etc/openvpn/server
-if [ -d "pki" ]; then
-    cp -f pki/ca.crt /etc/openvpn/server/ 2>/dev/null || true
-    cp -f pki/issued/server.crt /etc/openvpn/server/ 2>/dev/null || true
-    cp -f pki/private/server.key /etc/openvpn/server/ 2>/dev/null || true
-    cp -f pki/dh.pem /etc/openvpn/server/ 2>/dev/null || true
-fi
-
-# 6. Write server.conf
+# 5. Write server.conf
 cat << 'EOF_CONF' > /etc/openvpn/server/server.conf
 port %d
-proto %s-server
+proto %s
 dev tun
 topology subnet
 
 ca /etc/openvpn/server/ca.crt
 cert /etc/openvpn/server/server.crt
 key /etc/openvpn/server/server.key
-dh /etc/openvpn/server/dh.pem
+dh none
 
 server 10.8.0.0 255.255.255.0
 ifconfig-pool-persist /etc/openvpn/server/ipp.txt
@@ -1039,32 +1062,46 @@ auth SHA256
 
 persist-key
 persist-tun
-status /var/log/openvpn-status.log
-log /var/log/openvpn.log
+status /var/log/openvpn/openvpn-status.log 10
+status-version 2
+log-append /var/log/openvpn/openvpn.log
 verb 3
 management 127.0.0.1 7505
 duplicate-cn
 EOF_CONF
 
-# 7. Enable routing & systemd service
+cp -f /etc/openvpn/server/server.conf /etc/openvpn/server.conf 2>/dev/null || true
+
+# 6. Enable routing & systemd service
 sysctl -w net.ipv4.ip_forward=1 >/dev/null 2>&1 || true
 sed -i '/net.ipv4.ip_forward/d' /etc/sysctl.conf 2>/dev/null || true
 echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf 2>/dev/null || true
 
 systemctl daemon-reload >/dev/null 2>&1 || true
-systemctl enable --now openvpn-server@server >/dev/null 2>&1 || systemctl enable --now openvpn@server >/dev/null 2>&1 || true
+systemctl enable openvpn-server@server >/dev/null 2>&1 || systemctl enable openvpn@server >/dev/null 2>&1 || true
 systemctl restart openvpn-server@server >/dev/null 2>&1 || systemctl restart openvpn@server >/dev/null 2>&1 || true
 `, port, proto)
 
-	out, err := s.execPrivilegedBash(ctx, script)
+	_, err := s.execPrivilegedBash(ctx, script)
 	if err != nil {
-		return fmt.Errorf("auto-install failed: %v (output: %s)", err, string(out))
-	}
-
-	if _, err := os.Stat(filepath.Join(defaultEasyRsaDir, "easyrsa")); err != nil {
-		return fmt.Errorf("openvpn easy-rsa installation incomplete: easyrsa script not found in %s (output: %s)", defaultEasyRsaDir, string(out))
+		diagCmd := "journalctl -u openvpn-server@server -u openvpn@server -n 12 --no-pager 2>&1 || cat /var/log/openvpn/openvpn.log 2>&1 | tail -n 12"
+		diagOut, _ := s.execPrivilegedBash(ctx, diagCmd)
+		return fmt.Errorf("auto-install failed: %v (diag: %s)", err, strings.TrimSpace(string(diagOut)))
 	}
 
 	s.EnsureNAT()
 	return nil
+}
+
+// GetLog returns recent journal or log file records for the OpenVPN service.
+func (s *OpenVPNService) GetLog() (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	cmd := "journalctl -u openvpn-server@server -u openvpn@server -n 100 --no-pager 2>/dev/null || cat /var/log/openvpn/openvpn.log 2>/dev/null | tail -n 100"
+	out, err := s.execPrivilegedBash(ctx, cmd)
+	if err != nil {
+		return "", err
+	}
+	return string(out), nil
 }

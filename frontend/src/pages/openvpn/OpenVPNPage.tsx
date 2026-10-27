@@ -48,6 +48,7 @@ import {
   StopOutlined,
   ShareAltOutlined,
   SaveOutlined,
+  FileTextOutlined,
 } from '@ant-design/icons';
 import { HttpUtil } from '@/utils';
 import { useTheme } from '@/hooks/useTheme';
@@ -194,6 +195,28 @@ export default function OpenVPNPage() {
 
   const [savingSettings, setSavingSettings] = useState(false);
   const [installing, setInstalling] = useState(false);
+
+  const [isLogModalOpen, setIsLogModalOpen] = useState(false);
+  const [logContent, setLogContent] = useState('');
+  const [loadingLog, setLoadingLog] = useState(false);
+
+  const handleViewLogs = async () => {
+    setIsLogModalOpen(true);
+    setLoadingLog(true);
+    try {
+      const res = await HttpUtil.get<{ log: string }>('/panel/api/openvpn/log');
+      if (res && res.obj) {
+        setLogContent(res.obj.log || 'هیچ لاگی یافت نشد.');
+      } else {
+        setLogContent(res?.msg || 'خطا در دریافت لاگ.');
+      }
+    } catch (e: unknown) {
+      const err = e as { message?: string };
+      setLogContent('خطا در دریافت لاگ: ' + (err?.message || 'ارتباط با سرور ناموفق بود'));
+    } finally {
+      setLoadingLog(false);
+    }
+  };
 
   const handleAutoInstall = async () => {
     setInstalling(true);
@@ -467,13 +490,14 @@ export default function OpenVPNPage() {
     try {
       const res = await HttpUtil.post('/panel/api/openvpn/restart');
       if (res && res.success) {
-        messageApi.success('سرویس OpenVPN با موفقیت ری‌استارت شد');
+        messageApi.success('سرویس OpenVPN با موفقیت ری‌استارت و فعال شد');
         fetchStatus();
       } else {
         messageApi.error(res?.msg || 'خطا در ری‌استارت سرویس');
       }
-    } catch {
-      messageApi.error('خطا در اجرای دستور ری‌استارت');
+    } catch (e: unknown) {
+      const err = e as { message?: string };
+      messageApi.error(err?.message || 'خطا در اجرای دستور ری‌استارت');
     } finally {
       setRestarting(false);
     }
@@ -954,6 +978,9 @@ export default function OpenVPNPage() {
                     onClick={handleRestart}
                   >
                     ری‌استارت هسته
+                  </Button>
+                  <Button icon={<FileTextOutlined />} onClick={handleViewLogs}>
+                    لاگ سرویس
                   </Button>
                   <Button
                     type="primary"
@@ -1962,6 +1989,44 @@ export default function OpenVPNPage() {
                     : configModal.previewContent}
                 </pre>
               </div>
+            </Modal>
+            <Modal
+              title={
+                <Space>
+                  <FileTextOutlined style={{ color: '#00ffcc' }} />
+                  <span>لاگ‌های زنده سرویس OpenVPN</span>
+                </Space>
+              }
+              open={isLogModalOpen}
+              onCancel={() => setIsLogModalOpen(false)}
+              footer={[
+                <Button key="refresh" icon={<ReloadOutlined spin={loadingLog} />} onClick={handleViewLogs}>
+                  بروزرسانی لاگ
+                </Button>,
+                <Button key="close" type="primary" onClick={() => setIsLogModalOpen(false)}>
+                  بستن
+                </Button>,
+              ]}
+              width={800}
+            >
+              <pre
+                style={{
+                  background: '#0d1117',
+                  color: '#58a6ff',
+                  padding: 14,
+                  borderRadius: 8,
+                  maxHeight: 480,
+                  overflowY: 'auto',
+                  fontFamily: 'Consolas, monospace',
+                  fontSize: 12,
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-all',
+                  direction: 'ltr',
+                  textAlign: 'left',
+                }}
+              >
+                {loadingLog ? 'در حال دریافت لاگ‌های سرویس...' : logContent}
+              </pre>
             </Modal>
           </Layout.Content>
         </Layout>

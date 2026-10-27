@@ -11,6 +11,7 @@ const ClientsPage = lazy(() => import('@/pages/clients/ClientsPage'));
 const GroupsPage = lazy(() => import('@/pages/groups/GroupsPage'));
 const NodesPage = lazy(() => import('@/pages/nodes/NodesPage'));
 const HashemPage = lazy(() => import('@/pages/hashem/HashemPage'));
+const OpenVPNPage = lazy(() => import('@/pages/openvpn/OpenVPNPage'));
 const TelegramShopPage = lazy(() => import('@/pages/telegram-shop/TelegramShopPage'));
 const AdminsPage = lazy(() => import('@/pages/admins/AdminsPage'));
 const AdminRolesPage = lazy(() => import('@/pages/admin-roles/AdminRolesPage'));
@@ -57,6 +58,7 @@ const routes: RouteObject[] = [
       { path: 'groups', element: withSuspense(<GroupsPage />) },
       { path: 'nodes', element: withSuspense(<NodesPage />) },
       { path: 'hashem', element: withSuspense(<HashemPage />) },
+      { path: 'openvpn', element: withSuspense(<OpenVPNPage />) },
       { path: 'telegram-shop', element: withSuspense(<TelegramShopPage />) },
       { path: 'admins', element: withSuspense(<AdminsPage />) },
       { path: 'my-api', element: withSuspense(<MyApiPage />) },

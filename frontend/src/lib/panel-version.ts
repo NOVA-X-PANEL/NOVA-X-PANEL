@@ -5,11 +5,11 @@
 // agrees with what the server would decide.
 function parseVersionParts(version: string): [number, number, number] | null {
   const parts = version.trim().replace(/^v/, '').split('.');
-  if (parts.length !== 3) return null;
+  if (parts.length < 3) return null;
   const out: number[] = [];
-  for (const part of parts) {
-    if (!/^\d+$/.test(part)) return null;
-    out.push(Number(part));
+  for (let i = 0; i < 3; i++) {
+    const digits = parts[i].replace(/[^0-9]/g, '');
+    out.push(digits ? parseInt(digits, 10) : 0);
   }
   return [out[0], out[1], out[2]];
 }

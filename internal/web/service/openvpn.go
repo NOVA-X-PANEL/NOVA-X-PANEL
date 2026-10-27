@@ -244,21 +244,24 @@ func (s *OpenVPNService) EnsureNAT() {
 
 	script := fmt.Sprintf(`
 sysctl -w net.ipv4.ip_forward=1 >/dev/null 2>&1
-iptables -t nat -C POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE 2>/dev/null || iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE
+IFACE=$(ip route show default 2>/dev/null | awk '{print $5}' | head -n1)
+[ -z "$IFACE" ] && IFACE="eth0"
+iptables -t nat -C POSTROUTING -s 10.8.0.0/24 -o "$IFACE" -j MASQUERADE 2>/dev/null || iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o "$IFACE" -j MASQUERADE
+iptables -t nat -C POSTROUTING -s 10.8.0.0/24 -j MASQUERADE 2>/dev/null || iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -j MASQUERADE
 iptables -C FORWARD -s 10.8.0.0/24 -j ACCEPT 2>/dev/null || iptables -A FORWARD -s 10.8.0.0/24 -j ACCEPT
 iptables -C FORWARD -d 10.8.0.0/24 -m state --state RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || iptables -A FORWARD -d 10.8.0.0/24 -m state --state RELATED,ESTABLISHED -j ACCEPT
 
-# Ensure tls-verify hook and duplicate-cn are in server.conf for concurrent logins
+# Ensure duplicate-cn is in server.conf for concurrent logins
 for c in /etc/openvpn/server/server.conf /etc/openvpn/server.conf; do
     if [ -f "$c" ]; then
-        if ! grep -q "tls-verify" "$c"; then
-            sed -i '/script-security 2/a tls-verify /usr/local/x-ui/bin/openvpn-verify.py' "$c"
-        fi
         if ! grep -q "duplicate-cn" "$c"; then
             echo "duplicate-cn" >> "$c"
         fi
-        # Remove username-as-common-name so client cert CN is preserved and avoids UNDEF
         sed -i '/username-as-common-name/d' "$c"
+        sed -i '/tls-verify \/usr\/local\/x-ui\/bin\/openvpn-verify.py/d' "$c"
+        sed -i '/auth-user-pass-verify/d' "$c"
+        sed -i '/client-connect \/usr\/local\/x-ui\/bin\/openvpn-auth.py/d' "$c"
+        sed -i '/client-disconnect \/usr\/local\/x-ui\/bin\/openvpn-auth.py/d' "$c"
     fi
 done
 
@@ -362,9 +365,19 @@ func (s *OpenVPNService) GetStatus() (*OpenVPNStatus, error) {
 		Clients:          []OpenVPNClientInfo{},
 	}
 
-	if _, err := os.Stat("/usr/sbin/openvpn"); err == nil {
+	hasOpenvpn := false
+	if _, err := exec.LookPath("openvpn"); err == nil {
 		status.Installed = true
+		hasOpenvpn = true
+	} else if _, err := os.Stat("/usr/sbin/openvpn"); err == nil {
+		status.Installed = true
+		hasOpenvpn = true
 	}
+	hasEasyRsa := false
+	if _, err := os.Stat(filepath.Join(defaultEasyRsaDir, "easyrsa")); err == nil {
+		hasEasyRsa = true
+	}
+	status.Installed = hasOpenvpn && hasEasyRsa
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -579,6 +592,10 @@ func (s *OpenVPNService) AddClient(name string, password string, totalGB int64, 
 	db.Model(&model.OpenVPNUser{}).Where("name = ?", name).Count(&count)
 	if count > 0 {
 		return fmt.Errorf("client '%s' already exists in database", name)
+	}
+
+	if err := s.ensureEasyRSALocked(); err != nil {
+		return fmt.Errorf("failed to initialize openvpn easy-rsa environment: %w", err)
 	}
 
 	crtFile := filepath.Join(defaultEasyRsaDir, "pki", "issued", name+".crt")
@@ -859,11 +876,33 @@ func (s *OpenVPNService) SaveSettings(remoteHost string, remotePort int, serverP
 	return nil
 }
 
+func (s *OpenVPNService) ensureEasyRSALocked() error {
+	pkiDir := filepath.Join(defaultEasyRsaDir, "pki")
+	easyrsaBin := filepath.Join(defaultEasyRsaDir, "easyrsa")
+	caCrt := filepath.Join(defaultServerDir, "ca.crt")
+	serverConf := defaultServerConf
+
+	if _, err1 := os.Stat(easyrsaBin); err1 == nil {
+		if _, err2 := os.Stat(pkiDir); err2 == nil {
+			if _, err3 := os.Stat(caCrt); err3 == nil {
+				if _, err4 := os.Stat(serverConf); err4 == nil {
+					return nil
+				}
+			}
+		}
+	}
+
+	return s.autoInstallOpenVPNInternal(2083, "tcp")
+}
+
 // AutoInstallOpenVPN performs a one-click automated installation of OpenVPN and Easy-RSA on fresh servers.
 func (s *OpenVPNService) AutoInstallOpenVPN(port int, proto string) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
+	return s.autoInstallOpenVPNInternal(port, proto)
+}
 
+func (s *OpenVPNService) autoInstallOpenVPNInternal(port int, proto string) error {
 	if port <= 0 || port > 65535 {
 		port = 2083
 	}
@@ -876,21 +915,59 @@ func (s *OpenVPNService) AutoInstallOpenVPN(port int, proto string) error {
 
 	script := fmt.Sprintf(`
 export DEBIAN_FRONTEND=noninteractive
-apt-get update -y && apt-get install -y openvpn easy-rsa iptables
-mkdir -p /etc/openvpn/easy-rsa
-cp -rf /usr/share/easy-rsa/* /etc/openvpn/easy-rsa/ 2>/dev/null || true
-cd /etc/openvpn/easy-rsa
-if [ ! -d "pki" ]; then
-    ./easyrsa init-pki
-    echo -e "\n" | ./easyrsa --batch build-ca nopass
-    ./easyrsa --batch build-server-full server nopass
-    ./easyrsa gen-dh
+
+# 1. Install required packages if missing
+if ! command -v openvpn >/dev/null 2>&1 || [ ! -d "/usr/share/easy-rsa" -a ! -d "/usr/local/share/easy-rsa" ]; then
+    if command -v apt-get >/dev/null 2>&1; then
+        apt-get update -y >/dev/null 2>&1 || true
+        apt-get install -y openvpn easy-rsa iptables >/dev/null 2>&1 || true
+    elif command -v dnf >/dev/null 2>&1; then
+        dnf install -y epel-release >/dev/null 2>&1 || true
+        dnf install -y openvpn easy-rsa iptables >/dev/null 2>&1 || true
+    elif command -v yum >/dev/null 2>&1; then
+        yum install -y epel-release >/dev/null 2>&1 || true
+        yum install -y openvpn easy-rsa iptables >/dev/null 2>&1 || true
+    elif command -v pacman >/dev/null 2>&1; then
+        pacman -Sy --noconfirm openvpn easy-rsa iptables >/dev/null 2>&1 || true
+    fi
 fi
+
+# 2. Setup easy-rsa folder
+mkdir -p /etc/openvpn/easy-rsa
+if [ ! -f "/etc/openvpn/easy-rsa/easyrsa" ]; then
+    if [ -d "/usr/share/easy-rsa" ]; then
+        cp -rf /usr/share/easy-rsa/* /etc/openvpn/easy-rsa/ 2>/dev/null || true
+    elif [ -d "/usr/local/share/easy-rsa" ]; then
+        cp -rf /usr/local/share/easy-rsa/* /etc/openvpn/easy-rsa/ 2>/dev/null || true
+    fi
+fi
+
+# 3. Initialize PKI and generate CA + Server Cert
+cd /etc/openvpn/easy-rsa
+if [ -f "./easyrsa" ]; then
+    chmod +x ./easyrsa 2>/dev/null || true
+    if [ ! -d "pki" ]; then
+        ./easyrsa init-pki >/dev/null 2>&1 || true
+        echo -e "\n" | ./easyrsa --batch build-ca nopass >/dev/null 2>&1 || true
+        ./easyrsa --batch build-server-full server nopass >/dev/null 2>&1 || true
+        ./easyrsa gen-dh >/dev/null 2>&1 || true
+    elif [ ! -f "pki/ca.crt" ]; then
+        echo -e "\n" | ./easyrsa --batch build-ca nopass >/dev/null 2>&1 || true
+        ./easyrsa --batch build-server-full server nopass >/dev/null 2>&1 || true
+        ./easyrsa gen-dh >/dev/null 2>&1 || true
+    fi
+fi
+
+# 4. Copy certificates to /etc/openvpn/server
 mkdir -p /etc/openvpn/server
-cp -f pki/ca.crt /etc/openvpn/server/
-cp -f pki/issued/server.crt /etc/openvpn/server/
-cp -f pki/private/server.key /etc/openvpn/server/
-cp -f pki/dh.pem /etc/openvpn/server/
+if [ -d "pki" ]; then
+    cp -f pki/ca.crt /etc/openvpn/server/ 2>/dev/null || true
+    cp -f pki/issued/server.crt /etc/openvpn/server/ 2>/dev/null || true
+    cp -f pki/private/server.key /etc/openvpn/server/ 2>/dev/null || true
+    cp -f pki/dh.pem /etc/openvpn/server/ 2>/dev/null || true
+fi
+
+# 5. Write server.conf
 cat << 'EOF_CONF' > /etc/openvpn/server/server.conf
 port %d
 proto %s-server
@@ -920,24 +997,16 @@ status /var/log/openvpn-status.log
 log /var/log/openvpn.log
 verb 3
 management 127.0.0.1 7505
-
-script-security 2
-tls-verify /usr/local/x-ui/bin/openvpn-verify.py
-client-connect /usr/local/x-ui/bin/openvpn-auth.py
-client-disconnect /usr/local/x-ui/bin/openvpn-auth.py
-
-verify-client-cert optional
-auth-user-pass-verify /usr/local/x-ui/bin/openvpn-verify.py via-file
-auth-user-pass-optional
 duplicate-cn
 EOF_CONF
 
-sysctl -w net.ipv4.ip_forward=1
-sed -i '/net.ipv4.ip_forward/d' /etc/sysctl.conf
-echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
+# 6. Enable routing & systemd service
+sysctl -w net.ipv4.ip_forward=1 >/dev/null 2>&1 || true
+sed -i '/net.ipv4.ip_forward/d' /etc/sysctl.conf 2>/dev/null || true
+echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf 2>/dev/null || true
 
-systemctl daemon-reload
-systemctl enable --now openvpn-server@server
+systemctl daemon-reload >/dev/null 2>&1 || true
+systemctl enable --now openvpn-server@server >/dev/null 2>&1 || true
 `, port, proto)
 
 	out, err := s.execPrivilegedBash(ctx, script)

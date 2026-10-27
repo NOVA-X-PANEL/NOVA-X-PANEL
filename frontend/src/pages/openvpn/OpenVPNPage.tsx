@@ -193,6 +193,44 @@ export default function OpenVPNPage() {
   };
 
   const [savingSettings, setSavingSettings] = useState(false);
+  const [installing, setInstalling] = useState(false);
+
+  const handleAutoInstall = async () => {
+    setInstalling(true);
+    messageApi.loading({
+      content: 'در حال نصب و راه‌اندازی هسته OpenVPN و ساخت گواهی‌ها...',
+      key: 'ovpn-install',
+      duration: 0,
+    });
+    try {
+      const pNum = parseInt(portInput, 10);
+      const finalPort = !isNaN(pNum) && pNum > 0 && pNum <= 65535 ? pNum : status?.port || 2083;
+      const res = await HttpUtil.post('/panel/api/openvpn/install', {
+        port: finalPort,
+        proto: 'tcp',
+      });
+      if (res && res.success) {
+        messageApi.success({
+          content: 'هسته و مخزن گواهی‌های OpenVPN با موفقیت نصب و فعال شد',
+          key: 'ovpn-install',
+        });
+        fetchStatus();
+      } else {
+        messageApi.error({
+          content: res?.msg || 'خطا در نصب OpenVPN',
+          key: 'ovpn-install',
+        });
+      }
+    } catch (e: unknown) {
+      const err = e as { message?: string };
+      messageApi.error({
+        content: 'خطا در ارتباط با سرور: ' + (err?.message || 'خطای نامشخص'),
+        key: 'ovpn-install',
+      });
+    } finally {
+      setInstalling(false);
+    }
+  };
 
   const handleSaveSettings = async () => {
     if (!endpointHost) {
@@ -876,6 +914,23 @@ export default function OpenVPNPage() {
               </div>
               <div className="openvpn-hero-actions">
                 <Space wrap>
+                  {(!status?.installed || !status?.running) && (
+                    <Button
+                      type="primary"
+                      danger
+                      loading={installing}
+                      icon={<ThunderboltOutlined />}
+                      onClick={handleAutoInstall}
+                      style={{
+                        background: 'linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)',
+                        border: 'none',
+                        fontWeight: 'bold',
+                        boxShadow: '0 0 12px rgba(239, 68, 68, 0.4)',
+                      }}
+                    >
+                      نصب و راه‌اندازی ۱-کلیکه هسته OpenVPN
+                    </Button>
+                  )}
                   <Button icon={<ReloadOutlined spin={loading} />} onClick={fetchStatus}>
                     بروزرسانی
                   </Button>
@@ -905,6 +960,56 @@ export default function OpenVPNPage() {
                 </Space>
               </div>
             </div>
+
+            {(!status?.installed || !status?.running) && (
+              <Card
+                className="openvpn-card"
+                style={{
+                  marginBottom: 20,
+                  background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(245, 158, 11, 0.1) 100%)',
+                  borderColor: 'rgba(239, 68, 68, 0.4)',
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: 16,
+                  }}
+                >
+                  <div>
+                    <Text
+                      strong
+                      style={{ color: '#ef4444', fontSize: 16, display: 'block', marginBottom: 4 }}
+                    >
+                      ⚠️ سرویس یا مخزن گواهی‌های OpenVPN روی این سرور راه‌اندازی نشده است
+                    </Text>
+                    <Text type="secondary" style={{ fontSize: 13 }}>
+                      جهت ساخت کاربران و صدور فایل کانفیگ .ovpn، ابتدا باید هسته OpenVPN و مرکز صدور گواهی (Easy-RSA) راه‌اندازی شوند.
+                    </Text>
+                  </div>
+                  <Button
+                    type="primary"
+                    danger
+                    icon={<ThunderboltOutlined />}
+                    loading={installing}
+                    onClick={handleAutoInstall}
+                    style={{
+                      background: 'linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)',
+                      border: 'none',
+                      fontWeight: 'bold',
+                      boxShadow: '0 0 12px rgba(239, 68, 68, 0.4)',
+                      height: 40,
+                      padding: '0 20px',
+                    }}
+                  >
+                    نصب و راه‌اندازی خودکار OpenVPN (۱-کلیک)
+                  </Button>
+                </div>
+              </Card>
+            )}
 
             {/* Stat Cards */}
             <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>

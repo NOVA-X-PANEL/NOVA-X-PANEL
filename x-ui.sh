@@ -2412,6 +2412,98 @@ install_iplimit() {
     before_show_menu
 }
 
+setup_openvpn_cli() {
+    echo -e "${green}Installing OpenVPN and setting up Easy-RSA PKI environment...${plain}"
+    if command -v apt-get >/dev/null 2>&1; then
+        apt-get update -y || true
+        apt-get install -y openvpn easy-rsa iptables
+    elif command -v dnf >/dev/null 2>&1; then
+        dnf install -y epel-release || true
+        dnf install -y openvpn easy-rsa iptables
+    elif command -v yum >/dev/null 2>&1; then
+        yum install -y epel-release || true
+        yum install -y openvpn easy-rsa iptables
+    elif command -v pacman >/dev/null 2>&1; then
+        pacman -Sy --noconfirm openvpn easy-rsa iptables
+    fi
+
+    mkdir -p /etc/openvpn/easy-rsa
+    if [[ ! -f "/etc/openvpn/easy-rsa/easyrsa" ]]; then
+        if [[ -d "/usr/share/easy-rsa" ]]; then
+            cp -rf /usr/share/easy-rsa/* /etc/openvpn/easy-rsa/ 2>/dev/null || true
+        elif [[ -d "/usr/local/share/easy-rsa" ]]; then
+            cp -rf /usr/local/share/easy-rsa/* /etc/openvpn/easy-rsa/ 2>/dev/null || true
+        fi
+        if [[ ! -f "/etc/openvpn/easy-rsa/easyrsa" ]]; then
+            local easyrsa_tar="/tmp/easyrsa.tgz"
+            curl -fsSL "https://github.com/OpenVPN/easy-rsa/releases/download/v3.2.1/EasyRSA-3.2.1.tgz" -o "$easyrsa_tar" 2>/dev/null || true
+            if [[ -s "$easyrsa_tar" ]]; then
+                tar -xzf "$easyrsa_tar" --strip-components=1 -C /etc/openvpn/easy-rsa/ 2>/dev/null || true
+                rm -f "$easyrsa_tar"
+            fi
+        fi
+    fi
+
+    if [[ -f "/etc/openvpn/easy-rsa/easyrsa" ]]; then
+        cd /etc/openvpn/easy-rsa
+        chmod +x ./easyrsa 2>/dev/null || true
+        if [[ ! -d "pki" ]]; then
+            ./easyrsa init-pki
+            echo -e "\n" | ./easyrsa --batch build-ca nopass
+            ./easyrsa --batch build-server-full server nopass
+            ./easyrsa gen-dh
+        fi
+        mkdir -p /etc/openvpn/server
+        cp -f pki/ca.crt /etc/openvpn/server/ 2>/dev/null || true
+        cp -f pki/issued/server.crt /etc/openvpn/server/ 2>/dev/null || true
+        cp -f pki/private/server.key /etc/openvpn/server/ 2>/dev/null || true
+        cp -f pki/dh.pem /etc/openvpn/server/ 2>/dev/null || true
+    fi
+
+    if [[ ! -f "/etc/openvpn/server/server.conf" ]] && [[ -f "/etc/openvpn/server/ca.crt" ]]; then
+        cat << 'EOF_CONF' > /etc/openvpn/server/server.conf
+port 2083
+proto tcp-server
+dev tun
+topology subnet
+
+ca /etc/openvpn/server/ca.crt
+cert /etc/openvpn/server/server.crt
+key /etc/openvpn/server/server.key
+dh /etc/openvpn/server/dh.pem
+
+server 10.8.0.0 255.255.255.0
+ifconfig-pool-persist /etc/openvpn/server/ipp.txt
+
+push "redirect-gateway def1 bypass-dhcp"
+push "dhcp-option DNS 1.1.1.1"
+push "dhcp-option DNS 8.8.8.8"
+
+keepalive 10 60
+data-ciphers AES-256-GCM:AES-128-GCM:AES-256-CBC:AES-128-CBC
+cipher AES-256-GCM
+auth SHA256
+
+persist-key
+persist-tun
+status /var/log/openvpn-status.log
+log /var/log/openvpn.log
+verb 3
+management 127.0.0.1 7505
+duplicate-cn
+EOF_CONF
+    fi
+
+    sysctl -w net.ipv4.ip_forward=1 >/dev/null 2>&1 || true
+    sed -i '/net.ipv4.ip_forward/d' /etc/sysctl.conf 2>/dev/null || true
+    echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf 2>/dev/null || true
+
+    systemctl daemon-reload >/dev/null 2>&1 || true
+    systemctl enable --now openvpn-server@server >/dev/null 2>&1 || systemctl enable --now openvpn@server >/dev/null 2>&1 || true
+    systemctl restart openvpn-server@server >/dev/null 2>&1 || systemctl restart openvpn@server >/dev/null 2>&1 || true
+    echo -e "${green}OpenVPN and Easy-RSA setup completed successfully!${plain}\n"
+}
+
 remove_iplimit() {
     echo -e "${green}\t1.${plain} Only remove IP Limit configurations"
     echo -e "${green}\t2.${plain} Uninstall Fail2ban and IP Limit"
@@ -3676,6 +3768,9 @@ if [[ $# > 0 ]]; then
             ;;
         "setup-fail2ban")
             setup_fail2ban_iplimit
+            ;;
+        "setup-openvpn")
+            setup_openvpn_cli
             ;;
         "update")
             check_install 0 && update 0

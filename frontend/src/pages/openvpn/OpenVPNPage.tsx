@@ -914,7 +914,7 @@ export default function OpenVPNPage() {
               </div>
               <div className="openvpn-hero-actions">
                 <Space wrap>
-                  {(!status?.installed || !status?.running) && (
+                  {!status?.installed ? (
                     <Button
                       type="primary"
                       danger
@@ -930,7 +930,21 @@ export default function OpenVPNPage() {
                     >
                       نصب و راه‌اندازی ۱-کلیکه هسته OpenVPN
                     </Button>
-                  )}
+                  ) : !status?.running ? (
+                    <Button
+                      type="primary"
+                      icon={<SyncOutlined spin={restarting} />}
+                      loading={restarting}
+                      onClick={handleRestart}
+                      style={{
+                        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                        border: 'none',
+                        fontWeight: 'bold',
+                      }}
+                    >
+                      روشن کردن سرویس
+                    </Button>
+                  ) : null}
                   <Button icon={<ReloadOutlined spin={loading} />} onClick={fetchStatus}>
                     بروزرسانی
                   </Button>
@@ -984,29 +998,52 @@ export default function OpenVPNPage() {
                       strong
                       style={{ color: '#ef4444', fontSize: 16, display: 'block', marginBottom: 4 }}
                     >
-                      ⚠️ سرویس یا مخزن گواهی‌های OpenVPN روی این سرور راه‌اندازی نشده است
+                      {!status?.installed
+                        ? '⚠️ هسته یا مخزن گواهی‌های OpenVPN روی این سرور راه‌اندازی نشده است'
+                        : '⚠️ سرویس OpenVPN نصب است اما در حال حاضر متوقف (غیرفعال) می‌باشد'}
                     </Text>
                     <Text type="secondary" style={{ fontSize: 13 }}>
-                      جهت ساخت کاربران و صدور فایل کانفیگ .ovpn، ابتدا باید هسته OpenVPN و مرکز صدور گواهی (Easy-RSA) راه‌اندازی شوند.
+                      {!status?.installed
+                        ? 'جهت ساخت کاربران و صدور فایل کانفیگ .ovpn، ابتدا باید هسته OpenVPN و مرکز صدور گواهی (Easy-RSA) راه‌اندازی شوند.'
+                        : 'برای اتصال کلاینت‌ها و شروع تبادل ترافیک، سرویس OpenVPN را روشن کنید.'}
                     </Text>
                   </div>
-                  <Button
-                    type="primary"
-                    danger
-                    icon={<ThunderboltOutlined />}
-                    loading={installing}
-                    onClick={handleAutoInstall}
-                    style={{
-                      background: 'linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)',
-                      border: 'none',
-                      fontWeight: 'bold',
-                      boxShadow: '0 0 12px rgba(239, 68, 68, 0.4)',
-                      height: 40,
-                      padding: '0 20px',
-                    }}
-                  >
-                    نصب و راه‌اندازی خودکار OpenVPN (۱-کلیک)
-                  </Button>
+                  {!status?.installed ? (
+                    <Button
+                      type="primary"
+                      danger
+                      icon={<ThunderboltOutlined />}
+                      loading={installing}
+                      onClick={handleAutoInstall}
+                      style={{
+                        background: 'linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)',
+                        border: 'none',
+                        fontWeight: 'bold',
+                        boxShadow: '0 0 12px rgba(239, 68, 68, 0.4)',
+                        height: 40,
+                        padding: '0 20px',
+                      }}
+                    >
+                      نصب و راه‌اندازی خودکار OpenVPN (۱-کلیک)
+                    </Button>
+                  ) : (
+                    <Button
+                      type="primary"
+                      icon={<SyncOutlined spin={restarting} />}
+                      loading={restarting}
+                      onClick={handleRestart}
+                      style={{
+                        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                        border: 'none',
+                        fontWeight: 'bold',
+                        boxShadow: '0 0 12px rgba(16, 185, 129, 0.4)',
+                        height: 40,
+                        padding: '0 20px',
+                      }}
+                    >
+                      روشن کردن سرویس OpenVPN
+                    </Button>
+                  )}
                 </div>
               </Card>
             )}

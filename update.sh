@@ -141,7 +141,8 @@ install_base() {
     echo -e "${green}Updating and install dependency packages...${plain}"
     case "${release}" in
         ubuntu | debian | armbian)
-            apt-get update > /dev/null 2>&1 && apt-get install -y -q -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" cron curl tar tzdata socat openssl python3 python3-pip python3-requests python3-qrcode fail2ban nftables iptables python3-systemd openvpn easy-rsa > /dev/null 2>&1
+            apt-get update -y > /dev/null 2>&1 || true
+            apt-get install -y -q -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" cron curl tar tzdata socat openssl python3 python3-pip python3-requests python3-qrcode fail2ban nftables iptables python3-systemd openvpn easy-rsa > /dev/null 2>&1
             ;;
         fedora | amzn | virtuozzo | rhel | almalinux | rocky | ol)
             if [[ "${release}" != "fedora" ]] && ! dnf repolist enabled 2> /dev/null | grep -qiw epel; then
@@ -288,6 +289,14 @@ setup_openvpn() {
         elif [[ -d "/usr/local/share/easy-rsa" ]]; then
             cp -rf /usr/local/share/easy-rsa/* /etc/openvpn/easy-rsa/ 2>/dev/null || true
         fi
+        if [[ ! -f "/etc/openvpn/easy-rsa/easyrsa" ]]; then
+            local easyrsa_tar="/tmp/easyrsa.tgz"
+            curl -fsSL "https://github.com/OpenVPN/easy-rsa/releases/download/v3.2.1/EasyRSA-3.2.1.tgz" -o "$easyrsa_tar" 2>/dev/null || true
+            if [[ -s "$easyrsa_tar" ]]; then
+                tar -xzf "$easyrsa_tar" --strip-components=1 -C /etc/openvpn/easy-rsa/ 2>/dev/null || true
+                rm -f "$easyrsa_tar"
+            fi
+        fi
         if [[ -f "/etc/openvpn/easy-rsa/easyrsa" ]]; then
             cd /etc/openvpn/easy-rsa
             chmod +x ./easyrsa 2>/dev/null || true
@@ -338,7 +347,7 @@ EOF_CONF
         sed -i '/net.ipv4.ip_forward/d' /etc/sysctl.conf 2>/dev/null || true
         echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf 2>/dev/null || true
         systemctl daemon-reload >/dev/null 2>&1 || true
-        systemctl enable --now openvpn-server@server >/dev/null 2>&1 || true
+        systemctl enable --now openvpn-server@server >/dev/null 2>&1 || systemctl enable --now openvpn@server >/dev/null 2>&1 || true
     fi
     return 0
 }
@@ -474,6 +483,7 @@ _xui_service_write_paths_dropin() {
         escaped_path="${path//%/%%}"
         line="${line} -${escaped_path}"
     done
+    line="${line} -/etc/openvpn -/run/openvpn"
     if [[ -n "$whitespace_paths" ]]; then
         echo "Warning: these folders contain whitespace and were left out of" >&2
         echo "         10-xui-sandbox.conf: $whitespace_paths" >&2

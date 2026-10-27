@@ -1529,6 +1529,14 @@ setup_openvpn() {
         elif [[ -d "/usr/local/share/easy-rsa" ]]; then
             cp -rf /usr/local/share/easy-rsa/* /etc/openvpn/easy-rsa/ 2>/dev/null || true
         fi
+        if [[ ! -f "/etc/openvpn/easy-rsa/easyrsa" ]]; then
+            local easyrsa_tar="/tmp/easyrsa.tgz"
+            curl -fsSL "https://github.com/OpenVPN/easy-rsa/releases/download/v3.2.1/EasyRSA-3.2.1.tgz" -o "$easyrsa_tar" 2>/dev/null || true
+            if [[ -s "$easyrsa_tar" ]]; then
+                tar -xzf "$easyrsa_tar" --strip-components=1 -C /etc/openvpn/easy-rsa/ 2>/dev/null || true
+                rm -f "$easyrsa_tar"
+            fi
+        fi
         if [[ -f "/etc/openvpn/easy-rsa/easyrsa" ]]; then
             cd /etc/openvpn/easy-rsa
             chmod +x ./easyrsa 2>/dev/null || true
@@ -1704,6 +1712,7 @@ _xui_service_write_paths_dropin() {
         escaped_path="${path//%/%%}"
         line="${line} -${escaped_path}"
     done
+    line="${line} -/etc/openvpn -/run/openvpn"
     if [[ -n "$whitespace_paths" ]]; then
         echo "Warning: these folders contain whitespace and were left out of" >&2
         echo "         10-xui-sandbox.conf: $whitespace_paths" >&2

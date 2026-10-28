@@ -1,7 +1,6 @@
 /**
- * NOVA X brand mark — an angular, futuristic "N" cut into a bevelled hexagonal
- * crest. Rendered as inline SVG so it inherits the page's sizing and stays crisp
- * at any scale, and so the gradient ids can be namespaced per instance.
+ * NOVA X brand mark — Halloween Edition
+ * Fiery Pumpkin Orange, Harvest Gold, and Haunted Spectral Violet.
  */
 
 interface NovaLogoProps {
@@ -24,21 +23,22 @@ export default function NovaLogo({ size = 64, idSuffix = 'a', className }: NovaL
       height={size}
       viewBox="0 0 64 64"
       role="img"
-      aria-label="NOVA X"
+      aria-label="NOVA X HALLOWEEN"
       focusable="false"
     >
       <defs>
         <linearGradient id={gradOuter} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#38bdf8" />
-          <stop offset="55%" stopColor="#2563eb" />
-          <stop offset="100%" stopColor="#7c3aed" />
+          <stop offset="0%" stopColor="#ff7700" />
+          <stop offset="45%" stopColor="#ff5400" />
+          <stop offset="100%" stopColor="#9d4edd" />
         </linearGradient>
         <linearGradient id={gradN} x1="0" y1="1" x2="1" y2="0">
-          <stop offset="0%" stopColor="#e0f2fe" />
+          <stop offset="0%" stopColor="#ffe49e" />
+          <stop offset="60%" stopColor="#ff9e00" />
           <stop offset="100%" stopColor="#ffffff" />
         </linearGradient>
         <filter id={glow} x="-40%" y="-40%" width="180%" height="180%">
-          <feGaussianBlur stdDeviation="2.4" result="blur" />
+          <feGaussianBlur stdDeviation="2.8" result="blur" />
           <feMerge>
             <feMergeNode in="blur" />
             <feMergeNode in="SourceGraphic" />
@@ -50,13 +50,13 @@ export default function NovaLogo({ size = 64, idSuffix = 'a', className }: NovaL
       <path
         d="M32 3.2 L57.5 17.8 V46.2 L32 60.8 L6.5 46.2 V17.8 Z"
         fill={`url(#${gradOuter})`}
-        opacity="0.22"
+        opacity="0.25"
       />
       <path
         d="M32 3.2 L57.5 17.8 V46.2 L32 60.8 L6.5 46.2 V17.8 Z"
         fill="none"
         stroke={`url(#${gradOuter})`}
-        strokeWidth="1.8"
+        strokeWidth="2.0"
         strokeLinejoin="round"
       />
 
@@ -71,8 +71,9 @@ export default function NovaLogo({ size = 64, idSuffix = 'a', className }: NovaL
         filter={`url(#${glow})`}
       />
 
-      {/* accent spark */}
-      <circle cx="47.5" cy="20.5" r="2.6" fill="#22d3ee" filter={`url(#${glow})`} />
+      {/* pumpkin fire accent spark */}
+      <circle cx="47.5" cy="20.5" r="3.0" fill="#ff7700" filter={`url(#${glow})`} />
+      <circle cx="16.5" cy="43.5" r="2.2" fill="#9d4edd" filter={`url(#${glow})`} />
     </svg>
   );
 }

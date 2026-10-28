@@ -228,13 +228,13 @@ export default function LoginPage() {
             <div className="nx-brand">
               <NovaLogo size={52} idSuffix="hero" />
               <div className="nx-brand__text">
-                <span className="nx-brand__name">NOVA X</span>
-                <span className="nx-brand__label">PANEL</span>
+                <span className="nx-brand__name">NOVA 🎃</span>
+                <span className="nx-brand__label" style={{ color: '#ff7700', letterSpacing: '0.12em' }}>HALLOWEEN</span>
               </div>
             </div>
 
-            <h1 className="nx-hero__title">NOVA X PANEL</h1>
-            <p className="nx-hero__tagline">More Freedom · More Connection · Nova X</p>
+            <h1 className="nx-hero__title">NOVA X PANEL 🎃</h1>
+            <p className="nx-hero__tagline">Spooky Fast · Borderless Connection · Halloween Edition 👻</p>
             <p className="nx-hero__slogan">
               {t('pages.login.slogan', { defaultValue: COPY.slogan })}
             </p>
@@ -312,9 +312,9 @@ export default function LoginPage() {
             <div className="nx-card">
               <div className="nx-card__head">
                 <NovaLogo size={58} idSuffix="card" />
-                <h2 className="nx-card__title">NOVA X PANEL</h2>
+                <h2 className="nx-card__title">NOVA X PANEL 🎃</h2>
                 <p className="nx-card__subtitle">
-                  {t('pages.login.cardSubtitle', { defaultValue: COPY.cardSubtitle })}
+                  {t('pages.login.cardSubtitle', { defaultValue: 'Enter the realm · Sign in to continue 👻' })}
                 </p>
               </div>
 

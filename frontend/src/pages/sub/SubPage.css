@@ -1,33 +1,33 @@
 .subscription-page {
   /* --sub-grad-* paints graphics, --sub-ink-* paints text: the cyan end darkens
      so text clears 4.5:1. --sub-accent is ACCENT.primary in SubPage.tsx. */
-  --sub-grad-from: #8b5cf6;
-  --sub-grad-to: #06b6d4;
-  --sub-ink-from: #6d28d9;
-  --sub-ink-to: #0e7490;
-  --sub-accent: #7c3aed;
-  --bg-page: linear-gradient(135deg, #e9e4ff 0%, #ddeefc 52%, #e2f7f2 100%);
-  --sub-card-bg: rgba(255, 255, 255, 0.72);
-  --sub-card-border: rgba(255, 255, 255, 0.7);
-  --sub-card-shadow: 0 1px 3px rgba(15, 23, 42, 0.05), 0 20px 56px rgba(124, 58, 237, 0.16);
+  --sub-grad-from: #ff7700;
+  --sub-grad-to: #9d4edd;
+  --sub-ink-from: #e65100;
+  --sub-ink-to: #7b2cbf;
+  --sub-accent: #ff7700;
+  --bg-page: linear-gradient(135deg, #180928 0%, #0d0515 52%, #08030e 100%);
+  --sub-card-bg: rgba(22, 10, 36, 0.88);
+  --sub-card-border: rgba(255, 119, 0, 0.35);
+  --sub-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.5), 0 20px 56px rgba(255, 119, 0, 0.22);
   --sub-card-sheen: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.75),
+    rgba(255, 119, 0, 0.35),
     rgba(255, 255, 255, 0) 42%,
-    rgba(124, 58, 237, 0.22) 88%
+    rgba(157, 78, 221, 0.35) 88%
   );
-  --sub-blob-1: rgba(139, 92, 246, 0.55);
-  --sub-blob-2: rgba(6, 182, 212, 0.45);
-  --sub-grid: rgba(124, 58, 237, 0.06);
-  --sub-hairline: linear-gradient(90deg, rgba(139, 92, 246, 0.4), rgba(6, 182, 212, 0.4));
-  --sub-tile-bg: rgba(124, 58, 237, 0.05);
-  --sub-tile-border: rgba(124, 58, 237, 0.12);
-  --sub-row-bg: rgba(124, 58, 237, 0.045);
-  --sub-row-border: rgba(124, 58, 237, 0.11);
-  --sub-row-bg-hover: rgba(124, 58, 237, 0.09);
-  --sub-row-border-hover: rgba(124, 58, 237, 0.3);
-  --sub-row-glow: rgba(124, 58, 237, 0.28);
-  --sub-glass-bg: rgba(255, 255, 255, 0.6);
+  --sub-blob-1: rgba(255, 119, 0, 0.45);
+  --sub-blob-2: rgba(157, 78, 221, 0.4);
+  --sub-grid: rgba(255, 119, 0, 0.08);
+  --sub-hairline: linear-gradient(90deg, #ff7700, #ff9e00, #9d4edd, #ff0055);
+  --sub-tile-bg: rgba(30, 14, 48, 0.8);
+  --sub-tile-border: rgba(255, 119, 0, 0.25);
+  --sub-row-bg: rgba(22, 10, 36, 0.85);
+  --sub-row-border: rgba(255, 119, 0, 0.2);
+  --sub-row-bg-hover: rgba(36, 16, 58, 0.95);
+  --sub-row-border-hover: rgba(255, 119, 0, 0.55);
+  --sub-row-glow: rgba(255, 119, 0, 0.45);
+  --sub-glass-bg: rgba(22, 10, 36, 0.85);
 
   position: relative;
   min-height: 100vh;
@@ -35,44 +35,44 @@
 }
 
 .subscription-page.is-dark {
-  --sub-grad-from: #2563ff;
-  --sub-grad-to: #7140ff;
-  --sub-ink-from: #38bdf8;
-  --sub-ink-to: #a78bfa;
-  --sub-accent: #38bdf8;
-  --bg-page: #07090e;
-  --sub-card-bg: rgba(15, 20, 32, 0.85);
-  --sub-card-border: rgba(56, 189, 248, 0.25);
-  --sub-card-shadow: 0 16px 48px rgba(0, 0, 0, 0.75), 0 0 28px rgba(37, 99, 255, 0.25);
+  --sub-grad-from: #ff7700;
+  --sub-grad-to: #9d4edd;
+  --sub-ink-from: #ff9e00;
+  --sub-ink-to: #d8b4fe;
+  --sub-accent: #ff7700;
+  --bg-page: #08040d;
+  --sub-card-bg: rgba(18, 8, 30, 0.9);
+  --sub-card-border: rgba(255, 119, 0, 0.32);
+  --sub-card-shadow: 0 16px 48px rgba(0, 0, 0, 0.85), 0 0 35px rgba(255, 119, 0, 0.25);
   --sub-card-sheen: linear-gradient(
     135deg,
-    rgba(56, 189, 248, 0.22),
+    rgba(255, 119, 0, 0.3),
     rgba(255, 255, 255, 0) 42%,
-    rgba(113, 64, 255, 0.35) 88%
+    rgba(157, 78, 221, 0.38) 88%
   );
-  --sub-blob-1: rgba(37, 99, 255, 0.35);
-  --sub-blob-2: rgba(113, 64, 255, 0.3);
-  --sub-grid: rgba(56, 189, 248, 0.05);
-  --sub-hairline: linear-gradient(90deg, #00bfff, #2563ff, #7140ff, #f13b96);
-  --sub-tile-bg: rgba(22, 29, 46, 0.85);
-  --sub-tile-border: rgba(56, 189, 248, 0.18);
-  --sub-row-bg: rgba(15, 20, 32, 0.8);
-  --sub-row-border: rgba(56, 189, 248, 0.2);
-  --sub-row-bg-hover: rgba(22, 29, 46, 0.95);
-  --sub-row-border-hover: rgba(56, 189, 248, 0.5);
-  --sub-row-glow: rgba(37, 99, 255, 0.55);
-  --sub-glass-bg: rgba(15, 20, 32, 0.75);
+  --sub-blob-1: rgba(255, 119, 0, 0.4);
+  --sub-blob-2: rgba(157, 78, 221, 0.4);
+  --sub-grid: rgba(255, 119, 0, 0.07);
+  --sub-hairline: linear-gradient(90deg, #ff7700, #ff9e00, #9d4edd, #ff0055);
+  --sub-tile-bg: rgba(28, 12, 46, 0.85);
+  --sub-tile-border: rgba(255, 119, 0, 0.24);
+  --sub-row-bg: rgba(18, 8, 30, 0.85);
+  --sub-row-border: rgba(255, 119, 0, 0.22);
+  --sub-row-bg-hover: rgba(30, 14, 52, 0.95);
+  --sub-row-border-hover: rgba(255, 119, 0, 0.55);
+  --sub-row-glow: rgba(255, 119, 0, 0.5);
+  --sub-glass-bg: rgba(18, 8, 30, 0.85);
 }
 
 .subscription-page.is-dark.is-ultra {
-  --bg-page: #040508;
-  --sub-card-bg: rgba(10, 14, 24, 0.92);
-  --sub-card-border: rgba(56, 189, 248, 0.3);
-  --sub-card-shadow: 0 20px 60px rgba(0, 0, 0, 0.9), 0 0 32px rgba(113, 64, 255, 0.3);
-  --sub-blob-1: rgba(37, 99, 255, 0.25);
-  --sub-blob-2: rgba(113, 64, 255, 0.2);
-  --sub-grid: rgba(56, 189, 248, 0.04);
-  --sub-glass-bg: rgba(10, 14, 24, 0.85);
+  --bg-page: #050208;
+  --sub-card-bg: rgba(14, 6, 24, 0.95);
+  --sub-card-border: rgba(255, 119, 0, 0.38);
+  --sub-card-shadow: 0 20px 60px rgba(0, 0, 0, 0.95), 0 0 38px rgba(157, 78, 221, 0.35);
+  --sub-blob-1: rgba(255, 119, 0, 0.35);
+  --sub-blob-2: rgba(157, 78, 221, 0.35);
+  --sub-grid: rgba(255, 119, 0, 0.05);
+  --sub-glass-bg: rgba(14, 6, 24, 0.9);
 }
 
 .subscription-page .ant-layout,
@@ -191,8 +191,8 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, #00bfff, #2563ff, #7140ff, #f13b96);
-  box-shadow: 0 0 16px rgba(0, 191, 255, 0.85);
+  background: linear-gradient(90deg, #ff7700, #ff9e00, #9d4edd, #ff0055);
+  box-shadow: 0 0 16px rgba(255, 119, 0, 0.85);
   border-radius: 20px 20px 0 0;
   z-index: 2;
   pointer-events: none;
@@ -256,11 +256,11 @@
   align-items: center;
   justify-content: center;
   border-radius: 14px;
-  background: linear-gradient(135deg, #1e1b4b 0%, #2563ff 50%, #7140ff 100%);
+  background: linear-gradient(135deg, #2b0b3a 0%, #ff7700 50%, #9d4edd 100%);
   box-shadow:
-    0 0 20px rgba(113, 64, 255, 0.6),
+    0 0 20px rgba(255, 119, 0, 0.6),
     inset 0 1px 1px rgba(255, 255, 255, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 119, 0, 0.4);
   color: #fff;
   font-size: 22px;
   font-weight: 700;
@@ -418,7 +418,7 @@
 .sub-stat:hover {
   border-color: var(--sub-row-border-hover);
   background: var(--sub-row-bg-hover);
-  box-shadow: 0 4px 20px rgba(37, 99, 255, 0.25);
+  box-shadow: 0 4px 20px rgba(255, 119, 0, 0.35);
   transform: translateY(-2px);
 }
 

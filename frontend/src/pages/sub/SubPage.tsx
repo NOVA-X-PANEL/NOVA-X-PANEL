@@ -64,16 +64,16 @@ const RTL_LANGUAGES = new Set(['fa-IR', 'ar-EG']);
 // hue up instead of the panel blue useTheme pins. Mirrored in SubPage.css.
 const ACCENT = {
   light: {
-    primary: '#2563ff',
-    hover: '#3b82f6',
-    active: '#1d4ed8',
-    rail: 'rgba(37, 99, 255, 0.16)',
+    primary: '#ff7700',
+    hover: '#ff9500',
+    active: '#e65100',
+    rail: 'rgba(255, 119, 0, 0.2)',
   },
   dark: {
-    primary: '#38bdf8',
-    hover: '#67e8f9',
-    active: '#0284c7',
-    rail: 'rgba(56, 189, 248, 0.2)',
+    primary: '#ff7700',
+    hover: '#ff9500',
+    active: '#e65100',
+    rail: 'rgba(255, 119, 0, 0.25)',
   },
 };
 

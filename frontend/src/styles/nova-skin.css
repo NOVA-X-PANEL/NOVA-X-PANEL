@@ -9,18 +9,49 @@
 
 /* One glow behind every page, so no screen is a flat black rectangle. */
 body.dark {
-  background-color: #07090e;
+  background-color: #08040d;
   background-image:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(120, 50, 220, 0.16), transparent),
-    radial-gradient(circle at 10% 20%, rgba(34, 211, 238, 0.05), transparent 40%),
-    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(255, 119, 0, 0.22), transparent),
+    radial-gradient(circle at 10% 85%, rgba(157, 78, 221, 0.18), transparent 45%),
+    radial-gradient(circle at 90% 20%, rgba(57, 255, 20, 0.08), transparent 40%),
+    linear-gradient(rgba(255, 119, 0, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 119, 0, 0.02) 1px, transparent 1px);
   background-size:
+    100% 100%,
     100% 100%,
     100% 100%,
     40px 40px,
     40px 40px;
   background-attachment: fixed;
+}
+
+/* Corner cobwebs */
+body.dark::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 170px;
+  height: 170px;
+  pointer-events: none;
+  z-index: 999;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='%23ff7700' stroke-width='0.8' stroke-opacity='0.3'%3E%3Cline x1='100' y1='0' x2='0' y2='100' /%3E%3Cline x1='100' y1='0' x2='30' y2='100' /%3E%3Cline x1='100' y1='0' x2='65' y2='100' /%3E%3Cline x1='100' y1='0' x2='0' y2='30' /%3E%3Cline x1='100' y1='0' x2='0' y2='65' /%3E%3Cpath d='M85 0 Q80 20 100 15' /%3E%3Cpath d='M68 0 Q62 38 100 32' /%3E%3Cpath d='M48 0 Q40 60 100 52' /%3E%3Cpath d='M28 0 Q20 80 100 72' /%3E%3Cpath d='M8 0 Q0 98 100 92' /%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+
+body.dark::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 150px;
+  height: 150px;
+  pointer-events: none;
+  z-index: 999;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='%239d4edd' stroke-width='0.8' stroke-opacity='0.3'%3E%3Cline x1='0' y1='0' x2='100' y2='100' /%3E%3Cline x1='0' y1='0' x2='70' y2='100' /%3E%3Cline x1='0' y1='0' x2='35' y2='100' /%3E%3Cline x1='0' y1='0' x2='100' y2='30' /%3E%3Cline x1='0' y1='0' x2='100' y2='65' /%3E%3Cpath d='M15 0 Q20 20 0 15' /%3E%3Cpath d='M32 0 Q38 38 0 32' /%3E%3Cpath d='M52 0 Q60 60 0 52' /%3E%3Cpath d='M72 0 Q80 80 0 72' /%3E%3Cpath d='M92 0 Q100 98 0 92' /%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: contain;
 }
 
 body.light {
@@ -36,11 +67,11 @@ body.light {
    they live in the two per-theme blocks below. */
 body.dark,
 body.light {
-  --nc-blue: #176bff;
-  --nc-violet: #7134f0;
-  --nc-teal: #00c9a8;
-  --nc-green: #00e1b0;
-  --nc-pink: #c41d63;
+  --nc-blue: #ff7700;
+  --nc-violet: #9d4edd;
+  --nc-teal: #ff9e00;
+  --nc-green: #39ff14;
+  --nc-pink: #ff0055;
   --nv-on-accent: #ffffff;
 }
 
@@ -56,24 +87,24 @@ body.light {
    panels are white. Each theme now carries its own. */
 
 body.dark {
-  --nc-card: rgba(15, 20, 32, 0.85);
-  --nc-card-2: rgba(22, 29, 46, 0.95);
-  --nc-border: rgba(56, 189, 248, 0.18);
+  --nc-card: rgba(17, 8, 28, 0.88);
+  --nc-card-2: rgba(26, 12, 42, 0.95);
+  --nc-border: rgba(255, 119, 0, 0.28);
   --nc-divider: rgba(255, 255, 255, 0.08);
-  --nc-field: rgba(11, 14, 23, 0.85);
-  --nc-text: #f1f5f9;
-  --nc-text-2: #94a3b8;
-  --nc-text-3: #64748b;
-  --nv-card: rgba(15, 20, 32, 0.85);
-  --nv-border: rgba(56, 189, 248, 0.18);
-  --nv-shadow: 0 12px 35px rgba(0, 0, 0, 0.5);
-  --nv-accent: #22d3ee;
-  --nv-blue: #0ea5e9;
-  --nv-violet: #a855f7;
-  --nv-cyan: #22d3ee;
-  --nv-teal: #10b981;
-  --nv-grad: linear-gradient(135deg, rgba(15, 20, 32, 0.9) 0%, rgba(22, 29, 46, 0.95) 100%);
-  --nv-topbar-bg: #07090e;
+  --nc-field: rgba(14, 6, 23, 0.88);
+  --nc-text: #fbfaff;
+  --nc-text-2: #d8b4fe;
+  --nc-text-3: #9333ea;
+  --nv-card: rgba(17, 8, 28, 0.88);
+  --nv-border: rgba(255, 119, 0, 0.28);
+  --nv-shadow: 0 12px 35px rgba(0, 0, 0, 0.6), 0 0 15px rgba(255, 119, 0, 0.15);
+  --nv-accent: #ff7700;
+  --nv-blue: #ff7700;
+  --nv-violet: #9d4edd;
+  --nv-cyan: #ff9e00;
+  --nv-teal: #39ff14;
+  --nv-grad: linear-gradient(135deg, rgba(255, 119, 0, 0.2) 0%, rgba(157, 78, 221, 0.25) 100%);
+  --nv-topbar-bg: #09040f;
 }
 
 /* Light surfaces, mirroring the light palette nova-glass.css sets on the page
@@ -558,8 +589,8 @@ body.light {
   )
   :is(.ant-checkbox-checked .ant-checkbox-inner, .ant-radio-checked .ant-radio-inner) {
   border-color: transparent;
-  background: linear-gradient(135deg, var(--nc-blue), var(--nc-violet));
-  box-shadow: 0 0 10px rgba(23, 107, 255, 0.5);
+  background: linear-gradient(135deg, #ff7700, #9d4edd);
+  box-shadow: 0 0 10px rgba(255, 119, 0, 0.6);
 }
 
 :is(
@@ -596,9 +627,9 @@ body.light {
     .admin-roles-page
   )
   .ant-switch.ant-switch-checked {
-  background: linear-gradient(135deg, var(--nc-blue), var(--nc-violet));
-  border-color: transparent;
-  box-shadow: 0 0 12px rgba(23, 107, 255, 0.5);
+  background: linear-gradient(135deg, #ff7700 0%, #ff5400 50%, #9d4edd 100%) !important;
+  border-color: #ff7700 !important;
+  box-shadow: 0 0 14px rgba(255, 119, 0, 0.65), 0 0 6px rgba(157, 78, 221, 0.5) !important;
 }
 
 :is(
@@ -1487,21 +1518,21 @@ body.dark .ant-sidebar > .ant-layout-sider {
 .sider-nav .ant-menu-item-selected {
   background: linear-gradient(
     90deg,
-    rgba(34, 211, 238, 0.18) 0%,
-    rgba(168, 85, 247, 0.22) 100%
+    rgba(255, 119, 0, 0.22) 0%,
+    rgba(157, 78, 221, 0.28) 100%
   ) !important;
-  border-left: 3px solid #22d3ee !important;
-  border-inline-start: 3px solid #22d3ee !important;
+  border-left: 3px solid #ff7700 !important;
+  border-inline-start: 3px solid #ff7700 !important;
   box-shadow:
-    inset 0 0 16px rgba(34, 211, 238, 0.15),
-    0 0 14px rgba(34, 211, 238, 0.22) !important;
+    inset 0 0 16px rgba(255, 119, 0, 0.2),
+    0 0 16px rgba(255, 119, 0, 0.35) !important;
   color: #fff !important;
   font-weight: 700 !important;
 }
 
 .sider-nav .ant-menu-item-selected .anticon {
-  color: #22d3ee !important;
-  filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.85)) !important;
+  color: #ff7700 !important;
+  filter: drop-shadow(0 0 10px rgba(255, 119, 0, 0.95)) !important;
 }
 
 .nx-topbar .ant-menu-horizontal > .ant-menu-item:not(.ant-menu-item-selected) {
@@ -1856,9 +1887,9 @@ body.dark .ant-command-palette,
 
 .ant-sidebar .sider-nav .ant-menu-item:not(.ant-menu-item-selected):hover,
 .ant-sidebar .sider-utility .ant-menu-item:not(.ant-menu-item-selected):hover {
-  background-color: rgba(34, 211, 238, 0.08) !important;
-  border-left: 3px solid rgba(56, 189, 248, 0.35) !important;
-  border-inline-start: 3px solid rgba(56, 189, 248, 0.35) !important;
+  background-color: rgba(255, 119, 0, 0.1) !important;
+  border-left: 3px solid rgba(255, 119, 0, 0.45) !important;
+  border-inline-start: 3px solid rgba(255, 119, 0, 0.45) !important;
 }
 
 /* ---- 5. login: solid card and fields, no glass ---- */

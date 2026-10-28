@@ -34,36 +34,36 @@ const initialDark = readBool(STORAGE_DARK, true);
 const initialUltra = readBool(STORAGE_ULTRA, false);
 applyDom(initialDark, initialUltra);
 
-// NOVA X PANEL — "Neon Console" (from the NEON X reference). A deep navy canvas
-// with neon-glow cards, luminous blue borders and electric accents: blue
-// #2563FF, cyan #00BFFF, teal #13D6B0, violet #7140FF, magenta #F13B96.
+// NOVA X PANEL — Halloween Edition
+// Spooky midnight obsidian canvas with luminous pumpkin orange glow,
+// haunted spectral violet, and toxic slime green accents.
 const NEON = {
   dark: {
-    bg: '#07090e',
-    container: '#0b0f19',
-    elevated: '#0b0f19',
-    sider: '#07090e',
-    border: 'rgba(56,189,248,.25)',
-    borderSecondary: 'rgba(56,189,248,.12)',
-    text: '#f3f7ff',
-    textSecondary: '#94a3b8',
-    textTertiary: '#64748b',
-    blue: '#0ea5e9',
-    violet: '#a855f7',
+    bg: '#08040d',
+    container: '#11081c',
+    elevated: '#170c26',
+    sider: '#09040f',
+    border: 'rgba(255,119,0,.35)',
+    borderSecondary: 'rgba(157,78,221,.22)',
+    text: '#fbfaff',
+    textSecondary: '#d8b4fe',
+    textTertiary: '#9333ea',
+    blue: '#ff7700',
+    violet: '#9d4edd',
     onAccent: '#ffffff',
   },
   ultra: {
-    bg: '#040508',
-    container: '#07090e',
-    elevated: '#07090e',
-    sider: '#040508',
-    border: 'rgba(56,189,248,.18)',
-    borderSecondary: 'rgba(56,189,248,.1)',
-    text: '#f3f7ff',
-    textSecondary: '#94a3b8',
-    textTertiary: '#64748b',
-    blue: '#0ea5e9',
-    violet: '#a855f7',
+    bg: '#040206',
+    container: '#0b0512',
+    elevated: '#10071a',
+    sider: '#040206',
+    border: 'rgba(255,119,0,.3)',
+    borderSecondary: 'rgba(157,78,221,.18)',
+    text: '#fbfaff',
+    textSecondary: '#d8b4fe',
+    textTertiary: '#9333ea',
+    blue: '#ff7700',
+    violet: '#9d4edd',
     onAccent: '#ffffff',
   },
   light: {

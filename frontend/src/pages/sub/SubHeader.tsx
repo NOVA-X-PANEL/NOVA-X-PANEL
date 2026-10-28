@@ -60,7 +60,7 @@ export default function SubHeader({ title, sId, email, lang, onLangChange }: Sub
     <header className="sub-header">
       <div className="sub-brand">
         <span className="sub-brand-mark" aria-hidden="true">
-          {initial ?? <WifiOutlined />}
+          {initial ?? '🎃'}
         </span>
         <div className="sub-brand-text">
           <div
@@ -70,18 +70,18 @@ export default function SubHeader({ title, sId, email, lang, onLangChange }: Sub
           >
             <span>{title || t('subscription.title')}</span>
             <Tag
-              color="purple"
+              color="orange"
               style={{
                 margin: 0,
                 fontSize: '10px',
                 fontWeight: 800,
                 borderRadius: '6px',
-                background: 'rgba(113, 64, 255, 0.25)',
-                borderColor: '#7140ff',
-                color: '#c4b5fd',
+                background: 'rgba(255, 119, 0, 0.25)',
+                borderColor: '#ff7700',
+                color: '#ff9e00',
               }}
             >
-              PRO TUNNEL
+              🎃 HALLOWEEN 👻
             </Tag>
           </div>
           <div className="sub-brand-id">

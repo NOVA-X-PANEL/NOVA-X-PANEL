@@ -24,7 +24,7 @@ interface SubHeroProps {
 }
 
 const STATUS_TAGS: Record<SubStatus, { color: string; label: string }> = {
-  active: { color: 'green', label: 'subscription.active' },
+  active: { color: 'orange', label: 'subscription.active' },
   unlimited: { color: 'purple', label: 'subscription.unlimited' },
   expired: { color: 'red', label: 'subscription.expired' },
   depleted: { color: 'red', label: 'subscription.depleted' },

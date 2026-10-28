@@ -5,12 +5,12 @@
    Light reuses the same shapes on light surfaces. */
 
 :root {
-  --nc-blue: #2563ff;
-  --nc-cyan: #00bfff;
-  --nc-teal: #13d6b0;
-  --nc-violet: #7140ff;
-  --nc-pink: #f13b96;
-  --nc-amber: #ffd15c;
+  --nc-blue: #ff7700;
+  --nc-cyan: #ff9e00;
+  --nc-teal: #39ff14;
+  --nc-violet: #9d4edd;
+  --nc-pink: #ff0055;
+  --nc-amber: #ffb703;
 
   --nc-grad: linear-gradient(100deg, var(--nc-blue) 0%, var(--nc-violet) 100%);
   --nc-grad-soft: linear-gradient(
@@ -18,8 +18,8 @@
     color-mix(in srgb, var(--nc-blue) 26%, transparent),
     color-mix(in srgb, var(--nc-violet) 22%, transparent)
   );
-  --nc-glow: 0 0 22px rgba(36, 85, 255, 0.45);
-  --nc-halo: rgba(37, 99, 255, 0.55);
+  --nc-glow: 0 0 25px rgba(255, 119, 0, 0.45);
+  --nc-halo: rgba(255, 119, 0, 0.55);
   --nc-on-accent: #ffffff;
   --nc-radius: 12px;
 }
@@ -67,23 +67,25 @@
   .admins-page,
   .admin-roles-page
 ).is-dark {
-  --nc-card: rgba(15, 20, 32, 0.85);
-  --nc-card-2: rgba(22, 29, 46, 0.95);
-  --nc-border: rgba(56, 189, 248, 0.18);
+  --nc-card: rgba(17, 8, 28, 0.88);
+  --nc-card-2: rgba(26, 12, 42, 0.95);
+  --nc-border: rgba(255, 119, 0, 0.28);
   --nc-divider: rgba(255, 255, 255, 0.08);
-  --nc-field: rgba(11, 14, 23, 0.85);
-  --nc-text: #f1f5f9;
-  --nc-text-2: #94a3b8;
-  --nc-shadow: 0 12px 35px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  --bg-page: #07090e;
-  --bg-card: rgba(15, 20, 32, 0.85);
-  background-color: #07090e;
+  --nc-field: rgba(14, 6, 23, 0.88);
+  --nc-text: #fbfaff;
+  --nc-text-2: #d8b4fe;
+  --nc-shadow: 0 12px 35px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 119, 0, 0.12);
+  --bg-page: #08040d;
+  --bg-card: rgba(17, 8, 28, 0.88);
+  background-color: #08040d;
   background-image:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(120, 50, 220, 0.16), transparent),
-    radial-gradient(circle at 10% 20%, rgba(34, 211, 238, 0.05), transparent 40%),
-    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(255, 119, 0, 0.22), transparent),
+    radial-gradient(circle at 10% 85%, rgba(157, 78, 221, 0.18), transparent 45%),
+    radial-gradient(circle at 90% 20%, rgba(57, 255, 20, 0.08), transparent 40%),
+    linear-gradient(rgba(255, 119, 0, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 119, 0, 0.02) 1px, transparent 1px);
   background-size:
+    100% 100%,
     100% 100%,
     100% 100%,
     40px 40px,
@@ -105,10 +107,10 @@
     .admins-page,
     .admin-roles-page
   ).is-dark.is-ultra {
-  --nc-card: #04102a;
-  --nc-card-2: #071c3d;
-  --nc-border: rgba(51, 112, 215, 0.28);
-  --bg-page: #02081a;
+  --nc-card: #0d0617;
+  --nc-card-2: #140924;
+  --nc-border: rgba(255, 119, 0, 0.35);
+  --bg-page: #040206;
 }
 
 /* — cards — */
@@ -352,9 +354,9 @@
   )
   .ant-btn-primary:not(:disabled) {
   border: none !important;
-  background: linear-gradient(135deg, #0ea5e9, #8b5cf6) !important;
+  background: linear-gradient(135deg, #ff7700, #9d4edd) !important;
   color: #fff !important;
-  box-shadow: 0 0 18px rgba(14, 165, 233, 0.4) !important;
+  box-shadow: 0 0 18px rgba(255, 119, 0, 0.5) !important;
   font-family: 'Rajdhani', sans-serif !important;
   font-weight: 700 !important;
   letter-spacing: 0.5px !important;
@@ -375,10 +377,10 @@
     .admin-roles-page
   )
   .ant-btn-primary:not(:disabled):hover {
-  background: linear-gradient(135deg, #0ea5e9, #8b5cf6) !important;
+  background: linear-gradient(135deg, #ff9500, #b5179e) !important;
   color: #fff !important;
   filter: brightness(1.1) !important;
-  box-shadow: 0 0 28px rgba(168, 85, 247, 0.6) !important;
+  box-shadow: 0 0 28px rgba(255, 119, 0, 0.75), 0 0 40px rgba(157, 78, 221, 0.5) !important;
   transform: translateY(-1px);
 }
 
@@ -397,8 +399,9 @@
     .admin-roles-page
   )
   .ant-switch.ant-switch-checked {
-  background: linear-gradient(90deg, #10b981, #059669) !important;
-  box-shadow: 0 0 12px rgba(16, 185, 129, 0.4) !important;
+  background: linear-gradient(90deg, #ff7700, #ff5400) !important;
+  border-color: #ff7700 !important;
+  box-shadow: 0 0 14px rgba(255, 119, 0, 0.6) !important;
 }
 
 :is(
@@ -859,7 +862,7 @@ body.dark .ant-modal .ant-modal-content::before {
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, transparent, #22d3ee, #c084fc, transparent);
+  background: linear-gradient(90deg, transparent, #ff7700, #9d4edd, transparent);
   z-index: 2;
 }
 
@@ -910,13 +913,13 @@ body.dark .ant-select-item {
 }
 
 body.dark .ant-select-item-option-active:not(.ant-select-item-option-disabled) {
-  background: rgba(34, 211, 238, 0.12) !important;
-  color: #22d3ee !important;
+  background: rgba(255, 119, 0, 0.15) !important;
+  color: #ff9e00 !important;
 }
 
 body.dark .ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
-  background: rgba(34, 211, 238, 0.2) !important;
-  color: #22d3ee !important;
+  background: rgba(255, 119, 0, 0.25) !important;
+  color: #ff7700 !important;
   font-weight: 700 !important;
 }
 
@@ -1199,7 +1202,7 @@ body:not(.dark) .nc-hero .nc-landscape {
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, transparent, #22d3ee, #c084fc, transparent);
+  background: linear-gradient(90deg, transparent, #ff7700, #9d4edd, transparent);
   z-index: 2;
 }
 
@@ -2072,14 +2075,14 @@ body.dark .sider-utility .ant-menu-item-selected,
 body.dark .drawer-menu .ant-menu-item-selected {
   background: linear-gradient(
     90deg,
-    rgba(34, 211, 238, 0.18) 0%,
-    rgba(168, 85, 247, 0.22) 100%
+    rgba(255, 119, 0, 0.22) 0%,
+    rgba(157, 78, 221, 0.28) 100%
   ) !important;
-  border-left: 3px solid #22d3ee !important;
-  border-inline-start: 3px solid #22d3ee !important;
+  border-left: 3px solid #ff7700 !important;
+  border-inline-start: 3px solid #ff7700 !important;
   box-shadow:
-    inset 0 0 16px rgba(34, 211, 238, 0.15),
-    0 0 14px rgba(34, 211, 238, 0.22) !important;
+    inset 0 0 16px rgba(255, 119, 0, 0.2),
+    0 0 16px rgba(255, 119, 0, 0.35) !important;
   color: #ffffff !important;
   font-weight: 700 !important;
 }
@@ -2087,8 +2090,8 @@ body.dark .drawer-menu .ant-menu-item-selected {
 body.dark .sider-nav .ant-menu-item-selected .anticon,
 body.dark .sider-utility .ant-menu-item-selected .anticon,
 body.dark .drawer-menu .ant-menu-item-selected .anticon {
-  color: #22d3ee !important;
-  filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.85)) !important;
+  color: #ff7700 !important;
+  filter: drop-shadow(0 0 10px rgba(255, 119, 0, 0.95)) !important;
 }
 
 body.dark .sider-brand {
@@ -2527,16 +2530,16 @@ body.dark .ant-modal .ant-switch {
 }
 
 body.dark .ant-modal .ant-switch.ant-switch-checked {
-  background: linear-gradient(135deg, #0ea5e9, #8b5cf6) !important;
-  border-color: #38bdf8 !important;
-  box-shadow: 0 0 12px rgba(14, 165, 233, 0.5) !important;
+  background: linear-gradient(135deg, #ff7700, #9d4edd) !important;
+  border-color: #ff7700 !important;
+  box-shadow: 0 0 14px rgba(255, 119, 0, 0.6) !important;
 }
 
 /* 8. Quick Action Inline Buttons (e.g. Select all, Clear all) */
 body.dark .ant-modal .ant-btn-sm:not(.ant-btn-primary):not(.ant-btn-dangerous) {
-  background: rgba(34, 211, 238, 0.08) !important;
-  border: 1px solid rgba(56, 189, 248, 0.28) !important;
-  color: #22d3ee !important;
+  background: rgba(255, 119, 0, 0.1) !important;
+  border: 1px solid rgba(255, 119, 0, 0.35) !important;
+  color: #ff9e00 !important;
   border-radius: 6px !important;
   font-family: 'JetBrains Mono', monospace !important;
   font-size: 11px !important;
@@ -2546,9 +2549,9 @@ body.dark .ant-modal .ant-btn-sm:not(.ant-btn-primary):not(.ant-btn-dangerous) {
 body.dark
   .ant-modal
   .ant-btn-sm:not(.ant-btn-primary):not(.ant-btn-dangerous):hover:not(:disabled) {
-  background: rgba(34, 211, 238, 0.2) !important;
-  border-color: #22d3ee !important;
-  box-shadow: 0 0 10px rgba(34, 211, 238, 0.35) !important;
+  background: rgba(255, 119, 0, 0.2) !important;
+  border-color: #ff7700 !important;
+  box-shadow: 0 0 10px rgba(255, 119, 0, 0.45) !important;
   color: #ffffff !important;
 }
 
@@ -2897,11 +2900,11 @@ body.dark .clients-page .ant-switch.nx-client-switch.ant-switch-checked,
 body.dark .ant-switch.nx-client-switch.ant-switch-checked,
 .dark .clients-page .ant-switch.nx-client-switch.ant-switch-checked,
 .dark .ant-switch.nx-client-switch.ant-switch-checked {
-  background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%) !important;
-  border-color: #10b981 !important;
+  background: linear-gradient(135deg, #ff7700 0%, #ff5400 50%, #9d4edd 100%) !important;
+  border-color: #ff7700 !important;
   box-shadow:
-    0 0 12px rgba(16, 185, 129, 0.55),
-    0 0 4px rgba(6, 182, 212, 0.4) !important;
+    0 0 14px rgba(255, 119, 0, 0.65),
+    0 0 6px rgba(157, 78, 221, 0.5) !important;
 }
 
 body.light .clients-page .ant-switch.nx-client-switch,

@@ -34,20 +34,20 @@
   /* ---- design tokens ---------------------------------------------------- */
   /* The panel's own neon tokens, so the sign-in screen and the panel are one
      product. Kept as --nx-* names because the rest of this file reads them. */
-  --nx-bg: #07090e;
-  --nx-bg-2: #0b0e17;
-  --nx-panel: rgba(15, 20, 32, 0.85);
-  --nx-line: rgba(56, 189, 248, 0.18);
-  --nx-line-strong: rgba(168, 85, 247, 0.4);
-  --nx-text: #f1f5f9;
-  --nx-muted: #94a3b8;
-  --nx-faint: #64748b;
-  --nx-blue: #0ea5e9;
-  --nx-blue-2: #0284c7;
-  --nx-violet: #8b5cf6;
-  --nx-cyan: #22d3ee;
-  --nx-teal: #10b981;
-  --nx-success: #10b981;
+  --nx-bg: #08040d;
+  --nx-bg-2: #10061c;
+  --nx-panel: rgba(18, 8, 30, 0.88);
+  --nx-line: rgba(255, 119, 0, 0.28);
+  --nx-line-strong: rgba(157, 78, 221, 0.5);
+  --nx-text: #fbfaff;
+  --nx-muted: #d8b4fe;
+  --nx-faint: #9333ea;
+  --nx-blue: #ff7700;
+  --nx-blue-2: #ff5400;
+  --nx-violet: #9d4edd;
+  --nx-cyan: #ff9e00;
+  --nx-teal: #39ff14;
+  --nx-success: #39ff14;
   --nx-radius: 14px;
   /* Latin first, Persian next. Inter carries the Latin glyphs, and Vazirmatn
      picks up the Persian ones through fallback — so an English panel does not
@@ -58,12 +58,12 @@
   display: grid;
   grid-template-columns: 1.05fr 0.95fr;
   min-height: 100vh;
-  background-color: #07090e;
+  background-color: #08040d;
   background-image:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(120, 50, 220, 0.18), transparent),
-    radial-gradient(circle at 10% 20%, rgba(34, 211, 238, 0.08), transparent 40%),
-    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(255, 119, 0, 0.25), transparent),
+    radial-gradient(circle at 10% 20%, rgba(157, 78, 221, 0.15), transparent 40%),
+    linear-gradient(rgba(255, 119, 0, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 119, 0, 0.02) 1px, transparent 1px);
   background-size:
     100% 100%,
     100% 100%,
@@ -74,17 +74,16 @@
   overflow: hidden;
 }
 
-/* Ambience: the panel's own blue/violet/teal washes, so the sign-in canvas is
-   literally the same background the panel uses. */
+/* Ambience: Halloween pumpkin/violet washes */
 .nova-login::before {
   content: '';
   position: absolute;
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(900px 520px at 12% 18%, rgba(14, 165, 233, 0.15), transparent 70%),
-    radial-gradient(780px 520px at 88% 14%, rgba(139, 92, 246, 0.18), transparent 72%),
-    radial-gradient(760px 540px at 62% 92%, rgba(16, 185, 129, 0.08), transparent 72%);
+    radial-gradient(900px 520px at 12% 18%, rgba(255, 119, 0, 0.2), transparent 70%),
+    radial-gradient(780px 520px at 88% 14%, rgba(157, 78, 221, 0.22), transparent 72%),
+    radial-gradient(760px 540px at 62% 92%, rgba(57, 255, 20, 0.08), transparent 72%);
 }
 
 .nova-login *,
@@ -402,7 +401,7 @@
   inset: 0 0 auto 0;
   height: 2px;
   border-radius: var(--nx-radius) var(--nx-radius) 0 0;
-  background: linear-gradient(90deg, transparent, #22d3ee, #c084fc, transparent);
+  background: linear-gradient(90deg, transparent, #ff7700, #9d4edd, transparent);
 }
 
 .nx-card__head {
@@ -556,21 +555,21 @@
   margin-top: 6px;
   border: 0;
   border-radius: 10px;
-  background: linear-gradient(135deg, #0ea5e9, #8b5cf6) !important;
+  background: linear-gradient(135deg, #ff7700, #9d4edd) !important;
   color: #ffffff;
   font-family: inherit;
   font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.05em;
   cursor: pointer;
-  box-shadow: 0 0 20px rgba(14, 165, 233, 0.45);
+  box-shadow: 0 0 20px rgba(255, 119, 0, 0.45);
   transition: all 0.25s ease;
 }
 
 .nx-submit:hover:not(:disabled) {
   transform: translateY(-1px);
   filter: brightness(1.1);
-  box-shadow: 0 0 30px rgba(168, 85, 247, 0.65);
+  box-shadow: 0 0 30px rgba(255, 119, 0, 0.7), 0 0 45px rgba(157, 78, 221, 0.5);
 }
 
 .nx-submit:disabled {

@@ -23,9 +23,14 @@ const GITHUB_API_URL = 'https://api.github.com/repos/NOVA-X-PANEL/NOVA-X-PANEL/r
 const CACHE_KEY = 'pg_release'
 const CACHE_DURATION = 10 * 60 * 1000
 
+function parseVersionNumber(str: string): number {
+  const digits = str.replace(/[^0-9]/g, '');
+  return digits ? parseInt(digits, 10) : 0;
+}
+
 function compareVersions(current: string, latest: string): number {
-  const currentParts = current.replace(/^v/, '').split('.').map(Number)
-  const latestParts = latest.replace(/^v/, '').split('.').map(Number)
+  const currentParts = current.replace(/^v/, '').split('.').map(parseVersionNumber)
+  const latestParts = latest.replace(/^v/, '').split('.').map(parseVersionNumber)
 
   for (let i = 0; i < Math.max(currentParts.length, latestParts.length); i++) {
     const curr = currentParts[i] || 0

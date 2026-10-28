@@ -72,6 +72,7 @@ type IconName =
   | 'tool'
   | 'cluster'
   | 'hashem'
+  | 'openvpn'
   | 'telegramShop'
   | 'admins'
   | 'roles'
@@ -91,6 +92,7 @@ const iconByName: Record<IconName, ComponentType> = {
   tool: ToolOutlined,
   cluster: ClusterOutlined,
   hashem: ThunderboltOutlined,
+  openvpn: SafetyOutlined,
   telegramShop: ShoppingCartOutlined,
   admins: UserSwitchOutlined,
   roles: SafetyCertificateOutlined,
@@ -246,6 +248,7 @@ export default function AppSidebar() {
       { key: '/groups', icon: 'groups', title: t('menu.groups') },
       { key: '/nodes', icon: 'cluster', title: t('menu.nodes') },
       { key: '/hashem', icon: 'hashem', title: t('menu.hashem') },
+      { key: '/openvpn', icon: 'openvpn', title: t('menu.openvpn') },
       { key: '/telegram-shop', icon: 'telegramShop', title: t('menu.telegramShop') },
       { key: '/admins', icon: 'admins', title: t('menu.admins') },
       { key: '/admin-roles', icon: 'roles', title: t('menu.adminRoles') },

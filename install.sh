@@ -167,24 +167,24 @@ install_base() {
                 mkdir -p /etc/needrestart/conf.d
                 echo '$nrconf{restart} = "a";' > /etc/needrestart/conf.d/99-noninteractive.conf
             fi
-            apt-get update -qq && apt-get install -y -qq -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" cron curl tar tzdata socat ca-certificates openssl python3 python3-pip python3-requests python3-qrcode fail2ban nftables iptables python3-systemd
+            apt-get update -qq && apt-get install -y -qq -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" cron curl tar tzdata socat ca-certificates openssl python3 python3-pip python3-requests python3-qrcode fail2ban nftables iptables python3-systemd openvpn easy-rsa
             ;;
         fedora | amzn | virtuozzo | rhel | almalinux | rocky | ol)
             if [[ "${release}" != "fedora" ]] && ! dnf repolist enabled 2> /dev/null | grep -qiw epel; then
                 dnf install -y epel-release 2>/dev/null || true
             fi
-            dnf makecache -y && dnf install -y -q cronie curl tar tzdata socat ca-certificates openssl python3 python3-pip python3-requests python3-qrcode fail2ban nftables iptables
+            dnf makecache -y && dnf install -y -q cronie curl tar tzdata socat ca-certificates openssl python3 python3-pip python3-requests python3-qrcode fail2ban nftables iptables openvpn easy-rsa
             ;;
         centos)
             if [[ "${VERSION_ID}" =~ ^7 ]]; then
-                yum makecache -y && yum install -y epel-release cronie curl tar tzdata socat ca-certificates openssl python3 fail2ban iptables
+                yum makecache -y && yum install -y epel-release cronie curl tar tzdata socat ca-certificates openssl python3 fail2ban iptables openvpn easy-rsa
             else
                 dnf install -y epel-release 2>/dev/null || true
-                dnf makecache -y && dnf install -y -q cronie curl tar tzdata socat ca-certificates openssl python3 python3-pip python3-requests python3-qrcode fail2ban nftables iptables
+                dnf makecache -y && dnf install -y -q cronie curl tar tzdata socat ca-certificates openssl python3 python3-pip python3-requests python3-qrcode fail2ban nftables iptables openvpn easy-rsa
             fi
             ;;
         arch | manjaro | parch)
-            pacman -Sy --noconfirm cronie curl tar tzdata socat ca-certificates openssl python python-requests python-qrcode fail2ban nftables iptables
+            pacman -Sy --noconfirm cronie curl tar tzdata socat ca-certificates openssl python python-requests python-qrcode fail2ban nftables iptables openvpn easy-rsa
             ;;
         opensuse-tumbleweed | opensuse-leap)
             zypper refresh && zypper -q install -y cron curl tar timezone socat ca-certificates openssl python3 python3-requests fail2ban iptables
@@ -1519,6 +1519,87 @@ setup_fail2ban() {
     return 0
 }
 
+# setup_openvpn auto-initializes OpenVPN and Easy-RSA PKI for the OpenVPN module. Non-fatal.
+setup_openvpn() {
+    echo -e "${green}Ensuring OpenVPN and PKI certificates environment...${plain}"
+    mkdir -p /etc/openvpn/server /etc/openvpn/easy-rsa/pki/issued /etc/openvpn/easy-rsa/pki/private /run/openvpn /run/openvpn-server /var/log/openvpn
+    
+    if [ ! -c /dev/net/tun ]; then
+        mkdir -p /dev/net
+        mknod /dev/net/tun c 10 200 2>/dev/null || true
+        chmod 666 /dev/net/tun 2>/dev/null || true
+    fi
+
+    if [[ -d "/usr/share/easy-rsa" ]]; then
+        cp -rf /usr/share/easy-rsa/* /etc/openvpn/easy-rsa/ 2>/dev/null || true
+    elif [[ -d "/usr/local/share/easy-rsa" ]]; then
+        cp -rf /usr/local/share/easy-rsa/* /etc/openvpn/easy-rsa/ 2>/dev/null || true
+    fi
+
+    # Generate CA + Server Cert using OpenSSL (instant, bulletproof, zero prompts)
+    if [[ ! -f "/etc/openvpn/server/ca.crt" ]] || [[ ! -f "/etc/openvpn/server/server.crt" ]] || [[ ! -f "/etc/openvpn/server/server.key" ]]; then
+        openssl req -new -x509 -days 3650 -nodes -newkey rsa:2048 \
+            -keyout /etc/openvpn/server/ca.key -out /etc/openvpn/server/ca.crt \
+            -subj "/CN=OpenVPN-CA" >/dev/null 2>&1 || true
+        openssl req -new -nodes -newkey rsa:2048 \
+            -keyout /etc/openvpn/server/server.key -out /tmp/ovpn_server.csr \
+            -subj "/CN=server" >/dev/null 2>&1 || true
+        openssl x509 -req -in /tmp/ovpn_server.csr -CA /etc/openvpn/server/ca.crt -CAkey /etc/openvpn/server/ca.key \
+            -CAcreateserial -out /etc/openvpn/server/server.crt -days 3650 >/dev/null 2>&1 || true
+        rm -f /tmp/ovpn_server.csr
+    fi
+
+    # Sync certs into Easy-RSA PKI directory
+    cp -f /etc/openvpn/server/ca.crt /etc/openvpn/easy-rsa/pki/ca.crt 2>/dev/null || true
+    cp -f /etc/openvpn/server/ca.key /etc/openvpn/easy-rsa/pki/private/ca.key 2>/dev/null || true
+    cp -f /etc/openvpn/server/server.crt /etc/openvpn/easy-rsa/pki/issued/server.crt 2>/dev/null || true
+    cp -f /etc/openvpn/server/server.key /etc/openvpn/easy-rsa/pki/private/server.key 2>/dev/null || true
+
+    # Write clean server.conf if not present or broken
+    if [[ ! -f "/etc/openvpn/server/server.conf" ]] || grep -q "dh /etc/openvpn/server/dh.pem" "/etc/openvpn/server/server.conf" 2>/dev/null; then
+        cat << 'EOF_CONF' > /etc/openvpn/server/server.conf
+port 2083
+proto tcp
+dev tun
+topology subnet
+
+ca /etc/openvpn/server/ca.crt
+cert /etc/openvpn/server/server.crt
+key /etc/openvpn/server/server.key
+dh none
+
+server 10.8.0.0 255.255.255.0
+ifconfig-pool-persist /etc/openvpn/server/ipp.txt
+
+push "redirect-gateway def1 bypass-dhcp"
+push "dhcp-option DNS 1.1.1.1"
+push "dhcp-option DNS 8.8.8.8"
+
+keepalive 10 60
+data-ciphers AES-256-GCM:AES-128-GCM:AES-256-CBC:AES-128-CBC
+cipher AES-256-GCM
+auth SHA256
+
+persist-key
+persist-tun
+status /var/log/openvpn/openvpn-status.log 10
+status-version 2
+log-append /var/log/openvpn/openvpn.log
+verb 3
+management 127.0.0.1 7505
+duplicate-cn
+EOF_CONF
+        cp -f /etc/openvpn/server/server.conf /etc/openvpn/server.conf 2>/dev/null || true
+        sysctl -w net.ipv4.ip_forward=1 >/dev/null 2>&1 || true
+        sed -i '/net.ipv4.ip_forward/d' /etc/sysctl.conf 2>/dev/null || true
+        echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf 2>/dev/null || true
+        systemctl daemon-reload >/dev/null 2>&1 || true
+        systemctl enable openvpn-server@server >/dev/null 2>&1 || systemctl enable openvpn@server >/dev/null 2>&1 || true
+        systemctl restart openvpn-server@server >/dev/null 2>&1 || systemctl restart openvpn@server >/dev/null 2>&1 || true
+    fi
+    return 0
+}
+
 # Major version of the local systemd, 0 when it cannot be determined. The
 # SystemCallFilter=@system-service group only exists from systemd 239 on (other
 # @-named groups exist since 231); on older versions an unknown group is not
@@ -1639,6 +1720,7 @@ _xui_service_write_paths_dropin() {
         escaped_path="${path//%/%%}"
         line="${line} -${escaped_path}"
     done
+    line="${line} -/etc/openvpn -/run/openvpn"
     if [[ -n "$whitespace_paths" ]]; then
         echo "Warning: these folders contain whitespace and were left out of" >&2
         echo "         10-xui-sandbox.conf: $whitespace_paths" >&2
@@ -2105,6 +2187,7 @@ install_x-ui() {
     # IP Limit relies on fail2ban; install + configure it now so the feature
     # works out of the box (no-op when XUI_ENABLE_FAIL2BAN=false). Never fatal.
     setup_fail2ban
+    setup_openvpn
 
     echo -e "${green}x-ui ${tag_version}${plain} installation finished, it is running now..."
     echo -e ""

@@ -2412,6 +2412,97 @@ install_iplimit() {
     before_show_menu
 }
 
+setup_openvpn_cli() {
+    echo -e "${green}Installing OpenVPN and setting up PKI environment...${plain}"
+    if command -v apt-get >/dev/null 2>&1; then
+        apt-get update -y || true
+        apt-get install -y openvpn easy-rsa openssl iptables
+    elif command -v dnf >/dev/null 2>&1; then
+        dnf install -y epel-release || true
+        dnf install -y openvpn easy-rsa openssl iptables
+    elif command -v yum >/dev/null 2>&1; then
+        yum install -y epel-release || true
+        yum install -y openvpn easy-rsa openssl iptables
+    elif command -v pacman >/dev/null 2>&1; then
+        pacman -Sy --noconfirm openvpn easy-rsa openssl iptables
+    fi
+
+    mkdir -p /etc/openvpn/server /etc/openvpn/easy-rsa/pki/issued /etc/openvpn/easy-rsa/pki/private /run/openvpn /run/openvpn-server /var/log/openvpn
+    if [ ! -c /dev/net/tun ]; then
+        mkdir -p /dev/net
+        mknod /dev/net/tun c 10 200 2>/dev/null || true
+        chmod 666 /dev/net/tun 2>/dev/null || true
+    fi
+
+    if [[ -d "/usr/share/easy-rsa" ]]; then
+        cp -rf /usr/share/easy-rsa/* /etc/openvpn/easy-rsa/ 2>/dev/null || true
+    elif [[ -d "/usr/local/share/easy-rsa" ]]; then
+        cp -rf /usr/local/share/easy-rsa/* /etc/openvpn/easy-rsa/ 2>/dev/null || true
+    fi
+
+    # Generate CA + Server Cert using OpenSSL (instant, bulletproof, zero prompts)
+    if [[ ! -f "/etc/openvpn/server/ca.crt" ]] || [[ ! -f "/etc/openvpn/server/server.crt" ]] || [[ ! -f "/etc/openvpn/server/server.key" ]]; then
+        openssl req -new -x509 -days 3650 -nodes -newkey rsa:2048 \
+            -keyout /etc/openvpn/server/ca.key -out /etc/openvpn/server/ca.crt \
+            -subj "/CN=OpenVPN-CA" >/dev/null 2>&1 || true
+        openssl req -new -nodes -newkey rsa:2048 \
+            -keyout /etc/openvpn/server/server.key -out /tmp/ovpn_server.csr \
+            -subj "/CN=server" >/dev/null 2>&1 || true
+        openssl x509 -req -in /tmp/ovpn_server.csr -CA /etc/openvpn/server/ca.crt -CAkey /etc/openvpn/server/ca.key \
+            -CAcreateserial -out /etc/openvpn/server/server.crt -days 3650 >/dev/null 2>&1 || true
+        rm -f /tmp/ovpn_server.csr
+    fi
+
+    # Sync certs into Easy-RSA PKI directory
+    cp -f /etc/openvpn/server/ca.crt /etc/openvpn/easy-rsa/pki/ca.crt 2>/dev/null || true
+    cp -f /etc/openvpn/server/ca.key /etc/openvpn/easy-rsa/pki/private/ca.key 2>/dev/null || true
+    cp -f /etc/openvpn/server/server.crt /etc/openvpn/easy-rsa/pki/issued/server.crt 2>/dev/null || true
+    cp -f /etc/openvpn/server/server.key /etc/openvpn/easy-rsa/pki/private/server.key 2>/dev/null || true
+
+    cat << 'EOF_CONF' > /etc/openvpn/server/server.conf
+port 2083
+proto tcp
+dev tun
+topology subnet
+
+ca /etc/openvpn/server/ca.crt
+cert /etc/openvpn/server/server.crt
+key /etc/openvpn/server/server.key
+dh none
+
+server 10.8.0.0 255.255.255.0
+ifconfig-pool-persist /etc/openvpn/server/ipp.txt
+
+push "redirect-gateway def1 bypass-dhcp"
+push "dhcp-option DNS 1.1.1.1"
+push "dhcp-option DNS 8.8.8.8"
+
+keepalive 10 60
+data-ciphers AES-256-GCM:AES-128-GCM:AES-256-CBC:AES-128-CBC
+cipher AES-256-GCM
+auth SHA256
+
+persist-key
+persist-tun
+status /var/log/openvpn/openvpn-status.log 10
+status-version 2
+log-append /var/log/openvpn/openvpn.log
+verb 3
+management 127.0.0.1 7505
+duplicate-cn
+EOF_CONF
+    cp -f /etc/openvpn/server/server.conf /etc/openvpn/server.conf 2>/dev/null || true
+
+    sysctl -w net.ipv4.ip_forward=1 >/dev/null 2>&1 || true
+    sed -i '/net.ipv4.ip_forward/d' /etc/sysctl.conf 2>/dev/null || true
+    echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf 2>/dev/null || true
+
+    systemctl daemon-reload >/dev/null 2>&1 || true
+    systemctl enable openvpn-server@server >/dev/null 2>&1 || systemctl enable openvpn@server >/dev/null 2>&1 || true
+    systemctl restart openvpn-server@server >/dev/null 2>&1 || systemctl restart openvpn@server >/dev/null 2>&1 || true
+    echo -e "${green}OpenVPN and PKI certificates successfully initialized!${plain}\n"
+}
+
 remove_iplimit() {
     echo -e "${green}\t1.${plain} Only remove IP Limit configurations"
     echo -e "${green}\t2.${plain} Uninstall Fail2ban and IP Limit"
@@ -3676,6 +3767,9 @@ if [[ $# > 0 ]]; then
             ;;
         "setup-fail2ban")
             setup_fail2ban_iplimit
+            ;;
+        "setup-openvpn")
+            setup_openvpn_cli
             ;;
         "update")
             check_install 0 && update 0

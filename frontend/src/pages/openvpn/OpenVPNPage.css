@@ -24,9 +24,9 @@
   gap: 16px;
   padding: 18px 22px;
   margin-bottom: 20px;
-  border: 1px solid rgba(56, 189, 248, 0.25);
+  border: 1px solid rgba(255, 119, 0, 0.25);
   border-radius: 16px;
-  background: rgba(13, 21, 37, 0.8);
+  background: rgba(18, 8, 30, 0.8);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(16px) saturate(160%);
   -webkit-backdrop-filter: blur(16px) saturate(160%);
@@ -41,7 +41,7 @@
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(0, 242, 254, 0.7), transparent);
+  background: linear-gradient(90deg, transparent, rgba(157, 78, 221, 0.7), transparent);
 }
 
 .openvpn-hero-left {
@@ -60,7 +60,7 @@
 }
 
 .openvpn-hero-title-text {
-  background: linear-gradient(135deg, #00f2fe 0%, #38bdf8 100%);
+  background: linear-gradient(135deg, #ff7700 0%, #ff9e00 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -75,9 +75,9 @@
 .openvpn-card {
   position: relative;
   overflow: hidden;
-  border: 1px solid rgba(56, 189, 248, 0.22) !important;
+  border: 1px solid rgba(255, 119, 0, 0.22) !important;
   border-radius: 16px !important;
-  background: rgba(13, 21, 37, 0.78) !important;
+  background: rgba(18, 8, 30, 0.78) !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
   backdrop-filter: blur(16px) saturate(160%);
   -webkit-backdrop-filter: blur(16px) saturate(160%);
@@ -91,12 +91,12 @@
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.4), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255, 119, 0, 0.4), transparent);
 }
 
 .openvpn-card:hover {
-  border-color: rgba(0, 242, 254, 0.4) !important;
-  box-shadow: 0 12px 36px rgba(0, 242, 254, 0.12) !important;
+  border-color: rgba(157, 78, 221, 0.4) !important;
+  box-shadow: 0 12px 36px rgba(157, 78, 221, 0.12) !important;
 }
 
 .openvpn-card .ant-card-head {
@@ -105,7 +105,7 @@
 }
 
 .openvpn-card .ant-card-head-title {
-  color: #00f2fe;
+  color: #ff7700;
   font-weight: 600;
   letter-spacing: 0.02em;
 }
@@ -138,14 +138,14 @@
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: rgba(10, 16, 30, 0.7);
-  border: 1px solid rgba(56, 189, 248, 0.18);
+  background: rgba(14, 6, 23, 0.7);
+  border: 1px solid rgba(255, 119, 0, 0.18);
   border-radius: 10px;
 }
 
 .openvpn-preset-chip {
   background: rgba(30, 41, 59, 0.7) !important;
-  border: 1px solid rgba(56, 189, 248, 0.25) !important;
+  border: 1px solid rgba(255, 119, 0, 0.25) !important;
   color: #cbd5e1 !important;
   border-radius: 8px !important;
   font-size: 12px !important;
@@ -153,10 +153,10 @@
 }
 
 .openvpn-preset-chip:hover {
-  background: rgba(0, 242, 254, 0.15) !important;
-  border-color: #00f2fe !important;
-  color: #00f2fe !important;
-  box-shadow: 0 0 10px rgba(0, 242, 254, 0.25) !important;
+  background: rgba(157, 78, 221, 0.15) !important;
+  border-color: #ff7700 !important;
+  color: #ff7700 !important;
+  box-shadow: 0 0 10px rgba(157, 78, 221, 0.25) !important;
 }
 
 /* Buttons */
@@ -174,30 +174,30 @@
 }
 
 .openvpn-btn-download {
-  background: linear-gradient(135deg, #00f2fe 0%, #0284c7 100%) !important;
+  background: linear-gradient(135deg, #ff7700 0%, #0284c7 100%) !important;
   border: none !important;
-  box-shadow: 0 0 12px rgba(0, 242, 254, 0.35);
+  box-shadow: 0 0 12px rgba(157, 78, 221, 0.35);
   color: #000000 !important;
   font-weight: 600 !important;
 }
 
 .openvpn-btn-download:hover {
-  box-shadow: 0 0 20px rgba(0, 242, 254, 0.65) !important;
+  box-shadow: 0 0 20px rgba(157, 78, 221, 0.65) !important;
   transform: translateY(-1px);
 }
 
 .openvpn-btn-action-download {
-  background: rgba(0, 242, 254, 0.1) !important;
-  border: 1px solid rgba(0, 242, 254, 0.35) !important;
-  color: #00f2fe !important;
+  background: rgba(157, 78, 221, 0.1) !important;
+  border: 1px solid rgba(157, 78, 221, 0.35) !important;
+  color: #ff7700 !important;
   font-weight: 500 !important;
   transition: all 0.2s ease;
 }
 
 .openvpn-btn-action-download:hover {
-  background: rgba(0, 242, 254, 0.25) !important;
-  border-color: #00f2fe !important;
-  box-shadow: 0 0 12px rgba(0, 242, 254, 0.4) !important;
+  background: rgba(157, 78, 221, 0.25) !important;
+  border-color: #ff7700 !important;
+  box-shadow: 0 0 12px rgba(157, 78, 221, 0.4) !important;
   transform: translateY(-1px);
 }
 
@@ -256,21 +256,21 @@
   font-size: 11px;
   padding: 2px 7px;
   border-radius: 6px;
-  background: rgba(0, 242, 254, 0.1);
-  color: #00f2fe;
-  border: 1px solid rgba(0, 242, 254, 0.3);
+  background: rgba(157, 78, 221, 0.1);
+  color: #ff7700;
+  border: 1px solid rgba(157, 78, 221, 0.3);
   margin-right: 6px;
 }
 
 /* Config Code Snippet */
 .openvpn-code-snippet {
   background: rgba(8, 12, 22, 0.95);
-  border: 1px solid rgba(0, 242, 254, 0.3);
+  border: 1px solid rgba(157, 78, 221, 0.3);
   border-radius: 8px;
   padding: 12px 14px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 12px;
-  color: #00f2fe;
+  color: #ff7700;
   max-height: 280px;
   overflow-y: auto;
   box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.6);
@@ -280,7 +280,7 @@
 /* Credentials Box */
 .openvpn-creds-card {
   background: rgba(14, 23, 42, 0.85) !important;
-  border: 1px solid rgba(56, 189, 248, 0.35) !important;
+  border: 1px solid rgba(255, 119, 0, 0.35) !important;
   border-radius: 10px !important;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
 }
@@ -301,7 +301,7 @@
   }
   .openvpn-mobile-client-card {
     background: rgba(15, 23, 42, 0.88);
-    border: 1px solid rgba(56, 189, 248, 0.3);
+    border: 1px solid rgba(255, 119, 0, 0.3);
     border-radius: 14px;
     padding: 14px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
@@ -322,7 +322,7 @@
   .openvpn-mobile-username {
     font-size: 16px;
     font-weight: 700;
-    color: #00f2fe;
+    color: #ff7700;
     display: block;
   }
   .openvpn-mobile-client-stats {
@@ -348,13 +348,13 @@
     font-weight: 600;
   }
   .openvpn-mobile-btn-download {
-    background: linear-gradient(135deg, #00f2fe 0%, #38bdf8 100%) !important;
+    background: linear-gradient(135deg, #ff7700 0%, #ff9e00 100%) !important;
     border: none !important;
     color: #000 !important;
     font-weight: 700 !important;
     height: 44px !important;
     font-size: 14px !important;
-    box-shadow: 0 0 16px rgba(0, 242, 254, 0.4) !important;
+    box-shadow: 0 0 16px rgba(157, 78, 221, 0.4) !important;
     border-radius: 10px !important;
   }
   .openvpn-mobile-actions-secondary {

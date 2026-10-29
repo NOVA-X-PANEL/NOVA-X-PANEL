@@ -33,10 +33,10 @@ var validClientNameRegexp = regexp.MustCompile(`^[a-zA-Z0-9_-]{1,32}$`)
 
 // OpenVPNLiveSession represents an active session parsed from OpenVPN management socket.
 type OpenVPNLiveSession struct {
-	CommonName    string
-	RealAddress   string
-	BytesReceived int64
-	BytesSent     int64
+	CommonName     string
+	RealAddress    string
+	BytesReceived  int64
+	BytesSent      int64
 	ConnectedSince string
 }
 
@@ -224,7 +224,7 @@ func (s *OpenVPNService) QueryManagementSessions() ([]OpenVPNLiveSession, error)
 						cn = uCol
 					}
 				}
-				if (cn == "UNDEF" || cn == "") {
+				if cn == "UNDEF" || cn == "" {
 					if db := database.GetDB(); db != nil {
 						portPart := ""
 						if idx := strings.LastIndex(realAddr, ":"); idx != -1 {
@@ -246,10 +246,10 @@ func (s *OpenVPNService) QueryManagementSessions() ([]OpenVPNLiveSession, error)
 				tx, _ := strconv.ParseInt(parts[6], 10, 64)
 				since := parts[7]
 				sessions = append(sessions, OpenVPNLiveSession{
-					CommonName:    cn,
-					RealAddress:   realAddr,
-					BytesReceived: rx,
-					BytesSent:     tx,
+					CommonName:     cn,
+					RealAddress:    realAddr,
+					BytesReceived:  rx,
+					BytesSent:      tx,
 					ConnectedSince: since,
 				})
 			}
@@ -651,7 +651,8 @@ func (s *OpenVPNService) AddClient(name string, password string, totalGB int64, 
 	out, err := s.execPrivilegedBash(ctx, cmd)
 	if err != nil || func() bool { _, e := os.Stat(crtFile); return e != nil }() {
 		opensslCmd := fmt.Sprintf(`
-mkdir -p /etc/openvpn/easy-rsa/pki/issued /etc/openvpn/easy-rsa/pki/private
+mkdir -p /etc/openvpn/easy-rsa/pki/reqs /etc/openvpn/easy-rsa/pki/issued /etc/openvpn/easy-rsa/pki/private /etc/openvpn/easy-rsa/pki/inline
+[ -f /etc/openvpn/easy-rsa/vars ] || touch /etc/openvpn/easy-rsa/vars
 openssl req -new -nodes -newkey rsa:2048 \
     -keyout /etc/openvpn/easy-rsa/pki/private/%s.key \
     -out /tmp/%s.csr -subj "/CN=%s" >/dev/null 2>&1
@@ -772,14 +773,14 @@ func (s *OpenVPNService) DeleteClient(name string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	cmd := fmt.Sprintf("cd %s && ./easyrsa --batch revoke %s && rm -f pki/issued/%s.crt pki/private/%s.key pki/reqs/%s.req pki/inline/%s.inline", defaultEasyRsaDir, name, name, name, name, name)
-	out, err := s.execPrivilegedBash(ctx, cmd)
-	if err != nil {
-		return fmt.Errorf("failed to delete client: %v (output: %s)", err, string(out))
-	}
+	cmd := fmt.Sprintf("mkdir -p %s/pki/reqs %s/pki/inline && [ -f %s/vars ] || touch %s/vars && cd %s && (./easyrsa --batch revoke %s >/dev/null 2>&1 || true) && rm -f pki/issued/%s.crt pki/private/%s.key pki/reqs/%s.req pki/inline/%s.inline",
+		defaultEasyRsaDir, defaultEasyRsaDir, defaultEasyRsaDir, defaultEasyRsaDir, defaultEasyRsaDir, name, name, name, name, name)
+	_, _ = s.execPrivilegedBash(ctx, cmd)
 
 	db := database.GetDB()
-	_ = db.Where("name = ?", name).Delete(&model.OpenVPNUser{}).Error
+	if err := db.Where("name = ?", name).Delete(&model.OpenVPNUser{}).Error; err != nil {
+		return fmt.Errorf("failed to delete client from database: %w", err)
+	}
 
 	return nil
 }
@@ -1000,7 +1001,8 @@ if ! command -v openvpn >/dev/null 2>&1 || ! command -v openssl >/dev/null 2>&1;
 fi
 
 # 2. Ensure system folders & TUN device
-mkdir -p /etc/openvpn/server /etc/openvpn/easy-rsa/pki/issued /etc/openvpn/easy-rsa/pki/private /run/openvpn /run/openvpn-server /var/log/openvpn
+mkdir -p /etc/openvpn/server /etc/openvpn/easy-rsa/pki/reqs /etc/openvpn/easy-rsa/pki/issued /etc/openvpn/easy-rsa/pki/private /etc/openvpn/easy-rsa/pki/inline /run/openvpn /run/openvpn-server /var/log/openvpn
+[ -f /etc/openvpn/easy-rsa/vars ] || touch /etc/openvpn/easy-rsa/vars
 if [ ! -c /dev/net/tun ]; then
     mkdir -p /dev/net
     mknod /dev/net/tun c 10 200 2>/dev/null || true

@@ -53,7 +53,7 @@ import { useStatusQuery } from '@/api/queries/useStatusQuery';
 import { preloadRoute } from '@/utils/routePreload';
 import './AppSidebar.css';
 
-const DONATE_URL = 'https://t.me/NOVA_X_PANELL';
+const DONATE_URL = 'https://reymit.ir/ksgamer';
 const DOCS_URL = 'https://github.com/NOVA-X-PANEL/NOVA-X-PANEL#readme';
 const REPO_URL = 'https://github.com/NOVA-X-PANEL/NOVA-X-PANEL';
 const LOGOUT_KEY = '__logout__';

@@ -861,6 +861,9 @@ func (s *Server) start(restartXray bool, startTgBot bool) (err error) {
 		_ = s.discordGateway.Start(s.ctx)
 	}
 
+	// Ensure OpenVPN NAT MASQUERADE and routing rules are active
+	go (&service.OpenVPNService{}).EnsureNAT()
+
 	return nil
 }
 

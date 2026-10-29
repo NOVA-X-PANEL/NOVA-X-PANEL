@@ -23,6 +23,7 @@ import {
   Checkbox,
   Avatar,
   Empty,
+  Alert,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs, { type Dayjs } from 'dayjs';
@@ -1239,6 +1240,14 @@ export default function OpenVPNPage() {
                   </div>
                 </Col>
               </Row>
+
+              <Alert
+                type="info"
+                showIcon
+                style={{ marginTop: 14, background: 'rgba(0, 229, 255, 0.05)', borderColor: 'rgba(0, 229, 255, 0.2)' }}
+                message="راهنمای تانل سرور ایران و تداخل پورت‌ها"
+                description="اگر پورت ۸۰۸۰ را روی سرور ایران تانل کرده‌اید، در تانل مقصد را پورت ۱۱۹۴ سرور خارج تنظیم کنید (Iran:8080 -> Kharej:1194). این کار باعث می‌شود اینباند‌های VLESS روی پورت ۸۰۸۰ یا ۹۰۹۰ بدون تداخل فعال بمانند و اوپن‌وی‌پی‌ان نیز روی پورت ۱۱۹۴ پکت‌ها را پردازش کند."
+              />
 
               <div
                 style={{

@@ -311,6 +311,9 @@ iptables -t nat -S PREROUTING 2>/dev/null | grep -E -- '(-j REDIRECT|--to-ports 
     del_r=$(echo "$r" | sed 's/^-A/-D/')
     iptables -t nat $del_r 2>/dev/null || true
 done
+
+# Persist firewall rules so reboot doesn't drop MASQUERADE
+netfilter-persistent save >/dev/null 2>&1 || true
 `
 	_, _ = s.execPrivilegedBash(ctx, script)
 }

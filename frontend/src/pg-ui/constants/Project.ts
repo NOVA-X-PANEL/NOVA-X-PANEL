@@ -1,6 +1,6 @@
 // @ts-nocheck — vendored from Heimdall-Panel (upstream pg-ui); keep byte-compatible with upstream.
 export const REPO_URL = 'https://github.com/NOVA-X-PANEL/NOVA-X-PANEL'
 export const ORGANIZATION_URL = 'https://github.com/NOVA-X-PANEL'
-export const DONATION_URL = 'https://reymit.ir/ksgamer'
+export const DONATION_URL = 'https://reymit.ir/nova-x'
 export const DISCUSSION_GROUP = 'https://t.me/Pasar_Guard'
 export const DOCUMENTATION = 'https://docs.pasarguard.org'

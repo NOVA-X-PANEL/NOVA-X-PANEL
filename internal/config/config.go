@@ -61,10 +61,12 @@ func GetBuildCommit() string {
 	if trimmed := strings.TrimSpace(buildCommit); trimmed != "" {
 		return trimmed
 	}
-	if info, ok := debug.ReadBuildInfo(); ok {
-		for _, setting := range info.Settings {
-			if setting.Key == "vcs.revision" && len(setting.Value) >= 8 {
-				return setting.Value[:8]
+	if strings.Contains(GetBaseVersion(), "dev") {
+		if info, ok := debug.ReadBuildInfo(); ok {
+			for _, setting := range info.Settings {
+				if setting.Key == "vcs.revision" && len(setting.Value) >= 8 {
+					return setting.Value[:8]
+				}
 			}
 		}
 	}
@@ -79,7 +81,7 @@ func GetBuildDate() string {
 // IsDevBuild reports whether this binary is a CI per-commit (dev channel) build,
 // detected by the injected commit. Stable releases and local builds return false.
 func IsDevBuild() bool {
-	return GetBuildCommit() != ""
+	return strings.Contains(GetBaseVersion(), "dev") || strings.TrimSpace(buildCommit) != ""
 }
 
 // GetPanelVersion returns the version a panel advertises to a managing master

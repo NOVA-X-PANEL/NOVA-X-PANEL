@@ -364,6 +364,14 @@ EOF_CONF
         systemctl enable openvpn-server@server >/dev/null 2>&1 || systemctl enable openvpn@server >/dev/null 2>&1 || true
         systemctl restart openvpn-server@server >/dev/null 2>&1 || systemctl restart openvpn@server >/dev/null 2>&1 || true
     fi
+
+    # Migrate legacy port 2083 to standard 1194 in existing server configs
+    for c in /etc/openvpn/server/server.conf /etc/openvpn/server.conf; do
+        if [ -f "$c" ] && grep -qE '^port 2083$' "$c"; then
+            sed -i 's/^port 2083$/port 1194/' "$c" 2>/dev/null || true
+            systemctl restart openvpn-server@server.service 2>/dev/null || systemctl restart openvpn@server.service 2>/dev/null || systemctl restart openvpn 2>/dev/null || true
+        fi
+    done
     return 0
 }
 

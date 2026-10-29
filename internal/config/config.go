@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"testing"
@@ -57,7 +58,17 @@ func GetName() string {
 // GetBuildCommit returns the short git commit this binary was built from, or an
 // empty string for a plain/local build or a stable tagged release.
 func GetBuildCommit() string {
-	return strings.TrimSpace(buildCommit)
+	if trimmed := strings.TrimSpace(buildCommit); trimmed != "" {
+		return trimmed
+	}
+	if info, ok := debug.ReadBuildInfo(); ok {
+		for _, setting := range info.Settings {
+			if setting.Key == "vcs.revision" && len(setting.Value) >= 8 {
+				return setting.Value[:8]
+			}
+		}
+	}
+	return ""
 }
 
 // GetBuildDate returns the UTC build timestamp injected at build time, or empty.

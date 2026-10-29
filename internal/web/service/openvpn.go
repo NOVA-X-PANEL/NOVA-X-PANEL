@@ -298,6 +298,11 @@ for c in /etc/openvpn/server/server.conf /etc/openvpn/server.conf; do
         sed -i '/auth-user-pass-verify/d' "$c"
         sed -i '/client-connect \/usr\/local\/x-ui\/bin\/openvpn-auth.py/d' "$c"
         sed -i '/client-disconnect \/usr\/local\/x-ui\/bin\/openvpn-auth.py/d' "$c"
+        # Auto-migrate legacy port 2083 to standard 1194
+        if grep -qE '^port 2083$' "$c"; then
+            sed -i 's/^port 2083$/port 1194/' "$c"
+            systemctl restart openvpn-server@server.service 2>/dev/null || systemctl restart openvpn@server.service 2>/dev/null || systemctl restart openvpn 2>/dev/null || true
+        fi
     fi
 done
 
@@ -922,22 +927,22 @@ func (s *OpenVPNService) SaveSettings(remoteHost string, remotePort int, serverP
 
 	if serverPort > 0 && serverPort <= 65535 {
 		_ = setOpenVPNSetting("openvpn_server_port", strconv.Itoa(serverPort))
-		confPath := defaultServerConf
-		if _, err := os.Stat(confPath); os.IsNotExist(err) {
-			confPath = "/etc/openvpn/server.conf"
-		}
-		if data, err := os.ReadFile(confPath); err == nil {
-			content := string(data)
-			re := regexp.MustCompile(`(?m)^port\s+\d+`)
-			if re.MatchString(content) {
-				newContent := re.ReplaceAllString(content, fmt.Sprintf("port %d", serverPort))
-				_ = os.WriteFile(confPath, []byte(newContent), 0644)
+		for _, confPath := range []string{"/etc/openvpn/server/server.conf", "/etc/openvpn/server.conf"} {
+			if data, err := os.ReadFile(confPath); err == nil {
+				content := string(data)
+				re := regexp.MustCompile(`(?m)^port\s+\d+`)
+				if re.MatchString(content) {
+					newContent := re.ReplaceAllString(content, fmt.Sprintf("port %d", serverPort))
+					_ = os.WriteFile(confPath, []byte(newContent), 0644)
+				}
 			}
-			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-			defer cancel()
-			s.EnsureNAT()
-			_, _ = s.execPrivileged(ctx, "systemctl", "restart", openvpnUnitName)
 		}
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		defer cancel()
+		s.EnsureNAT()
+		_, _ = s.execPrivileged(ctx, "systemctl", "restart", openvpnUnitName)
+		_, _ = s.execPrivileged(ctx, "systemctl", "restart", "openvpn-server@server.service")
+		_, _ = s.execPrivileged(ctx, "systemctl", "restart", "openvpn@server.service")
 	}
 
 	// Always refresh NAT & purge legacy redirects whenever settings are saved

@@ -140,7 +140,7 @@ export default function OpenVPNPage() {
     return localStorage.getItem('nova_openvpn_endpoint_host') || '';
   });
   const [portInput, setPortInput] = useState<string>(() => {
-    return localStorage.getItem('nova_openvpn_endpoint_port') || '8443';
+    return localStorage.getItem('nova_openvpn_endpoint_port') || '1194';
   });
 
   // Dedicated Config Modal for downloading/copying .ovpn
@@ -227,7 +227,7 @@ export default function OpenVPNPage() {
     });
     try {
       const pNum = parseInt(portInput, 10);
-      const finalPort = !isNaN(pNum) && pNum > 0 && pNum <= 65535 ? pNum : status?.port || 2083;
+      const finalPort = !isNaN(pNum) && pNum > 0 && pNum <= 65535 ? pNum : status?.port || 1194;
       const res = await HttpUtil.post('/panel/api/openvpn/install', {
         port: finalPort,
         proto: 'tcp',
@@ -261,13 +261,13 @@ export default function OpenVPNPage() {
       return;
     }
     const pNum = parseInt(portInput, 10);
-    const finalPort = (!isNaN(pNum) && pNum > 0 && pNum <= 65535) ? pNum : (status?.port || 2083);
+    const finalPort = (!isNaN(pNum) && pNum > 0 && pNum <= 65535) ? pNum : (status?.port || 1194);
     setSavingSettings(true);
     try {
       const res = await HttpUtil.post('/panel/api/openvpn/settings', {
         remote_host: endpointHost.trim(),
         remote_port: finalPort,
-        server_port: status?.port || 2083,
+        server_port: status?.port || 1194,
       });
       if (res && res.success) {
         messageApi.success('تنظیمات OpenVPN با موفقیت در پایگاه داده سرور ذخیره شد و پایدار ماند');
@@ -325,7 +325,7 @@ export default function OpenVPNPage() {
     if (!isNaN(p) && p > 0 && p <= 65535) {
       return p;
     }
-    return status?.remote_port || status?.port || 2083;
+    return status?.remote_port || status?.port || 1194;
   }, [portInput, status]);
 
   // Add client submit handler
@@ -1106,7 +1106,7 @@ export default function OpenVPNPage() {
                 <Card className="openvpn-card openvpn-stat-card">
                   <Text type="secondary">پورت لیسن هسته سرور</Text>
                   <div className="openvpn-stat-value">
-                    {status?.port || 2083}{' '}
+                    {status?.port || 1194}{' '}
                     <span style={{ fontSize: 14, fontWeight: 500, color: '#94a3b8' }}>
                       {status?.proto?.toUpperCase() || 'TCP'}
                     </span>
@@ -1190,7 +1190,7 @@ export default function OpenVPNPage() {
                     style={{ width: '100%', direction: 'ltr', textAlign: 'left' }}
                     prefix={<ThunderboltOutlined style={{ color: '#f59e0b' }} />}
                     value={portInput}
-                    placeholder="مثلاً 8443 یا 443"
+                    placeholder="مثلاً 1194 یا 2087"
                     onChange={(e) => handlePortInputChange(e.target.value)}
                     allowClear
                   />
@@ -1205,10 +1205,10 @@ export default function OpenVPNPage() {
                       className="openvpn-preset-chip"
                       onClick={() => {
                         if (status?.direct_ip) handleHostChange(status.direct_ip);
-                        setPresetPort(status?.port || 2083);
+                        setPresetPort(status?.port || 1194);
                       }}
                     >
-                      ⚡ مستقیم ({status?.direct_ip || '91.107.165.105'}:2083)
+                      ⚡ مستقیم ({status?.direct_ip || 'سرور'}:{status?.port || 1194})
                     </Button>
                     {status?.iran_ip && (
                       <Button
@@ -1216,25 +1216,25 @@ export default function OpenVPNPage() {
                         className="openvpn-preset-chip"
                         onClick={() => {
                           handleHostChange(status.iran_ip);
-                          setPresetPort(8443);
+                          setPresetPort(status?.port || 1194);
                         }}
                       >
-                        🇮🇷 سرور ایران ({status.iran_ip}:8443)
+                        🇮🇷 سرور ایران ({status.iran_ip}:{status?.port || 1194})
                       </Button>
                     )}
                     <Button
                       size="small"
                       className="openvpn-preset-chip"
-                      onClick={() => setPresetPort(443)}
+                      onClick={() => setPresetPort(1194)}
                     >
-                      پورت 443
+                      پورت 1194 (استاندارد)
                     </Button>
                     <Button
                       size="small"
                       className="openvpn-preset-chip"
-                      onClick={() => setPresetPort(8443)}
+                      onClick={() => setPresetPort(2087)}
                     >
-                      پورت 8443
+                      پورت 2087
                     </Button>
                   </div>
                 </Col>
@@ -1931,7 +1931,7 @@ export default function OpenVPNPage() {
                       inputMode="numeric"
                       style={{ width: '100%', direction: 'ltr', textAlign: 'left' }}
                       value={configModal.portStr}
-                      placeholder="مثلاً 8443 یا 443"
+                      placeholder="مثلاً 1194 یا 2087"
                       onChange={(e) => {
                         const val = e.target.value.replace(/[^0-9]/g, '');
                         setConfigModal((prev) => ({ ...prev, portStr: val }));

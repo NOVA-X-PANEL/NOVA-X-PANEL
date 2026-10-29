@@ -16,6 +16,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"errors"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
@@ -258,16 +259,26 @@ func (s *OpenVPNService) QueryManagementSessions() ([]OpenVPNLiveSession, error)
 	return sessions, nil
 }
 
+// isPortInUseByInbounds checks if a given port is already used by an active Xray inbound.
+func isPortInUseByInbounds(port int) (bool, string) {
+	db := database.GetDB()
+	if db == nil {
+		return false, ""
+	}
+	var inbounds []model.Inbound
+	if err := db.Where("enable = ? AND port = ?", true, port).Find(&inbounds).Error; err == nil && len(inbounds) > 0 {
+		return true, fmt.Sprintf("پورت %d توسط اینباند فعال «%s» (%s) در حال استفاده است. لطفاً جهت جلوگیری از قطعی VLESS از پورت دیگری استفاده کنید.", port, inbounds[0].Remark, inbounds[0].Protocol)
+	}
+	return false, ""
+}
+
 // EnsureNAT enables IPv4 forwarding and adds iptables MASQUERADE for the VPN subnet,
-// plus dynamic port redirection for remote/tunnel ports to the OpenVPN server port.
+// while actively removing any dangerous or legacy port redirection rules that conflict with Xray inbounds.
 func (s *OpenVPNService) EnsureNAT() {
 	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
 	defer cancel()
 
-	serverPortStr := getOpenVPNSetting("openvpn_server_port", "2083")
-	remotePortStr := getOpenVPNSetting("openvpn_remote_port", "")
-
-	script := fmt.Sprintf(`
+	script := `
 sysctl -w net.ipv4.ip_forward=1 >/dev/null 2>&1
 IFACE=$(ip route show default 2>/dev/null | awk '{print $5}' | head -n1)
 [ -z "$IFACE" ] && IFACE="eth0"
@@ -290,23 +301,12 @@ for c in /etc/openvpn/server/server.conf /etc/openvpn/server.conf; do
     fi
 done
 
-# Dynamic port redirection for tunnel/remote port to OpenVPN server port
-SPORT="%s"
-RPORT="%s"
-if [ -n "$RPORT" ] && [ "$RPORT" != "$SPORT" ] && [ "$RPORT" != "0" ]; then
-    iptables -t nat -C PREROUTING -i eth0 -p tcp --dport "$RPORT" -j REDIRECT --to-ports "$SPORT" 2>/dev/null || \
-    iptables -t nat -A PREROUTING -i eth0 -p tcp --dport "$RPORT" -j REDIRECT --to-ports "$SPORT"
-    iptables -t nat -C PREROUTING -i eth0 -p udp --dport "$RPORT" -j REDIRECT --to-ports "$SPORT" 2>/dev/null || \
-    iptables -t nat -A PREROUTING -i eth0 -p udp --dport "$RPORT" -j REDIRECT --to-ports "$SPORT"
-
-    if ip link show gre-a-1 >/dev/null 2>&1; then
-        iptables -t nat -C PREROUTING -i gre-a-1 -p tcp --dport "$RPORT" -j REDIRECT --to-ports "$SPORT" 2>/dev/null || \
-        iptables -t nat -A PREROUTING -i gre-a-1 -p tcp --dport "$RPORT" -j REDIRECT --to-ports "$SPORT"
-        iptables -t nat -C PREROUTING -i gre-a-1 -p udp --dport "$RPORT" -j REDIRECT --to-ports "$SPORT" 2>/dev/null || \
-        iptables -t nat -A PREROUTING -i gre-a-1 -p udp --dport "$RPORT" -j REDIRECT --to-ports "$SPORT"
-    fi
-fi
-`, serverPortStr, remotePortStr)
+# Actively purge any legacy or rogue PREROUTING REDIRECT rules targeting OpenVPN so VLESS / Xray ports are never hijacked
+iptables -t nat -S PREROUTING 2>/dev/null | grep -E -- '(-j REDIRECT|--to-ports (2083|1194|[0-9]+))' | while read -r r; do
+    del_r=$(echo "$r" | sed 's/^-A/-D/')
+    iptables -t nat $del_r 2>/dev/null || true
+done
+`
 	_, _ = s.execPrivilegedBash(ctx, script)
 }
 
@@ -381,7 +381,7 @@ func (s *OpenVPNService) GetStatus() (*OpenVPNStatus, error) {
 	status := &OpenVPNStatus{
 		Installed:        false,
 		Running:          false,
-		Port:             2083,
+		Port:             1194,
 		Proto:            "tcp",
 		Subnet:           "10.8.0.0/24",
 		DirectIP:         detectServerIP(),
@@ -471,7 +471,7 @@ func (s *OpenVPNService) GetStatus() (*OpenVPNStatus, error) {
 	if savedPort <= 0 {
 		savedPort = status.Port
 		if savedPort <= 0 {
-			savedPort = 2083
+			savedPort = 1194
 		}
 		_ = setOpenVPNSetting("openvpn_remote_port", strconv.Itoa(savedPort))
 	}
@@ -800,9 +800,9 @@ func (s *OpenVPNService) GetClientConfig(name string, remoteIP string, remotePor
 		remoteIP = getOpenVPNSetting("openvpn_remote_host", detectServerIP())
 	}
 	if remotePort <= 0 {
-		savedPort, _ := strconv.Atoi(getOpenVPNSetting("openvpn_remote_port", "2083"))
+		savedPort, _ := strconv.Atoi(getOpenVPNSetting("openvpn_remote_port", "1194"))
 		if savedPort <= 0 {
-			savedPort = 2083
+			savedPort = 1194
 		}
 		remotePort = savedPort
 	}
@@ -901,6 +901,12 @@ func (s *OpenVPNService) SaveSettings(remoteHost string, remotePort int, serverP
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
+	if serverPort > 0 && serverPort <= 65535 {
+		if inUse, reason := isPortInUseByInbounds(serverPort); inUse {
+			return errors.New(reason)
+		}
+	}
+
 	remoteHost = strings.TrimSpace(remoteHost)
 	if remoteHost != "" {
 		if err := setOpenVPNSetting("openvpn_remote_host", remoteHost); err != nil {
@@ -934,7 +940,7 @@ func (s *OpenVPNService) SaveSettings(remoteHost string, remotePort int, serverP
 		}
 	}
 
-	// Always refresh NAT & port redirects whenever settings are saved
+	// Always refresh NAT & purge legacy redirects whenever settings are saved
 	s.EnsureNAT()
 
 	return nil
@@ -956,9 +962,9 @@ func (s *OpenVPNService) ensureEasyRSALocked() error {
 		}
 	}
 
-	savedPort, _ := strconv.Atoi(getOpenVPNSetting("openvpn_server_port", "2083"))
+	savedPort, _ := strconv.Atoi(getOpenVPNSetting("openvpn_server_port", "1194"))
 	if savedPort <= 0 {
-		savedPort = 2083
+		savedPort = 1194
 	}
 	return s.autoInstallOpenVPNInternal(savedPort, "tcp")
 }
@@ -972,10 +978,23 @@ func (s *OpenVPNService) AutoInstallOpenVPN(port int, proto string) error {
 
 func (s *OpenVPNService) autoInstallOpenVPNInternal(port int, proto string) error {
 	if port <= 0 || port > 65535 {
-		port = 2083
+		port = 1194
+	}
+	if inUse, reason := isPortInUseByInbounds(port); inUse {
+		return errors.New(reason)
 	}
 	if proto == "" {
 		proto = "tcp"
+	}
+
+	directIP := detectServerIP()
+	iranIP := getIranTunnelIP()
+	bypassRoutes := ""
+	if directIP != "" && directIP != "127.0.0.1" {
+		bypassRoutes += fmt.Sprintf("push \"route %s 255.255.255.255 net_gateway\"\n", directIP)
+	}
+	if iranIP != "" && iranIP != directIP {
+		bypassRoutes += fmt.Sprintf("push \"route %s 255.255.255.255 net_gateway\"\n", iranIP)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
@@ -1054,7 +1073,7 @@ server 10.8.0.0 255.255.255.0
 ifconfig-pool-persist /etc/openvpn/server/ipp.txt
 
 push "redirect-gateway def1 bypass-dhcp"
-push "dhcp-option DNS 1.1.1.1"
+%spush "dhcp-option DNS 1.1.1.1"
 push "dhcp-option DNS 8.8.8.8"
 
 keepalive 10 60
@@ -1082,7 +1101,7 @@ echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf 2>/dev/null || true
 systemctl daemon-reload >/dev/null 2>&1 || true
 systemctl enable openvpn-server@server >/dev/null 2>&1 || systemctl enable openvpn@server >/dev/null 2>&1 || true
 systemctl restart openvpn-server@server >/dev/null 2>&1 || systemctl restart openvpn@server >/dev/null 2>&1 || true
-`, port, proto)
+`, port, proto, bypassRoutes)
 
 	_, err := s.execPrivilegedBash(ctx, script)
 	if err != nil {

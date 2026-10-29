@@ -30,6 +30,7 @@ import ThroughputCard from './ThroughputCard';
 import ConnectionsCard from './ConnectionsCard';
 import SystemStrip from './SystemStrip';
 import { TelegramBanner } from './TelegramBanner';
+import { DonateBanner } from './DonateBanner';
 import { mean, peak, useOverviewHistory } from './useOverviewHistory';
 import type { PanelUpdateInfo } from './PanelUpdateModal';
 const JsonEditor = lazy(() => import('@/components/form/JsonEditor'));
@@ -228,6 +229,7 @@ export default function IndexPage() {
                   <OverviewStats status={status} />
 
                   <TelegramBanner />
+                  <DonateBanner />
 
                   <div className="nc-split">
                     <div className="nc-main">

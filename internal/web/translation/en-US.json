@@ -153,6 +153,7 @@
       "or": "or",
       "telegramLogin": "Sign in with Telegram",
       "telegramUnavailable": "Telegram sign-in is not enabled on this panel",
+      "donateTitle": "Support Project (Reymit)",
       "credit": "Designed and developed exclusively",
       "alwaysOnline": "Always online",
       "features": {
@@ -323,7 +324,10 @@
       "importKeepHostSettingsDesc": "Keeps this panel's listen addresses, ports, base path, certificates and node identity instead of taking them from the uploaded file.",
       "telegramChannel": "Official Telegram Channel",
       "telegramChannelDesc": "Join our official Telegram channel for updates, guides, and support.",
-      "telegramChannelBtn": "Join Channel"
+      "telegramChannelBtn": "Join Channel",
+      "donateTitle": "Support NOVA-X Project",
+      "donateDesc": "Support the development and maintenance of NOVA-X Panel via Reymit donation.",
+      "donateBtn": "Donate (Reymit)"
     },
     "inbounds": {
       "totalDownUp": "Total Sent/Received",

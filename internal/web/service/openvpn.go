@@ -95,6 +95,10 @@ type OpenVPNService struct {
 	lock sync.Mutex
 }
 
+func NewOpenVPNService() *OpenVPNService {
+	return &OpenVPNService{}
+}
+
 func (s *OpenVPNService) execPrivileged(ctx context.Context, name string, args ...string) ([]byte, error) {
 	if systemdRun, err := exec.LookPath("systemd-run"); err == nil {
 		sdArgs := append([]string{"--quiet", "--pipe", "--wait", name}, args...)
@@ -272,8 +276,21 @@ func isPortInUseByInbounds(port int) (bool, string) {
 	return false, ""
 }
 
+// PurgeRogueRedirects actively purges any legacy or rogue PREROUTING REDIRECT rules targeting OpenVPN so VLESS / Xray ports and Tunnels are never hijacked.
+func (s *OpenVPNService) PurgeRogueRedirects() {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	script := `
+iptables -t nat -S PREROUTING 2>/dev/null | grep -E -- '(-j REDIRECT|--to-ports)' | while read -r r; do
+    del_r=$(echo "$r" | sed 's/^-A/-D/')
+    iptables -t nat $del_r 2>/dev/null || true
+done
+`
+	_, _ = s.execPrivilegedBash(ctx, script)
+}
+
 // EnsureNAT enables IPv4 forwarding and adds iptables MASQUERADE for the VPN subnet,
-// while actively removing any dangerous or legacy port redirection rules that conflict with Xray inbounds.
+// while actively removing any dangerous or legacy port redirection rules that conflict with Xray inbounds or Tunnels.
 func (s *OpenVPNService) EnsureNAT() {
 	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
 	defer cancel()
@@ -282,8 +299,13 @@ func (s *OpenVPNService) EnsureNAT() {
 sysctl -w net.ipv4.ip_forward=1 >/dev/null 2>&1
 IFACE=$(ip route show default 2>/dev/null | awk '{print $5}' | head -n1)
 [ -z "$IFACE" ] && IFACE="eth0"
+
+# Strictly scoped MASQUERADE only for OpenVPN subnet 10.8.0.0/24 exiting via default WAN interface
 iptables -t nat -C POSTROUTING -s 10.8.0.0/24 -o "$IFACE" -j MASQUERADE 2>/dev/null || iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o "$IFACE" -j MASQUERADE
-iptables -t nat -C POSTROUTING -s 10.8.0.0/24 -j MASQUERADE 2>/dev/null || iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -j MASQUERADE
+
+# Remove any un-scoped blanket MASQUERADE that could hijack GRE/tunnel interfaces
+iptables -t nat -D POSTROUTING -s 10.8.0.0/24 -j MASQUERADE 2>/dev/null || true
+
 iptables -C FORWARD -s 10.8.0.0/24 -j ACCEPT 2>/dev/null || iptables -A FORWARD -s 10.8.0.0/24 -j ACCEPT
 iptables -C FORWARD -d 10.8.0.0/24 -m state --state RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || iptables -A FORWARD -d 10.8.0.0/24 -m state --state RELATED,ESTABLISHED -j ACCEPT
 
@@ -307,7 +329,7 @@ for c in /etc/openvpn/server/server.conf /etc/openvpn/server.conf; do
 done
 
 # Actively purge any legacy or rogue PREROUTING REDIRECT rules targeting OpenVPN so VLESS / Xray ports are never hijacked
-iptables -t nat -S PREROUTING 2>/dev/null | grep -E -- '(-j REDIRECT|--to-ports (2083|1194|[0-9]+))' | while read -r r; do
+iptables -t nat -S PREROUTING 2>/dev/null | grep -E -- '(-j REDIRECT|--to-ports)' | while read -r r; do
     del_r=$(echo "$r" | sed 's/^-A/-D/')
     iptables -t nat $del_r 2>/dev/null || true
 done

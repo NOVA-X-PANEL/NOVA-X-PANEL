@@ -861,8 +861,15 @@ func (s *Server) start(restartXray bool, startTgBot bool) (err error) {
 		_ = s.discordGateway.Start(s.ctx)
 	}
 
-	// Ensure OpenVPN NAT MASQUERADE and routing rules are active
-	go (&service.OpenVPNService{}).EnsureNAT()
+	// Purge legacy rogue REDIRECT rules and ensure OpenVPN NAT only if OpenVPN is installed/running
+	go func() {
+		ovpn := &service.OpenVPNService{}
+		ovpn.PurgeRogueRedirects()
+		st, err := ovpn.GetStatus()
+		if err == nil && st != nil && (st.Running || st.Installed) {
+			ovpn.EnsureNAT()
+		}
+	}()
 
 	return nil
 }

@@ -2610,14 +2610,11 @@ except Exception as e:
 			if status.PingMs <= 0 {
 				status.PingMs = s.measurePing(status.RemoteGreIP, "", 0)
 			}
-			if status.PingMs > 0 {
-				status.Running = true
-				status.FrpStatus = "active"
-				status.BackhaulStatus = "active"
-			} else {
-				status.Running = false
-				status.FrpStatus = "stopped"
-				status.BackhaulStatus = "stopped"
+			// Interface exists in Linux network stack; mark running even if peer is temporarily unreached
+			status.Running = true
+			status.FrpStatus = "active"
+			status.BackhaulStatus = "active"
+			if status.PingMs <= 0 {
 				status.PingMs = -1
 			}
 			return

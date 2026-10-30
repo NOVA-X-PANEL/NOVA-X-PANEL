@@ -2494,6 +2494,8 @@
       "title": "NOVA-TUNELL",
       "subtitle": "اتوماسیون و پایش تانل لایه ۳ GRE و پروکسی معکوس FRP",
       "statusHealthy": "متصل و پایدار",
+      "statusWaitingPeer": "در انتظار اتصال سرور رله",
+      "statusReady": "آماده (UP)",
       "statusNotInstalled": "نصب نشده",
       "syncInboundsBtn": "سینک اینباندها به تانل",
       "restartBtn": "ری‌استارت تانل",

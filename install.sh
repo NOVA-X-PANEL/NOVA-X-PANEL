@@ -1592,17 +1592,18 @@ EOF_CONF
         direct_ip=$(curl -s4 --max-time 2 https://api.ipify.org 2>/dev/null || ip route get 1.1.1.1 2>/dev/null | awk '{print $7; exit}')
         [ -n "$direct_ip" ] && sed -i "/bypass-dhcp/a push \"route $direct_ip 255.255.255.255 net_gateway\"" /etc/openvpn/server/server.conf 2>/dev/null || true
         cp -f /etc/openvpn/server/server.conf /etc/openvpn/server.conf 2>/dev/null || true
-        # Purge legacy/rogue PREROUTING REDIRECT rules targeting OpenVPN so VLESS is never hijacked
-        iptables -t nat -S PREROUTING 2>/dev/null | grep -E -- '(-j REDIRECT|--to-ports (2083|1194|[0-9]+))' | while read -r r; do
+        # Purge legacy/rogue PREROUTING REDIRECT rules targeting OpenVPN so VLESS and Tunnels are never hijacked
+        iptables -t nat -S PREROUTING 2>/dev/null | grep -E -- '(-j REDIRECT|--to-ports)' | while read -r r; do
             del_r=$(echo "$r" | sed 's/^-A/-D/')
             iptables -t nat $del_r 2>/dev/null || true
         done
         sysctl -w net.ipv4.ip_forward=1 >/dev/null 2>&1 || true
         sed -i '/net.ipv4.ip_forward/d' /etc/sysctl.conf 2>/dev/null || true
         echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf 2>/dev/null || true
-        systemctl daemon-reload >/dev/null 2>&1 || true
-        systemctl enable openvpn-server@server >/dev/null 2>&1 || systemctl enable openvpn@server >/dev/null 2>&1 || true
-        systemctl restart openvpn-server@server >/dev/null 2>&1 || systemctl restart openvpn@server >/dev/null 2>&1 || true
+        if systemctl is-active --quiet openvpn-server@server 2>/dev/null || systemctl is-enabled --quiet openvpn-server@server 2>/dev/null; then
+            systemctl daemon-reload >/dev/null 2>&1 || true
+            systemctl restart openvpn-server@server >/dev/null 2>&1 || systemctl restart openvpn@server >/dev/null 2>&1 || true
+        fi
     fi
     return 0
 }

@@ -2492,8 +2492,10 @@
     },
     "hashem": {
       "title": "NOVA-TUNELL",
-      "subtitle": "Automated Layer-3 GRE & FRP Reverse Tunnel Management",
+      "subtitle": "Automated Layer-3 GRE & FRP Reverse Tunnel Orchestration",
       "statusHealthy": "Active & Healthy",
+      "statusWaitingPeer": "Waiting for Peer Relay",
+      "statusReady": "Ready (UP)",
       "statusNotInstalled": "Not Installed",
       "syncInboundsBtn": "Sync Inbounds to Tunnel",
       "restartBtn": "Restart Tunnel",

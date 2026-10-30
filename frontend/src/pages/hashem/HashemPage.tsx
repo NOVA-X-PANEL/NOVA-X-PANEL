@@ -334,15 +334,18 @@ export default function HashemPage() {
   const isEngineTunnelPanel = status.engine === 'tunnel-panel';
   const isEngineBackhaul = status.engine === 'backhaul' || status.engine === 'gre-backhaul';
   const isHealthy = status.running && status.pingMs > 0;
+  const isWaitingPeer = isEngineTunnelPanel && status.running && status.pingMs <= 0;
   const engineStatus = isEngineTunnelPanel
     ? isHealthy
       ? 'active'
-      : 'stopped'
+      : status.running
+        ? 'waiting'
+        : 'stopped'
     : isEngineBackhaul
       ? status.backhaulStatus
       : status.frpStatus;
 
-  const isConnecting = engineStatus === 'connecting';
+  const isConnecting = engineStatus === 'connecting' || engineStatus === 'waiting';
 
   return (
     <ConfigProvider theme={antdThemeConfig}>
@@ -367,9 +370,11 @@ export default function HashemPage() {
                     >
                       {isHealthy
                         ? t('pages.hashem.statusHealthy')
-                        : isConnecting
-                          ? t('pages.hashem.statusConnecting')
-                          : t('pages.hashem.statusDisconnected')}
+                        : isWaitingPeer
+                          ? t('pages.hashem.statusWaitingPeer', { defaultValue: 'در انتظار اتصال سرور رله' })
+                          : isConnecting
+                            ? t('pages.hashem.statusConnecting')
+                            : t('pages.hashem.statusDisconnected')}
                     </Tag>
                   ) : (
                     <Tag
@@ -626,19 +631,23 @@ export default function HashemPage() {
                   >
                     <div style={{ marginBottom: 14 }}>
                       <Badge
-                        status={isHealthy ? 'success' : 'error'}
+                        status={isHealthy ? 'success' : status.running ? 'processing' : 'error'}
                         text={
                           <Text
                             strong
                             style={{
-                              color: isHealthy ? '#52c41a' : '#ff4d4f',
+                              color: isHealthy ? '#52c41a' : status.running ? '#38bdf8' : '#ff4d4f',
                             }}
                           >
                             {isHealthy
                               ? t('pages.hashem.statusRunning', {
                                   defaultValue: 'Active (Fast-Path)',
                                 })
-                              : t('pages.hashem.frpStopped')}
+                              : status.running
+                                ? t('pages.hashem.statusReady', {
+                                    defaultValue: 'آماده (UP)',
+                                  })
+                                : t('pages.hashem.frpStopped')}
                           </Text>
                         }
                       />

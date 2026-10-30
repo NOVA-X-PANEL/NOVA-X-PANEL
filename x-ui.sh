@@ -2495,8 +2495,8 @@ EOF_CONF
     [ -n "$direct_ip" ] && sed -i "/bypass-dhcp/a push \"route $direct_ip 255.255.255.255 net_gateway\"" /etc/openvpn/server/server.conf 2>/dev/null || true
     cp -f /etc/openvpn/server/server.conf /etc/openvpn/server.conf 2>/dev/null || true
 
-    # Purge legacy/rogue PREROUTING REDIRECT rules targeting OpenVPN so VLESS is never hijacked
-    iptables -t nat -S PREROUTING 2>/dev/null | grep -E -- '(-j REDIRECT|--to-ports (2083|1194|[0-9]+))' | while read -r r; do
+    # Purge legacy/rogue PREROUTING REDIRECT rules targeting OpenVPN so VLESS and Tunnels are never hijacked
+    iptables -t nat -S PREROUTING 2>/dev/null | grep -E -- '(-j REDIRECT|--to-ports)' | while read -r r; do
         del_r=$(echo "$r" | sed 's/^-A/-D/')
         iptables -t nat $del_r 2>/dev/null || true
     done

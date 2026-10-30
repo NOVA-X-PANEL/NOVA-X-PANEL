@@ -686,11 +686,16 @@ mkdir -p /etc/openvpn/easy-rsa/pki/reqs /etc/openvpn/easy-rsa/pki/issued /etc/op
 openssl req -new -nodes -newkey rsa:2048 \
     -keyout /etc/openvpn/easy-rsa/pki/private/%s.key \
     -out /tmp/%s.csr -subj "/CN=%s" >/dev/null 2>&1
+cat << 'EOF_EXT' > /tmp/%s.ext
+basicConstraints = CA:FALSE
+keyUsage = digitalSignature
+extendedKeyUsage = clientAuth
+EOF_EXT
 openssl x509 -req -in /tmp/%s.csr \
     -CA /etc/openvpn/server/ca.crt -CAkey /etc/openvpn/server/ca.key \
-    -CAcreateserial -out /etc/openvpn/easy-rsa/pki/issued/%s.crt -days 3650 >/dev/null 2>&1
-rm -f /tmp/%s.csr
-`, name, name, name, name, name, name)
+    -CAcreateserial -out /etc/openvpn/easy-rsa/pki/issued/%s.crt -days 3650 -extfile /tmp/%s.ext >/dev/null 2>&1
+rm -f /tmp/%s.csr /tmp/%s.ext
+`, name, name, name, name, name, name, name, name, name)
 		if outOss, errOss := s.execPrivilegedBash(ctx, opensslCmd); errOss != nil {
 			return fmt.Errorf("failed to create client: %v (output: %s / openssl: %s)", err, string(out), string(outOss))
 		}
@@ -872,15 +877,22 @@ func (s *OpenVPNService) GetClientConfig(name string, remoteIP string, remotePor
 		}
 	}
 
+	proto := getOpenVPNSetting("openvpn_proto", "tcp")
+	if proto != "udp" && proto != "tcp" {
+		proto = "tcp"
+	}
+
 	ovpn := fmt.Sprintf(`client
 dev tun
-proto tcp
+proto %s
 remote %s %d
 resolv-retry infinite
 nobind
 persist-key
 persist-tun
-remote-cert-tls server
+;remote-cert-tls server
+data-ciphers AES-256-GCM:AES-128-GCM:CHACHA20-POLY1305
+data-ciphers-fallback AES-256-GCM
 cipher AES-256-GCM
 auth SHA256
 verb 3
@@ -894,7 +906,7 @@ verb 3
 <key>
 %s
 </key>
-`, remoteIP, remotePort, authPassBlock, strings.TrimSpace(string(caData)), strings.TrimSpace(cleanCert), strings.TrimSpace(string(keyData)))
+`, proto, remoteIP, remotePort, authPassBlock, strings.TrimSpace(string(caData)), strings.TrimSpace(cleanCert), strings.TrimSpace(string(keyData)))
 
 	return ovpn, nil
 }
@@ -1075,9 +1087,15 @@ if [ ! -f "/etc/openvpn/server/ca.crt" ] || [ ! -f "/etc/openvpn/server/server.c
     openssl req -new -nodes -newkey rsa:2048 \
         -keyout /etc/openvpn/server/server.key -out /tmp/ovpn_server.csr \
         -subj "/CN=server" >/dev/null 2>&1
+    cat << 'EOF_EXT' > /tmp/ovpn_server.ext
+basicConstraints = CA:FALSE
+keyUsage = digitalSignature, keyEncipherment
+extendedKeyUsage = serverAuth
+subjectAltName = DNS:server
+EOF_EXT
     openssl x509 -req -in /tmp/ovpn_server.csr -CA /etc/openvpn/server/ca.crt -CAkey /etc/openvpn/server/ca.key \
-        -CAcreateserial -out /etc/openvpn/server/server.crt -days 3650 >/dev/null 2>&1
-    rm -f /tmp/ovpn_server.csr
+        -CAcreateserial -out /etc/openvpn/server/server.crt -days 3650 -extfile /tmp/ovpn_server.ext >/dev/null 2>&1
+    rm -f /tmp/ovpn_server.csr /tmp/ovpn_server.ext
 fi
 
 # Sync certs into Easy-RSA PKI directory so client generation and verify work

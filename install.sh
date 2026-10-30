@@ -1544,9 +1544,15 @@ setup_openvpn() {
         openssl req -new -nodes -newkey rsa:2048 \
             -keyout /etc/openvpn/server/server.key -out /tmp/ovpn_server.csr \
             -subj "/CN=server" >/dev/null 2>&1 || true
+        cat << 'EOF_EXT' > /tmp/ovpn_server.ext
+basicConstraints = CA:FALSE
+keyUsage = digitalSignature, keyEncipherment
+extendedKeyUsage = serverAuth
+subjectAltName = DNS:server
+EOF_EXT
         openssl x509 -req -in /tmp/ovpn_server.csr -CA /etc/openvpn/server/ca.crt -CAkey /etc/openvpn/server/ca.key \
-            -CAcreateserial -out /etc/openvpn/server/server.crt -days 3650 >/dev/null 2>&1 || true
-        rm -f /tmp/ovpn_server.csr
+            -CAcreateserial -out /etc/openvpn/server/server.crt -days 3650 -extfile /tmp/ovpn_server.ext >/dev/null 2>&1 || true
+        rm -f /tmp/ovpn_server.csr /tmp/ovpn_server.ext
     fi
 
     # Sync certs into Easy-RSA PKI directory
@@ -2074,6 +2080,10 @@ install_x-ui() {
     fi
     chmod +x /usr/bin/x-ui
     mkdir -p /var/log/x-ui
+    if [[ -e /etc/systemd/system/x-ui.service ]]; then
+        systemctl daemon-reload >/dev/null 2>&1 || true
+        systemctl restart x-ui >/dev/null 2>&1 || true
+    fi
     config_after_install
 
     # Etckeeper compatibility

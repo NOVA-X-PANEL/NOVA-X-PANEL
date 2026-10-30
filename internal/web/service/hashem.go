@@ -2673,9 +2673,9 @@ ip link set dev $IFNAME up
 iptables -t mangle -C POSTROUTING -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || iptables -t mangle -A POSTROUTING -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || true
 iptables -t mangle -C FORWARD -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || iptables -t mangle -A FORWARD -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || true
 
-cat << "UNIT_EOF" > /etc/systemd/system/${IFNAME}.service
+cat << UNIT_EOF > /etc/systemd/system/${IFNAME}.service
 [Unit]
-Description=GRETAP Tunnel $IFNAME (NOVA-X-PANEL)
+Description=GRETAP Tunnel ${IFNAME} (NOVA-X-PANEL)
 After=network-online.target
 Wants=network-online.target
 
@@ -2683,17 +2683,17 @@ Wants=network-online.target
 Type=oneshot
 RemainAfterExit=yes
 ExecStartPre=-/usr/sbin/modprobe ip_gre
-ExecStartPre=-/usr/sbin/ip link del $IFNAME
-ExecStart=/usr/sbin/ip link add name $IFNAME type gretap remote %s ttl 255 tos inherit ikey 2749365187 okey 2749365187 nopmtudisc
-ExecStart=/usr/sbin/ip addr add %s/30 dev $IFNAME
-ExecStart=/usr/sbin/ip link set dev $IFNAME mtu 1280
-ExecStart=/usr/sbin/ip link set dev $IFNAME up
-ExecStartPost=-/usr/sbin/iptables -t mangle -A POSTROUTING -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240
-ExecStartPost=-/usr/sbin/iptables -t mangle -A FORWARD -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240
-ExecStop=-/usr/sbin/ip link set dev $IFNAME down
-ExecStop=-/usr/sbin/ip link del $IFNAME
-ExecStopPost=-/usr/sbin/iptables -t mangle -D POSTROUTING -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240
-ExecStopPost=-/usr/sbin/iptables -t mangle -D FORWARD -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240
+ExecStartPre=-/usr/sbin/ip link del ${IFNAME}
+ExecStart=/usr/sbin/ip link add name ${IFNAME} type gretap remote %s ttl 255 tos inherit ikey 2749365187 okey 2749365187 nopmtudisc
+ExecStart=/usr/sbin/ip addr add %s/30 dev ${IFNAME}
+ExecStart=/usr/sbin/ip link set dev ${IFNAME} mtu 1280
+ExecStart=/usr/sbin/ip link set dev ${IFNAME} up
+ExecStartPost=-/usr/sbin/iptables -t mangle -A POSTROUTING -o ${IFNAME} -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240
+ExecStartPost=-/usr/sbin/iptables -t mangle -A FORWARD -o ${IFNAME} -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240
+ExecStop=-/usr/sbin/ip link set dev ${IFNAME} down
+ExecStop=-/usr/sbin/ip link del ${IFNAME}
+ExecStopPost=-/usr/sbin/iptables -t mangle -D POSTROUTING -o ${IFNAME} -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240
+ExecStopPost=-/usr/sbin/iptables -t mangle -D FORWARD -o ${IFNAME} -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240
 
 [Install]
 WantedBy=multi-user.target
@@ -2790,9 +2790,9 @@ func buildTunnelPanelIranScript(iranIP, foreignIP, iranGreIP, foreignGreIP, port
 	iptablesStr := strings.Join(iptablesRules, "\n")
 	portsDisplay := strings.Join(portList, ", ")
 
-	return fmt.Sprintf(`bash -c 'set -e; echo "=== NOVA-X-PANEL NOVA-TUNELL Fast Setup ==="; sysctl -w net.ipv4.ip_forward=1 >/dev/null 2>&1 || true; sysctl -w net.ipv4.conf.all.rp_filter=2 >/dev/null 2>&1 || true; sysctl -w net.ipv4.conf.default.rp_filter=2 >/dev/null 2>&1 || true; echo "net.ipv4.ip_forward=1" > /etc/sysctl.d/99-nova-tunnel.conf 2>/dev/null || true; echo "net.ipv4.conf.all.rp_filter=2" >> /etc/sysctl.d/99-nova-tunnel.conf 2>/dev/null || true; modprobe ip_gre 2>/dev/null || true; IFNAME="gre-b-1"; ip link del $IFNAME 2>/dev/null || true; ip link add name $IFNAME type gretap local %s remote %s ttl 255 tos inherit ikey 2749365187 okey 2749365187 nopmtudisc 2>/dev/null || ip link add name $IFNAME type gretap remote %s ttl 255 tos inherit ikey 2749365187 okey 2749365187 nopmtudisc; ip addr add %s/30 dev $IFNAME; ip link set dev $IFNAME mtu 1280; ip link set dev $IFNAME up; iptables -t mangle -C POSTROUTING -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || iptables -t mangle -A POSTROUTING -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || true; iptables -t mangle -C FORWARD -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || iptables -t mangle -A FORWARD -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || true; cat << "UNIT_EOF" > /etc/systemd/system/${IFNAME}.service
+	return fmt.Sprintf(`bash -c 'set -e; echo "=== NOVA-X-PANEL NOVA-TUNELL Fast Setup ==="; sysctl -w net.ipv4.ip_forward=1 >/dev/null 2>&1 || true; sysctl -w net.ipv4.conf.all.rp_filter=2 >/dev/null 2>&1 || true; sysctl -w net.ipv4.conf.default.rp_filter=2 >/dev/null 2>&1 || true; echo "net.ipv4.ip_forward=1" > /etc/sysctl.d/99-nova-tunnel.conf 2>/dev/null || true; echo "net.ipv4.conf.all.rp_filter=2" >> /etc/sysctl.d/99-nova-tunnel.conf 2>/dev/null || true; modprobe ip_gre 2>/dev/null || true; IFNAME="gre-b-1"; ip link del $IFNAME 2>/dev/null || true; ip link add name $IFNAME type gretap local %s remote %s ttl 255 tos inherit ikey 2749365187 okey 2749365187 nopmtudisc 2>/dev/null || ip link add name $IFNAME type gretap remote %s ttl 255 tos inherit ikey 2749365187 okey 2749365187 nopmtudisc; ip addr add %s/30 dev $IFNAME; ip link set dev $IFNAME mtu 1280; ip link set dev $IFNAME up; iptables -t mangle -C POSTROUTING -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || iptables -t mangle -A POSTROUTING -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || true; iptables -t mangle -C FORWARD -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || iptables -t mangle -A FORWARD -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || true; cat << UNIT_EOF > /etc/systemd/system/${IFNAME}.service
 [Unit]
-Description=GRETAP Tunnel $IFNAME (NOVA-X-PANEL)
+Description=GRETAP Tunnel ${IFNAME} (NOVA-X-PANEL)
 After=network-online.target
 Wants=network-online.target
 
@@ -2800,17 +2800,17 @@ Wants=network-online.target
 Type=oneshot
 RemainAfterExit=yes
 ExecStartPre=-/usr/sbin/modprobe ip_gre
-ExecStartPre=-/usr/sbin/ip link del $IFNAME
-ExecStart=/usr/sbin/ip link add name $IFNAME type gretap remote %s ttl 255 tos inherit ikey 2749365187 okey 2749365187 nopmtudisc
-ExecStart=/usr/sbin/ip addr add %s/30 dev $IFNAME
-ExecStart=/usr/sbin/ip link set dev $IFNAME mtu 1280
-ExecStart=/usr/sbin/ip link set dev $IFNAME up
-ExecStartPost=-/usr/sbin/iptables -t mangle -A POSTROUTING -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240
-ExecStartPost=-/usr/sbin/iptables -t mangle -A FORWARD -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240
-ExecStop=-/usr/sbin/ip link set dev $IFNAME down
-ExecStop=-/usr/sbin/ip link del $IFNAME
-ExecStopPost=-/usr/sbin/iptables -t mangle -D POSTROUTING -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240
-ExecStopPost=-/usr/sbin/iptables -t mangle -D FORWARD -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240
+ExecStartPre=-/usr/sbin/ip link del ${IFNAME}
+ExecStart=/usr/sbin/ip link add name ${IFNAME} type gretap remote %s ttl 255 tos inherit ikey 2749365187 okey 2749365187 nopmtudisc
+ExecStart=/usr/sbin/ip addr add %s/30 dev ${IFNAME}
+ExecStart=/usr/sbin/ip link set dev ${IFNAME} mtu 1280
+ExecStart=/usr/sbin/ip link set dev ${IFNAME} up
+ExecStartPost=-/usr/sbin/iptables -t mangle -A POSTROUTING -o ${IFNAME} -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240
+ExecStartPost=-/usr/sbin/iptables -t mangle -A FORWARD -o ${IFNAME} -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240
+ExecStop=-/usr/sbin/ip link set dev ${IFNAME} down
+ExecStop=-/usr/sbin/ip link del ${IFNAME}
+ExecStopPost=-/usr/sbin/iptables -t mangle -D POSTROUTING -o ${IFNAME} -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240
+ExecStopPost=-/usr/sbin/iptables -t mangle -D FORWARD -o ${IFNAME} -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240
 
 [Install]
 WantedBy=multi-user.target

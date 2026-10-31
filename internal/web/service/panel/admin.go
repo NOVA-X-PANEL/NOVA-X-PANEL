@@ -217,6 +217,7 @@ func adminToView(user *model.User, role *model.AdminRole, selfID int, usedBytes,
 
 // List returns every panel account with its role resolved.
 func (s *AdminService) List() ([]*AdminView, error) {
+	_ = s.SyncAdminUsedBytes()
 	db := database.GetDB()
 	var users []model.User
 	if err := db.Order("id ASC").Find(&users).Error; err != nil {

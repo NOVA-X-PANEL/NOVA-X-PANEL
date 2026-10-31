@@ -626,9 +626,13 @@ func (s *OpenVPNService) GetStatus(scopes ...OpenVPNAccessScope) (*OpenVPNStatus
 	for _, r := range allRoles {
 		roleNameMap[r.Id] = r.Name
 	}
+	adminLimitExceededMap := make(map[int]bool)
 	for _, a := range allAdmins {
 		adminNameMap[a.Id] = a.Username
 		adminRoleMap[a.Id] = roleNameMap[a.RoleId]
+		if a.DataLimit > 0 && a.UsedBytes >= a.DataLimit {
+			adminLimitExceededMap[a.Id] = true
+		}
 	}
 
 	type adminUsageAgg struct {
@@ -669,7 +673,8 @@ func (s *OpenVPNService) GetStatus(scopes ...OpenVPNAccessScope) (*OpenVPNStatus
 
 		totalUsed := u.Up + u.Down + liveRx + liveTx
 		isExpired := u.ExpiryTime > 0 && nowMs >= u.ExpiryTime
-		isTrafficExceeded := u.TotalGB > 0 && totalUsed >= (u.TotalGB*1024*1024*1024)
+		isTrafficExceeded := (u.TotalGB > 0 && totalUsed >= (u.TotalGB*1024*1024*1024)) ||
+			(u.OwnerAdminId > 0 && adminLimitExceededMap[u.OwnerAdminId])
 
 		limitStr := "نامحدود"
 		var percent float64 = 0

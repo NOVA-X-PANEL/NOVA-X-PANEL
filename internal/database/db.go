@@ -207,6 +207,9 @@ func initModels() error {
 	if err := migrateClientEmailLowerIndex(); err != nil {
 		return err
 	}
+	if err := migrateOpenVPNOwnerAdminIDColumn(); err != nil {
+		return err
+	}
 	if IsPostgres() {
 		if err := resyncPostgresSequences(db, models); err != nil {
 			log.Printf("Error resyncing postgres sequences: %v", err)
@@ -407,6 +410,17 @@ func migrateClientEmailLowerIndex() error {
 		return nil
 	}
 	return db.Exec("CREATE INDEX IF NOT EXISTS idx_clients_email_lower ON clients (LOWER(email))").Error
+}
+
+func migrateOpenVPNOwnerAdminIDColumn() error {
+	migrator := db.Migrator()
+	if migrator.HasTable(&model.OpenVPNUser{}) {
+		if !migrator.HasColumn(&model.OpenVPNUser{}, "owner_admin_id") {
+			_ = migrator.AddColumn(&model.OpenVPNUser{}, "OwnerAdminId")
+		}
+		_ = db.Exec("UPDATE open_vpn_users SET owner_admin_id = 0 WHERE owner_admin_id IS NULL").Error
+	}
+	return nil
 }
 
 func migrateHostVerifyPeerCertByNameColumn() error {

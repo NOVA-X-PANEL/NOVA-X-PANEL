@@ -132,6 +132,25 @@ func adminUsageByOwner(db *gorm.DB) (map[int]int64, map[int]int64, error) {
 		used[row.AdminID] = row.UsedBytes
 		counts[row.AdminID] = row.Count
 	}
+
+	// Aggregate OpenVPN clients usage by owner_admin_id
+	if db.Migrator().HasTable("open_vpn_users") {
+		var ovpnUsage []adminUsageRow
+		if err := db.Table("open_vpn_users").
+			Select("owner_admin_id AS admin_id, COALESCE(SUM(COALESCE(up, 0) + COALESCE(down, 0)), 0) AS used_bytes, COUNT(*) AS count").
+			Where("owner_admin_id > 0").
+			Group("owner_admin_id").
+			Scan(&ovpnUsage).Error; err == nil {
+			for _, row := range ovpnUsage {
+				if row.AdminID <= 0 {
+					continue
+				}
+				used[row.AdminID] += row.UsedBytes
+				counts[row.AdminID] += row.Count
+			}
+		}
+	}
+
 	return used, counts, nil
 }
 
@@ -318,7 +337,10 @@ func (s *AdminService) SyncAdminUsedBytes() error {
 		// Enforce disconnectUsersWhenLimited when data limit is reached
 		if user.DataLimit > 0 {
 			if next >= user.DataLimit && user.UsedBytes < user.DataLimit {
-				// Reached limit: check if role has disconnectUsersWhenLimited
+				// Reached limit: auto-disable all OpenVPN clients belonging to this admin
+				_, _ = s.DisableAllActiveOpenVPNUsers(user.Id)
+
+				// check if role has disconnectUsersWhenLimited
 				var role model.AdminRole
 				if db.Where("id = ?", user.RoleId).First(&role).Error == nil {
 					if features, ok := decodeRoleJSON(role.FeaturesJSON).(map[string]any); ok {
@@ -328,7 +350,10 @@ func (s *AdminService) SyncAdminUsedBytes() error {
 					}
 				}
 			} else if next < user.DataLimit && user.UsedBytes >= user.DataLimit {
-				// Traffic was reset / limit raised: re-activate clients
+				// Traffic was reset / limit raised: re-activate OpenVPN clients
+				_, _ = s.ActivateAllDisabledOpenVPNUsers(user.Id)
+
+				// re-activate clients
 				var role model.AdminRole
 				if db.Where("id = ?", user.RoleId).First(&role).Error == nil {
 					if features, ok := decodeRoleJSON(role.FeaturesJSON).(map[string]any); ok {
@@ -669,4 +694,42 @@ func (s *AdminService) RemoveAllUsers(id int) (int, error) {
 		return result.Deleted, err
 	}
 	return result.Deleted, nil
+}
+
+// DisableAllActiveOpenVPNUsers disables every enabled OpenVPN client the admin owns
+// and terminates their active connections.
+func (s *AdminService) DisableAllActiveOpenVPNUsers(id int) (int64, error) {
+	if id <= 0 {
+		return 0, nil
+	}
+	db := database.GetDB()
+	var users []model.OpenVPNUser
+	if err := db.Where("owner_admin_id = ? AND enable = ?", id, true).Find(&users).Error; err != nil {
+		return 0, err
+	}
+	if len(users) == 0 {
+		return 0, nil
+	}
+	res := db.Model(&model.OpenVPNUser{}).Where("owner_admin_id = ? AND enable = ?", id, true).Update("enable", false)
+	if res.Error != nil {
+		return 0, res.Error
+	}
+	ovpn := &core.OpenVPNService{}
+	for _, u := range users {
+		_ = ovpn.KillClient(u.Name)
+	}
+	return res.RowsAffected, nil
+}
+
+// ActivateAllDisabledOpenVPNUsers enables every disabled OpenVPN client the admin owns.
+func (s *AdminService) ActivateAllDisabledOpenVPNUsers(id int) (int64, error) {
+	if id <= 0 {
+		return 0, nil
+	}
+	db := database.GetDB()
+	res := db.Model(&model.OpenVPNUser{}).Where("owner_admin_id = ? AND enable = ?", id, false).Update("enable", true)
+	if res.Error != nil {
+		return 0, res.Error
+	}
+	return res.RowsAffected, nil
 }

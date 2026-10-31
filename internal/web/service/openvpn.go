@@ -71,6 +71,33 @@ type OpenVPNClientInfo struct {
 	Since              string   `json:"since,omitempty"`
 	IsExpired          bool     `json:"is_expired"`
 	IsTrafficExceeded  bool     `json:"is_traffic_exceeded"`
+	OwnerAdminId       int      `json:"owner_admin_id"`
+	OwnerAdminUsername string   `json:"owner_admin_username"`
+}
+
+// OpenVPNAccessScope defines the permission boundary for the acting admin.
+type OpenVPNAccessScope struct {
+	AdminID int
+	Mode    int // 0 = None, 1 = Own, 2 = All
+	IsOwner bool
+}
+
+// OpenVPNAdminUsage contains usage summary and quota for an admin.
+type OpenVPNAdminUsage struct {
+	AdminID        int     `json:"admin_id"`
+	Username       string  `json:"username"`
+	RoleName       string  `json:"role_name"`
+	ClientCount    int     `json:"client_count"`
+	OnlineCount    int     `json:"online_count"`
+	TotalUp        int64   `json:"total_up"`
+	TotalDown      int64   `json:"total_down"`
+	TotalUsed      int64   `json:"total_used"`
+	TrafficUsedStr string  `json:"traffic_used_str"`
+	DataLimit      int64   `json:"data_limit"`
+	DataLimitStr   string  `json:"data_limit_str"`
+	UsagePercent   float64 `json:"usage_percent"`
+	IsLimited      bool    `json:"is_limited"`
+	Status         string  `json:"status"`
 }
 
 // OpenVPNStatus contains overall OpenVPN server status and client list.
@@ -88,6 +115,7 @@ type OpenVPNStatus struct {
 	OnlineClients    int                      `json:"online_clients"`
 	ConnectedClients []OpenVPNConnectedClient `json:"connected_clients"`
 	Clients          []OpenVPNClientInfo      `json:"clients"`
+	AdminStats       []OpenVPNAdminUsage      `json:"admin_stats"`
 }
 
 // OpenVPNService manages OpenVPN server, easy-rsa certificates, client configs, and accounting.
@@ -404,9 +432,14 @@ func getIranTunnelIP() string {
 	return ""
 }
 
-func (s *OpenVPNService) GetStatus() (*OpenVPNStatus, error) {
+func (s *OpenVPNService) GetStatus(scopes ...OpenVPNAccessScope) (*OpenVPNStatus, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
+
+	scope := OpenVPNAccessScope{Mode: 2, IsOwner: true}
+	if len(scopes) > 0 {
+		scope = scopes[0]
+	}
 
 	status := &OpenVPNStatus{
 		Installed:        false,
@@ -418,6 +451,7 @@ func (s *OpenVPNService) GetStatus() (*OpenVPNStatus, error) {
 		IranIP:           getIranTunnelIP(),
 		ConnectedClients: []OpenVPNConnectedClient{},
 		Clients:          []OpenVPNClientInfo{},
+		AdminStats:       []OpenVPNAdminUsage{},
 	}
 
 	hasOpenvpn := false
@@ -576,6 +610,32 @@ func (s *OpenVPNService) GetStatus() (*OpenVPNStatus, error) {
 
 	nowMs := time.Now().UnixMilli()
 
+	adminNameMap := make(map[int]string)
+	adminRoleMap := make(map[int]string)
+	var allAdmins []model.User
+	_ = db.Find(&allAdmins).Error
+	var allRoles []model.AdminRole
+	_ = db.Find(&allRoles).Error
+	roleNameMap := make(map[int]string)
+	for _, r := range allRoles {
+		roleNameMap[r.Id] = r.Name
+	}
+	for _, a := range allAdmins {
+		adminNameMap[a.Id] = a.Username
+		adminRoleMap[a.Id] = roleNameMap[a.RoleId]
+	}
+
+	type adminUsageAgg struct {
+		clientCount int
+		onlineCount int
+		totalUp     int64
+		totalDown   int64
+	}
+	adminAggs := make(map[int]*adminUsageAgg)
+	for _, a := range allAdmins {
+		adminAggs[a.Id] = &adminUsageAgg{}
+	}
+
 	// Build full client info list
 	for _, u := range dbUsers {
 		createdAt := ""
@@ -615,6 +675,26 @@ func (s *OpenVPNService) GetStatus() (*OpenVPNStatus, error) {
 			}
 		}
 
+		// Update admin stats aggregator
+		agg, exists := adminAggs[u.OwnerAdminId]
+		if !exists {
+			agg = &adminUsageAgg{}
+			adminAggs[u.OwnerAdminId] = agg
+		}
+		agg.clientCount++
+		if isConnected {
+			agg.onlineCount++
+		}
+		agg.totalUp += u.Up + liveRx
+		agg.totalDown += u.Down + liveTx
+
+		// Scope check: an admin with ScopeOwn only sees their own clients
+		if !scope.IsOwner && scope.Mode != 2 {
+			if scope.Mode == 0 || u.OwnerAdminId != scope.AdminID {
+				continue
+			}
+		}
+
 		clientInfo := OpenVPNClientInfo{
 			Name:               u.Name,
 			Password:           u.Password,
@@ -635,17 +715,83 @@ func (s *OpenVPNService) GetStatus() (*OpenVPNStatus, error) {
 			Since:              since,
 			IsExpired:          isExpired,
 			IsTrafficExceeded:  isTrafficExceeded,
+			OwnerAdminId:       u.OwnerAdminId,
+			OwnerAdminUsername: adminNameMap[u.OwnerAdminId],
 		}
 
 		status.Clients = append(status.Clients, clientInfo)
 	}
 
+	// Populate AdminStats
+	for _, a := range allAdmins {
+		if !scope.IsOwner && scope.Mode != 2 && a.Id != scope.AdminID {
+			continue
+		}
+		agg := adminAggs[a.Id]
+		if agg == nil {
+			agg = &adminUsageAgg{}
+		}
+		totalUsed := agg.totalUp + agg.totalDown
+		limitStr := "نامحدود"
+		var percent float64 = 0
+		if a.DataLimit > 0 {
+			limitStr = FormatBytes(a.DataLimit)
+			percent = (float64(a.UsedBytes) / float64(a.DataLimit)) * 100
+			if percent > 100 {
+				percent = 100
+			}
+		}
+
+		status.AdminStats = append(status.AdminStats, OpenVPNAdminUsage{
+			AdminID:        a.Id,
+			Username:       a.Username,
+			RoleName:       adminRoleMap[a.Id],
+			ClientCount:    agg.clientCount,
+			OnlineCount:    agg.onlineCount,
+			TotalUp:        agg.totalUp,
+			TotalDown:      agg.totalDown,
+			TotalUsed:      totalUsed,
+			TrafficUsedStr: FormatBytes(totalUsed),
+			DataLimit:      a.DataLimit,
+			DataLimitStr:   limitStr,
+			UsagePercent:   percent,
+			IsLimited:      a.DataLimit > 0 && a.UsedBytes >= a.DataLimit,
+			Status:         a.Status,
+		})
+	}
+
+	onlinePermitted := 0
+	for _, c := range status.Clients {
+		if c.IsConnected {
+			onlinePermitted++
+		}
+	}
 	status.TotalClients = len(status.Clients)
+	status.OnlineClients = onlinePermitted
 	return status, nil
 }
 
+// CanManageClient verifies if the acting scope permits mutating/viewing this client.
+func (s *OpenVPNService) CanManageClient(scope OpenVPNAccessScope, name string) error {
+	if scope.IsOwner || scope.Mode == 2 {
+		return nil
+	}
+	if scope.Mode == 0 {
+		return errors.New("شما اجازه دسترسی به کلاینت‌های OpenVPN را ندارید")
+	}
+	db := database.GetDB()
+	var user model.OpenVPNUser
+	if err := db.Where("name = ?", name).First(&user).Error; err != nil {
+		return fmt.Errorf("کلاینت '%s' یافت نشد", name)
+	}
+	if user.OwnerAdminId != scope.AdminID {
+		return errors.New("شما فقط مجاز به مدیریت کلاینت‌های اختصاصی خود هستید")
+	}
+	return nil
+}
+
 // AddClient builds a new client certificate using Easy-RSA and saves limits to DB.
-func (s *OpenVPNService) AddClient(name string, password string, totalGB int64, expiryTime int64, limitIP int) error {
+func (s *OpenVPNService) AddClient(name string, password string, totalGB int64, expiryTime int64, limitIP int, ownerAdminId ...int) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -701,17 +847,31 @@ rm -f /tmp/%s.csr /tmp/%s.ext
 		}
 	}
 
+	uOwner := 0
+	if len(ownerAdminId) > 0 {
+		uOwner = ownerAdminId[0]
+	}
+	if uOwner > 0 {
+		var adminUser model.User
+		if err := db.Where("id = ?", uOwner).First(&adminUser).Error; err == nil {
+			if adminUser.DataLimit > 0 && adminUser.UsedBytes >= adminUser.DataLimit {
+				return errors.New("سهمیه ترافیک مجاز این ادمین به پایان رسیده است و امکان ساخت کلاینت جدید وجود ندارد")
+			}
+		}
+	}
+
 	if _, err := os.Stat(crtFile); err != nil {
 		return fmt.Errorf("certificate was not generated: %v", err)
 	}
 
 	user := &model.OpenVPNUser{
-		Name:       name,
-		Password:   password,
-		Enable:     true,
-		TotalGB:    totalGB,
-		ExpiryTime: expiryTime,
-		LimitIP:    limitIP,
+		Name:         name,
+		Password:     password,
+		Enable:       true,
+		TotalGB:      totalGB,
+		ExpiryTime:   expiryTime,
+		LimitIP:      limitIP,
+		OwnerAdminId: uOwner,
 	}
 	if err := db.Create(user).Error; err != nil {
 		return fmt.Errorf("client cert created but failed to save to database: %w", err)

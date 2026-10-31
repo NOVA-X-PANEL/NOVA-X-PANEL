@@ -6,6 +6,7 @@ const RESOURCE_ALIASES: Record<string, string[]> = {
   roles: ['roles', 'admin_roles'],
   admin_roles: ['admin_roles', 'roles'],
   clients: ['users'],
+  openvpn: ['openvpn', 'open_vpn'],
 }
 
 const ACTION_ALIASES: Record<string, string[]> = {
@@ -85,6 +86,11 @@ const ROUTE_PERMISSIONS: Record<string, RoutePermission[]> = {
     { resource: 'cores', action: 'read_simple' },
   ],
   '/hosts': [{ resource: 'hosts', action: 'read' }],
+  '/openvpn': [
+    { resource: 'openvpn', action: 'read' },
+    { resource: 'openvpn', action: 'read_simple' },
+    { resource: 'openvpn', action: 'view' },
+  ],
 }
 
 const FALLBACK_ROUTE = '/api-docs'

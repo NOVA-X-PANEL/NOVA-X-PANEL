@@ -139,6 +139,19 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
       { resource: 'system', action: 'read' },
     ],
   },
+  {
+    labelKey: 'openvpn',
+    actions: [
+      { resource: 'openvpn', action: 'read', scoped: true },
+      { resource: 'openvpn', action: 'read_simple', scoped: true },
+      { resource: 'openvpn', action: 'create' },
+      { resource: 'openvpn', action: 'update', scoped: true },
+      { resource: 'openvpn', action: 'delete', scoped: true },
+      { resource: 'openvpn', action: 'reset_usage', scoped: true },
+      { resource: 'openvpn', action: 'kill', scoped: true },
+      { resource: 'openvpn', action: 'config', scoped: true },
+    ],
+  },
 ]
 
 export const LIMIT_KEYS = ['max_users', 'data_limit_min', 'data_limit_max', 'expire_days_min', 'expire_days_max', 'download_mbps_min', 'download_mbps_max', 'upload_mbps_min', 'upload_mbps_max'] as const

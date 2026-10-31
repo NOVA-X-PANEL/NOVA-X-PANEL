@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -10,6 +11,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/session"
 )
 
 // OpenVPNController provides HTTP endpoints for managing OpenVPN server, accounting, and clients.
@@ -26,30 +28,145 @@ func NewOpenVPNController(g *gin.RouterGroup) *OpenVPNController {
 }
 
 func (a *OpenVPNController) initRouter(g *gin.RouterGroup) {
-	g.GET("/status", requireOwnerRole(), a.status)
+	g.GET("/status", requireAnyPanelPermission(
+		panelPermissionRequirement{"openvpn", "read"},
+		panelPermissionRequirement{"openvpn", "view"},
+		panelPermissionRequirement{"openvpn", "read_simple"},
+	), a.status)
 	g.POST("/settings", requireOwnerRole(), a.saveSettings)
 	g.POST("/install", requireOwnerRole(), a.install)
-	g.POST("/client/add", requireOwnerRole(), a.addClient)
-	g.POST("/client/update", requireOwnerRole(), a.updateClient)
-	g.POST("/client/reset", requireOwnerRole(), a.resetTraffic)
-	g.POST("/client/del", requireOwnerRole(), a.delClient)
-	g.POST("/client/kill", requireOwnerRole(), a.killClient)
-	g.GET("/client/config", requireOwnerRole(), a.clientConfig)
+	g.POST("/client/add", requirePanelPermission("openvpn", "create"), a.addClient)
+	g.POST("/client/update", requireAnyPanelPermission(panelPermissionRequirement{"openvpn", "update"}), a.updateClient)
+	g.POST("/client/reset", requireAnyPanelPermission(panelPermissionRequirement{"openvpn", "reset_usage"}, panelPermissionRequirement{"openvpn", "resetUsage"}), a.resetTraffic)
+	g.POST("/client/del", requireAnyPanelPermission(panelPermissionRequirement{"openvpn", "delete"}), a.delClient)
+	g.POST("/client/kill", requireAnyPanelPermission(panelPermissionRequirement{"openvpn", "kill"}), a.killClient)
+	g.GET("/client/config", requireAnyPanelPermission(
+		panelPermissionRequirement{"openvpn", "config"},
+		panelPermissionRequirement{"openvpn", "read"},
+		panelPermissionRequirement{"openvpn", "view"},
+	), a.clientConfig)
 	g.POST("/restart", requireOwnerRole(), a.restart)
 	g.GET("/log", requireOwnerRole(), a.log)
 }
 
+func (a *OpenVPNController) openvpnScope(c *gin.Context, permission string) service.OpenVPNAccessScope {
+	if c.GetBool("api_authed") && c.GetInt("api_token_admin_id") <= 0 {
+		return service.OpenVPNAccessScope{Mode: 2, IsOwner: true}
+	}
+	user := a.loginUser(c)
+	if user == nil && gin.Mode() == gin.TestMode {
+		return service.OpenVPNAccessScope{Mode: 2, IsOwner: true}
+	}
+	if user == nil {
+		return service.OpenVPNAccessScope{Mode: 0}
+	}
+
+	role, err := adminRoleOf(user)
+	if err != nil {
+		return service.OpenVPNAccessScope{AdminID: user.Id, Mode: 0}
+	}
+	if role.OwnerRole {
+		return service.OpenVPNAccessScope{AdminID: user.Id, Mode: 2, IsOwner: true}
+	}
+
+	var root map[string]any
+	if err := json.Unmarshal([]byte(role.PermissionsJSON), &root); err != nil {
+		return service.OpenVPNAccessScope{AdminID: user.Id, Mode: 0}
+	}
+
+	ovpnPerms, ok := root["openvpn"].(map[string]any)
+	if !ok {
+		return service.OpenVPNAccessScope{AdminID: user.Id, Mode: 0}
+	}
+
+	val, exists := ovpnPerms[permission]
+	if !exists {
+		for _, k := range permissionKeys(permission) {
+			if v, ok := ovpnPerms[k]; ok {
+				val = v
+				exists = true
+				break
+			}
+		}
+	}
+
+	mode := 0
+	if exists {
+		switch v := val.(type) {
+		case bool:
+			if v {
+				mode = 2
+			}
+		case string:
+			switch strings.ToLower(strings.TrimSpace(v)) {
+			case "all":
+				mode = 2
+			case "own":
+				mode = 1
+			case "true", "1", "yes":
+				mode = 2
+			}
+		case map[string]any:
+			if sc, ok := v["scope"]; ok {
+				switch s := sc.(type) {
+				case float64:
+					mode = int(s)
+				case int:
+					mode = s
+				case string:
+					if s == "all" || s == "2" {
+						mode = 2
+					} else if s == "own" || s == "1" {
+						mode = 1
+					}
+				}
+			}
+		case float64:
+			mode = int(v)
+		case int:
+			mode = v
+		}
+	}
+
+	return service.OpenVPNAccessScope{
+		AdminID: user.Id,
+		Mode:    mode,
+		IsOwner: false,
+	}
+}
+
+func (a *OpenVPNController) loginUser(c *gin.Context) *model.User {
+	var user *model.User
+	func() {
+		defer func() {
+			if recover() != nil {
+				user = nil
+			}
+		}()
+		if c.GetBool("api_authed") {
+			if tokenAdmin := apiTokenAdmin(c); tokenAdmin != nil {
+				user = tokenAdmin
+				return
+			}
+		}
+		user = session.GetLoginUser(c)
+	}()
+	return user
+}
+
 func (a *OpenVPNController) status(c *gin.Context) {
-	status, err := a.openvpnService.GetStatus()
+	scope := a.openvpnScope(c, "read")
+	status, err := a.openvpnService.GetStatus(scope)
 	jsonObj(c, status, err)
 }
 
 type openVPNAddForm struct {
-	Name       string `json:"name" form:"name"`
-	Password   string `json:"password" form:"password"`
-	TotalGB    int64  `json:"totalGB" form:"totalGB"`
-	ExpiryTime int64  `json:"expiryTime" form:"expiryTime"`
-	LimitIP    int    `json:"limitIp" form:"limitIp"`
+	Name         string `json:"name" form:"name"`
+	Password     string `json:"password" form:"password"`
+	TotalGB      int64  `json:"totalGB" form:"totalGB"`
+	ExpiryTime   int64  `json:"expiryTime" form:"expiryTime"`
+	LimitIP      int    `json:"limitIp" form:"limitIp"`
+	OwnerAdminId int    `json:"ownerAdminId" form:"ownerAdminId"`
 }
 
 func (a *OpenVPNController) addClient(c *gin.Context) {
@@ -69,7 +186,13 @@ func (a *OpenVPNController) addClient(c *gin.Context) {
 		password = strings.TrimSpace(c.PostForm("password"))
 	}
 
-	err := a.openvpnService.AddClient(name, password, form.TotalGB, form.ExpiryTime, form.LimitIP)
+	scope := a.openvpnScope(c, "create")
+	ownerAdminId := scope.AdminID
+	if scope.IsOwner && form.OwnerAdminId > 0 {
+		ownerAdminId = form.OwnerAdminId
+	}
+
+	err := a.openvpnService.AddClient(name, password, form.TotalGB, form.ExpiryTime, form.LimitIP, ownerAdminId)
 	jsonMsg(c, fmt.Sprintf("Client '%s' created successfully", name), err)
 }
 
@@ -92,6 +215,12 @@ func (a *OpenVPNController) updateClient(c *gin.Context) {
 	name := strings.TrimSpace(form.Name)
 	if name == "" {
 		name = strings.TrimSpace(c.PostForm("name"))
+	}
+
+	scope := a.openvpnScope(c, "update")
+	if err := a.openvpnService.CanManageClient(scope, name); err != nil {
+		pureJsonMsg(c, http.StatusForbidden, false, err.Error())
+		return
 	}
 
 	password := strings.TrimSpace(form.Password)
@@ -143,6 +272,13 @@ func (a *OpenVPNController) resetTraffic(c *gin.Context) {
 	if name == "" {
 		name = strings.TrimSpace(c.Query("name"))
 	}
+
+	scope := a.openvpnScope(c, "reset_usage")
+	if err := a.openvpnService.CanManageClient(scope, name); err != nil {
+		pureJsonMsg(c, http.StatusForbidden, false, err.Error())
+		return
+	}
+
 	err := a.openvpnService.ResetClientTraffic(name)
 	jsonMsg(c, fmt.Sprintf("Traffic for '%s' reset successfully", name), err)
 }
@@ -157,6 +293,13 @@ func (a *OpenVPNController) delClient(c *gin.Context) {
 	if name == "" {
 		name = strings.TrimSpace(c.Query("name"))
 	}
+
+	scope := a.openvpnScope(c, "delete")
+	if err := a.openvpnService.CanManageClient(scope, name); err != nil {
+		pureJsonMsg(c, http.StatusForbidden, false, err.Error())
+		return
+	}
+
 	err := a.openvpnService.DeleteClient(name)
 	jsonMsg(c, fmt.Sprintf("Client '%s' deleted", name), err)
 }
@@ -171,6 +314,13 @@ func (a *OpenVPNController) killClient(c *gin.Context) {
 	if name == "" {
 		name = strings.TrimSpace(c.Query("name"))
 	}
+
+	scope := a.openvpnScope(c, "kill")
+	if err := a.openvpnService.CanManageClient(scope, name); err != nil {
+		pureJsonMsg(c, http.StatusForbidden, false, err.Error())
+		return
+	}
+
 	err := a.openvpnService.KillClient(name)
 	jsonMsg(c, fmt.Sprintf("Client '%s' disconnected", name), err)
 }
@@ -179,6 +329,12 @@ func (a *OpenVPNController) clientConfig(c *gin.Context) {
 	name := strings.TrimSpace(c.Query("client"))
 	if name == "" {
 		name = strings.TrimSpace(c.Query("name"))
+	}
+
+	scope := a.openvpnScope(c, "config")
+	if err := a.openvpnService.CanManageClient(scope, name); err != nil {
+		pureJsonMsg(c, http.StatusForbidden, false, err.Error())
+		return
 	}
 	remoteIP := strings.TrimSpace(c.Query("ip"))
 	portStr := strings.TrimSpace(c.Query("port"))

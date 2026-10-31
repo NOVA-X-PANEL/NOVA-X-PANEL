@@ -24,6 +24,7 @@ import {
   Avatar,
   Empty,
   Alert,
+  Select,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs, { type Dayjs } from 'dayjs';
@@ -54,6 +55,8 @@ import {
 import { HttpUtil } from '@/utils';
 import { useTheme } from '@/hooks/useTheme';
 import AppSidebar from '@/layouts/AppSidebar';
+import { useAdmin } from '@/pg-ui/hooks/use-admin';
+import { isOwner, hasPermission } from '@/pg-ui/utils/rbac';
 import './OpenVPNPage.css';
 
 const { Title, Text, Paragraph } = Typography;
@@ -78,6 +81,8 @@ interface OpenVPNClientInfo {
   since?: string;
   is_expired: boolean;
   is_traffic_exceeded: boolean;
+  owner_admin_id?: number;
+  owner_admin_username?: string;
 }
 
 interface OpenVPNConnectedClient {
@@ -86,6 +91,23 @@ interface OpenVPNConnectedClient {
   bytes_received: string;
   bytes_sent: string;
   connected_since: string;
+}
+
+interface OpenVPNAdminUsage {
+  admin_id: number;
+  username: string;
+  role_name: string;
+  client_count: number;
+  online_count: number;
+  total_up: number;
+  total_down: number;
+  total_used: number;
+  traffic_used_str: string;
+  data_limit: number;
+  data_limit_str: string;
+  usage_percent: number;
+  is_limited: boolean;
+  status: string;
 }
 
 interface OpenVPNStatus {
@@ -102,11 +124,21 @@ interface OpenVPNStatus {
   online_clients: number;
   connected_clients: OpenVPNConnectedClient[];
   clients: OpenVPNClientInfo[];
+  admin_stats?: OpenVPNAdminUsage[];
 }
 
 export default function OpenVPNPage() {
   const { isDark, isUltra, antdThemeConfig } = useTheme();
   const [messageApi, contextHolder] = message.useMessage();
+  const { admin } = useAdmin();
+
+  const isOwnerAdmin = isOwner(admin);
+  const canCreate = isOwnerAdmin || hasPermission(admin, 'openvpn', 'create');
+  const canUpdate = isOwnerAdmin || hasPermission(admin, 'openvpn', 'update');
+  const canDelete = isOwnerAdmin || hasPermission(admin, 'openvpn', 'delete');
+  const canReset = isOwnerAdmin || hasPermission(admin, 'openvpn', 'reset_usage');
+  const canKill = isOwnerAdmin || hasPermission(admin, 'openvpn', 'kill');
+  const canDownloadConfig = isOwnerAdmin || hasPermission(admin, 'openvpn', 'config');
 
   const pageClass = useMemo(() => {
     const classes = ['openvpn-page'];
@@ -336,12 +368,14 @@ export default function OpenVPNPage() {
     totalGB?: number;
     expiryDate?: Dayjs | null;
     limitIp?: number;
+    ownerAdminId?: number;
   }) => {
     const name = values.name.trim();
     const password = values.password ? values.password.trim() : '';
     const totalGB = values.totalGB || 0;
     const limitIp = values.limitIp || 0;
     const expiryTime = values.expiryDate ? values.expiryDate.valueOf() : 0;
+    const ownerAdminId = values.ownerAdminId || 0;
 
     setAddingClient(true);
     try {
@@ -351,6 +385,7 @@ export default function OpenVPNPage() {
         totalGB,
         expiryTime,
         limitIp,
+        ownerAdminId,
       });
       if (res && res.success) {
         messageApi.success(`کاربر ${name} با موفقیت ساخته شد`);
@@ -686,6 +721,19 @@ export default function OpenVPNPage() {
       ),
     },
     {
+      title: 'مدیر مالک',
+      dataIndex: 'owner_admin_username',
+      key: 'owner_admin',
+      render: (ownerName: string, record) => (
+        <Space size={4}>
+          <UserOutlined style={{ color: '#00e5ff', fontSize: 12 }} />
+          <Tag color="cyan" style={{ borderRadius: 6, fontWeight: 500 }}>
+            {ownerName || (record.owner_admin_id ? `ادمین #${record.owner_admin_id}` : 'مدیر کل')}
+          </Tag>
+        </Space>
+      ),
+    },
+    {
       title: 'وضعیت حساب',
       key: 'enable',
       render: (_, record) => (
@@ -693,6 +741,7 @@ export default function OpenVPNPage() {
           <Switch
             size="small"
             checked={record.enable}
+            disabled={!canUpdate}
             onChange={(checked) => handleToggleEnable(record, checked)}
           />
           {record.enable ? (
@@ -831,42 +880,50 @@ export default function OpenVPNPage() {
       render: (_, record) => {
         return (
           <Space wrap size="small">
-            <Button
-              size="small"
-              type="primary"
-              icon={<DownloadOutlined />}
-              className="openvpn-btn-action-download"
-              onClick={() => triggerDownload(record.name, activeHost, activePort, false)}
-            >
-              دانلود فایل .ovpn
-            </Button>
-
-            <Tooltip title="مشاهده کانفیگ، تنظیمات IP و پورت، و کپی جزئیات">
+            {canDownloadConfig && (
               <Button
                 size="small"
-                icon={<EyeOutlined />}
-                onClick={() => openConfigModal(record)}
+                type="primary"
+                icon={<DownloadOutlined />}
+                className="openvpn-btn-action-download"
+                onClick={() => triggerDownload(record.name, activeHost, activePort, false)}
               >
-                کانفیگ
+                دانلود فایل .ovpn
               </Button>
-            </Tooltip>
+            )}
 
-            <Tooltip title="ویرایش اطلاعات و پسورد">
-              <Button size="small" icon={<EditOutlined />} onClick={() => openEditModal(record)} />
-            </Tooltip>
+            {canDownloadConfig && (
+              <Tooltip title="مشاهده کانفیگ، تنظیمات IP و پورت، و کپی جزئیات">
+                <Button
+                  size="small"
+                  icon={<EyeOutlined />}
+                  onClick={() => openConfigModal(record)}
+                >
+                  کانفیگ
+                </Button>
+              </Tooltip>
+            )}
 
-            <Tooltip title="ریست ترافیک مصرفی">
-              <Popconfirm
-                title={`آیا از ریست ترافیک '${record.name}' مطمئن هستید؟`}
-                okText="بله، ریست کن"
-                cancelText="انصراف"
-                onConfirm={() => handleResetTraffic(record.name)}
-              >
-                <Button size="small" icon={<UndoOutlined />} />
-              </Popconfirm>
-            </Tooltip>
+            {canUpdate && (
+              <Tooltip title="ویرایش اطلاعات و پسورد">
+                <Button size="small" icon={<EditOutlined />} onClick={() => openEditModal(record)} />
+              </Tooltip>
+            )}
 
-            {record.is_connected && (
+            {canReset && (
+              <Tooltip title="ریست ترافیک مصرفی">
+                <Popconfirm
+                  title={`آیا از ریست ترافیک '${record.name}' مطمئن هستید؟`}
+                  okText="بله، ریست کن"
+                  cancelText="انصراف"
+                  onConfirm={() => handleResetTraffic(record.name)}
+                >
+                  <Button size="small" icon={<UndoOutlined />} />
+                </Popconfirm>
+              </Tooltip>
+            )}
+
+            {canKill && record.is_connected && (
               <Tooltip title="قطع اتصال فعال کاربر">
                 <Popconfirm
                   title={`اتصال کاربر '${record.name}' قطع شود؟`}
@@ -879,16 +936,18 @@ export default function OpenVPNPage() {
               </Tooltip>
             )}
 
-            <Popconfirm
-              title={`آیا از حذف کاربر '${record.name}' مطمئن هستید؟`}
-              description="گواهی باطل شده و کاربر از دیتابیس حذف خواهد شد."
-              okText="بله، حذف کن"
-              cancelText="انصراف"
-              okButtonProps={{ danger: true }}
-              onConfirm={() => handleDeleteClient(record.name)}
-            >
-              <Button size="small" danger icon={<DeleteOutlined />} />
-            </Popconfirm>
+            {canDelete && (
+              <Popconfirm
+                title={`آیا از حذف کاربر '${record.name}' مطمئن هستید؟`}
+                description="گواهی باطل شده و کاربر از دیتابیس حذف خواهد شد."
+                okText="بله، حذف کن"
+                cancelText="انصراف"
+                okButtonProps={{ danger: true }}
+                onConfirm={() => handleDeleteClient(record.name)}
+              >
+                <Button size="small" danger icon={<DeleteOutlined />} />
+              </Popconfirm>
+            )}
           </Space>
         );
       },
@@ -1287,24 +1346,150 @@ export default function OpenVPNPage() {
               </div>
             </Card>
 
+            {/* Admin Quotas & OpenVPN Usage Card */}
+            {status?.admin_stats && status.admin_stats.length > 0 && (
+              <Card
+                className="openvpn-card"
+                title={
+                  <Space align="center">
+                    <UserOutlined style={{ color: '#00f2fe', fontSize: 18 }} />
+                    <span style={{ fontWeight: 600 }}>پایش ترافیک و سهمیه مدیران (Admin Quotas & Usage)</span>
+                  </Space>
+                }
+                style={{ marginBottom: 24 }}
+              >
+                <Table
+                  dataSource={status.admin_stats}
+                  rowKey="admin_id"
+                  pagination={false}
+                  size="middle"
+                  scroll={{ x: 600 }}
+                  columns={[
+                    {
+                      title: 'مدیر پنل',
+                      key: 'username',
+                      render: (_, rec) => (
+                        <Space size={8}>
+                          <Avatar
+                            icon={<UserOutlined />}
+                            style={{
+                              backgroundColor: rec.is_limited ? '#ef4444' : '#00f2fe',
+                              color: '#000',
+                              fontWeight: 700,
+                            }}
+                          />
+                          <div>
+                            <Text strong style={{ color: rec.is_limited ? '#ef4444' : '#00e5ff' }}>
+                              {rec.username}
+                            </Text>
+                            {rec.role_name && (
+                              <div>
+                                <Tag color="geekblue" style={{ fontSize: 10, marginTop: 2 }}>
+                                  {rec.role_name}
+                                </Tag>
+                              </div>
+                            )}
+                          </div>
+                        </Space>
+                      ),
+                    },
+                    {
+                      title: 'کلاینت‌های OpenVPN',
+                      key: 'clients_count',
+                      render: (_, rec) => (
+                        <Space size={6}>
+                          <Tag color="cyan">{rec.client_count} کلاینت</Tag>
+                          {rec.online_count > 0 && (
+                            <Tag color="green">{rec.online_count} آنلاین</Tag>
+                          )}
+                        </Space>
+                      ),
+                    },
+                    {
+                      title: 'ترافیک مصرفی OpenVPN',
+                      dataIndex: 'traffic_used_str',
+                      key: 'traffic_used',
+                      render: (val: string, rec) => (
+                        <Text strong style={{ color: rec.is_limited ? '#ef4444' : '#10b981', fontSize: 13 }}>
+                          {val}
+                        </Text>
+                      ),
+                    },
+                    {
+                      title: 'سقف مجاز (Data Limit)',
+                      dataIndex: 'data_limit_str',
+                      key: 'data_limit',
+                      render: (val: string) => (
+                        <Tag color="orange" style={{ fontWeight: 600 }}>
+                          {val}
+                        </Tag>
+                      ),
+                    },
+                    {
+                      title: 'درصد مصرف سهمیه',
+                      key: 'quota',
+                      render: (_, rec) => {
+                        if (rec.data_limit <= 0) {
+                          return <span className="openvpn-unlimited-tag">نامحدود</span>;
+                        }
+                        return (
+                          <div style={{ minWidth: 140 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 2 }}>
+                              <Text type="secondary">{Math.round(rec.usage_percent)}%</Text>
+                              {rec.is_limited && (
+                                <Text style={{ color: '#ef4444', fontWeight: 'bold' }}>سقف پر شد</Text>
+                              )}
+                            </div>
+                            <Progress
+                              percent={Math.round(rec.usage_percent)}
+                              size="small"
+                              status={rec.is_limited ? 'exception' : rec.usage_percent > 85 ? 'normal' : 'active'}
+                              strokeColor={rec.is_limited ? '#ef4444' : rec.usage_percent > 85 ? '#f59e0b' : '#00f2fe'}
+                            />
+                          </div>
+                        );
+                      },
+                    },
+                    {
+                      title: 'وضعیت سرویس',
+                      key: 'service_status',
+                      render: (_, rec) => (
+                        rec.is_limited ? (
+                          <Tag color="error" style={{ borderRadius: 6, fontWeight: 600 }}>
+                            کلاینت‌ها مسدود (ترافیک مازاد)
+                          </Tag>
+                        ) : (
+                          <Tag color="success" style={{ borderRadius: 6 }}>
+                            سرویس فعال
+                          </Tag>
+                        )
+                      ),
+                    },
+                  ]}
+                />
+              </Card>
+            )}
+
             {/* Clients Table (Desktop) & Cards (Mobile) */}
             <Card
               className="openvpn-card"
               title="لیست کلاینت‌ها و کاربران OpenVPN"
               extra={
-                <Button
-                  type="primary"
-                  icon={<PlusOutlined />}
-                  onClick={() => setIsAddModalOpen(true)}
-                  style={{
-                    background: 'linear-gradient(135deg, #00f2fe 0%, #38bdf8 100%)',
-                    border: 'none',
-                    color: '#000',
-                    fontWeight: 600,
-                  }}
-                >
-                  افزودن کاربر
-                </Button>
+                canCreate && (
+                  <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={() => setIsAddModalOpen(true)}
+                    style={{
+                      background: 'linear-gradient(135deg, #00f2fe 0%, #38bdf8 100%)',
+                      border: 'none',
+                      color: '#000',
+                      fontWeight: 600,
+                    }}
+                  >
+                    افزودن کاربر
+                  </Button>
+                )
               }
             >
               {/* Desktop Table View */}
@@ -1605,6 +1790,32 @@ export default function OpenVPNPage() {
                     ))}
                   </Space>
                 </div>
+
+                {/* Owner Admin Selector (Visible for Owner) */}
+                {isOwnerAdmin && status?.admin_stats && status.admin_stats.length > 0 && (
+                  <Form.Item
+                    name="ownerAdminId"
+                    label={
+                      <Space>
+                        <UserOutlined style={{ color: '#00e5ff' }} />
+                        <span>مدیر مالک کلاینت (Owner Admin)</span>
+                      </Space>
+                    }
+                  >
+                    <Select placeholder="انتخاب ادمین مالک کلاینت (پیش‌فرض: خودتان)" allowClear>
+                      {status.admin_stats.map((adm) => (
+                        <Select.Option
+                          key={adm.admin_id}
+                          value={adm.admin_id}
+                          disabled={adm.is_limited}
+                        >
+                          {adm.username} {adm.role_name ? `(${adm.role_name})` : ''}{' '}
+                          {adm.is_limited ? ' [سقف مصرف پر شده - غیرمجاز]' : ''}
+                        </Select.Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                )}
 
                 <div style={{ textAlign: 'left' }}>
                   <Space>

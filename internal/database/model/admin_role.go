@@ -150,6 +150,16 @@ func allRolePermissions() map[string]any {
 		"hosts": map[string]any{
 			"read": true, "create": true, "update": true,
 		},
+		"openvpn": map[string]any{
+			"read":        map[string]any{"scope": ScopeOwn},
+			"read_simple": map[string]any{"scope": ScopeOwn},
+			"create":      true,
+			"update":      map[string]any{"scope": ScopeOwn},
+			"delete":      map[string]any{"scope": ScopeOwn},
+			"reset_usage": map[string]any{"scope": ScopeOwn},
+			"kill":        map[string]any{"scope": ScopeOwn},
+			"config":      map[string]any{"scope": ScopeOwn},
+		},
 		"system": map[string]any{
 			"read": true,
 		},
@@ -212,6 +222,18 @@ func ownerPermissions() map[string]any {
 		"system": map[string]any{
 			"read": true,
 		},
+		"openvpn": map[string]any{
+			"read":        map[string]any{"scope": ScopeAll},
+			"read_simple": map[string]any{"scope": ScopeAll},
+			"create":      true,
+			"update":      map[string]any{"scope": ScopeAll},
+			"delete":      map[string]any{"scope": ScopeAll},
+			"reset_usage": map[string]any{"scope": ScopeAll},
+			"kill":        map[string]any{"scope": ScopeAll},
+			"config":      map[string]any{"scope": ScopeAll},
+			"view":        "all",
+			"viewSimple":  "all",
+		},
 	}
 }
 
@@ -234,6 +256,16 @@ func operatorPermissions() map[string]any {
 			"revoke_sub":         map[string]any{"scope": ScopeOwn},
 			"set_owner":          map[string]any{"scope": ScopeOwn},
 			"activate_next_plan": map[string]any{"scope": ScopeOwn},
+		},
+		"openvpn": map[string]any{
+			"read":        map[string]any{"scope": ScopeOwn},
+			"read_simple": map[string]any{"scope": ScopeOwn},
+			"create":      true,
+			"update":      map[string]any{"scope": ScopeOwn},
+			"delete":      map[string]any{"scope": ScopeOwn},
+			"reset_usage": map[string]any{"scope": ScopeOwn},
+			"kill":        map[string]any{"scope": ScopeOwn},
+			"config":      map[string]any{"scope": ScopeOwn},
 		},
 		"groups": map[string]any{
 			"read_simple": true,

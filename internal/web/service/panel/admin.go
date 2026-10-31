@@ -336,7 +336,7 @@ func (s *AdminService) SyncAdminUsedBytes() error {
 
 		// Enforce disconnectUsersWhenLimited when data limit is reached
 		if user.DataLimit > 0 {
-			if next >= user.DataLimit && user.UsedBytes < user.DataLimit {
+			if next >= user.DataLimit {
 				// Reached limit: auto-disable all OpenVPN clients belonging to this admin
 				_, _ = s.DisableAllActiveOpenVPNUsers(user.Id)
 

@@ -913,6 +913,16 @@ func (s *OpenVPNService) UpdateClient(name string, password string, totalGB int6
 	if password != "" {
 		user.Password = password
 	}
+
+	if enable && user.OwnerAdminId > 0 {
+		var adminUser model.User
+		if err := db.Where("id = ?", user.OwnerAdminId).First(&adminUser).Error; err == nil {
+			if adminUser.DataLimit > 0 && adminUser.UsedBytes >= adminUser.DataLimit {
+				return errors.New("سهمیه ترافیک مجاز این ادمین به پایان رسیده است و امکان فعال‌سازی کلاینت وجود ندارد")
+			}
+		}
+	}
+
 	user.TotalGB = totalGB
 	user.ExpiryTime = expiryTime
 	user.LimitIP = limitIP

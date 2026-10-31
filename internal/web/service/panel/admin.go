@@ -328,6 +328,10 @@ func (s *AdminService) SyncAdminUsedBytes() error {
 		if next < 0 {
 			next = 0
 		}
+
+		wasLimited := user.DataLimit > 0 && user.UsedBytes >= user.DataLimit
+		nowLimited := user.DataLimit > 0 && next >= user.DataLimit
+
 		if next != user.UsedBytes {
 			if err := db.Model(&model.User{}).Where("id = ?", user.Id).
 				Update("used_bytes", next).Error; err != nil {
@@ -336,31 +340,29 @@ func (s *AdminService) SyncAdminUsedBytes() error {
 		}
 
 		// Enforce disconnectUsersWhenLimited when data limit is reached
-		if user.DataLimit > 0 {
-			if next >= user.DataLimit {
-				// Reached limit: auto-disable all OpenVPN clients belonging to this admin
-				_, _ = s.DisableAllActiveOpenVPNUsers(user.Id)
+		if nowLimited {
+			// Reached limit: auto-disable all OpenVPN clients belonging to this admin
+			_, _ = s.DisableAllActiveOpenVPNUsers(user.Id)
 
-				// check if role has disconnectUsersWhenLimited
-				var role model.AdminRole
-				if db.Where("id = ?", user.RoleId).First(&role).Error == nil {
-					if features, ok := decodeRoleJSON(role.FeaturesJSON).(map[string]any); ok {
-						if b, ok := features["disconnectUsersWhenLimited"].(bool); ok && b {
-							_, _ = s.DisableAllActiveUsers(user.Id)
-						}
+			// check if role has disconnectUsersWhenLimited
+			var role model.AdminRole
+			if db.Where("id = ?", user.RoleId).First(&role).Error == nil {
+				if features, ok := decodeRoleJSON(role.FeaturesJSON).(map[string]any); ok {
+					if b, ok := features["disconnectUsersWhenLimited"].(bool); ok && b {
+						_, _ = s.DisableAllActiveUsers(user.Id)
 					}
 				}
-			} else if next < user.DataLimit && user.UsedBytes >= user.DataLimit {
-				// Traffic was reset / limit raised: re-activate OpenVPN clients
-				_, _ = s.ActivateAllDisabledOpenVPNUsers(user.Id)
+			}
+		} else if wasLimited && !nowLimited {
+			// Traffic was reset / limit raised: re-activate OpenVPN clients
+			_, _ = s.ActivateAllDisabledOpenVPNUsers(user.Id)
 
-				// re-activate clients
-				var role model.AdminRole
-				if db.Where("id = ?", user.RoleId).First(&role).Error == nil {
-					if features, ok := decodeRoleJSON(role.FeaturesJSON).(map[string]any); ok {
-						if b, ok := features["disconnectUsersWhenLimited"].(bool); ok && b {
-							_, _ = s.ActivateAllDisabledUsers(user.Id)
-						}
+			// re-activate clients
+			var role model.AdminRole
+			if db.Where("id = ?", user.RoleId).First(&role).Error == nil {
+				if features, ok := decodeRoleJSON(role.FeaturesJSON).(map[string]any); ok {
+					if b, ok := features["disconnectUsersWhenLimited"].(bool); ok && b {
+						_, _ = s.ActivateAllDisabledUsers(user.Id)
 					}
 				}
 			}
@@ -514,6 +516,17 @@ func (s *AdminService) Update(id int, payload AdminPayload) (*AdminView, error) 
 		if err := db.Model(&model.User{}).Where("id = ?", id).Updates(updates).Error; err != nil {
 			return nil, err
 		}
+		newLimit := user.DataLimit
+		if dl, ok := updates["data_limit"].(int64); ok {
+			newLimit = dl
+		}
+		wasLimited := user.DataLimit > 0 && user.UsedBytes >= user.DataLimit
+		isNowLimited := newLimit > 0 && user.UsedBytes >= newLimit
+		if wasLimited && !isNowLimited {
+			_, _ = s.ActivateAllDisabledOpenVPNUsers(id)
+			_, _ = s.ActivateAllDisabledUsers(id)
+		}
+		_ = s.SyncAdminUsedBytes()
 	}
 	return s.Get(id)
 }
@@ -629,6 +642,15 @@ func (s *AdminService) ResetUsage(id int) error {
 	if res.RowsAffected == 0 {
 		return errors.New("admin not found")
 	}
+
+	if db.Migrator().HasTable("open_vpn_users") {
+		_ = db.Model(&model.OpenVPNUser{}).Where("owner_admin_id = ?", id).Updates(map[string]any{
+			"up":   0,
+			"down": 0,
+		}).Error
+	}
+	_, _ = s.ActivateAllDisabledOpenVPNUsers(id)
+	_, _ = s.ActivateAllDisabledUsers(id)
 	return nil
 }
 

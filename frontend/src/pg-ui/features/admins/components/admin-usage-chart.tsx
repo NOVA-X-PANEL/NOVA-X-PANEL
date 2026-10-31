@@ -16,6 +16,7 @@ import { formatBytes } from '@/pg-ui/utils/formatByte';
 import useDirDetection from '@/pg-ui/hooks/use-dir-detection';
 import { cn } from '@/pg-ui/lib/utils';
 import type { AdminDetails } from '@/pg-ui/service/api';
+import { useGetAdmins } from '@/pg-ui/service/api';
 import {
   BarChart3,
   TrendingUp,
@@ -34,8 +35,14 @@ export default function AdminUsageChart({ admins = [] }: AdminUsageChartProps) {
   const dir = useDirDetection();
   const [metricMode, setMetricMode] = useState<'current' | 'lifetime' | 'quota'>('current');
 
+  const adminsFallbackQuery = useGetAdmins(
+    { limit: 100, offset: 0 },
+    { query: { enabled: !admins || admins.length === 0 } }
+  );
+  const effectiveAdmins = admins && admins.length > 0 ? admins : (adminsFallbackQuery.data?.admins || []);
+
   const { chartData, totalCurrent, totalLifetime, topConsumer, quotaExceededCount } = useMemo(() => {
-    if (!admins || admins.length === 0) {
+    if (!effectiveAdmins || effectiveAdmins.length === 0) {
       return {
         chartData: [],
         totalCurrent: '0 B',
@@ -48,13 +55,13 @@ export default function AdminUsageChart({ admins = [] }: AdminUsageChartProps) {
     let sumCurrent = 0;
     let sumLifetime = 0;
     let maxCurrent = -1;
-    let topAdmin: (typeof admins)[0] | null = null;
+    let topAdmin: (typeof effectiveAdmins)[0] | null = null;
     let exceeded = 0;
 
-    const data = admins.map((adm) => {
-      const rawUsed = Number(adm.used_traffic) || 0;
-      const rawLifetime = Number(adm.lifetime_used_traffic) || 0;
-      const rawLimit = Number(adm.data_limit) || 0;
+    const data = effectiveAdmins.map((adm) => {
+      const rawUsed = Number(adm.used_traffic ?? adm.usedBytes) || 0;
+      const rawLifetime = Number(adm.lifetime_used_traffic ?? adm.lifetimeUsedTraffic ?? rawUsed) || 0;
+      const rawLimit = Number(adm.data_limit ?? adm.dataLimit) || 0;
 
       sumCurrent += rawUsed;
       sumLifetime += rawLifetime;

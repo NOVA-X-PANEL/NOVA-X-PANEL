@@ -122,6 +122,12 @@ interface OpenVPNStatus {
   remote_port?: number;
   total_clients: number;
   online_clients: number;
+  total_up?: number;
+  total_down?: number;
+  total_used?: number;
+  total_used_str?: string;
+  total_up_str?: string;
+  total_down_str?: string;
   connected_clients: OpenVPNConnectedClient[];
   clients: OpenVPNClientInfo[];
   admin_stats?: OpenVPNAdminUsage[];
@@ -294,7 +300,7 @@ export default function OpenVPNPage() {
       return;
     }
     const pNum = parseInt(portInput, 10);
-    const finalPort = (!isNaN(pNum) && pNum > 0 && pNum <= 65535) ? pNum : (status?.port || 1194);
+    const finalPort = !isNaN(pNum) && pNum > 0 && pNum <= 65535 ? pNum : status?.port || 1194;
     setSavingSettings(true);
     try {
       const res = await HttpUtil.post('/panel/api/openvpn/settings', {
@@ -559,7 +565,10 @@ export default function OpenVPNPage() {
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(blobUrl);
-        messageApi.success({ content: `فایل ${name}_${h}_${p}.ovpn با موفقیت دانلود شد ✨`, key: `dl-${name}` });
+        messageApi.success({
+          content: `فایل ${name}_${h}_${p}.ovpn با موفقیت دانلود شد ✨`,
+          key: `dl-${name}`,
+        });
       } else {
         messageApi.error({ content: 'خطا: فایل کانفیگ خالی است یا تولید نشد', key: `dl-${name}` });
       }
@@ -894,11 +903,7 @@ export default function OpenVPNPage() {
 
             {canDownloadConfig && (
               <Tooltip title="مشاهده کانفیگ، تنظیمات IP و پورت، و کپی جزئیات">
-                <Button
-                  size="small"
-                  icon={<EyeOutlined />}
-                  onClick={() => openConfigModal(record)}
-                >
+                <Button size="small" icon={<EyeOutlined />} onClick={() => openConfigModal(record)}>
                   کانفیگ
                 </Button>
               </Tooltip>
@@ -906,7 +911,11 @@ export default function OpenVPNPage() {
 
             {canUpdate && (
               <Tooltip title="ویرایش اطلاعات و پسورد">
-                <Button size="small" icon={<EditOutlined />} onClick={() => openEditModal(record)} />
+                <Button
+                  size="small"
+                  icon={<EditOutlined />}
+                  onClick={() => openEditModal(record)}
+                />
               </Tooltip>
             )}
 
@@ -1067,7 +1076,8 @@ export default function OpenVPNPage() {
                 className="openvpn-card"
                 style={{
                   marginBottom: 20,
-                  background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(245, 158, 11, 0.1) 100%)',
+                  background:
+                    'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(245, 158, 11, 0.1) 100%)',
                   borderColor: 'rgba(239, 68, 68, 0.4)',
                 }}
               >
@@ -1136,7 +1146,7 @@ export default function OpenVPNPage() {
             )}
 
             {/* Stat Cards */}
-            <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
+            <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
               <Col xs={24} sm={12} md={6}>
                 <Card className="openvpn-card openvpn-stat-card">
                   <Text type="secondary">وضعیت هسته OpenVPN</Text>
@@ -1200,6 +1210,140 @@ export default function OpenVPNPage() {
                     }}
                   >
                     {status?.total_clients || 0}
+                  </div>
+                </Card>
+              </Col>
+            </Row>
+
+            {/* OpenVPN Bandwidth & Traffic Consumption Row */}
+            <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
+              <Col xs={24} sm={12} md={6}>
+                <Card className="openvpn-card openvpn-stat-card">
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <Text type="secondary">حجم مصرف کل OpenVPN</Text>
+                    <ThunderboltOutlined style={{ color: '#00f2fe', fontSize: 16 }} />
+                  </div>
+                  <div
+                    className="openvpn-stat-value"
+                    style={{
+                      background: 'linear-gradient(135deg, #00f2fe 0%, #4facfe 100%)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      fontWeight: 800,
+                    }}
+                  >
+                    {status?.total_used_str || '0 B'}
+                  </div>
+                  <Text type="secondary" style={{ fontSize: 11 }}>
+                    ترافیک محاسبه‌شده کل کلاینت‌ها
+                  </Text>
+                </Card>
+              </Col>
+              <Col xs={24} sm={12} md={6}>
+                <Card className="openvpn-card openvpn-stat-card">
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <Text type="secondary">دانلود کل (دریافت)</Text>
+                    <DownloadOutlined style={{ color: '#10b981', fontSize: 16 }} />
+                  </div>
+                  <div
+                    className="openvpn-stat-value"
+                    style={{
+                      background: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      fontWeight: 800,
+                    }}
+                  >
+                    {status?.total_down_str || '0 B'}
+                  </div>
+                  <Text type="secondary" style={{ fontSize: 11 }}>
+                    ارسال داده به سمت کاربران (TX)
+                  </Text>
+                </Card>
+              </Col>
+              <Col xs={24} sm={12} md={6}>
+                <Card className="openvpn-card openvpn-stat-card">
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <Text type="secondary">آپلود کل (ارسال)</Text>
+                    <SyncOutlined style={{ color: '#06b6d4', fontSize: 16 }} />
+                  </div>
+                  <div
+                    className="openvpn-stat-value"
+                    style={{
+                      background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      fontWeight: 800,
+                    }}
+                  >
+                    {status?.total_up_str || '0 B'}
+                  </div>
+                  <Text type="secondary" style={{ fontSize: 11 }}>
+                    دریافت داده از سمت کاربران (RX)
+                  </Text>
+                </Card>
+              </Col>
+              <Col xs={24} sm={12} md={6}>
+                <Card className="openvpn-card openvpn-stat-card">
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <Text type="secondary">نسبت دانلود / آپلود</Text>
+                    <DashboardOutlined style={{ color: '#a855f7', fontSize: 16 }} />
+                  </div>
+                  <div style={{ marginTop: 8, marginBottom: 4 }}>
+                    <Progress
+                      percent={
+                        status && (status.total_used || 0) > 0
+                          ? Math.round(((status.total_down || 0) / (status.total_used || 1)) * 100)
+                          : 50
+                      }
+                      strokeColor={{
+                        '0%': '#10b981',
+                        '100%': '#00f2fe',
+                      }}
+                      trailColor="#334155"
+                      size="small"
+                      showInfo={false}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+                    <span style={{ color: '#10b981' }}>
+                      DL:{' '}
+                      {status && (status.total_used || 0) > 0
+                        ? Math.round(((status.total_down || 0) / (status.total_used || 1)) * 100)
+                        : 0}
+                      %
+                    </span>
+                    <span style={{ color: '#00f2fe' }}>
+                      UL:{' '}
+                      {status && (status.total_used || 0) > 0
+                        ? Math.round(((status.total_up || 0) / (status.total_used || 1)) * 100)
+                        : 0}
+                      %
+                    </span>
                   </div>
                 </Card>
               </Col>
@@ -1303,7 +1447,11 @@ export default function OpenVPNPage() {
               <Alert
                 type="info"
                 showIcon
-                style={{ marginTop: 14, background: 'rgba(0, 229, 255, 0.05)', borderColor: 'rgba(0, 229, 255, 0.2)' }}
+                style={{
+                  marginTop: 14,
+                  background: 'rgba(0, 229, 255, 0.05)',
+                  borderColor: 'rgba(0, 229, 255, 0.2)',
+                }}
                 message="راهنمای تانل سرور ایران و تداخل پورت‌ها"
                 description="اگر پورت ۸۰۸۰ را روی سرور ایران تانل کرده‌اید، در تانل مقصد را پورت ۱۱۹۴ سرور خارج تنظیم کنید (Iran:8080 -> Kharej:1194). این کار باعث می‌شود اینباند‌های VLESS روی پورت ۸۰۸۰ یا ۹۰۹۰ بدون تداخل فعال بمانند و اوپن‌وی‌پی‌ان نیز روی پورت ۱۱۹۴ پکت‌ها را پردازش کند."
               />
@@ -1353,7 +1501,9 @@ export default function OpenVPNPage() {
                 title={
                   <Space align="center">
                     <UserOutlined style={{ color: '#00f2fe', fontSize: 18 }} />
-                    <span style={{ fontWeight: 600 }}>پایش ترافیک و سهمیه مدیران (Admin Quotas & Usage)</span>
+                    <span style={{ fontWeight: 600 }}>
+                      پایش ترافیک و سهمیه مدیران (Admin Quotas & Usage)
+                    </span>
                   </Space>
                 }
                 style={{ marginBottom: 24 }}
@@ -1410,7 +1560,10 @@ export default function OpenVPNPage() {
                       dataIndex: 'traffic_used_str',
                       key: 'traffic_used',
                       render: (val: string, rec) => (
-                        <Text strong style={{ color: rec.is_limited ? '#ef4444' : '#10b981', fontSize: 13 }}>
+                        <Text
+                          strong
+                          style={{ color: rec.is_limited ? '#ef4444' : '#10b981', fontSize: 13 }}
+                        >
                           {val}
                         </Text>
                       ),
@@ -1434,17 +1587,38 @@ export default function OpenVPNPage() {
                         }
                         return (
                           <div style={{ minWidth: 140 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 2 }}>
+                            <div
+                              style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                fontSize: 11,
+                                marginBottom: 2,
+                              }}
+                            >
                               <Text type="secondary">{Math.round(rec.usage_percent)}%</Text>
                               {rec.is_limited && (
-                                <Text style={{ color: '#ef4444', fontWeight: 'bold' }}>سقف پر شد</Text>
+                                <Text style={{ color: '#ef4444', fontWeight: 'bold' }}>
+                                  سقف پر شد
+                                </Text>
                               )}
                             </div>
                             <Progress
                               percent={Math.round(rec.usage_percent)}
                               size="small"
-                              status={rec.is_limited ? 'exception' : rec.usage_percent > 85 ? 'normal' : 'active'}
-                              strokeColor={rec.is_limited ? '#ef4444' : rec.usage_percent > 85 ? '#f59e0b' : '#00f2fe'}
+                              status={
+                                rec.is_limited
+                                  ? 'exception'
+                                  : rec.usage_percent > 85
+                                    ? 'normal'
+                                    : 'active'
+                              }
+                              strokeColor={
+                                rec.is_limited
+                                  ? '#ef4444'
+                                  : rec.usage_percent > 85
+                                    ? '#f59e0b'
+                                    : '#00f2fe'
+                              }
                             />
                           </div>
                         );
@@ -1453,7 +1627,7 @@ export default function OpenVPNPage() {
                     {
                       title: 'وضعیت سرویس',
                       key: 'service_status',
-                      render: (_, rec) => (
+                      render: (_, rec) =>
                         rec.is_limited ? (
                           <Tag color="error" style={{ borderRadius: 6, fontWeight: 600 }}>
                             کلاینت‌ها مسدود (ترافیک مازاد)
@@ -1462,8 +1636,7 @@ export default function OpenVPNPage() {
                           <Tag color="success" style={{ borderRadius: 6 }}>
                             سرویس فعال
                           </Tag>
-                        )
-                      ),
+                        ),
                     },
                   ]}
                 />
@@ -1507,7 +1680,7 @@ export default function OpenVPNPage() {
 
               {/* Mobile Cards View */}
               <div className="openvpn-mobile-cards">
-                {(!status?.clients || status.clients.length === 0) ? (
+                {!status?.clients || status.clients.length === 0 ? (
                   <Empty description="هیچ کلاینتی هنوز ساخته نشده است" />
                 ) : (
                   status.clients.map((client) => {
@@ -1518,7 +1691,11 @@ export default function OpenVPNPage() {
                           <div className="openvpn-mobile-client-user">
                             <Avatar
                               icon={<UserOutlined />}
-                              style={{ backgroundColor: '#00f2fe', color: '#000', fontWeight: 'bold' }}
+                              style={{
+                                backgroundColor: '#00f2fe',
+                                color: '#000',
+                                fontWeight: 'bold',
+                              }}
                             />
                             <div>
                               <span className="openvpn-mobile-username">{client.name}</span>
@@ -1529,7 +1706,9 @@ export default function OpenVPNPage() {
                                   <Tag color="default">⚫ آفلاین</Tag>
                                 )}
                                 {client.password && (
-                                  <Tag color="processing" style={{ fontSize: 10 }}>🔑 دارای رمز</Tag>
+                                  <Tag color="processing" style={{ fontSize: 10 }}>
+                                    🔑 دارای رمز
+                                  </Tag>
                                 )}
                               </div>
                             </div>
@@ -1540,7 +1719,9 @@ export default function OpenVPNPage() {
                               checked={client.enable}
                               onChange={(checked) => handleToggleEnable(client, checked)}
                             />
-                            <Text style={{ fontSize: 11, color: client.enable ? '#10b981' : '#ef4444' }}>
+                            <Text
+                              style={{ fontSize: 11, color: client.enable ? '#10b981' : '#ef4444' }}
+                            >
                               {client.enable ? 'فعال' : 'مسدود'}
                             </Text>
                           </Space>
@@ -1550,7 +1731,8 @@ export default function OpenVPNPage() {
                           <div className="openvpn-mobile-stat-row">
                             <span className="stat-label">📊 مصرف حجم:</span>
                             <span className="stat-val">
-                              {client.traffic_used_str} / {isUnlimited ? 'نامحدود' : client.traffic_limit_str}
+                              {client.traffic_used_str} /{' '}
+                              {isUnlimited ? 'نامحدود' : client.traffic_limit_str}
                             </span>
                           </div>
                           {!isUnlimited && (
@@ -1580,7 +1762,9 @@ export default function OpenVPNPage() {
                           size="large"
                           icon={<DownloadOutlined />}
                           className="openvpn-mobile-btn-download"
-                          onClick={() => triggerDownload(client.name, activeHost, activePort, false)}
+                          onClick={() =>
+                            triggerDownload(client.name, activeHost, activePort, false)
+                          }
                         >
                           ⬇️ دانلود مستقیم فایل کانفیگ .ovpn
                         </Button>
@@ -2220,7 +2404,11 @@ export default function OpenVPNPage() {
               open={isLogModalOpen}
               onCancel={() => setIsLogModalOpen(false)}
               footer={[
-                <Button key="refresh" icon={<ReloadOutlined spin={loadingLog} />} onClick={handleViewLogs}>
+                <Button
+                  key="refresh"
+                  icon={<ReloadOutlined spin={loadingLog} />}
+                  onClick={handleViewLogs}
+                >
                   بروزرسانی لاگ
                 </Button>,
                 <Button key="close" type="primary" onClick={() => setIsLogModalOpen(false)}>

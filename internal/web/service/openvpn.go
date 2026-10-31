@@ -113,6 +113,12 @@ type OpenVPNStatus struct {
 	RemotePort       int                      `json:"remote_port"`
 	TotalClients     int                      `json:"total_clients"`
 	OnlineClients    int                      `json:"online_clients"`
+	TotalUp          int64                    `json:"total_up"`
+	TotalDown        int64                    `json:"total_down"`
+	TotalUsed        int64                    `json:"total_used"`
+	TotalUsedStr     string                   `json:"total_used_str"`
+	TotalUpStr       string                   `json:"total_up_str"`
+	TotalDownStr     string                   `json:"total_down_str"`
 	ConnectedClients []OpenVPNConnectedClient `json:"connected_clients"`
 	Clients          []OpenVPNClientInfo      `json:"clients"`
 	AdminStats       []OpenVPNAdminUsage      `json:"admin_stats"`
@@ -761,13 +767,24 @@ func (s *OpenVPNService) GetStatus(scopes ...OpenVPNAccessScope) (*OpenVPNStatus
 	}
 
 	onlinePermitted := 0
+	var overallUp int64
+	var overallDown int64
 	for _, c := range status.Clients {
 		if c.IsConnected {
 			onlinePermitted++
 		}
+		overallUp += c.Up
+		overallDown += c.Down
 	}
+	overallUsed := overallUp + overallDown
 	status.TotalClients = len(status.Clients)
 	status.OnlineClients = onlinePermitted
+	status.TotalUp = overallUp
+	status.TotalDown = overallDown
+	status.TotalUsed = overallUsed
+	status.TotalUsedStr = FormatBytes(overallUsed)
+	status.TotalUpStr = FormatBytes(overallUp)
+	status.TotalDownStr = FormatBytes(overallDown)
 	return status, nil
 }
 

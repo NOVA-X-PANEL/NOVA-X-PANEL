@@ -33,6 +33,7 @@ interface AdminsTableProps {
   onToggleStatus: (admin: AdminDetails) => void
   onResetUsage: (admin: AdminDetails) => void
   onTotalAdminsChange?: (counts: { total: number; active: number; disabled: number; limited: number } | null) => void
+  onAdminsLoaded?: (admins: AdminDetails[]) => void
 }
 
 type BulkUsersActionType = 'disable' | 'activate'
@@ -185,7 +186,7 @@ const BulkUsersStatusConfirmationDialog = ({
   )
 }
 
-export default function AdminsTable({ onEdit, onDelete, onToggleStatus, onResetUsage, onTotalAdminsChange }: AdminsTableProps) {
+export default function AdminsTable({ onEdit, onDelete, onToggleStatus, onResetUsage, onTotalAdminsChange, onAdminsLoaded }: AdminsTableProps) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const { admin: currentAdmin } = useAdmin()
@@ -247,7 +248,7 @@ export default function AdminsTable({ onEdit, onDelete, onToggleStatus, onResetU
   const selectedEnableEligibleIds = compactAdminIds(selectedEnableEligibleAdmins)
   const selectedDisableEligibleIds = compactAdminIds(selectedDisableEligibleAdmins)
 
-  // Expose counts to parent component for statistics
+  // Expose counts and admins list to parent component for statistics and charts
   useEffect(() => {
     if (onTotalAdminsChange) {
       if (adminsResponseData) {
@@ -261,7 +262,10 @@ export default function AdminsTable({ onEdit, onDelete, onToggleStatus, onResetU
         onTotalAdminsChange(null)
       }
     }
-  }, [adminsResponse, onTotalAdminsChange])
+    if (onAdminsLoaded && adminsResponseData?.admins) {
+      onAdminsLoaded(adminsResponseData.admins)
+    }
+  }, [adminsResponse, onTotalAdminsChange, onAdminsLoaded])
   const disableAllActiveUsersMutation = useDisableAllActiveUsersById()
   const activateAllDisabledUsersMutation = useActivateAllDisabledUsersById()
   const removeAllUsersMutation = useRemoveAllUsersById()

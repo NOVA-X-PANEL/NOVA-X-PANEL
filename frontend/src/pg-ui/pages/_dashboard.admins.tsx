@@ -14,6 +14,7 @@ import type { AdminFormValuesInput } from '@/pg-ui/features/admins/forms/admin-f
 import { useModifyAdminById, useRemoveAdminById, useResetAdminUsageById } from '@/pg-ui/service/api';
 import type { AdminDetails } from '@/pg-ui/service/api'
 import AdminsStatistics from '@/pg-ui/features/admins/components/admin-statistics'
+import AdminUsageChart from '@/pg-ui/features/admins/components/admin-usage-chart'
 import { zodResolver } from '@hookform/resolvers/zod';
 import useDynamicErrorHandler from '@/pg-ui/hooks/use-dynamic-errors'
 import { removeAdminFromAdminsCache, upsertAdminInAdminsCache } from '@/pg-ui/utils/adminsCache';
@@ -36,6 +37,7 @@ export default function AdminsPage() {
   const [editingAdmin, setEditingAdmin] = useState<Partial<AdminDetails> | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [adminCounts, setAdminCounts] = useState<{ total: number; active: number; disabled: number; limited: number } | null>(null)
+  const [adminsList, setAdminsList] = useState<AdminDetails[]>([])
   const form = useForm<AdminFormValuesInput>({
     resolver: zodResolver(adminFormSchema),
     defaultValues: adminFormDefaultValues,
@@ -251,8 +253,12 @@ export default function AdminsPage() {
           <AdminsStatistics counts={adminCounts} />
         </div>
 
+        <div className="animate-slide-up transform-gpu mt-3" style={{ animationDuration: '500ms', animationDelay: '180ms', animationFillMode: 'both' }}>
+          <AdminUsageChart admins={adminsList} />
+        </div>
+
         <div className="animate-slide-up transform-gpu" style={{ animationDuration: '500ms', animationDelay: '250ms', animationFillMode: 'both' }}>
-          <AdminsTable onEdit={handleEdit} onDelete={handleDelete} onToggleStatus={handleToggleStatus} onResetUsage={resetUsage} onTotalAdminsChange={setAdminCounts} />
+          <AdminsTable onEdit={handleEdit} onDelete={handleDelete} onToggleStatus={handleToggleStatus} onResetUsage={resetUsage} onTotalAdminsChange={setAdminCounts} onAdminsLoaded={setAdminsList} />
         </div>
           </TabsContent>
 

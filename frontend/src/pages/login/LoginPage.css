@@ -34,20 +34,20 @@
   /* ---- design tokens ---------------------------------------------------- */
   /* The panel's own neon tokens, so the sign-in screen and the panel are one
      product. Kept as --nx-* names because the rest of this file reads them. */
-  --nx-bg: #0b0f19;
-  --nx-bg-2: #111a2e;
-  --nx-panel: rgba(13, 20, 36, 0.88);
-  --nx-line: rgba(212, 175, 55, 0.28);
-  --nx-line-strong: rgba(212, 175, 55, 0.55);
-  --nx-text: #fdfbf7;
-  --nx-muted: #d5c7a5;
-  --nx-faint: #8c7a56;
-  --nx-blue: #d4af37;
-  --nx-blue-2: #e5c158;
-  --nx-violet: #00b4d8;
-  --nx-cyan: #ffd700;
-  --nx-teal: #00e5ff;
-  --nx-success: #00e5ff;
+  --nx-bg: #07090e;
+  --nx-bg-2: #0b0e17;
+  --nx-panel: rgba(15, 20, 32, 0.85);
+  --nx-line: rgba(56, 189, 248, 0.18);
+  --nx-line-strong: rgba(168, 85, 247, 0.4);
+  --nx-text: #f1f5f9;
+  --nx-muted: #94a3b8;
+  --nx-faint: #64748b;
+  --nx-blue: #0ea5e9;
+  --nx-blue-2: #0284c7;
+  --nx-violet: #8b5cf6;
+  --nx-cyan: #22d3ee;
+  --nx-teal: #10b981;
+  --nx-success: #10b981;
   --nx-radius: 14px;
   /* Latin first, Persian next. Inter carries the Latin glyphs, and Vazirmatn
      picks up the Persian ones through fallback — so an English panel does not
@@ -58,12 +58,12 @@
   display: grid;
   grid-template-columns: 1.05fr 0.95fr;
   min-height: 100vh;
-  background-color: #060913;
+  background-color: #07090e;
   background-image:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(212, 175, 55, 0.22), transparent),
-    radial-gradient(circle at 10% 20%, rgba(0, 180, 216, 0.15), transparent 40%),
-    linear-gradient(rgba(212, 175, 55, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(212, 175, 55, 0.02) 1px, transparent 1px);
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(120, 50, 220, 0.18), transparent),
+    radial-gradient(circle at 10% 20%, rgba(34, 211, 238, 0.08), transparent 40%),
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
   background-size:
     100% 100%,
     100% 100%,
@@ -74,16 +74,17 @@
   overflow: hidden;
 }
 
-/* Ambience: Cyrus the Great / Pasargadae washes */
+/* Ambience: the panel's own blue/violet/teal washes, so the sign-in canvas is
+   literally the same background the panel uses. */
 .nova-login::before {
   content: '';
   position: absolute;
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(900px 520px at 12% 18%, rgba(212, 175, 55, 0.18), transparent 70%),
-    radial-gradient(780px 520px at 88% 14%, rgba(0, 180, 216, 0.16), transparent 72%),
-    radial-gradient(760px 540px at 62% 92%, rgba(212, 175, 55, 0.1), transparent 72%);
+    radial-gradient(900px 520px at 12% 18%, rgba(14, 165, 233, 0.15), transparent 70%),
+    radial-gradient(780px 520px at 88% 14%, rgba(139, 92, 246, 0.18), transparent 72%),
+    radial-gradient(760px 540px at 62% 92%, rgba(16, 185, 129, 0.08), transparent 72%);
 }
 
 .nova-login *,
@@ -141,11 +142,12 @@
   letter-spacing: 0.14em !important;
   background: linear-gradient(
     90deg,
-    #ffd700 0%,
-    #ffffff 20%,
-    #d4af37 45%,
-    #00b4d8 75%,
-    #ffd700 100%
+    #00f0ff 0%,
+    #3b82f6 20%,
+    #8b5cf6 40%,
+    #ec4899 60%,
+    #f43f5e 75%,
+    #00f0ff 100%
   ) !important;
   background-size: 200% auto !important;
   -webkit-background-clip: text !important;
@@ -153,7 +155,7 @@
   -webkit-text-fill-color: transparent !important;
   color: transparent !important;
   animation: novaBrandFlow 4s linear infinite !important;
-  filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.6)) !important;
+  filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.45)) !important;
   display: inline-block;
 }
 
@@ -161,27 +163,14 @@
   font-family: 'JetBrains Mono', monospace !important;
   font-size: 10.5px !important;
   font-weight: 800 !important;
-  letter-spacing: 0.35em !important;
-  color: #ffd700 !important;
-  filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.5)) !important;
-  text-transform: uppercase;
-  display: inline-block;
-}
-
-.nx-hero__title {
-  margin: 32px 0 0;
-  font-family: 'Rajdhani', sans-serif !important;
-  font-size: clamp(38px, 4.6vw, 58px) !important;
-  font-weight: 800 !important;
-  line-height: 1.05;
-  letter-spacing: 0.04em !important;
+  letter-spacing: 0.42em !important;
   background: linear-gradient(
     90deg,
-    #ffd700 0%,
-    #ffffff 20%,
-    #d4af37 45%,
-    #00b4d8 75%,
-    #ffd700 100%
+    #c084fc 0%,
+    #f472b6 25%,
+    #38bdf8 50%,
+    #22d3ee 75%,
+    #c084fc 100%
   ) !important;
   background-size: 200% auto !important;
   -webkit-background-clip: text !important;
@@ -189,8 +178,35 @@
   -webkit-text-fill-color: transparent !important;
   color: transparent !important;
   animation: novaBrandFlow 4s linear infinite !important;
-  filter: drop-shadow(0 0 16px rgba(212, 175, 55, 0.55))
-    drop-shadow(0 0 24px rgba(0, 180, 216, 0.35)) !important;
+  filter: drop-shadow(0 0 6px rgba(192, 132, 252, 0.45)) !important;
+  text-transform: uppercase;
+  display: inline-block;
+}
+
+.nx-hero__title {
+  margin: 40px 0 0;
+  font-family: 'Rajdhani', sans-serif !important;
+  font-size: clamp(38px, 4.6vw, 62px) !important;
+  font-weight: 800 !important;
+  line-height: 1.02;
+  letter-spacing: 0.03em !important;
+  background: linear-gradient(
+    90deg,
+    #00f0ff 0%,
+    #3b82f6 20%,
+    #8b5cf6 40%,
+    #ec4899 60%,
+    #f43f5e 75%,
+    #00f0ff 100%
+  ) !important;
+  background-size: 200% auto !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  color: transparent !important;
+  animation: novaBrandFlow 4s linear infinite !important;
+  filter: drop-shadow(0 0 16px rgba(0, 240, 255, 0.4))
+    drop-shadow(0 0 24px rgba(139, 92, 246, 0.35)) !important;
   display: inline-block;
 }
 
@@ -257,8 +273,8 @@
 }
 
 .nx-feature:hover {
-  border-color: rgba(212, 175, 55, 0.5);
-  box-shadow: 0 0 20px rgba(212, 175, 55, 0.25);
+  border-color: rgba(168, 85, 247, 0.5);
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.25);
   transform: translateY(-2px);
 }
 
@@ -292,185 +308,18 @@
   color: var(--nx-muted);
 }
 
-/* Cyrus the Great Featured Hero Artwork */
-.nx-cyrus-hero {
-  margin: 22px 0 24px;
-  background: rgba(14, 20, 36, 0.92);
-  border: 1px solid rgba(212, 175, 55, 0.45);
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow:
-    0 12px 36px rgba(0, 0, 0, 0.65),
-    0 0 30px rgba(212, 175, 55, 0.3),
-    inset 0 0 20px rgba(212, 175, 55, 0.1);
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.nx-cyrus-hero:hover {
-  border-color: rgba(255, 215, 0, 0.7);
-  box-shadow:
-    0 16px 44px rgba(0, 0, 0, 0.75),
-    0 0 40px rgba(212, 175, 55, 0.45),
-    inset 0 0 25px rgba(0, 180, 216, 0.2);
-  transform: translateY(-2px);
-}
-
-.nx-cyrus-frame {
-  position: relative;
-  width: 100%;
-  height: 270px;
-  overflow: hidden;
-  background: #060913;
-}
-
-.nx-cyrus-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center 42%;
-  transition: transform 0.6s ease;
-}
-
-.nx-cyrus-hero:hover .nx-cyrus-img {
-  transform: scale(1.04);
-}
-
-.nx-cyrus-frame__glow {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to bottom,
-    rgba(6, 9, 19, 0.05) 0%,
-    rgba(6, 9, 19, 0.35) 60%,
-    rgba(14, 20, 36, 0.98) 100%
-  );
-  pointer-events: none;
-}
-
-.nx-cyrus-badge {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  padding: 5px 12px;
-  background: rgba(6, 9, 19, 0.85);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 215, 0, 0.6);
-  border-radius: 20px;
-  font-size: 11.5px;
-  font-weight: 700;
-  color: #ffd700;
-  box-shadow: 0 0 14px rgba(212, 175, 55, 0.4);
-}
-
-.nx-cyrus-meta {
-  padding: 12px 18px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.nx-cyrus-title {
-  font-size: 14.5px;
-  font-weight: 800;
-  color: #ffd700;
-  letter-spacing: 0.03em;
-}
-
-.nx-cyrus-desc {
-  font-size: 12px;
-  color: #d5c7a5;
-  line-height: 1.45;
-}
-
-/* Tomb landscape sits flush with bottom */
+/* landscape sits flush with the bottom edge */
 .nx-hero__art {
   position: relative;
   z-index: 1;
-  margin: 28px -56px 0;
+  margin: 40px -56px 0;
   line-height: 0;
 }
 
-.nx-tomb-wrap {
-  position: relative;
+.nx-hero__art svg {
+  display: block;
   width: 100%;
-  height: clamp(160px, 24vh, 220px);
-  overflow: hidden;
-  border-top: 1px solid rgba(212, 175, 55, 0.35);
-}
-
-.nx-tomb-photo {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center 40%;
-  filter: contrast(1.05) brightness(0.9);
-  transition: transform 0.6s ease;
-}
-
-.nx-tomb-wrap:hover .nx-tomb-photo {
-  transform: scale(1.03);
-}
-
-.nx-tomb-photo__glow {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to bottom,
-    rgba(14, 20, 36, 0.7) 0%,
-    rgba(6, 9, 19, 0.1) 40%,
-    rgba(6, 9, 19, 0.6) 100%
-  );
-  pointer-events: none;
-}
-
-.nx-tomb-photo__badge {
-  position: absolute;
-  bottom: 12px;
-  left: 20px;
-  padding: 4px 12px;
-  background: rgba(6, 9, 19, 0.85);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(212, 175, 55, 0.4);
-  border-radius: 16px;
-  font-size: 10.5px;
-  font-weight: 600;
-  color: #e5c158;
-}
-
-/* Auth card avatar box */
-.nx-card__avatar-box {
-  position: relative;
-  width: 78px;
-  height: 78px;
-  margin: 0 auto 6px;
-}
-
-.nx-card__avatar {
-  width: 78px;
-  height: 78px;
-  border-radius: 50%;
-  object-fit: cover;
-  object-position: center 42%;
-  border: 2px solid #ffd700;
-  box-shadow:
-    0 0 20px rgba(212, 175, 55, 0.6),
-    0 0 35px rgba(0, 180, 216, 0.3);
-}
-
-.nx-card__avatar-badge {
-  position: absolute;
-  bottom: -2px;
-  right: -2px;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: #060913;
-  border: 1.5px solid #d4af37;
-  display: grid;
-  place-items: center;
-  box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+  height: clamp(190px, 30vh, 320px);
 }
 
 /* ==========================================================================
@@ -543,7 +392,7 @@
   -webkit-backdrop-filter: blur(16px);
   box-shadow:
     0 30px 70px rgba(0, 0, 0, 0.6),
-    0 0 30px rgba(212, 175, 55, 0.2);
+    0 0 30px rgba(168, 85, 247, 0.2);
 }
 
 /* fine specular reflection along the top edge */
@@ -553,7 +402,7 @@
   inset: 0 0 auto 0;
   height: 2px;
   border-radius: var(--nx-radius) var(--nx-radius) 0 0;
-  background: linear-gradient(90deg, transparent, #d4af37, #00b4d8, transparent);
+  background: linear-gradient(90deg, transparent, #22d3ee, #c084fc, transparent);
 }
 
 .nx-card__head {
@@ -572,11 +421,12 @@
   letter-spacing: 0.16em !important;
   background: linear-gradient(
     90deg,
-    #ffd700 0%,
-    #ffffff 25%,
-    #d4af37 50%,
-    #00b4d8 75%,
-    #ffd700 100%
+    #00f0ff 0%,
+    #3b82f6 20%,
+    #8b5cf6 40%,
+    #ec4899 60%,
+    #f43f5e 75%,
+    #00f0ff 100%
   ) !important;
   background-size: 200% auto !important;
   -webkit-background-clip: text !important;
@@ -584,8 +434,8 @@
   -webkit-text-fill-color: transparent !important;
   color: transparent !important;
   animation: novaBrandFlow 4s linear infinite !important;
-  filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.6))
-    drop-shadow(0 0 16px rgba(0, 180, 216, 0.35)) !important;
+  filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.45))
+    drop-shadow(0 0 16px rgba(139, 92, 246, 0.35)) !important;
   display: inline-block;
 }
 
@@ -706,21 +556,21 @@
   margin-top: 6px;
   border: 0;
   border-radius: 10px;
-  background: linear-gradient(135deg, #d4af37, #00b4d8) !important;
-  color: #07101e;
+  background: linear-gradient(135deg, #0ea5e9, #8b5cf6) !important;
+  color: #ffffff;
   font-family: inherit;
   font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.05em;
   cursor: pointer;
-  box-shadow: 0 0 20px rgba(212, 175, 55, 0.45);
+  box-shadow: 0 0 20px rgba(14, 165, 233, 0.45);
   transition: all 0.25s ease;
 }
 
 .nx-submit:hover:not(:disabled) {
   transform: translateY(-1px);
   filter: brightness(1.1);
-  box-shadow: 0 0 30px rgba(212, 175, 55, 0.8), 0 0 45px rgba(0, 180, 216, 0.5);
+  box-shadow: 0 0 30px rgba(168, 85, 247, 0.65);
 }
 
 .nx-submit:disabled {

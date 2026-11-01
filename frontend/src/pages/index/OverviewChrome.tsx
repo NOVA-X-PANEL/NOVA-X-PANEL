@@ -10,6 +10,7 @@ import {
   DatabaseOutlined,
   HddOutlined,
   RocketOutlined,
+  SmileOutlined,
   SwapOutlined,
   ThunderboltOutlined,
 } from '@ant-design/icons';
@@ -58,23 +59,22 @@ export function OverviewHero({ panelVersion }: OverviewHeroProps) {
   return (
     <div className="nc-hero">
       <NeonLandscape variant="panel" />
-      <span className="nc-hero-badge" aria-hidden="true" style={{ fontSize: 26, background: 'rgba(212, 175, 55, 0.2)', border: '1px solid rgba(212, 175, 55, 0.45)', color: '#d4af37' }}>
-        🏛️
+      <span className="nc-hero-badge" aria-hidden="true">
+        <SmileOutlined />
       </span>
       <div className="nc-hero-text">
         <div
           style={{
             fontFamily: 'JetBrains Mono, monospace',
             fontSize: 10,
-            color: '#d4af37',
+            color: '#38bdf8',
             letterSpacing: 1,
             textTransform: 'uppercase',
-            fontWeight: 700,
           }}
         >
-          // CYRUS THE GREAT EDITION // PASARGADAE TELEMETRY // 🏛️👑✨
+          // CORE // SYSTEM_OVERVIEW // TELEMETRY
         </div>
-        <div className="nc-hero-title">{t('menu.dashboard')} 👑</div>
+        <div className="nc-hero-title">{t('menu.dashboard')}</div>
         <div className="nc-hero-sub">{t('pages.index.systemHistoryTitle')}</div>
       </div>
       <div className="nc-hero-metrics">

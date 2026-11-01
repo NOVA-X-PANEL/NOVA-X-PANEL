@@ -44,10 +44,10 @@
 }
 
 .inb-proto-main {
-  color: #ffd700;
-  background: rgba(212, 175, 55, 0.12);
-  border: 1px solid rgba(212, 175, 55, 0.35);
-  box-shadow: 0 0 8px rgba(212, 175, 55, 0.15);
+  color: #c084fc;
+  background: rgba(168, 85, 247, 0.12);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  box-shadow: 0 0 8px rgba(168, 85, 247, 0.15);
 }
 
 .inb-proto-transport {
@@ -222,7 +222,7 @@
 }
 
 .row-action-trigger:hover {
-  color: #ffd700;
+  color: #c084fc;
 }
 
 .client-email-list {
@@ -270,12 +270,12 @@
 }
 
 .inbounds-main-block .ant-table-tbody > tr:hover > td:first-child {
-  border-left: 3px solid #ffd700;
+  border-left: 3px solid #c084fc;
 }
 
 /* Primary Button Styling */
 .inbounds-main-block .ant-btn-primary {
-  background: linear-gradient(135deg, #0ea5e9, #e5c158) !important;
+  background: linear-gradient(135deg, #0ea5e9, #8b5cf6) !important;
   border: none !important;
   border-radius: 8px !important;
   font-weight: 700 !important;
@@ -284,7 +284,7 @@
 }
 
 .inbounds-main-block .ant-btn-primary:hover {
-  box-shadow: 0 0 24px rgba(212, 175, 55, 0.6) !important;
+  box-shadow: 0 0 24px rgba(168, 85, 247, 0.6) !important;
   transform: translateY(-1px);
 }
 

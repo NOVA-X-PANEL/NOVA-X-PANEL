@@ -28,7 +28,7 @@ export default function RadialGauge({
   value,
   size = 148,
   thickness = 11,
-  from = '#e5c158',
+  from = '#8b5cf6',
   to = '#4f7cff',
   trackColor = 'rgba(128, 128, 140, 0.22)',
   glow = true,

@@ -5,12 +5,12 @@
    Light reuses the same shapes on light surfaces. */
 
 :root {
-  --nc-blue: #d4af37;
-  --nc-cyan: #ffd700;
-  --nc-teal: #00e5ff;
-  --nc-violet: #00b4d8;
-  --nc-pink: #d4af37;
-  --nc-amber: #e5c158;
+  --nc-blue: #2563ff;
+  --nc-cyan: #00bfff;
+  --nc-teal: #13d6b0;
+  --nc-violet: #7140ff;
+  --nc-pink: #f13b96;
+  --nc-amber: #ffd15c;
 
   --nc-grad: linear-gradient(100deg, var(--nc-blue) 0%, var(--nc-violet) 100%);
   --nc-grad-soft: linear-gradient(
@@ -18,9 +18,9 @@
     color-mix(in srgb, var(--nc-blue) 26%, transparent),
     color-mix(in srgb, var(--nc-violet) 22%, transparent)
   );
-  --nc-glow: 0 0 25px rgba(212, 175, 55, 0.45);
-  --nc-halo: rgba(212, 175, 55, 0.55);
-  --nc-on-accent: #07101e;
+  --nc-glow: 0 0 22px rgba(36, 85, 255, 0.45);
+  --nc-halo: rgba(37, 99, 255, 0.55);
+  --nc-on-accent: #ffffff;
   --nc-radius: 12px;
 }
 
@@ -34,7 +34,6 @@
   .settings-page,
   .nodes-page,
   .hashem-page,
-  .openvpn-page,
   .groups-page,
   .api-docs-page,
   .hosts-page,
@@ -62,32 +61,29 @@
   .settings-page,
   .nodes-page,
   .hashem-page,
-  .openvpn-page,
   .groups-page,
   .api-docs-page,
   .hosts-page,
   .admins-page,
   .admin-roles-page
 ).is-dark {
-  --nc-card: rgba(14, 20, 36, 0.92);
-  --nc-card-2: rgba(20, 28, 48, 0.95);
-  --nc-border: rgba(212, 175, 55, 0.3);
+  --nc-card: rgba(15, 20, 32, 0.85);
+  --nc-card-2: rgba(22, 29, 46, 0.95);
+  --nc-border: rgba(56, 189, 248, 0.18);
   --nc-divider: rgba(255, 255, 255, 0.08);
-  --nc-field: rgba(10, 15, 28, 0.9);
-  --nc-text: #fdfbf7;
-  --nc-text-2: #d5c7a5;
-  --nc-shadow: 0 12px 35px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(212, 175, 55, 0.15);
-  --bg-page: #060913;
-  --bg-card: rgba(14, 20, 36, 0.92);
-  background-color: #060913;
+  --nc-field: rgba(11, 14, 23, 0.85);
+  --nc-text: #f1f5f9;
+  --nc-text-2: #94a3b8;
+  --nc-shadow: 0 12px 35px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --bg-page: #07090e;
+  --bg-card: rgba(15, 20, 32, 0.85);
+  background-color: #07090e;
   background-image:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(212, 175, 55, 0.2), transparent),
-    radial-gradient(circle at 10% 85%, rgba(0, 180, 216, 0.15), transparent 45%),
-    radial-gradient(circle at 90% 20%, rgba(212, 175, 55, 0.1), transparent 40%),
-    linear-gradient(rgba(212, 175, 55, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(212, 175, 55, 0.02) 1px, transparent 1px);
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(120, 50, 220, 0.16), transparent),
+    radial-gradient(circle at 10% 20%, rgba(34, 211, 238, 0.05), transparent 40%),
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
   background-size:
-    100% 100%,
     100% 100%,
     100% 100%,
     40px 40px,
@@ -103,17 +99,16 @@
     .settings-page,
     .nodes-page,
     .hashem-page,
-  .openvpn-page,
     .groups-page,
     .api-docs-page,
     .hosts-page,
     .admins-page,
     .admin-roles-page
   ).is-dark.is-ultra {
-  --nc-card: #080c16;
-  --nc-card-2: #0e1526;
-  --nc-border: rgba(212, 175, 55, 0.35);
-  --bg-page: #04060c;
+  --nc-card: #04102a;
+  --nc-card-2: #071c3d;
+  --nc-border: rgba(51, 112, 215, 0.28);
+  --bg-page: #02081a;
 }
 
 /* — cards — */
@@ -126,7 +121,6 @@
     .settings-page,
     .nodes-page,
     .hashem-page,
-  .openvpn-page,
     .groups-page,
     .api-docs-page,
     .hosts-page,
@@ -155,7 +149,6 @@
     .settings-page,
     .nodes-page,
     .hashem-page,
-  .openvpn-page,
     .groups-page,
     .api-docs-page,
     .hosts-page,
@@ -179,7 +172,6 @@
     .settings-page,
     .nodes-page,
     .hashem-page,
-  .openvpn-page,
     .groups-page,
     .api-docs-page,
     .hosts-page,
@@ -201,7 +193,6 @@
     .settings-page,
     .nodes-page,
     .hashem-page,
-  .openvpn-page,
     .groups-page,
     .api-docs-page,
     .hosts-page,
@@ -223,7 +214,6 @@
     .settings-page,
     .nodes-page,
     .hashem-page,
-  .openvpn-page,
     .groups-page,
     .api-docs-page,
     .hosts-page,
@@ -243,7 +233,6 @@
     .settings-page,
     .nodes-page,
     .hashem-page,
-  .openvpn-page,
     .groups-page,
     .api-docs-page,
     .hosts-page,
@@ -265,7 +254,6 @@
   .settings-page,
   .nodes-page,
   .hashem-page,
-  .openvpn-page,
   .groups-page,
   .api-docs-page,
   .hosts-page,
@@ -337,7 +325,6 @@
     .settings-page,
     .nodes-page,
     .hashem-page,
-  .openvpn-page,
     .groups-page,
     .api-docs-page,
     .hosts-page,
@@ -357,7 +344,6 @@
     .settings-page,
     .nodes-page,
     .hashem-page,
-  .openvpn-page,
     .groups-page,
     .api-docs-page,
     .hosts-page,
@@ -366,9 +352,9 @@
   )
   .ant-btn-primary:not(:disabled) {
   border: none !important;
-  background: linear-gradient(135deg, #d4af37, #00b4d8) !important;
-  color: #07101e !important;
-  box-shadow: 0 0 18px rgba(212, 175, 55, 0.5) !important;
+  background: linear-gradient(135deg, #0ea5e9, #8b5cf6) !important;
+  color: #fff !important;
+  box-shadow: 0 0 18px rgba(14, 165, 233, 0.4) !important;
   font-family: 'Rajdhani', sans-serif !important;
   font-weight: 700 !important;
   letter-spacing: 0.5px !important;
@@ -382,7 +368,6 @@
     .settings-page,
     .nodes-page,
     .hashem-page,
-  .openvpn-page,
     .groups-page,
     .api-docs-page,
     .hosts-page,
@@ -390,10 +375,10 @@
     .admin-roles-page
   )
   .ant-btn-primary:not(:disabled):hover {
-  background: linear-gradient(135deg, #ffd700, #00b4d8) !important;
-  color: #07101e !important;
+  background: linear-gradient(135deg, #0ea5e9, #8b5cf6) !important;
+  color: #fff !important;
   filter: brightness(1.1) !important;
-  box-shadow: 0 0 28px rgba(212, 175, 55, 0.75), 0 0 40px rgba(0, 180, 216, 0.5) !important;
+  box-shadow: 0 0 28px rgba(168, 85, 247, 0.6) !important;
   transform: translateY(-1px);
 }
 
@@ -405,7 +390,6 @@
     .settings-page,
     .nodes-page,
     .hashem-page,
-  .openvpn-page,
     .groups-page,
     .api-docs-page,
     .hosts-page,
@@ -413,9 +397,8 @@
     .admin-roles-page
   )
   .ant-switch.ant-switch-checked {
-  background: linear-gradient(90deg, #d4af37, #e5c158) !important;
-  border-color: #d4af37 !important;
-  box-shadow: 0 0 14px rgba(212, 175, 55, 0.6) !important;
+  background: linear-gradient(90deg, #10b981, #059669) !important;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.4) !important;
 }
 
 :is(
@@ -426,7 +409,6 @@
     .settings-page,
     .nodes-page,
     .hashem-page,
-  .openvpn-page,
     .groups-page,
     .api-docs-page,
     .hosts-page,
@@ -446,7 +428,6 @@
     .settings-page,
     .nodes-page,
     .hashem-page,
-  .openvpn-page,
     .groups-page,
     .api-docs-page,
     .hosts-page,
@@ -468,7 +449,6 @@
     .settings-page,
     .nodes-page,
     .hashem-page,
-  .openvpn-page,
     .groups-page,
     .api-docs-page,
     .hosts-page,
@@ -489,7 +469,6 @@
     .settings-page,
     .nodes-page,
     .hashem-page,
-  .openvpn-page,
     .groups-page,
     .api-docs-page,
     .hosts-page,
@@ -509,7 +488,6 @@
     .settings-page,
     .nodes-page,
     .hashem-page,
-  .openvpn-page,
     .groups-page,
     .api-docs-page,
     .hosts-page,
@@ -525,7 +503,6 @@
     .settings-page,
     .nodes-page,
     .hashem-page,
-  .openvpn-page,
     .groups-page,
     .api-docs-page,
     .hosts-page,
@@ -548,7 +525,6 @@
     .settings-page,
     .nodes-page,
     .hashem-page,
-  .openvpn-page,
     .groups-page,
     .api-docs-page,
     .hosts-page,
@@ -569,7 +545,6 @@ body.dark
     .settings-page,
     .nodes-page,
     .hashem-page,
-  .openvpn-page,
     .groups-page,
     .api-docs-page,
     .hosts-page,
@@ -599,7 +574,6 @@ body:not(.dark)
     .settings-page,
     .nodes-page,
     .hashem-page,
-  .openvpn-page,
     .groups-page,
     .api-docs-page,
     .hosts-page,
@@ -628,7 +602,6 @@ body.dark
     .settings-page,
     .nodes-page,
     .hashem-page,
-  .openvpn-page,
     .groups-page,
     .api-docs-page,
     .hosts-page,
@@ -651,7 +624,6 @@ body.light
     .settings-page,
     .nodes-page,
     .hashem-page,
-  .openvpn-page,
     .groups-page,
     .api-docs-page,
     .hosts-page,
@@ -674,7 +646,6 @@ body.dark
     .settings-page,
     .nodes-page,
     .hashem-page,
-  .openvpn-page,
     .groups-page,
     .api-docs-page,
     .hosts-page,
@@ -697,7 +668,6 @@ body:not(.dark)
     .settings-page,
     .nodes-page,
     .hashem-page,
-  .openvpn-page,
     .groups-page,
     .api-docs-page,
     .hosts-page,
@@ -719,7 +689,6 @@ body:not(.dark)
     .settings-page,
     .nodes-page,
     .hashem-page,
-  .openvpn-page,
     .groups-page,
     .api-docs-page,
     .hosts-page,
@@ -729,7 +698,7 @@ body:not(.dark)
   .ant-table-tbody
   > tr.ant-table-row:hover
   > td:first-child {
-  border-left: 3px solid #ffd700 !important;
+  border-left: 3px solid #c084fc !important;
 }
 
 :is(
@@ -740,7 +709,6 @@ body:not(.dark)
     .settings-page,
     .nodes-page,
     .hashem-page,
-  .openvpn-page,
     .groups-page,
     .api-docs-page,
     .hosts-page,
@@ -756,7 +724,6 @@ body:not(.dark)
     .settings-page,
     .nodes-page,
     .hashem-page,
-  .openvpn-page,
     .groups-page,
     .api-docs-page,
     .hosts-page,
@@ -777,7 +744,6 @@ body:not(.dark)
     .settings-page,
     .nodes-page,
     .hashem-page,
-  .openvpn-page,
     .groups-page,
     .api-docs-page,
     .hosts-page,
@@ -804,7 +770,6 @@ body:not(.dark)
     .settings-page,
     .nodes-page,
     .hashem-page,
-  .openvpn-page,
     .groups-page,
     .api-docs-page,
     .hosts-page,
@@ -821,7 +786,6 @@ body:not(.dark)
     .settings-page,
     .nodes-page,
     .hashem-page,
-  .openvpn-page,
     .groups-page,
     .api-docs-page,
     .hosts-page,
@@ -841,7 +805,6 @@ body:not(.dark)
     .settings-page,
     .nodes-page,
     .hashem-page,
-  .openvpn-page,
     .groups-page,
     .api-docs-page,
     .hosts-page,
@@ -861,7 +824,6 @@ body:not(.dark)
     .settings-page,
     .nodes-page,
     .hashem-page,
-  .openvpn-page,
     .groups-page,
     .api-docs-page,
     .hosts-page,
@@ -885,7 +847,7 @@ body.dark .ant-drawer .ant-drawer-content {
   -webkit-backdrop-filter: blur(16px);
   box-shadow:
     0 24px 60px rgba(0, 0, 0, 0.65),
-    0 0 25px rgba(212, 175, 55, 0.25) !important;
+    0 0 25px rgba(168, 85, 247, 0.25) !important;
   position: relative;
   overflow: hidden;
 }
@@ -897,7 +859,7 @@ body.dark .ant-modal .ant-modal-content::before {
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, transparent, #d4af37, #00b4d8, transparent);
+  background: linear-gradient(90deg, transparent, #22d3ee, #c084fc, transparent);
   z-index: 2;
 }
 
@@ -948,13 +910,13 @@ body.dark .ant-select-item {
 }
 
 body.dark .ant-select-item-option-active:not(.ant-select-item-option-disabled) {
-  background: rgba(212, 175, 55, 0.15) !important;
-  color: #ffd700 !important;
+  background: rgba(34, 211, 238, 0.12) !important;
+  color: #22d3ee !important;
 }
 
 body.dark .ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
-  background: rgba(212, 175, 55, 0.25) !important;
-  color: #d4af37 !important;
+  background: rgba(34, 211, 238, 0.2) !important;
+  color: #22d3ee !important;
   font-weight: 700 !important;
 }
 
@@ -994,7 +956,6 @@ body.dark .ant-message .ant-message-notice-content {
     .settings-page,
     .nodes-page,
     .hashem-page,
-  .openvpn-page,
     .groups-page,
     .api-docs-page,
     .hosts-page,
@@ -1010,7 +971,6 @@ body.dark .ant-message .ant-message-notice-content {
     .settings-page,
     .nodes-page,
     .hashem-page,
-  .openvpn-page,
     .groups-page,
     .api-docs-page,
     .hosts-page,
@@ -1030,7 +990,6 @@ body.dark .ant-message .ant-message-notice-content {
     .settings-page,
     .nodes-page,
     .hashem-page,
-  .openvpn-page,
     .groups-page,
     .api-docs-page,
     .hosts-page,
@@ -1049,7 +1008,6 @@ body.dark .ant-message .ant-message-notice-content {
     .settings-page,
     .nodes-page,
     .hashem-page,
-  .openvpn-page,
     .groups-page,
     .api-docs-page,
     .hosts-page,
@@ -1134,7 +1092,6 @@ body.dark .pg-admin-page {
       .settings-page,
       .nodes-page,
       .hashem-page,
-  .openvpn-page,
       .groups-page,
       .api-docs-page,
       .hosts-page,
@@ -1153,7 +1110,6 @@ body.dark .pg-admin-page {
       .settings-page,
       .nodes-page,
       .hashem-page,
-  .openvpn-page,
       .groups-page,
       .api-docs-page,
       .hosts-page,
@@ -1243,7 +1199,7 @@ body:not(.dark) .nc-hero .nc-landscape {
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, transparent, #d4af37, #00b4d8, transparent);
+  background: linear-gradient(90deg, transparent, #22d3ee, #c084fc, transparent);
   z-index: 2;
 }
 
@@ -1259,10 +1215,10 @@ body:not(.dark) .nc-hero .nc-landscape {
   background: linear-gradient(
     135deg,
     rgba(56, 189, 248, 0.15),
-    rgba(212, 175, 55, 0.25)
+    rgba(168, 85, 247, 0.25)
   ) !important;
-  border: 1px solid rgba(212, 175, 55, 0.4);
-  box-shadow: 0 0 16px rgba(212, 175, 55, 0.3) !important;
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  box-shadow: 0 0 16px rgba(168, 85, 247, 0.3) !important;
 }
 
 .nc-hero-title {
@@ -1375,8 +1331,8 @@ body:not(.dark) .nc-stat-foot {
 
 .nc-stat:hover {
   transform: translateY(-2px);
-  border-color: rgba(212, 175, 55, 0.4) !important;
-  box-shadow: 0 0 25px rgba(212, 175, 55, 0.25) !important;
+  border-color: rgba(168, 85, 247, 0.4) !important;
+  box-shadow: 0 0 25px rgba(168, 85, 247, 0.25) !important;
   background: rgba(22, 29, 46, 0.95) !important;
 }
 
@@ -2021,7 +1977,7 @@ body:not(.dark) .drawer-menu .ant-menu-item-selected {
   background: linear-gradient(
     90deg,
     rgba(2, 132, 199, 0.12) 0%,
-    rgba(212, 175, 55, 0.1) 100%
+    rgba(168, 85, 247, 0.1) 100%
   ) !important;
   border-left: 3px solid #0284c7 !important;
   border-inline-start: 3px solid #0284c7 !important;
@@ -2061,9 +2017,9 @@ body:not(.dark) .sider-footer {
 }
 
 body:not(.dark) .sider-footer .sider-version {
-  background: rgba(212, 175, 55, 0.08) !important;
-  border: 1px solid rgba(212, 175, 55, 0.25) !important;
-  color: #aa7c11 !important;
+  background: rgba(168, 85, 247, 0.08) !important;
+  border: 1px solid rgba(168, 85, 247, 0.25) !important;
+  color: #7e22ce !important;
 }
 
 body:not(.dark) .sider-tools button,
@@ -2116,14 +2072,14 @@ body.dark .sider-utility .ant-menu-item-selected,
 body.dark .drawer-menu .ant-menu-item-selected {
   background: linear-gradient(
     90deg,
-    rgba(212, 175, 55, 0.22) 0%,
-    rgba(0, 180, 216, 0.28) 100%
+    rgba(34, 211, 238, 0.18) 0%,
+    rgba(168, 85, 247, 0.22) 100%
   ) !important;
-  border-left: 3px solid #d4af37 !important;
-  border-inline-start: 3px solid #d4af37 !important;
+  border-left: 3px solid #22d3ee !important;
+  border-inline-start: 3px solid #22d3ee !important;
   box-shadow:
-    inset 0 0 16px rgba(212, 175, 55, 0.2),
-    0 0 16px rgba(212, 175, 55, 0.35) !important;
+    inset 0 0 16px rgba(34, 211, 238, 0.15),
+    0 0 14px rgba(34, 211, 238, 0.22) !important;
   color: #ffffff !important;
   font-weight: 700 !important;
 }
@@ -2131,8 +2087,8 @@ body.dark .drawer-menu .ant-menu-item-selected {
 body.dark .sider-nav .ant-menu-item-selected .anticon,
 body.dark .sider-utility .ant-menu-item-selected .anticon,
 body.dark .drawer-menu .ant-menu-item-selected .anticon {
-  color: #d4af37 !important;
-  filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.95)) !important;
+  color: #22d3ee !important;
+  filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.85)) !important;
 }
 
 body.dark .sider-brand {
@@ -2226,7 +2182,7 @@ body.dark .ant-dropdown .ant-dropdown-menu-item-active,
   background: linear-gradient(
     90deg,
     rgba(34, 211, 238, 0.18) 0%,
-    rgba(212, 175, 55, 0.15) 100%
+    rgba(168, 85, 247, 0.15) 100%
   ) !important;
   color: #ffffff !important;
   border-left: 2px solid #22d3ee !important;
@@ -2342,16 +2298,16 @@ body.dark .ant-table-tbody .ant-dropdown-trigger .anticon-more {
 body.dark .action-buttons .cyber-more-btn:hover,
 body.dark .action-buttons .ant-dropdown-trigger:hover,
 body.dark .ant-table-tbody .ant-dropdown-trigger:hover {
-  border-color: #ffd700 !important;
-  background: rgba(212, 175, 55, 0.16) !important;
-  box-shadow: 0 0 14px rgba(212, 175, 55, 0.5) !important;
+  border-color: #c084fc !important;
+  background: rgba(168, 85, 247, 0.16) !important;
+  box-shadow: 0 0 14px rgba(168, 85, 247, 0.5) !important;
 }
 
 body.dark .action-buttons .cyber-more-btn:hover .anticon-more,
 body.dark .action-buttons .ant-dropdown-trigger:hover .anticon-more,
 body.dark .ant-table-tbody .ant-dropdown-trigger:hover .anticon-more {
-  color: #ffd700 !important;
-  filter: drop-shadow(0 0 8px #ffd700) !important;
+  color: #c084fc !important;
+  filter: drop-shadow(0 0 8px #c084fc) !important;
 }
 
 /* Edit pencil button specific styling */
@@ -2401,7 +2357,7 @@ body.dark .ant-modal .ant-modal-header {
   background: linear-gradient(
     90deg,
     rgba(34, 211, 238, 0.1) 0%,
-    rgba(212, 175, 55, 0.06) 100%
+    rgba(168, 85, 247, 0.06) 100%
   ) !important;
   border-bottom: 1px solid rgba(56, 189, 248, 0.18) !important;
   padding: 16px 24px !important;
@@ -2416,7 +2372,7 @@ body.dark .ant-modal .ant-modal-header::before {
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, #22d3ee 0%, #ffd700 50%, #22d3ee 100%);
+  background: linear-gradient(90deg, #22d3ee 0%, #c084fc 50%, #22d3ee 100%);
   box-shadow: 0 0 10px #22d3ee;
 }
 
@@ -2480,7 +2436,7 @@ body.dark .ant-modal .ant-tabs-tab-active .ant-tabs-tab-btn {
 
 body.dark .ant-modal .ant-tabs-ink-bar {
   height: 2.5px !important;
-  background: linear-gradient(90deg, #22d3ee, #ffd700) !important;
+  background: linear-gradient(90deg, #22d3ee, #c084fc) !important;
   box-shadow:
     0 0 10px #22d3ee,
     0 0 20px rgba(34, 211, 238, 0.6) !important;
@@ -2571,16 +2527,16 @@ body.dark .ant-modal .ant-switch {
 }
 
 body.dark .ant-modal .ant-switch.ant-switch-checked {
-  background: linear-gradient(135deg, #d4af37, #00b4d8) !important;
-  border-color: #d4af37 !important;
-  box-shadow: 0 0 14px rgba(212, 175, 55, 0.6) !important;
+  background: linear-gradient(135deg, #0ea5e9, #8b5cf6) !important;
+  border-color: #38bdf8 !important;
+  box-shadow: 0 0 12px rgba(14, 165, 233, 0.5) !important;
 }
 
 /* 8. Quick Action Inline Buttons (e.g. Select all, Clear all) */
 body.dark .ant-modal .ant-btn-sm:not(.ant-btn-primary):not(.ant-btn-dangerous) {
-  background: rgba(212, 175, 55, 0.1) !important;
-  border: 1px solid rgba(212, 175, 55, 0.35) !important;
-  color: #ffd700 !important;
+  background: rgba(34, 211, 238, 0.08) !important;
+  border: 1px solid rgba(56, 189, 248, 0.28) !important;
+  color: #22d3ee !important;
   border-radius: 6px !important;
   font-family: 'JetBrains Mono', monospace !important;
   font-size: 11px !important;
@@ -2590,9 +2546,9 @@ body.dark .ant-modal .ant-btn-sm:not(.ant-btn-primary):not(.ant-btn-dangerous) {
 body.dark
   .ant-modal
   .ant-btn-sm:not(.ant-btn-primary):not(.ant-btn-dangerous):hover:not(:disabled) {
-  background: rgba(212, 175, 55, 0.2) !important;
-  border-color: #d4af37 !important;
-  box-shadow: 0 0 10px rgba(212, 175, 55, 0.45) !important;
+  background: rgba(34, 211, 238, 0.2) !important;
+  border-color: #22d3ee !important;
+  box-shadow: 0 0 10px rgba(34, 211, 238, 0.35) !important;
   color: #ffffff !important;
 }
 
@@ -2631,7 +2587,7 @@ body.dark
 
 body.dark .ant-modal .ant-modal-footer .ant-btn-primary,
 body.dark .ant-modal .ant-btn-primary {
-  background: linear-gradient(135deg, #0ea5e9 0%, #e5c158 100%) !important;
+  background: linear-gradient(135deg, #0ea5e9 0%, #8b5cf6 100%) !important;
   border: none !important;
   border-radius: 8px !important;
   color: #ffffff !important;
@@ -2901,12 +2857,12 @@ body.light .nx-row-btn:hover,
 
 /* Edit Button */
 .nx-btn-edit {
-  color: #ffd700 !important;
+  color: #c084fc !important;
 }
 .nx-btn-edit:hover {
   color: #fff !important;
   background: rgba(192, 132, 252, 0.2) !important;
-  border-color: #ffd700 !important;
+  border-color: #c084fc !important;
   box-shadow: 0 0 10px rgba(192, 132, 252, 0.5) !important;
 }
 
@@ -2941,11 +2897,11 @@ body.dark .clients-page .ant-switch.nx-client-switch.ant-switch-checked,
 body.dark .ant-switch.nx-client-switch.ant-switch-checked,
 .dark .clients-page .ant-switch.nx-client-switch.ant-switch-checked,
 .dark .ant-switch.nx-client-switch.ant-switch-checked {
-  background: linear-gradient(135deg, #d4af37 0%, #e5c158 50%, #00b4d8 100%) !important;
-  border-color: #d4af37 !important;
+  background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%) !important;
+  border-color: #10b981 !important;
   box-shadow:
-    0 0 14px rgba(212, 175, 55, 0.65),
-    0 0 6px rgba(0, 180, 216, 0.5) !important;
+    0 0 12px rgba(16, 185, 129, 0.55),
+    0 0 4px rgba(6, 182, 212, 0.4) !important;
 }
 
 body.light .clients-page .ant-switch.nx-client-switch,
@@ -3018,9 +2974,9 @@ body.light .nx-btn-ghost-cyber:hover,
 
 body.dark .nx-btn-kebab-cyber,
 .dark .nx-btn-kebab-cyber {
-  border: 1px solid rgba(212, 175, 55, 0.25) !important;
+  border: 1px solid rgba(168, 85, 247, 0.25) !important;
   background: rgba(15, 23, 42, 0.6) !important;
-  color: #ffd700 !important;
+  color: #c084fc !important;
   border-radius: 8px !important;
   display: inline-flex !important;
   align-items: center !important;
@@ -3029,10 +2985,10 @@ body.dark .nx-btn-kebab-cyber,
 }
 body.dark .nx-btn-kebab-cyber:hover,
 .dark .nx-btn-kebab-cyber:hover {
-  background: rgba(212, 175, 55, 0.22) !important;
-  border-color: #d4af37 !important;
+  background: rgba(168, 85, 247, 0.22) !important;
+  border-color: #a855f7 !important;
   color: #fff !important;
-  box-shadow: 0 0 12px rgba(212, 175, 55, 0.5) !important;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.5) !important;
   transform: translateY(-1px);
 }
 
@@ -3040,7 +2996,7 @@ body.light .nx-btn-kebab-cyber,
 .light .nx-btn-kebab-cyber {
   border: 1px solid #e2e8f0 !important;
   background: #ffffff !important;
-  color: #b8860b !important;
+  color: #7c3aed !important;
   border-radius: 8px !important;
   display: inline-flex !important;
   align-items: center !important;
@@ -3050,7 +3006,7 @@ body.light .nx-btn-kebab-cyber,
 body.light .nx-btn-kebab-cyber:hover,
 .light .nx-btn-kebab-cyber:hover {
   background: #faf5ff !important;
-  border-color: #b8860b !important;
+  border-color: #7c3aed !important;
   color: #6d28d9 !important;
   box-shadow: 0 2px 6px rgba(124, 58, 237, 0.2) !important;
   transform: translateY(-1px);

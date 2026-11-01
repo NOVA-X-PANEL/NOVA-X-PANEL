@@ -64,16 +64,16 @@ const RTL_LANGUAGES = new Set(['fa-IR', 'ar-EG']);
 // hue up instead of the panel blue useTheme pins. Mirrored in SubPage.css.
 const ACCENT = {
   light: {
-    primary: '#ffd700',
-    hover: '#e5c158',
-    active: '#aa7c11',
-    rail: 'rgba(212, 175, 55, 0.2)',
+    primary: '#2563ff',
+    hover: '#3b82f6',
+    active: '#1d4ed8',
+    rail: 'rgba(37, 99, 255, 0.16)',
   },
   dark: {
-    primary: '#ffd700',
-    hover: '#e5c158',
-    active: '#aa7c11',
-    rail: 'rgba(212, 175, 55, 0.25)',
+    primary: '#38bdf8',
+    hover: '#67e8f9',
+    active: '#0284c7',
+    rail: 'rgba(56, 189, 248, 0.2)',
   },
 };
 
@@ -200,11 +200,7 @@ export default function SubPage() {
                 </span>
               )}
               {subSupportUrl && (
-                <a
-                  href={subSupportUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
+                <a href={subSupportUrl} target="_blank" rel="noopener noreferrer">
                   <CustomerServiceOutlined />
                   {t('support')}
                 </a>

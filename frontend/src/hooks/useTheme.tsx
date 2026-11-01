@@ -34,37 +34,37 @@ const initialDark = readBool(STORAGE_DARK, true);
 const initialUltra = readBool(STORAGE_ULTRA, false);
 applyDom(initialDark, initialUltra);
 
-// NOVA X PANEL — Cyrus the Great / Pasargadae Edition
-// Imperial obsidian stone canvas with luminous Achaemenid Royal Gold glow,
-// and royal Persian turquoise accents.
+// NOVA X PANEL — "Neon Console" (from the NEON X reference). A deep navy canvas
+// with neon-glow cards, luminous blue borders and electric accents: blue
+// #2563FF, cyan #00BFFF, teal #13D6B0, violet #7140FF, magenta #F13B96.
 const NEON = {
   dark: {
-    bg: '#0a0d14',
-    container: '#101726',
-    elevated: '#172238',
-    sider: '#080c14',
-    border: 'rgba(212,175,55,.35)',
-    borderSecondary: 'rgba(0,180,216,.22)',
-    text: '#fdfbf7',
-    textSecondary: '#d5c7a5',
-    textTertiary: '#8c7a56',
-    blue: '#d4af37',
-    violet: '#00b4d8',
-    onAccent: '#07101e',
+    bg: '#07090e',
+    container: '#0b0f19',
+    elevated: '#0b0f19',
+    sider: '#07090e',
+    border: 'rgba(56,189,248,.25)',
+    borderSecondary: 'rgba(56,189,248,.12)',
+    text: '#f3f7ff',
+    textSecondary: '#94a3b8',
+    textTertiary: '#64748b',
+    blue: '#0ea5e9',
+    violet: '#a855f7',
+    onAccent: '#ffffff',
   },
   ultra: {
-    bg: '#05070d',
-    container: '#0c121e',
-    elevated: '#121b2d',
-    sider: '#04060a',
-    border: 'rgba(212,175,55,.3)',
-    borderSecondary: 'rgba(0,180,216,.18)',
-    text: '#fdfbf7',
-    textSecondary: '#d5c7a5',
-    textTertiary: '#8c7a56',
-    blue: '#d4af37',
-    violet: '#00b4d8',
-    onAccent: '#07101e',
+    bg: '#040508',
+    container: '#07090e',
+    elevated: '#07090e',
+    sider: '#040508',
+    border: 'rgba(56,189,248,.18)',
+    borderSecondary: 'rgba(56,189,248,.1)',
+    text: '#f3f7ff',
+    textSecondary: '#94a3b8',
+    textTertiary: '#64748b',
+    blue: '#0ea5e9',
+    violet: '#a855f7',
+    onAccent: '#ffffff',
   },
   light: {
     bg: '#f4f7ff',

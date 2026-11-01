@@ -362,7 +362,7 @@ export default function TelegramShopPage() {
                       >
                         <Input
                           placeholder="123456789"
-                          prefix={<UserOutlined style={{ color: '#e5c158' }} />}
+                          prefix={<UserOutlined style={{ color: '#8b5cf6' }} />}
                           size="large"
                         />
                       </Form.Item>
@@ -442,7 +442,7 @@ export default function TelegramShopPage() {
                       </div>
 
                       <div>
-                        <Text strong style={{ color: '#e5c158' }}>
+                        <Text strong style={{ color: '#8b5cf6' }}>
                           {t('pages.telegramShop.feature3Title')}
                         </Text>
                         <Paragraph style={{ color: '#94a3b8', fontSize: 13, margin: 0 }}>
@@ -534,7 +534,7 @@ export default function TelegramShopPage() {
                           </span>
                         }
                         value={status.admin_chat_id || t('pages.telegramShop.unspecified')}
-                        prefix={<SafetyCertificateOutlined style={{ color: '#e5c158' }} />}
+                        prefix={<SafetyCertificateOutlined style={{ color: '#8b5cf6' }} />}
                         valueStyle={{ color: '#818cf8', fontSize: 18 }}
                       />
                     </Card>

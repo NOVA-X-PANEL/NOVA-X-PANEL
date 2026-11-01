@@ -22,8 +22,7 @@ import { setMessageInstance } from '@/utils/messageBus';
 import { pauseAnimationsUntilLeave, useTheme } from '@/hooks/useTheme';
 import { LoginFormSchema } from '@/schemas/login';
 import NovaLogo from './NovaLogo';
-import cyrusPortrait from '@/assets/cyrus-portrait.webp';
-import cyrusTomb from '@/assets/cyrus-tomb.webp';
+import NeonLandscape from '@/components/NeonLandscape';
 import './LoginPage.css';
 
 const basePath = window.X_UI_BASE_PATH || '';
@@ -233,37 +232,17 @@ export default function LoginPage() {
             <div className="nx-brand">
               <NovaLogo size={52} idSuffix="hero" />
               <div className="nx-brand__text">
-                <span className="nx-brand__name">NOVA 🏛️</span>
-                <span className="nx-brand__label" style={{ color: '#d4af37', letterSpacing: '0.12em' }}>CYRUS THE GREAT</span>
+                <span className="nx-brand__name">NOVA X</span>
+                <span className="nx-brand__label">PANEL</span>
               </div>
             </div>
 
             <h1 className="nx-hero__title">NOVA X PANEL</h1>
-            <p className="nx-hero__tagline">شاهنشاهی هخامنشی · آرامگاه کوروش بزرگ · اتصال بی‌مرز پارسی</p>
+            <p className="nx-hero__tagline">More Freedom · More Connection · Nova X</p>
             <p className="nx-hero__slogan">
-              «منم کوروش، شاه جهان، شاه بزرگ، شاه دادگر» — پاسارگاد
+              {t('pages.login.slogan', { defaultValue: COPY.slogan })}
             </p>
             <div className="nx-hero__rule" />
-
-            {/* Cyrus the Great Featured Artwork */}
-            <div className="nx-cyrus-hero">
-              <div className="nx-cyrus-frame">
-                <img
-                  src={cyrusPortrait}
-                  alt="کوروش بزرگ هخامنشی"
-                  className="nx-cyrus-img"
-                  loading="eager"
-                />
-                <div className="nx-cyrus-frame__glow" />
-                <div className="nx-cyrus-badge">
-                  <span>🏛️ کوروش بزرگ · پاسارگاد</span>
-                </div>
-              </div>
-              <div className="nx-cyrus-meta">
-                <span className="nx-cyrus-title">شهریار دادگر ایران باستان</span>
-                <span className="nx-cyrus-desc">بنیان‌گذار شاهنشاهی هخامنشی و نخستین منشور جهانی حقوق بشر</span>
-              </div>
-            </div>
 
             <div className="nx-features">
               {FEATURES.map((feature) => (
@@ -283,17 +262,7 @@ export default function LoginPage() {
           </div>
 
           <div className="nx-hero__art">
-            <div className="nx-tomb-wrap">
-              <img
-                src={cyrusTomb}
-                alt="آرامگاه کوروش بزرگ در پاسارگاد"
-                className="nx-tomb-photo"
-              />
-              <div className="nx-tomb-photo__glow" />
-              <div className="nx-tomb-photo__badge">
-                <span>پاسارگاد · میراث جهانی کوروش بزرگ</span>
-              </div>
-            </div>
+            <NeonLandscape variant="panel" />
           </div>
         </section>
 
@@ -346,19 +315,10 @@ export default function LoginPage() {
           ) : (
             <div className="nx-card">
               <div className="nx-card__head">
-                <div className="nx-card__avatar-box">
-                  <img
-                    src={cyrusPortrait}
-                    alt="کوروش بزرگ"
-                    className="nx-card__avatar"
-                  />
-                  <div className="nx-card__avatar-badge">
-                    <NovaLogo size={24} idSuffix="card-badge" />
-                  </div>
-                </div>
+                <NovaLogo size={58} idSuffix="card" />
                 <h2 className="nx-card__title">NOVA X PANEL</h2>
                 <p className="nx-card__subtitle">
-                  {t('pages.login.cardSubtitle', { defaultValue: 'ورود به درگاه شاهنشاهی · پاسارگاد' })}
+                  {t('pages.login.cardSubtitle', { defaultValue: COPY.cardSubtitle })}
                 </p>
               </div>
 

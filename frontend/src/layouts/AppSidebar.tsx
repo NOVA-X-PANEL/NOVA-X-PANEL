@@ -497,13 +497,13 @@ export default function AppSidebar() {
       >
         <div className="sider-brand">
           <div className="brand-block">
-            <span className="brand-mark" aria-hidden="true" style={{ fontSize: 24, lineHeight: '32px' }}>
-              🏛️
+            <span className="brand-mark" aria-hidden="true">
+              N
             </span>
             {!railCollapsed && (
               <span className="brand-block-text">
-                <span className="brand-text">NOVA 👑</span>
-                <span className="brand-sub" style={{ color: '#d4af37', letterSpacing: '0.14em' }}>PASARGADAE</span>
+                <span className="brand-text">NOVA X</span>
+                <span className="brand-sub">PANEL</span>
               </span>
             )}
           </div>
@@ -591,7 +591,7 @@ export default function AppSidebar() {
       >
         <div className="drawer-header">
           <div className="brand-block">
-            <span className="drawer-brand">🏛️ NOVA X · CYRUS THE GREAT 👑</span>
+            <span className="drawer-brand">NOVA X PANEL</span>
           </div>
           <div className="drawer-header-actions">
             <button

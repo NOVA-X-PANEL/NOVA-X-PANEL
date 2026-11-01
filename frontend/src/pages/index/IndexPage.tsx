@@ -240,7 +240,7 @@ export default function IndexPage() {
                           percent={status.cpu.percent}
                           statusColor={status.cpu.color}
                           gradientFrom="#38bdf8"
-                          gradientTo="#c084fc"
+                          gradientTo="#ffd700"
                           detail={`${CPUFormatter.cpuCoreFormat(status.cpuCores)} / ${status.logicalPro}T · ${CPUFormatter.cpuSpeedFormat(status.cpuSpeedMhz)}`}
                           footLeft={`${t('pages.index.avg')} ${mean(history.series.cpu).toFixed(0)}%`}
                           footRight={`${t('pages.index.peak')} ${peak(history.series.cpu).toFixed(0)}%`}

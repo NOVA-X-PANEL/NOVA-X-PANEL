@@ -9,13 +9,13 @@
 
 /* One glow behind every page, so no screen is a flat black rectangle. */
 body.dark {
-  background-color: #08040d;
+  background-color: #060913;
   background-image:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(255, 119, 0, 0.22), transparent),
-    radial-gradient(circle at 10% 85%, rgba(157, 78, 221, 0.18), transparent 45%),
-    radial-gradient(circle at 90% 20%, rgba(57, 255, 20, 0.08), transparent 40%),
-    linear-gradient(rgba(255, 119, 0, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 119, 0, 0.02) 1px, transparent 1px);
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(212, 175, 55, 0.22), transparent),
+    radial-gradient(circle at 10% 85%, rgba(0, 180, 216, 0.18), transparent 45%),
+    radial-gradient(circle at 90% 20%, rgba(212, 175, 55, 0.12), transparent 40%),
+    linear-gradient(rgba(212, 175, 55, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(212, 175, 55, 0.02) 1px, transparent 1px);
   background-size:
     100% 100%,
     100% 100%,
@@ -25,7 +25,7 @@ body.dark {
   background-attachment: fixed;
 }
 
-/* Corner cobwebs */
+/* Achaemenid Persian Lotus corner ornaments */
 body.dark::before {
   content: '';
   position: fixed;
@@ -35,7 +35,7 @@ body.dark::before {
   height: 170px;
   pointer-events: none;
   z-index: 999;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='%23ff7700' stroke-width='0.8' stroke-opacity='0.3'%3E%3Cline x1='100' y1='0' x2='0' y2='100' /%3E%3Cline x1='100' y1='0' x2='30' y2='100' /%3E%3Cline x1='100' y1='0' x2='65' y2='100' /%3E%3Cline x1='100' y1='0' x2='0' y2='30' /%3E%3Cline x1='100' y1='0' x2='0' y2='65' /%3E%3Cpath d='M85 0 Q80 20 100 15' /%3E%3Cpath d='M68 0 Q62 38 100 32' /%3E%3Cpath d='M48 0 Q40 60 100 52' /%3E%3Cpath d='M28 0 Q20 80 100 72' /%3E%3Cpath d='M8 0 Q0 98 100 92' /%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='%23d4af37' stroke-width='0.8' stroke-opacity='0.3'%3E%3Cline x1='100' y1='0' x2='0' y2='100' stroke-dasharray='2 2' /%3E%3Ccircle cx='85' cy='15' r='8' stroke-width='1' /%3E%3Ccircle cx='85' cy='15' r='3' fill='%23d4af37' fill-opacity='0.4' /%3E%3Cpath d='M85 7 Q85 15 93 15 Q85 15 85 23 Q85 15 77 15 Q85 15 85 7 Z' fill='%23d4af37' fill-opacity='0.3' /%3E%3Cpath d='M70 0 Q70 20 90 20' /%3E%3Cpath d='M50 0 Q50 35 85 35' /%3E%3Cpath d='M30 0 Q30 50 80 50' /%3E%3Cpath d='M10 0 Q10 65 75 65' /%3E%3Cpath d='M100 30 Q80 30 80 50' /%3E%3Cpath d='M100 50 Q65 50 65 85' /%3E%3Cpath d='M100 70 Q50 70 50 100' /%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-size: contain;
 }
@@ -49,7 +49,7 @@ body.dark::after {
   height: 150px;
   pointer-events: none;
   z-index: 999;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='%239d4edd' stroke-width='0.8' stroke-opacity='0.3'%3E%3Cline x1='0' y1='0' x2='100' y2='100' /%3E%3Cline x1='0' y1='0' x2='70' y2='100' /%3E%3Cline x1='0' y1='0' x2='35' y2='100' /%3E%3Cline x1='0' y1='0' x2='100' y2='30' /%3E%3Cline x1='0' y1='0' x2='100' y2='65' /%3E%3Cpath d='M15 0 Q20 20 0 15' /%3E%3Cpath d='M32 0 Q38 38 0 32' /%3E%3Cpath d='M52 0 Q60 60 0 52' /%3E%3Cpath d='M72 0 Q80 80 0 72' /%3E%3Cpath d='M92 0 Q100 98 0 92' /%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='%2300b4d8' stroke-width='0.8' stroke-opacity='0.3'%3E%3Cline x1='0' y1='0' x2='100' y2='100' stroke-dasharray='2 2' /%3E%3Ccircle cx='15' cy='15' r='8' stroke-width='1' /%3E%3Ccircle cx='15' cy='15' r='3' fill='%2300b4d8' fill-opacity='0.4' /%3E%3Cpath d='M15 7 Q15 15 23 15 Q15 15 15 23 Q15 15 7 15 Q15 15 15 7 Z' fill='%2300b4d8' fill-opacity='0.3' /%3E%3Cpath d='M30 0 Q30 20 10 20' /%3E%3Cpath d='M50 0 Q50 35 15 35' /%3E%3Cpath d='M70 0 Q70 50 20 50' /%3E%3Cpath d='M90 0 Q90 65 25 65' /%3E%3Cpath d='M0 30 Q20 30 20 50' /%3E%3Cpath d='M0 50 Q35 50 35 85' /%3E%3Cpath d='M0 70 Q50 70 50 100' /%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-size: contain;
 }
@@ -67,12 +67,12 @@ body.light {
    they live in the two per-theme blocks below. */
 body.dark,
 body.light {
-  --nc-blue: #ff7700;
-  --nc-violet: #9d4edd;
-  --nc-teal: #ff9e00;
-  --nc-green: #39ff14;
-  --nc-pink: #ff0055;
-  --nv-on-accent: #ffffff;
+  --nc-blue: #d4af37;
+  --nc-violet: #00b4d8;
+  --nc-teal: #e5c158;
+  --nc-green: #00e5ff;
+  --nc-pink: #d4af37;
+  --nv-on-accent: #07101e;
 }
 
 /* The `--nv-*` names predate the `--nc-*` rename and are still referenced by the
@@ -87,24 +87,24 @@ body.light {
    panels are white. Each theme now carries its own. */
 
 body.dark {
-  --nc-card: rgba(17, 8, 28, 0.88);
-  --nc-card-2: rgba(26, 12, 42, 0.95);
-  --nc-border: rgba(255, 119, 0, 0.28);
+  --nc-card: rgba(14, 20, 32, 0.88);
+  --nc-card-2: rgba(20, 28, 46, 0.95);
+  --nc-border: rgba(212, 175, 55, 0.28);
   --nc-divider: rgba(255, 255, 255, 0.08);
-  --nc-field: rgba(14, 6, 23, 0.88);
-  --nc-text: #fbfaff;
-  --nc-text-2: #d8b4fe;
-  --nc-text-3: #9333ea;
-  --nv-card: rgba(17, 8, 28, 0.88);
-  --nv-border: rgba(255, 119, 0, 0.28);
-  --nv-shadow: 0 12px 35px rgba(0, 0, 0, 0.6), 0 0 15px rgba(255, 119, 0, 0.15);
-  --nv-accent: #ff7700;
-  --nv-blue: #ff7700;
-  --nv-violet: #9d4edd;
-  --nv-cyan: #ff9e00;
-  --nv-teal: #39ff14;
-  --nv-grad: linear-gradient(135deg, rgba(255, 119, 0, 0.2) 0%, rgba(157, 78, 221, 0.25) 100%);
-  --nv-topbar-bg: #09040f;
+  --nc-field: rgba(10, 16, 26, 0.88);
+  --nc-text: #fdfbf7;
+  --nc-text-2: #d5c7a5;
+  --nc-text-3: #8c7a56;
+  --nv-card: rgba(14, 20, 32, 0.88);
+  --nv-border: rgba(212, 175, 55, 0.28);
+  --nv-shadow: 0 12px 35px rgba(0, 0, 0, 0.6), 0 0 15px rgba(212, 175, 55, 0.15);
+  --nv-accent: #d4af37;
+  --nv-blue: #d4af37;
+  --nv-violet: #00b4d8;
+  --nv-cyan: #ffd700;
+  --nv-teal: #00e5ff;
+  --nv-grad: linear-gradient(135deg, rgba(212, 175, 55, 0.2) 0%, rgba(0, 180, 216, 0.25) 100%);
+  --nv-topbar-bg: #070b14;
 }
 
 /* Light surfaces, mirroring the light palette nova-glass.css sets on the page
@@ -612,8 +612,8 @@ body.light {
   )
   :is(.ant-checkbox-checked .ant-checkbox-inner, .ant-radio-checked .ant-radio-inner) {
   border-color: transparent;
-  background: linear-gradient(135deg, #ff7700, #9d4edd);
-  box-shadow: 0 0 10px rgba(255, 119, 0, 0.6);
+  background: linear-gradient(135deg, #d4af37, #00b4d8);
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.6);
 }
 
 :is(
@@ -652,9 +652,9 @@ body.light {
     .admin-roles-page
   )
   .ant-switch.ant-switch-checked {
-  background: linear-gradient(135deg, #ff7700 0%, #ff5400 50%, #9d4edd 100%) !important;
-  border-color: #ff7700 !important;
-  box-shadow: 0 0 14px rgba(255, 119, 0, 0.65), 0 0 6px rgba(157, 78, 221, 0.5) !important;
+  background: linear-gradient(135deg, #d4af37 0%, #e5c158 50%, #00b4d8 100%) !important;
+  border-color: #d4af37 !important;
+  box-shadow: 0 0 14px rgba(212, 175, 55, 0.65), 0 0 6px rgba(0, 180, 216, 0.5) !important;
 }
 
 :is(
@@ -742,7 +742,7 @@ body.dark .ant-select-item-option-selected {
   background: linear-gradient(
     90deg,
     rgba(34, 211, 238, 0.18) 0%,
-    rgba(168, 85, 247, 0.15) 100%
+    rgba(212, 175, 55, 0.15) 100%
   ) !important;
 }
 
@@ -1571,21 +1571,21 @@ body.dark .ant-sidebar > .ant-layout-sider {
 .sider-nav .ant-menu-item-selected {
   background: linear-gradient(
     90deg,
-    rgba(255, 119, 0, 0.22) 0%,
-    rgba(157, 78, 221, 0.28) 100%
+    rgba(212, 175, 55, 0.22) 0%,
+    rgba(0, 180, 216, 0.28) 100%
   ) !important;
-  border-left: 3px solid #ff7700 !important;
-  border-inline-start: 3px solid #ff7700 !important;
+  border-left: 3px solid #d4af37 !important;
+  border-inline-start: 3px solid #d4af37 !important;
   box-shadow:
-    inset 0 0 16px rgba(255, 119, 0, 0.2),
-    0 0 16px rgba(255, 119, 0, 0.35) !important;
+    inset 0 0 16px rgba(212, 175, 55, 0.2),
+    0 0 16px rgba(212, 175, 55, 0.35) !important;
   color: #fff !important;
   font-weight: 700 !important;
 }
 
 .sider-nav .ant-menu-item-selected .anticon {
-  color: #ff7700 !important;
-  filter: drop-shadow(0 0 10px rgba(255, 119, 0, 0.95)) !important;
+  color: #d4af37 !important;
+  filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.95)) !important;
 }
 
 .nx-topbar .ant-menu-horizontal > .ant-menu-item:not(.ant-menu-item-selected) {
@@ -1950,9 +1950,9 @@ body.dark .ant-command-palette,
 
 .ant-sidebar .sider-nav .ant-menu-item:not(.ant-menu-item-selected):hover,
 .ant-sidebar .sider-utility .ant-menu-item:not(.ant-menu-item-selected):hover {
-  background-color: rgba(255, 119, 0, 0.1) !important;
-  border-left: 3px solid rgba(255, 119, 0, 0.45) !important;
-  border-inline-start: 3px solid rgba(255, 119, 0, 0.45) !important;
+  background-color: rgba(212, 175, 55, 0.12) !important;
+  border-left: 3px solid rgba(212, 175, 55, 0.5) !important;
+  border-inline-start: 3px solid rgba(212, 175, 55, 0.5) !important;
 }
 
 /* ---- 5. login: solid card and fields, no glass ---- */

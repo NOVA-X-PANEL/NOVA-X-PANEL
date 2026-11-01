@@ -189,17 +189,17 @@
 }
 
 .card-toolbar .ant-btn {
-  background: rgba(22, 10, 36, 0.6) !important;
-  border: 1px solid rgba(255, 119, 0, 0.25) !important;
-  color: #c084fc !important;
+  background: rgba(14, 20, 36, 0.7) !important;
+  border: 1px solid rgba(212, 175, 55, 0.3) !important;
+  color: #ffd700 !important;
   border-radius: 6px !important;
   transition: all 0.2s ease !important;
 }
 
 .card-toolbar .ant-btn:hover {
-  border-color: #ff7700 !important;
-  color: #ff9e00 !important;
-  box-shadow: 0 0 10px rgba(255, 119, 0, 0.4) !important;
+  border-color: #ffd700 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 12px rgba(212, 175, 55, 0.5) !important;
 }
 
 @media (min-width: 769px) and (max-width: 920px) {

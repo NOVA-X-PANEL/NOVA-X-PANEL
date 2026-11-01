@@ -108,11 +108,11 @@ export function InboundsStats({ dbInbounds, totals, clients, online }: InboundsS
         <div className="inb-card-top-line purple" />
         <div className="inb-card-header">
           <span className="inb-card-label">{t('menu.clients')}</span>
-          <span className="inb-card-icon" style={{ color: '#c084fc' }}>
+          <span className="inb-card-icon" style={{ color: '#ffd700' }}>
             <TeamOutlined />
           </span>
         </div>
-        <div className="inb-card-value" style={{ color: '#c084fc' }}>
+        <div className="inb-card-value" style={{ color: '#ffd700' }}>
           {String(clients).padStart(2, '0')} <span className="inb-card-unit">USERS</span>
         </div>
         <div className="inb-card-sub">
@@ -128,7 +128,7 @@ export function InboundsStats({ dbInbounds, totals, clients, online }: InboundsS
             className="inb-micro-fill"
             style={{
               width: `${Math.max(clientLoad, 10)}%`,
-              background: '#c084fc',
+              background: '#ffd700',
             }}
           />
         </div>
@@ -247,8 +247,8 @@ export function InboundsRail({ dbInbounds, totals, online }: InboundsRailProps) 
                 <stop offset="100%" stopColor="#22d3ee" stopOpacity="0.0" />
               </linearGradient>
               <linearGradient id="waveInbPurple" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#c084fc" stopOpacity="0.25" />
-                <stop offset="100%" stopColor="#c084fc" stopOpacity="0.0" />
+                <stop offset="0%" stopColor="#ffd700" stopOpacity="0.25" />
+                <stop offset="100%" stopColor="#ffd700" stopOpacity="0.0" />
               </linearGradient>
             </defs>
             {/* RX Inbound Wave */}
@@ -270,7 +270,7 @@ export function InboundsRail({ dbInbounds, totals, online }: InboundsRailProps) 
             <path
               d="M0,60 Q70,55 140,62 T280,58 T400,60 T460,56 L500,58"
               fill="none"
-              stroke="#c084fc"
+              stroke="#ffd700"
               strokeWidth="1.8"
               strokeDasharray="4 2"
             />
@@ -286,7 +286,7 @@ export function InboundsRail({ dbInbounds, totals, online }: InboundsRailProps) 
           </div>
           <div className="inb-tele-metric">
             <span className="inb-tele-metric-lbl">Outbound Stream (TX)</span>
-            <span className="inb-tele-metric-val" style={{ color: '#c084fc' }}>
+            <span className="inb-tele-metric-val" style={{ color: '#ffd700' }}>
               {SizeFormatter.sizeFormat(totals.up)} Total
             </span>
           </div>
@@ -303,7 +303,7 @@ export function InboundsRail({ dbInbounds, totals, online }: InboundsRailProps) 
       <div className="inb-console-card">
         <div className="inb-console-title-row">
           <div className="inb-console-title">
-            <span style={{ color: '#c084fc' }}>🛡️</span>
+            <span style={{ color: '#ffd700' }}>🛡️</span>
             {t('pages.inbounds.protocol')} & INBOUND DISTRIBUTION
           </div>
           <div className="inb-console-sub">{dbInbounds.length} NODES OPTIMAL</div>
@@ -314,7 +314,7 @@ export function InboundsRail({ dbInbounds, totals, online }: InboundsRailProps) 
             byProtocol.map((p, idx) => (
               <div key={p.name} className="inb-matrix-item">
                 <div className="inb-matrix-label-row">
-                  <span style={{ color: idx === 0 ? '#c084fc' : '#22d3ee', fontWeight: 700 }}>
+                  <span style={{ color: idx === 0 ? '#ffd700' : '#22d3ee', fontWeight: 700 }}>
                     {p.name.toUpperCase()} PROTOCOL
                   </span>
                   <span style={{ color: '#94a3b8' }}>
@@ -328,7 +328,7 @@ export function InboundsRail({ dbInbounds, totals, online }: InboundsRailProps) 
                       width: `${p.pct}%`,
                       background:
                         idx === 0
-                          ? 'linear-gradient(90deg, #a855f7, #c084fc)'
+                          ? 'linear-gradient(90deg, #d4af37, #ffd700)'
                           : 'linear-gradient(90deg, #0ea5e9, #38bdf8)',
                     }}
                   />

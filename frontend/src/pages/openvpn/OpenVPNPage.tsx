@@ -1311,7 +1311,7 @@ export default function OpenVPNPage() {
                     }}
                   >
                     <Text type="secondary">نسبت دانلود / آپلود</Text>
-                    <DashboardOutlined style={{ color: '#a855f7', fontSize: 16 }} />
+                    <DashboardOutlined style={{ color: '#d4af37', fontSize: 16 }} />
                   </div>
                   <div style={{ marginTop: 8, marginBottom: 4 }}>
                     <Progress

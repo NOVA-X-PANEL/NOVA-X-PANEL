@@ -30,7 +30,7 @@
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, transparent, #22d3ee, #c084fc, transparent);
+  background: linear-gradient(90deg, transparent, #22d3ee, #ffd700, transparent);
 }
 
 .inb-hud-left {
@@ -44,14 +44,14 @@
   width: 50px;
   height: 50px;
   border-radius: 14px;
-  background: linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(168, 85, 247, 0.25));
-  border: 1px solid rgba(168, 85, 247, 0.4);
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(212, 175, 55, 0.25));
+  border: 1px solid rgba(212, 175, 55, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 24px;
   color: #22d3ee;
-  box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
   flex-shrink: 0;
 }
 
@@ -82,9 +82,9 @@
 }
 
 .inb-version-chip {
-  background: rgba(168, 85, 247, 0.2);
-  border: 1px solid rgba(168, 85, 247, 0.4);
-  color: #c084fc;
+  background: rgba(212, 175, 55, 0.2);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  color: #ffd700;
   padding: 2px 8px;
   border-radius: 6px;
   font-family: 'JetBrains Mono', monospace;
@@ -156,8 +156,8 @@
 
 .inb-stat-card:hover {
   background: rgba(22, 29, 46, 0.95);
-  border-color: rgba(168, 85, 247, 0.4);
-  box-shadow: 0 0 25px rgba(168, 85, 247, 0.2);
+  border-color: rgba(212, 175, 55, 0.4);
+  box-shadow: 0 0 25px rgba(212, 175, 55, 0.2);
   transform: translateY(-2px);
 }
 
@@ -173,7 +173,7 @@
   background: linear-gradient(90deg, transparent, #22d3ee, transparent);
 }
 .inb-card-top-line.purple {
-  background: linear-gradient(90deg, transparent, #c084fc, transparent);
+  background: linear-gradient(90deg, transparent, #ffd700, transparent);
 }
 .inb-card-top-line.emerald {
   background: linear-gradient(90deg, transparent, #34d399, transparent);

@@ -89,7 +89,7 @@ import {
  */
 const CLIENT_ACCENTS = [
   'linear-gradient(140deg,#3b82f6,#1d4ed8)',
-  'linear-gradient(140deg,#8b5cf6,#5b21b6)',
+  'linear-gradient(140deg,#e5c158,#5b21b6)',
   'linear-gradient(140deg,#ec4899,#9d174d)',
   'linear-gradient(140deg,#22d3ee,#0369a1)',
   'linear-gradient(140deg,#14b8a6,#0f766e)',

@@ -1,79 +1,82 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 480" preserveAspectRatio="xMidYMax slice" role="img" aria-label="Halloween Neon Landscape">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 480" preserveAspectRatio="xMidYMax slice" role="img" aria-label="Pasargadae Cyrus Tomb Landscape">
   <defs>
-    <!-- Haunted Sky Gradient -->
+    <!-- Sky Gradient: Persian Midnight Lapis Lazuli -->
     <linearGradient id="nx-sky" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#05020a" stop-opacity="0.95" />
-      <stop offset="45%" stop-color="#140624" stop-opacity="0.8" />
-      <stop offset="80%" stop-color="#240c38" stop-opacity="0.7" />
-      <stop offset="100%" stop-color="#12041e" stop-opacity="0.9" />
+      <stop offset="0%" stop-color="#020611" stop-opacity="0.98" />
+      <stop offset="35%" stop-color="#081a36" stop-opacity="0.9" />
+      <stop offset="70%" stop-color="#0f2e5c" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#061329" stop-opacity="0.95" />
     </linearGradient>
 
-    <!-- Harvest Blood Moon Glow -->
+    <!-- Moon Halo & Body -->
     <radialGradient id="nx-moon-glow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#ffb703" stop-opacity="0.95" />
-      <stop offset="45%" stop-color="#ff7700" stop-opacity="0.75" />
-      <stop offset="75%" stop-color="#e85d04" stop-opacity="0.3" />
-      <stop offset="100%" stop-color="#9d4edd" stop-opacity="0" />
+      <stop offset="0%" stop-color="#fff2b2" stop-opacity="0.95" />
+      <stop offset="40%" stop-color="#d4af37" stop-opacity="0.7" />
+      <stop offset="70%" stop-color="#00b4d8" stop-opacity="0.25" />
+      <stop offset="100%" stop-color="#081b38" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="nx-moon-body" cx="35%" cy="35%\" r="65%">
+      <stop offset="0%" stop-color="#fffbee" />
+      <stop offset="35%" stop-color="#fcedb3" />
+      <stop offset="75%" stop-color="#d4af37" />
+      <stop offset="100%" stop-color="#9e7611" />
     </radialGradient>
 
-    <!-- Moon Texture -->
-    <radialGradient id="nx-moon-body" cx="40%" cy="40%" r="60%">
-      <stop offset="0%" stop-color="#ffe3a8" />
-      <stop offset="40%" stop-color="#ffb703" />
-      <stop offset="85%" stop-color="#fb8500" />
-      <stop offset="100%" stop-color="#d9480f" />
-    </radialGradient>
-
-    <!-- Distant Spooky Peaks -->
+    <!-- Mountain Ridges -->
     <linearGradient id="nx-r3" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#090312" />
-      <stop offset="50%" stop-color="#2b0e4a" />
-      <stop offset="100%" stop-color="#090312" />
+      <stop offset="0%" stop-color="#040a17" />
+      <stop offset="50%" stop-color="#0b2247" />
+      <stop offset="100%" stop-color="#040a17" />
     </linearGradient>
-
-    <!-- Mid Peaks (Haunted Violet to Ember Orange) -->
     <linearGradient id="nx-r2" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#120524" />
-      <stop offset="35%" stop-color="#7b2cbf" />
-      <stop offset="68%" stop-color="#ff6600" />
-      <stop offset="100%" stop-color="#1f0933" />
+      <stop offset="0%" stop-color="#061124" />
+      <stop offset="30%" stop-color="#11376e" />
+      <stop offset="70%" stop-color="#1c4587" />
+      <stop offset="100%" stop-color="#09172f" />
     </linearGradient>
-
-    <!-- Foreground Ridge (Fiery Pumpkin) -->
     <linearGradient id="nx-r1" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#150626" />
-      <stop offset="40%" stop-color="#e85d04" />
-      <stop offset="75%" stop-color="#ff7700" />
-      <stop offset="100%" stop-color="#3c096c" />
+      <stop offset="0%" stop-color="#08162e" />
+      <stop offset="45%" stop-color="#15386b" />
+      <stop offset="75%" stop-color="#0c254b" />
+      <stop offset="100%" stop-color="#08162e" />
     </linearGradient>
 
-    <!-- Glowing Pumpkin Rim Light -->
-    <linearGradient id="nx-rim" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#ff5400" stop-opacity="0" />
-      <stop offset="25%" stop-color="#ff7700" stop-opacity="0.95" />
-      <stop offset="55%" stop-color="#ff9e00" stop-opacity="1" />
-      <stop offset="80%" stop-color="#c77dff" stop-opacity="0.9" />
-      <stop offset="100%" stop-color="#9d4edd" stop-opacity="0" />
+    <!-- Golden Rim Lights -->
+    <linearGradient id="nx-gold-rim" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#d4af37" stop-opacity="0.1" />
+      <stop offset="30%" stop-color="#fff0b3" stop-opacity="0.95" />
+      <stop offset="70%" stop-color="#d4af37" stop-opacity="1" />
+      <stop offset="100%" stop-color="#00b4d8" stop-opacity="0.2" />
+    </linearGradient>
+    <linearGradient id="nx-tomb-stone" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#273852" />
+      <stop offset="50%" stop-color="#162438" />
+      <stop offset="100%" stop-color="#091321" />
+    </linearGradient>
+    <linearGradient id="nx-tomb-gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffeaa7" />
+      <stop offset="50%" stop-color="#d4af37" />
+      <stop offset="100%" stop-color="#aa7c11" />
     </linearGradient>
 
     <radialGradient id="nx-valley" cx="50%" cy="100%" r="70%">
-      <stop offset="0%" stop-color="#ff7700" stop-opacity="0.45" />
-      <stop offset="45%" stop-color="#7b2cbf" stop-opacity="0.25" />
-      <stop offset="100%" stop-color="#0a0314" stop-opacity="0" />
+      <stop offset="0%" stop-color="#d4af37" stop-opacity="0.35" />
+      <stop offset="45%" stop-color="#00b4d8" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="#020611" stop-opacity="0" />
     </radialGradient>
 
     <filter id="nx-soft" x="-20%" y="-20%" width="140%" height="140%">
       <feGaussianBlur stdDeviation="6" />
     </filter>
     <filter id="nx-glow" x="-40%" y="-40%" width="180%" height="180%">
-      <feGaussianBlur stdDeviation="5" result="b" />
+      <feGaussianBlur stdDeviation="4" result="b" />
       <feMerge>
         <feMergeNode in="b" />
         <feMergeNode in="SourceGraphic" />
       </feMerge>
     </filter>
     <filter id="moon-halo" x="-60%" y="-60%" width="220%" height="220%">
-      <feGaussianBlur stdDeviation="16" />
+      <feGaussianBlur stdDeviation="18" />
     </filter>
   </defs>
 
@@ -81,55 +84,100 @@
   <rect width="1440" height="480" fill="url(#nx-sky)" />
 
   <!-- Stars -->
-  <g fill="#ffe5b4">
-    <circle cx="180" cy="70" r="1.5" opacity="0.8" />
-    <circle cx="340" cy="45" r="1.2" opacity="0.6" />
-    <circle cx="510" cy="85" r="1.8" opacity="0.75" />
-    <circle cx="890" cy="55" r="1.4" opacity="0.65" />
-    <circle cx="1060" cy="95" r="1.6" opacity="0.8" />
-    <circle cx="1220" cy="40" r="1.3" opacity="0.55" />
-    <circle cx="1380" cy="80" r="1.7" opacity="0.7" />
-    <circle cx="95" cy="130" r="1.1" opacity="0.5" />
-    <circle cx="1290" cy="140" r="1.4" opacity="0.6" />
+  <g fill="#ffeaa7">
+    <circle cx="140" cy="65" r="1.6" opacity="0.85" />
+    <circle cx="270" cy="40" r="1.2" opacity="0.6" />
+    <circle cx="420" cy="75" r="1.8" opacity="0.75" />
+    <circle cx="580" cy="50" r="1.4" opacity="0.65" />
+    <circle cx="860" cy="45" r="1.5" opacity="0.8" />
+    <circle cx="1020" cy="85" r="1.3" opacity="0.55" />
+    <circle cx="1190" cy="55" r="1.9" opacity="0.7" />
+    <circle cx="1340" cy="90" r="1.4" opacity="0.75" />
+    <circle cx="80" cy="120" r="1.1" opacity="0.5" />
+    <circle cx="1260" cy="130" r="1.3" opacity="0.6" />
+    <circle cx="360" cy="110" r="1.5" fill="#90e0ef" opacity="0.7" />
+    <circle cx="960" cy="115" r="1.5" fill="#90e0ef" opacity="0.7" />
   </g>
 
-  <!-- Giant Harvest Blood Moon -->
-  <circle cx="720" cy="150" r="110" fill="url(#nx-moon-glow)" filter="url(#moon-halo)" />
-  <circle cx="720" cy="150" r="68" fill="url(#nx-moon-body)" />
-  <!-- Moon Craters / Shadows -->
-  <g fill="#d9480f" opacity="0.28">
-    <circle cx="700" cy="135" r="16" />
-    <circle cx="735" cy="165" r="22" />
-    <circle cx="745" cy="125" r="12" />
-    <circle cx="695" cy="170" r="10" />
-    <circle cx="718" cy="180" r="8" />
+  <!-- Persian Golden Moon of Pasargadae -->
+  <circle cx="720" cy="135" r="90" fill="url(#nx-moon-glow)" filter="url(#moon-halo)" />
+  <circle cx="720" cy="135" r="52" fill="url(#nx-moon-body)" />
+  <circle cx="720" cy="135" r="52" fill="none" stroke="#fff0b3" stroke-width="0.8" opacity="0.7" />
+
+  <!-- Distant Zagros Mountains -->
+  <g filter="url(#nx-soft)" opacity="0.88">
+    <path d="M0 480 L120 280 L260 360 L410 210 L580 340 L720 230 L870 360 L1030 220 L1180 350 L1320 270 L1440 365 L1440 480 Z" fill="url(#nx-r3)" />
   </g>
 
-  <!-- Flying Bats Silhouettes -->
-  <!-- Bat 1 (large, left of moon) -->
-  <path d="M 610,130 Q 625,120 635,128 Q 638,124 640,128 Q 642,124 645,128 Q 655,120 670,130 Q 658,138 647,133 Q 640,140 633,133 Q 622,138 610,130 Z" fill="#150624" opacity="0.9" />
-  <!-- Bat 2 (mid, top right of moon) -->
-  <path d="M 770,95 Q 782,87 790,93 Q 792,90 794,93 Q 796,90 798,93 Q 806,87 818,95 Q 808,102 799,98 Q 794,103 789,98 Q 780,102 770,95 Z" fill="#150624" opacity="0.85" />
-  <!-- Bat 3 (small, far left) -->
-  <path d="M 520,105 Q 528,100 534,104 Q 535,102 537,104 Q 539,102 540,104 Q 546,100 554,105 Q 547,110 541,107 Q 537,111 533,107 Q 527,110 520,105 Z" fill="#150624" opacity="0.75" />
-  <!-- Bat 4 (small, far right) -->
-  <path d="M 870,120 Q 879,114 885,119 Q 887,117 889,119 Q 891,117 893,119 Q 899,114 908,120 Q 901,126 894,123 Q 889,127 884,123 Q 877,126 870,120 Z" fill="#150624" opacity="0.7" />
+  <!-- Mid Mountain Ridge -->
+  <path d="M0 480 L150 325 L310 405 L480 250 L650 380 L790 280 L960 410 L1130 265 L1310 395 L1440 315 L1440 480 Z" fill="url(#nx-r2)" opacity="0.9" />
 
-  <!-- Distant Ridge -->
-  <g filter="url(#nx-soft)" opacity="0.9">
-    <path d="M0 480 L110 290 L240 365 L390 220 L550 350 L690 250 L840 370 L1000 230 L1160 355 L1310 280 L1440 375 L1440 480 Z" fill="url(#nx-r3)" />
+  <!-- Primary Plateau Ridge with Golden Rim -->
+  <path d="M0 480 L130 380 L285 438 L430 305 L600 430 L760 330 L930 445 L1090 315 L1270 430 L1440 355 L1440 480 Z" fill="url(#nx-r1)" />
+  <path d="M0 480 L130 380 L285 438 L430 305 L600 430 L760 330 L930 445 L1090 315 L1270 430 L1440 355" fill="none" stroke="url(#nx-gold-rim)" stroke-width="2.5" filter="url(#nx-glow)" />
+
+  <!-- Pasargadae Ancient Fluted Columns (Left Flank) -->
+  <g id="columns-left" stroke="#d4af37" stroke-width="0.8" opacity="0.85">
+    <!-- Pillar 1 -->
+    <rect x="230" y="290" width="18" height="150" fill="url(#nx-tomb-stone)" />
+    <rect x="226" y="284" width="26" height="7" fill="url(#nx-tomb-gold)" />
+    <rect x="225" y="438" width="28" height="8" fill="url(#nx-tomb-gold)" />
+    <line x1="236" y1="291" x2="236" y2="437" stroke="#d4af37" stroke-width="0.5" opacity="0.6" />
+    <line x1="242" y1="291" x2="242" y2="437" stroke="#d4af37" stroke-width="0.5" opacity="0.6" />
+    <!-- Pillar 2 -->
+    <rect x="310" y="320" width="16" height="130" fill="url(#nx-tomb-stone)" />
+    <rect x="306" y="314" width="24" height="7" fill="url(#nx-tomb-gold)" />
+    <rect x="305" y="448" width="26" height="7" fill="url(#nx-tomb-gold)" />
   </g>
 
-  <!-- Mid Ridge (Spooky jagged) -->
-  <path d="M0 480 L140 330 L290 410 L460 255 L630 390 L790 285 L950 415 L1110 270 L1290 400 L1440 320 L1440 480 Z" fill="url(#nx-r2)" opacity="0.92" />
+  <!-- Pasargadae Ancient Fluted Columns (Right Flank) -->
+  <g id="columns-right" stroke="#d4af37" stroke-width="0.8" opacity="0.85">
+    <!-- Pillar 3 -->
+    <rect x="1110" y="320" width="16" height="130" fill="url(#nx-tomb-stone)" />
+    <rect x="1106" y="314" width="24" height="7" fill="url(#nx-tomb-gold)" />
+    <rect x="1105" y="448" width="26" height="7" fill="url(#nx-tomb-gold)" />
+    <!-- Pillar 4 -->
+    <rect x="1190" y="290" width="18" height="150" fill="url(#nx-tomb-stone)" />
+    <rect x="1186" y="284" width="26" height="7" fill="url(#nx-tomb-gold)" />
+    <rect x="1185" y="438" width="28" height="8" fill="url(#nx-tomb-gold)" />
+    <line x1="1196" y1="291" x2="1196" y2="437" stroke="#d4af37" stroke-width="0.5" opacity="0.6" />
+    <line x1="1202" y1="291" x2="1202" y2="437" stroke="#d4af37" stroke-width="0.5" opacity="0.6" />
+  </g>
 
-  <!-- Primary Ridge with Luminous Neon Pumpkin Rim -->
-  <path d="M0 480 L125 385 L275 442 L425 310 L595 435 L755 335 L925 450 L1085 320 L1265 435 L1440 360 L1440 480 Z" fill="url(#nx-r1)" />
-  <path d="M0 480 L125 385 L275 442 L425 310 L595 435 L755 335 L925 450 L1085 320 L1265 435 L1440 360" fill="none" stroke="url(#nx-rim)" stroke-width="2.8" filter="url(#nx-glow)" />
+  <!-- ======================================================== -->
+  <!-- THE TOMB OF CYRUS THE GREAT (آرامگاه کوروش بزرگ در پاسارگاد) -->
+  <!-- ======================================================== -->
+  <g id="cyrus-great-tomb" filter="url(#nx-glow)">
+    <!-- Gabled Triangular Stone Roof -->
+    <polygon points="720,205 605,255 835,255" fill="url(#nx-tomb-gold)" stroke="#fff0b3" stroke-width="1.5" />
+    <polygon points="720,210 615,252 825,252" fill="url(#nx-tomb-stone)" />
+    <!-- Roof Stone Bevels -->
+    <line x1="600" y1="255" x2="840" y2="255" stroke="#ffd700" stroke-width="2.5" />
 
-  <!-- Foreground Silhouette with Spooky Dead Trees and Pumpkins -->
-  <path d="M0 480 L170 425 L350 460 L530 405 L710 450 L890 412 L1070 455 L1250 420 L1440 452 L1440 480 Z" fill="#090212" />
+    <!-- Sacred Burial Chamber -->
+    <rect x="618" y="255" width="204" height="52" fill="url(#nx-tomb-stone)" stroke="#d4af37" stroke-width="1.4" />
+    <!-- Chamber Entrance Doorway with Sacred Light -->
+    <path d="M 700 307 V 270 Q 720 264 740 270 V 307 Z" fill="#020611" stroke="#ffd700" stroke-width="1.6" />
+    <path d="M 706 307 V 276 Q 720 271 734 276 V 307 Z" fill="#ffeaa7" opacity="0.85" filter="url(#nx-glow)" />
 
-  <!-- Glowing Valley Mist -->
-  <ellipse cx="720" cy="480" rx="680" ry="160" fill="url(#nx-valley)" />
+    <!-- 6-Tier Stepped Stone Plinth (سکوی شش‌پله‌ای سنگی پاسارگاد) -->
+    <!-- Tier 6 -->
+    <rect x="605" y="307" width="230" height="16" rx="1" fill="url(#nx-tomb-stone)" stroke="#d4af37" stroke-width="1.2" />
+    <!-- Tier 5 -->
+    <rect x="585" y="323" width="270" height="18" rx="1" fill="url(#nx-tomb-stone)" stroke="#d4af37" stroke-width="1.2" />
+    <!-- Tier 4 -->
+    <rect x="562" y="341" width="316" height="20" rx="1" fill="url(#nx-tomb-stone)" stroke="#d4af37" stroke-width="1.2" />
+    <!-- Tier 3 -->
+    <rect x="536" y="361" width="368" height="22" rx="1" fill="url(#nx-tomb-stone)" stroke="#d4af37" stroke-width="1.3" />
+    <!-- Tier 2 -->
+    <rect x="506" y="383" width="428" height="25" rx="1.5" fill="url(#nx-tomb-stone)" stroke="#d4af37" stroke-width="1.4" />
+    <!-- Tier 1 (Lowest massive stone foundation) -->
+    <rect x="470" y="408" width="500" height="30" rx="2" fill="url(#nx-tomb-stone)" stroke="#ffd700" stroke-width="1.6" />
+  </g>
+
+  <!-- Foreground Plains & Ancient Soil of Pasargadae -->
+  <path d="M0 480 L180 435 L360 465 L540 415 L720 455 L900 422 L1080 460 L1260 430 L1440 455 L1440 480 Z" fill="#030914" />
+
+  <!-- Golden Mist of the Imperial Valley -->
+  <ellipse cx="720" cy="480" rx="700" ry="140" fill="url(#nx-valley)" />
 </svg>

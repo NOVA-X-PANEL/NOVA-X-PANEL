@@ -5,12 +5,12 @@
    Light reuses the same shapes on light surfaces. */
 
 :root {
-  --nc-blue: #ff7700;
-  --nc-cyan: #ff9e00;
-  --nc-teal: #39ff14;
-  --nc-violet: #9d4edd;
-  --nc-pink: #ff0055;
-  --nc-amber: #ffb703;
+  --nc-blue: #d4af37;
+  --nc-cyan: #ffd700;
+  --nc-teal: #00e5ff;
+  --nc-violet: #00b4d8;
+  --nc-pink: #d4af37;
+  --nc-amber: #e5c158;
 
   --nc-grad: linear-gradient(100deg, var(--nc-blue) 0%, var(--nc-violet) 100%);
   --nc-grad-soft: linear-gradient(
@@ -18,9 +18,9 @@
     color-mix(in srgb, var(--nc-blue) 26%, transparent),
     color-mix(in srgb, var(--nc-violet) 22%, transparent)
   );
-  --nc-glow: 0 0 25px rgba(255, 119, 0, 0.45);
-  --nc-halo: rgba(255, 119, 0, 0.55);
-  --nc-on-accent: #ffffff;
+  --nc-glow: 0 0 25px rgba(212, 175, 55, 0.45);
+  --nc-halo: rgba(212, 175, 55, 0.55);
+  --nc-on-accent: #07101e;
   --nc-radius: 12px;
 }
 
@@ -69,23 +69,23 @@
   .admins-page,
   .admin-roles-page
 ).is-dark {
-  --nc-card: rgba(17, 8, 28, 0.88);
-  --nc-card-2: rgba(26, 12, 42, 0.95);
-  --nc-border: rgba(255, 119, 0, 0.28);
+  --nc-card: rgba(14, 20, 36, 0.92);
+  --nc-card-2: rgba(20, 28, 48, 0.95);
+  --nc-border: rgba(212, 175, 55, 0.3);
   --nc-divider: rgba(255, 255, 255, 0.08);
-  --nc-field: rgba(14, 6, 23, 0.88);
-  --nc-text: #fbfaff;
-  --nc-text-2: #d8b4fe;
-  --nc-shadow: 0 12px 35px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 119, 0, 0.12);
-  --bg-page: #08040d;
-  --bg-card: rgba(17, 8, 28, 0.88);
-  background-color: #08040d;
+  --nc-field: rgba(10, 15, 28, 0.9);
+  --nc-text: #fdfbf7;
+  --nc-text-2: #d5c7a5;
+  --nc-shadow: 0 12px 35px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(212, 175, 55, 0.15);
+  --bg-page: #060913;
+  --bg-card: rgba(14, 20, 36, 0.92);
+  background-color: #060913;
   background-image:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(255, 119, 0, 0.22), transparent),
-    radial-gradient(circle at 10% 85%, rgba(157, 78, 221, 0.18), transparent 45%),
-    radial-gradient(circle at 90% 20%, rgba(57, 255, 20, 0.08), transparent 40%),
-    linear-gradient(rgba(255, 119, 0, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 119, 0, 0.02) 1px, transparent 1px);
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(212, 175, 55, 0.2), transparent),
+    radial-gradient(circle at 10% 85%, rgba(0, 180, 216, 0.15), transparent 45%),
+    radial-gradient(circle at 90% 20%, rgba(212, 175, 55, 0.1), transparent 40%),
+    linear-gradient(rgba(212, 175, 55, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(212, 175, 55, 0.02) 1px, transparent 1px);
   background-size:
     100% 100%,
     100% 100%,
@@ -110,10 +110,10 @@
     .admins-page,
     .admin-roles-page
   ).is-dark.is-ultra {
-  --nc-card: #0d0617;
-  --nc-card-2: #140924;
-  --nc-border: rgba(255, 119, 0, 0.35);
-  --bg-page: #040206;
+  --nc-card: #080c16;
+  --nc-card-2: #0e1526;
+  --nc-border: rgba(212, 175, 55, 0.35);
+  --bg-page: #04060c;
 }
 
 /* — cards — */
@@ -366,9 +366,9 @@
   )
   .ant-btn-primary:not(:disabled) {
   border: none !important;
-  background: linear-gradient(135deg, #ff7700, #9d4edd) !important;
-  color: #fff !important;
-  box-shadow: 0 0 18px rgba(255, 119, 0, 0.5) !important;
+  background: linear-gradient(135deg, #d4af37, #00b4d8) !important;
+  color: #07101e !important;
+  box-shadow: 0 0 18px rgba(212, 175, 55, 0.5) !important;
   font-family: 'Rajdhani', sans-serif !important;
   font-weight: 700 !important;
   letter-spacing: 0.5px !important;
@@ -390,10 +390,10 @@
     .admin-roles-page
   )
   .ant-btn-primary:not(:disabled):hover {
-  background: linear-gradient(135deg, #ff9500, #b5179e) !important;
-  color: #fff !important;
+  background: linear-gradient(135deg, #ffd700, #00b4d8) !important;
+  color: #07101e !important;
   filter: brightness(1.1) !important;
-  box-shadow: 0 0 28px rgba(255, 119, 0, 0.75), 0 0 40px rgba(157, 78, 221, 0.5) !important;
+  box-shadow: 0 0 28px rgba(212, 175, 55, 0.75), 0 0 40px rgba(0, 180, 216, 0.5) !important;
   transform: translateY(-1px);
 }
 
@@ -413,9 +413,9 @@
     .admin-roles-page
   )
   .ant-switch.ant-switch-checked {
-  background: linear-gradient(90deg, #ff7700, #ff5400) !important;
-  border-color: #ff7700 !important;
-  box-shadow: 0 0 14px rgba(255, 119, 0, 0.6) !important;
+  background: linear-gradient(90deg, #d4af37, #e5c158) !important;
+  border-color: #d4af37 !important;
+  box-shadow: 0 0 14px rgba(212, 175, 55, 0.6) !important;
 }
 
 :is(
@@ -729,7 +729,7 @@ body:not(.dark)
   .ant-table-tbody
   > tr.ant-table-row:hover
   > td:first-child {
-  border-left: 3px solid #c084fc !important;
+  border-left: 3px solid #ffd700 !important;
 }
 
 :is(
@@ -885,7 +885,7 @@ body.dark .ant-drawer .ant-drawer-content {
   -webkit-backdrop-filter: blur(16px);
   box-shadow:
     0 24px 60px rgba(0, 0, 0, 0.65),
-    0 0 25px rgba(168, 85, 247, 0.25) !important;
+    0 0 25px rgba(212, 175, 55, 0.25) !important;
   position: relative;
   overflow: hidden;
 }
@@ -897,7 +897,7 @@ body.dark .ant-modal .ant-modal-content::before {
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, transparent, #ff7700, #9d4edd, transparent);
+  background: linear-gradient(90deg, transparent, #d4af37, #00b4d8, transparent);
   z-index: 2;
 }
 
@@ -948,13 +948,13 @@ body.dark .ant-select-item {
 }
 
 body.dark .ant-select-item-option-active:not(.ant-select-item-option-disabled) {
-  background: rgba(255, 119, 0, 0.15) !important;
-  color: #ff9e00 !important;
+  background: rgba(212, 175, 55, 0.15) !important;
+  color: #ffd700 !important;
 }
 
 body.dark .ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
-  background: rgba(255, 119, 0, 0.25) !important;
-  color: #ff7700 !important;
+  background: rgba(212, 175, 55, 0.25) !important;
+  color: #d4af37 !important;
   font-weight: 700 !important;
 }
 
@@ -1243,7 +1243,7 @@ body:not(.dark) .nc-hero .nc-landscape {
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, transparent, #ff7700, #9d4edd, transparent);
+  background: linear-gradient(90deg, transparent, #d4af37, #00b4d8, transparent);
   z-index: 2;
 }
 
@@ -1259,10 +1259,10 @@ body:not(.dark) .nc-hero .nc-landscape {
   background: linear-gradient(
     135deg,
     rgba(56, 189, 248, 0.15),
-    rgba(168, 85, 247, 0.25)
+    rgba(212, 175, 55, 0.25)
   ) !important;
-  border: 1px solid rgba(168, 85, 247, 0.4);
-  box-shadow: 0 0 16px rgba(168, 85, 247, 0.3) !important;
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  box-shadow: 0 0 16px rgba(212, 175, 55, 0.3) !important;
 }
 
 .nc-hero-title {
@@ -1375,8 +1375,8 @@ body:not(.dark) .nc-stat-foot {
 
 .nc-stat:hover {
   transform: translateY(-2px);
-  border-color: rgba(168, 85, 247, 0.4) !important;
-  box-shadow: 0 0 25px rgba(168, 85, 247, 0.25) !important;
+  border-color: rgba(212, 175, 55, 0.4) !important;
+  box-shadow: 0 0 25px rgba(212, 175, 55, 0.25) !important;
   background: rgba(22, 29, 46, 0.95) !important;
 }
 
@@ -2021,7 +2021,7 @@ body:not(.dark) .drawer-menu .ant-menu-item-selected {
   background: linear-gradient(
     90deg,
     rgba(2, 132, 199, 0.12) 0%,
-    rgba(168, 85, 247, 0.1) 100%
+    rgba(212, 175, 55, 0.1) 100%
   ) !important;
   border-left: 3px solid #0284c7 !important;
   border-inline-start: 3px solid #0284c7 !important;
@@ -2061,9 +2061,9 @@ body:not(.dark) .sider-footer {
 }
 
 body:not(.dark) .sider-footer .sider-version {
-  background: rgba(168, 85, 247, 0.08) !important;
-  border: 1px solid rgba(168, 85, 247, 0.25) !important;
-  color: #7e22ce !important;
+  background: rgba(212, 175, 55, 0.08) !important;
+  border: 1px solid rgba(212, 175, 55, 0.25) !important;
+  color: #aa7c11 !important;
 }
 
 body:not(.dark) .sider-tools button,
@@ -2116,14 +2116,14 @@ body.dark .sider-utility .ant-menu-item-selected,
 body.dark .drawer-menu .ant-menu-item-selected {
   background: linear-gradient(
     90deg,
-    rgba(255, 119, 0, 0.22) 0%,
-    rgba(157, 78, 221, 0.28) 100%
+    rgba(212, 175, 55, 0.22) 0%,
+    rgba(0, 180, 216, 0.28) 100%
   ) !important;
-  border-left: 3px solid #ff7700 !important;
-  border-inline-start: 3px solid #ff7700 !important;
+  border-left: 3px solid #d4af37 !important;
+  border-inline-start: 3px solid #d4af37 !important;
   box-shadow:
-    inset 0 0 16px rgba(255, 119, 0, 0.2),
-    0 0 16px rgba(255, 119, 0, 0.35) !important;
+    inset 0 0 16px rgba(212, 175, 55, 0.2),
+    0 0 16px rgba(212, 175, 55, 0.35) !important;
   color: #ffffff !important;
   font-weight: 700 !important;
 }
@@ -2131,8 +2131,8 @@ body.dark .drawer-menu .ant-menu-item-selected {
 body.dark .sider-nav .ant-menu-item-selected .anticon,
 body.dark .sider-utility .ant-menu-item-selected .anticon,
 body.dark .drawer-menu .ant-menu-item-selected .anticon {
-  color: #ff7700 !important;
-  filter: drop-shadow(0 0 10px rgba(255, 119, 0, 0.95)) !important;
+  color: #d4af37 !important;
+  filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.95)) !important;
 }
 
 body.dark .sider-brand {
@@ -2226,7 +2226,7 @@ body.dark .ant-dropdown .ant-dropdown-menu-item-active,
   background: linear-gradient(
     90deg,
     rgba(34, 211, 238, 0.18) 0%,
-    rgba(168, 85, 247, 0.15) 100%
+    rgba(212, 175, 55, 0.15) 100%
   ) !important;
   color: #ffffff !important;
   border-left: 2px solid #22d3ee !important;
@@ -2342,16 +2342,16 @@ body.dark .ant-table-tbody .ant-dropdown-trigger .anticon-more {
 body.dark .action-buttons .cyber-more-btn:hover,
 body.dark .action-buttons .ant-dropdown-trigger:hover,
 body.dark .ant-table-tbody .ant-dropdown-trigger:hover {
-  border-color: #c084fc !important;
-  background: rgba(168, 85, 247, 0.16) !important;
-  box-shadow: 0 0 14px rgba(168, 85, 247, 0.5) !important;
+  border-color: #ffd700 !important;
+  background: rgba(212, 175, 55, 0.16) !important;
+  box-shadow: 0 0 14px rgba(212, 175, 55, 0.5) !important;
 }
 
 body.dark .action-buttons .cyber-more-btn:hover .anticon-more,
 body.dark .action-buttons .ant-dropdown-trigger:hover .anticon-more,
 body.dark .ant-table-tbody .ant-dropdown-trigger:hover .anticon-more {
-  color: #c084fc !important;
-  filter: drop-shadow(0 0 8px #c084fc) !important;
+  color: #ffd700 !important;
+  filter: drop-shadow(0 0 8px #ffd700) !important;
 }
 
 /* Edit pencil button specific styling */
@@ -2401,7 +2401,7 @@ body.dark .ant-modal .ant-modal-header {
   background: linear-gradient(
     90deg,
     rgba(34, 211, 238, 0.1) 0%,
-    rgba(168, 85, 247, 0.06) 100%
+    rgba(212, 175, 55, 0.06) 100%
   ) !important;
   border-bottom: 1px solid rgba(56, 189, 248, 0.18) !important;
   padding: 16px 24px !important;
@@ -2416,7 +2416,7 @@ body.dark .ant-modal .ant-modal-header::before {
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, #22d3ee 0%, #c084fc 50%, #22d3ee 100%);
+  background: linear-gradient(90deg, #22d3ee 0%, #ffd700 50%, #22d3ee 100%);
   box-shadow: 0 0 10px #22d3ee;
 }
 
@@ -2480,7 +2480,7 @@ body.dark .ant-modal .ant-tabs-tab-active .ant-tabs-tab-btn {
 
 body.dark .ant-modal .ant-tabs-ink-bar {
   height: 2.5px !important;
-  background: linear-gradient(90deg, #22d3ee, #c084fc) !important;
+  background: linear-gradient(90deg, #22d3ee, #ffd700) !important;
   box-shadow:
     0 0 10px #22d3ee,
     0 0 20px rgba(34, 211, 238, 0.6) !important;
@@ -2571,16 +2571,16 @@ body.dark .ant-modal .ant-switch {
 }
 
 body.dark .ant-modal .ant-switch.ant-switch-checked {
-  background: linear-gradient(135deg, #ff7700, #9d4edd) !important;
-  border-color: #ff7700 !important;
-  box-shadow: 0 0 14px rgba(255, 119, 0, 0.6) !important;
+  background: linear-gradient(135deg, #d4af37, #00b4d8) !important;
+  border-color: #d4af37 !important;
+  box-shadow: 0 0 14px rgba(212, 175, 55, 0.6) !important;
 }
 
 /* 8. Quick Action Inline Buttons (e.g. Select all, Clear all) */
 body.dark .ant-modal .ant-btn-sm:not(.ant-btn-primary):not(.ant-btn-dangerous) {
-  background: rgba(255, 119, 0, 0.1) !important;
-  border: 1px solid rgba(255, 119, 0, 0.35) !important;
-  color: #ff9e00 !important;
+  background: rgba(212, 175, 55, 0.1) !important;
+  border: 1px solid rgba(212, 175, 55, 0.35) !important;
+  color: #ffd700 !important;
   border-radius: 6px !important;
   font-family: 'JetBrains Mono', monospace !important;
   font-size: 11px !important;
@@ -2590,9 +2590,9 @@ body.dark .ant-modal .ant-btn-sm:not(.ant-btn-primary):not(.ant-btn-dangerous) {
 body.dark
   .ant-modal
   .ant-btn-sm:not(.ant-btn-primary):not(.ant-btn-dangerous):hover:not(:disabled) {
-  background: rgba(255, 119, 0, 0.2) !important;
-  border-color: #ff7700 !important;
-  box-shadow: 0 0 10px rgba(255, 119, 0, 0.45) !important;
+  background: rgba(212, 175, 55, 0.2) !important;
+  border-color: #d4af37 !important;
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.45) !important;
   color: #ffffff !important;
 }
 
@@ -2631,7 +2631,7 @@ body.dark
 
 body.dark .ant-modal .ant-modal-footer .ant-btn-primary,
 body.dark .ant-modal .ant-btn-primary {
-  background: linear-gradient(135deg, #0ea5e9 0%, #8b5cf6 100%) !important;
+  background: linear-gradient(135deg, #0ea5e9 0%, #e5c158 100%) !important;
   border: none !important;
   border-radius: 8px !important;
   color: #ffffff !important;
@@ -2901,12 +2901,12 @@ body.light .nx-row-btn:hover,
 
 /* Edit Button */
 .nx-btn-edit {
-  color: #c084fc !important;
+  color: #ffd700 !important;
 }
 .nx-btn-edit:hover {
   color: #fff !important;
   background: rgba(192, 132, 252, 0.2) !important;
-  border-color: #c084fc !important;
+  border-color: #ffd700 !important;
   box-shadow: 0 0 10px rgba(192, 132, 252, 0.5) !important;
 }
 
@@ -2941,11 +2941,11 @@ body.dark .clients-page .ant-switch.nx-client-switch.ant-switch-checked,
 body.dark .ant-switch.nx-client-switch.ant-switch-checked,
 .dark .clients-page .ant-switch.nx-client-switch.ant-switch-checked,
 .dark .ant-switch.nx-client-switch.ant-switch-checked {
-  background: linear-gradient(135deg, #ff7700 0%, #ff5400 50%, #9d4edd 100%) !important;
-  border-color: #ff7700 !important;
+  background: linear-gradient(135deg, #d4af37 0%, #e5c158 50%, #00b4d8 100%) !important;
+  border-color: #d4af37 !important;
   box-shadow:
-    0 0 14px rgba(255, 119, 0, 0.65),
-    0 0 6px rgba(157, 78, 221, 0.5) !important;
+    0 0 14px rgba(212, 175, 55, 0.65),
+    0 0 6px rgba(0, 180, 216, 0.5) !important;
 }
 
 body.light .clients-page .ant-switch.nx-client-switch,
@@ -3018,9 +3018,9 @@ body.light .nx-btn-ghost-cyber:hover,
 
 body.dark .nx-btn-kebab-cyber,
 .dark .nx-btn-kebab-cyber {
-  border: 1px solid rgba(168, 85, 247, 0.25) !important;
+  border: 1px solid rgba(212, 175, 55, 0.25) !important;
   background: rgba(15, 23, 42, 0.6) !important;
-  color: #c084fc !important;
+  color: #ffd700 !important;
   border-radius: 8px !important;
   display: inline-flex !important;
   align-items: center !important;
@@ -3029,10 +3029,10 @@ body.dark .nx-btn-kebab-cyber,
 }
 body.dark .nx-btn-kebab-cyber:hover,
 .dark .nx-btn-kebab-cyber:hover {
-  background: rgba(168, 85, 247, 0.22) !important;
-  border-color: #a855f7 !important;
+  background: rgba(212, 175, 55, 0.22) !important;
+  border-color: #d4af37 !important;
   color: #fff !important;
-  box-shadow: 0 0 12px rgba(168, 85, 247, 0.5) !important;
+  box-shadow: 0 0 12px rgba(212, 175, 55, 0.5) !important;
   transform: translateY(-1px);
 }
 
@@ -3040,7 +3040,7 @@ body.light .nx-btn-kebab-cyber,
 .light .nx-btn-kebab-cyber {
   border: 1px solid #e2e8f0 !important;
   background: #ffffff !important;
-  color: #7c3aed !important;
+  color: #b8860b !important;
   border-radius: 8px !important;
   display: inline-flex !important;
   align-items: center !important;
@@ -3050,7 +3050,7 @@ body.light .nx-btn-kebab-cyber,
 body.light .nx-btn-kebab-cyber:hover,
 .light .nx-btn-kebab-cyber:hover {
   background: #faf5ff !important;
-  border-color: #7c3aed !important;
+  border-color: #b8860b !important;
   color: #6d28d9 !important;
   box-shadow: 0 2px 6px rgba(124, 58, 237, 0.2) !important;
   transform: translateY(-1px);

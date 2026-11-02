@@ -131,7 +131,7 @@
     "adminRoles": "نقش‌های مدیر",
     "myApi": "API من",
     "brandTagline": "سریع • امن • آزاد",
-    "hashem": "NOVA-TUNELL",
+    "hashem": "NOVA-TUNNEL",
     "telegramShop": "تلگرام شاپ",
     "openvpn": "مدیریت OpenVPN"
   },
@@ -2491,7 +2491,7 @@
       "activeCount": "{count} فعال"
     },
     "hashem": {
-      "title": "NOVA-TUNELL",
+      "title": "NOVA-TUNNEL",
       "subtitle": "اتوماسیون و پایش تانل لایه ۳ GRE و پروکسی معکوس FRP",
       "statusHealthy": "متصل و پایدار",
       "statusWaitingPeer": "در انتظار اتصال سرور رله",

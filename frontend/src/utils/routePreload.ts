@@ -7,6 +7,8 @@ const routeLoaders: Record<string, () => Promise<unknown>> = {
   '/clients': () => import('@/pages/clients/ClientsPage'),
   '/groups': () => import('@/pages/groups/GroupsPage'),
   '/nodes': () => import('@/pages/nodes/NodesPage'),
+  '/nova-tunnel': () => import('@/pages/hashem/HashemPage'),
+  '/hashem': () => import('@/pages/hashem/HashemPage'),
   '/admins': () => import('@/pages/admins/AdminsPage'),
   '/my-api': () => import('@/pages/my-api/MyApiPage'),
   '/admin-roles': () => import('@/pages/admin-roles/AdminRolesPage'),

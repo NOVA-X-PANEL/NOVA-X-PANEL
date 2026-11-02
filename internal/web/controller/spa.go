@@ -48,6 +48,8 @@ func (a *XUIController) initRouter(g *gin.RouterGroup) {
 	g.GET("/routing", a.panelSPA)
 	g.GET("/api-docs", a.panelSPA)
 	g.GET("/hashem", a.panelSPA)
+	g.GET("/nova-tunnel", a.panelSPA)
+	g.GET("/tunnel", a.panelSPA)
 	g.GET("/telegram-shop", a.panelSPA)
 	g.GET("/my-api", a.panelSPA)
 	g.GET("/hosts", a.panelSPA)

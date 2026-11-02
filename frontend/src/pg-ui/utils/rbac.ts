@@ -64,6 +64,8 @@ const ROUTE_PERMISSIONS: Record<string, RoutePermission[]> = {
     { resource: 'nodes', action: 'read' },
     { resource: 'nodes', action: 'read_simple' },
   ],
+  '/nova-tunnel': [{ resource: 'system', action: 'read' }],
+  '/tunnel': [{ resource: 'system', action: 'read' }],
   '/hashem': [{ resource: 'system', action: 'read' }],
   '/admins': [
     { resource: 'admins', action: 'read' },
@@ -252,7 +254,9 @@ function routeKey(pathname: string) {
   if (path.startsWith('/my-api')) return '/my-api'
   if (path.startsWith('/admins')) return '/admins'
   if (path.startsWith('/hosts')) return '/hosts'
-  if (path.startsWith('/hashem')) return '/hashem'
+  if (path.startsWith('/nova-tunnel')) return '/nova-tunnel'
+  if (path.startsWith('/tunnel')) return '/nova-tunnel'
+  if (path.startsWith('/hashem')) return '/nova-tunnel'
   if (path.startsWith('/telegram-shop')) return '/telegram-shop'
   return path
 }
@@ -267,7 +271,7 @@ export function canAccessRoute(admin: unknown, pathname: string): boolean {
   const key = routeKey(pathname)
   if (key === '/api-docs') return true
   if (key === '/my-api') return hasApiAccess(admin)
-  if (key === '/hashem') return isOwner(admin)
+  if (key === '/nova-tunnel' || key === '/tunnel' || key === '/hashem') return isOwner(admin)
   if (key === '/telegram-shop') return hasTelegramShopAccess(admin)
   const requirements = ROUTE_PERMISSIONS[key]
   if (!requirements) return true
@@ -275,6 +279,6 @@ export function canAccessRoute(admin: unknown, pathname: string): boolean {
 }
 
 export function firstAllowedRoute(admin: unknown): string {
-  const orderedRoutes = ['/', '/inbounds', '/clients', '/groups', '/nodes', '/hashem', '/telegram-shop', '/admins', '/admin-roles', '/outbound', '/routing', '/settings', '/xray', '/hosts', '/my-api']
+  const orderedRoutes = ['/', '/inbounds', '/clients', '/groups', '/nodes', '/nova-tunnel', '/telegram-shop', '/admins', '/admin-roles', '/outbound', '/routing', '/settings', '/xray', '/hosts', '/my-api']
   return orderedRoutes.find(route => canAccessRoute(admin, route)) || FALLBACK_ROUTE
 }

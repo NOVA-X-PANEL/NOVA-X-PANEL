@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { createBrowserRouter, type RouteObject } from 'react-router';
+import { createBrowserRouter, Navigate, type RouteObject } from 'react-router';
 import { Spin } from 'antd';
 
 import PanelLayout from '@/layouts/PanelLayout';
@@ -57,7 +57,9 @@ const routes: RouteObject[] = [
       { path: 'clients', element: withSuspense(<ClientsPage />) },
       { path: 'groups', element: withSuspense(<GroupsPage />) },
       { path: 'nodes', element: withSuspense(<NodesPage />) },
-      { path: 'hashem', element: withSuspense(<HashemPage />) },
+      { path: 'nova-tunnel', element: withSuspense(<HashemPage />) },
+      { path: 'tunnel', element: <Navigate to="/nova-tunnel" replace /> },
+      { path: 'hashem', element: <Navigate to="/nova-tunnel" replace /> },
       { path: 'openvpn', element: withSuspense(<OpenVPNPage />) },
       { path: 'telegram-shop', element: withSuspense(<TelegramShopPage />) },
       { path: 'admins', element: withSuspense(<AdminsPage />) },

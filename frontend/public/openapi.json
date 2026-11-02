@@ -18109,6 +18109,36 @@
         }
       }
     },
+    "/panel/api/openvpn/log": {
+      "get": {
+        "tags": [
+          "OpenVPN Management"
+        ],
+        "summary": "Retrieve OpenVPN daemon systemd journal logs.",
+        "operationId": "get_panel_api_openvpn_log",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/ws": {
       "get": {
         "tags": [

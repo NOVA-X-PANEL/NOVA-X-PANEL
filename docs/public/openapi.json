@@ -1763,6 +1763,11 @@
             "description": "IP limit for this client",
             "type": "integer"
           },
+          "ownerAdminId": {
+            "description": "OwnerAdminId binds this client to the panel admin (model.User) that created it.",
+            "format": "int64",
+            "type": "integer"
+          },
           "password": {
             "description": "Client password",
             "type": "string"
@@ -4803,12 +4808,20 @@
           "password": {
             "type": "string"
           },
+          "permissionOverrides": {
+            "description": "PermissionOverridesJSON stores per-account limit overrides (e.g. max_users,\ndata_limit_max, etc.) that take precedence over the role's default limits.",
+            "type": "string"
+          },
           "roleId": {
             "description": "RBAC (NOVA X PANEL): each panel account is bound to one AdminRole.",
             "type": "integer"
           },
           "status": {
             "type": "string"
+          },
+          "telegramShopAccess": {
+            "description": "TelegramShopAccess gates access to the Telegram Shop management page for this admin.",
+            "type": "boolean"
           },
           "updatedAt": {
             "format": "int64",
@@ -4828,8 +4841,10 @@
           "dataLimit",
           "id",
           "password",
+          "permissionOverrides",
           "roleId",
           "status",
+          "telegramShopAccess",
           "updatedAt",
           "usedBytes",
           "username"
@@ -4938,6 +4953,14 @@
     {
       "name": "Hashem Tunnel",
       "description": "Hashem Layer-3 GRE and FRP reverse tunnel management. Controls carrier mode (Direct GRE, FoU:443, WSS), watchdog, and port forwarding synchronization."
+    },
+    {
+      "name": "Telegram Shop",
+      "description": "Mirza-style automated Telegram shop bot installer and lifecycle manager. Manages bot installation, status, and control."
+    },
+    {
+      "name": "OpenVPN Management",
+      "description": "Manage OpenVPN server daemon, easy-rsa client certificates, traffic statistics, and .ovpn configurations."
     },
     {
       "name": "WebSocket",
@@ -8879,6 +8902,56 @@
         }
       }
     },
+    "/panel/api/clients/{email}/revokeSub": {
+      "post": {
+        "tags": [
+          "Clients"
+        ],
+        "summary": "Revoke and regenerate subscription ID for a client across all inbounds.",
+        "operationId": "post_panel_api_clients_email_revokeSub",
+        "description": "Generates a fresh random UUID subId for the client, updates the client record and all attached inbounds, and returns the new subId and full subscription URL.",
+        "parameters": [
+          {
+            "name": "email",
+            "in": "path",
+            "required": true,
+            "description": "Client email (unique identifier).",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "email": "user@example.com",
+                    "subId": "b1a2c3d4-...",
+                    "subUrl": "https://domain:2096/sub/b1a2c3d4-..."
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/panel/api/clients/{email}/attach": {
       "post": {
         "tags": [
@@ -10879,6 +10952,55 @@
                     "vless://uuid@host:443?security=reality&...#user1",
                     "vmess://eyJ2IjoyLC..."
                   ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/clients/subUrl/{subId}": {
+      "get": {
+        "tags": [
+          "Clients"
+        ],
+        "summary": "Get the full subscription URL for a given subscription ID.",
+        "operationId": "get_panel_api_clients_subUrl_subId",
+        "description": "Constructs and returns the full subscription URL using the configured subURI or panel domain/port.",
+        "parameters": [
+          {
+            "name": "subId",
+            "in": "path",
+            "required": true,
+            "description": "Subscription ID.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "subId": "b1a2c3d4-...",
+                    "subUrl": "https://domain:2096/sub/b1a2c3d4-..."
+                  }
                 }
               }
             }
@@ -16975,6 +17097,183 @@
         }
       }
     },
+    "/panel/api/hashem/edit-ports": {
+      "post": {
+        "tags": [
+          "Hashem Tunnel"
+        ],
+        "summary": "Dynamically update forwarded ports in Hashem tunnel without dropping or restarting the tunnel.",
+        "operationId": "post_panel_api_hashem_edit_ports",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "ports": [
+                  443,
+                  2083
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/hashem/add-port": {
+      "post": {
+        "tags": [
+          "Hashem Tunnel"
+        ],
+        "summary": "Add a new forwarded port to Hashem tunnel and return Iran server command.",
+        "operationId": "post_panel_api_hashem_add_port",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "port": 8443,
+                "autoInbound": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/hashem/remove-port": {
+      "post": {
+        "tags": [
+          "Hashem Tunnel"
+        ],
+        "summary": "Remove a forwarded port from Hashem tunnel.",
+        "operationId": "post_panel_api_hashem_remove_port",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "port": 8443
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/hashem/auto-create-inbound": {
+      "post": {
+        "tags": [
+          "Hashem Tunnel"
+        ],
+        "summary": "Automatically create matching VLESS-WS inbounds for forwarded tunnel ports with host and path configured.",
+        "operationId": "post_panel_api_hashem_auto_create_inbound",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "ports": "8080",
+                "host": "tunnel.example.com"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/panel/api/hashem/setup-ssh": {
       "post": {
         "tags": [
@@ -17073,6 +17372,750 @@
         ],
         "summary": "Install Hashem tunnel core engine on server.",
         "operationId": "post_panel_api_hashem_install",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/hashem/remove": {
+      "post": {
+        "tags": [
+          "Hashem Tunnel"
+        ],
+        "summary": "Remove Hashem tunnel core engine and services from server.",
+        "operationId": "post_panel_api_hashem_remove",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/hashem/benchmark": {
+      "get": {
+        "tags": [
+          "Hashem Tunnel"
+        ],
+        "summary": "Get latest carrier benchmark and performance report.",
+        "operationId": "get_panel_api_hashem_benchmark",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/hashem/benchmark/run": {
+      "post": {
+        "tags": [
+          "Hashem Tunnel"
+        ],
+        "summary": "Execute intelligent carrier benchmark across all transport paths.",
+        "operationId": "post_panel_api_hashem_benchmark_run",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/hashem/benchmark/autopilot": {
+      "post": {
+        "tags": [
+          "Hashem Tunnel"
+        ],
+        "summary": "Enable or disable automated carrier auto-pilot switching.",
+        "operationId": "post_panel_api_hashem_benchmark_autopilot",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "enabled": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/telegram-shop/status": {
+      "get": {
+        "tags": [
+          "Telegram Shop"
+        ],
+        "summary": "Get operational status and configuration of Telegram Shop Bot.",
+        "operationId": "get_panel_api_telegram_shop_status",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/telegram-shop/install-deps": {
+      "post": {
+        "tags": [
+          "Telegram Shop"
+        ],
+        "summary": "Install OS system dependencies (PHP, MySQL, Nginx, Composer) for Telegram Shop Bot.",
+        "operationId": "post_panel_api_telegram_shop_install_deps",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/telegram-shop/install": {
+      "post": {
+        "tags": [
+          "Telegram Shop"
+        ],
+        "summary": "Install and configure Telegram Shop Bot with token and admin chat ID.",
+        "operationId": "post_panel_api_telegram_shop_install",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "bot_token": "token",
+                "admin_chat_id": "123456789",
+                "card_number": "6037...",
+                "card_holder": "NOVA-X"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/telegram-shop/action": {
+      "post": {
+        "tags": [
+          "Telegram Shop"
+        ],
+        "summary": "Perform lifecycle action (start, stop, restart, uninstall).",
+        "operationId": "post_panel_api_telegram_shop_action",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "action": "restart"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/telegram-shop/restore": {
+      "post": {
+        "tags": [
+          "Telegram Shop"
+        ],
+        "summary": "Upload and restore a database (.sql) or codebase (.tar.gz) backup for Telegram Shop Bot.",
+        "operationId": "post_panel_api_telegram_shop_restore",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/telegram-shop/backup": {
+      "get": {
+        "tags": [
+          "Telegram Shop"
+        ],
+        "summary": "Download SQL dump backup of Telegram Shop database.",
+        "operationId": "get_panel_api_telegram_shop_backup",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/openvpn/status": {
+      "get": {
+        "tags": [
+          "OpenVPN Management"
+        ],
+        "summary": "Get OpenVPN server status, port, proto, online clients, and list of issued certificates.",
+        "operationId": "get_panel_api_openvpn_status",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/openvpn/settings": {
+      "post": {
+        "tags": [
+          "OpenVPN Management"
+        ],
+        "summary": "Save OpenVPN server settings such as port, protocol, network subnet, and DNS.",
+        "operationId": "post_panel_api_openvpn_settings",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/openvpn/install": {
+      "post": {
+        "tags": [
+          "OpenVPN Management"
+        ],
+        "summary": "Install and initialize OpenVPN server packages and certificates.",
+        "operationId": "post_panel_api_openvpn_install",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/openvpn/client/add": {
+      "post": {
+        "tags": [
+          "OpenVPN Management"
+        ],
+        "summary": "Create a new OpenVPN client certificate with optional traffic/expiry/IP limits.",
+        "operationId": "post_panel_api_openvpn_client_add",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "name": "client1",
+                "totalGB": 50,
+                "expiryTime": 1792520000000,
+                "limitIp": 2
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/openvpn/client/update": {
+      "post": {
+        "tags": [
+          "OpenVPN Management"
+        ],
+        "summary": "Update OpenVPN client limits (totalGB, expiryTime, limitIp, enable).",
+        "operationId": "post_panel_api_openvpn_client_update",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "name": "client1",
+                "totalGB": 100,
+                "expiryTime": 1792520000000,
+                "limitIp": 1,
+                "enable": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/openvpn/client/reset": {
+      "post": {
+        "tags": [
+          "OpenVPN Management"
+        ],
+        "summary": "Reset cumulative traffic usage (up and down) for an OpenVPN client.",
+        "operationId": "post_panel_api_openvpn_client_reset",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "name": "client1"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/openvpn/client/del": {
+      "post": {
+        "tags": [
+          "OpenVPN Management"
+        ],
+        "summary": "Revoke and delete an OpenVPN client certificate.",
+        "operationId": "post_panel_api_openvpn_client_del",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "name": "client1"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/openvpn/client/kill": {
+      "post": {
+        "tags": [
+          "OpenVPN Management"
+        ],
+        "summary": "Disconnect active session for an OpenVPN client.",
+        "operationId": "post_panel_api_openvpn_client_kill",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "name": "client1"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/openvpn/client/config": {
+      "get": {
+        "tags": [
+          "OpenVPN Management"
+        ],
+        "summary": "Download or retrieve raw .ovpn client profile configuration.",
+        "operationId": "get_panel_api_openvpn_client_config",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/openvpn/restart": {
+      "post": {
+        "tags": [
+          "OpenVPN Management"
+        ],
+        "summary": "Restart OpenVPN server service and re-apply iptables NAT forwarding.",
+        "operationId": "post_panel_api_openvpn_restart",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/openvpn/log": {
+      "get": {
+        "tags": [
+          "OpenVPN Management"
+        ],
+        "summary": "Retrieve OpenVPN daemon systemd journal logs.",
+        "operationId": "get_panel_api_openvpn_log",
         "responses": {
           "200": {
             "description": "Successful response",

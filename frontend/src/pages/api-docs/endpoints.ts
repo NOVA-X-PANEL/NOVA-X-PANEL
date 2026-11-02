@@ -3205,6 +3205,11 @@ export const sections: readonly Section[] = [
         path: '/panel/api/openvpn/restart',
         summary: 'Restart OpenVPN server service and re-apply iptables NAT forwarding.',
       },
+      {
+        method: 'GET',
+        path: '/panel/api/openvpn/log',
+        summary: 'Retrieve OpenVPN daemon systemd journal logs.',
+      },
     ],
   },
 

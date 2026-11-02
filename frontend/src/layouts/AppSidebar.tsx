@@ -247,7 +247,7 @@ export default function AppSidebar() {
       { key: '/clients', icon: 'team', title: t('menu.clients') },
       { key: '/groups', icon: 'groups', title: t('menu.groups') },
       { key: '/nodes', icon: 'cluster', title: t('menu.nodes') },
-      { key: '/hashem', icon: 'hashem', title: t('menu.hashem') },
+      { key: '/nova-tunnel', icon: 'hashem', title: t('menu.hashem') },
       { key: '/openvpn', icon: 'openvpn', title: t('menu.openvpn') },
       { key: '/telegram-shop', icon: 'telegramShop', title: t('menu.telegramShop') },
       { key: '/admins', icon: 'admins', title: t('menu.admins') },
@@ -404,7 +404,9 @@ export default function AppSidebar() {
       ? `/xray${hash || '#basic'}`
       : pathname === ''
         ? '/'
-        : pathname;
+        : pathname === '/hashem' || pathname === '/tunnel'
+          ? '/nova-tunnel'
+          : pathname;
 
   const openSubmenu = settingsActive ? '/settings' : xrayActive ? '/xray' : null;
   const [openKeys, setOpenKeys] = useState<string[]>(() => (openSubmenu ? [openSubmenu] : []));

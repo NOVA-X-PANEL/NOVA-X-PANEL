@@ -17425,6 +17425,36 @@
         }
       }
     },
+    "/panel/api/hashem/teardown-command": {
+      "get": {
+        "tags": [
+          "Hashem Tunnel"
+        ],
+        "summary": "Generate tailored Iran server teardown script to stop bandwidth waste and clean up routes.",
+        "operationId": "get_panel_api_hashem_teardown_command",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/panel/api/hashem/benchmark": {
       "get": {
         "tags": [

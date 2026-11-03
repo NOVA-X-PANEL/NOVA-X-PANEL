@@ -80,6 +80,15 @@ export interface HashemPortActionResult {
   message: string;
 }
 
+export interface HashemRemoveResult {
+  cleanupCommand?: string;
+  iranCommand?: string;
+  foreignIp?: string;
+  iranIp?: string;
+  engine?: string;
+  ports?: number[];
+}
+
 export function useHashemMutations(customMessageApi?: MessageInstance) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -226,7 +235,7 @@ export function useHashemMutations(customMessageApi?: MessageInstance) {
 
   const removeMutation = useMutation({
     mutationFn: async () => {
-      const res = await HttpUtil.post('/panel/api/hashem/remove');
+      const res = await HttpUtil.post<HashemRemoveResult>('/panel/api/hashem/remove');
       if (!res?.success) throw new Error(res?.msg || 'Remove failed');
       return res;
     },

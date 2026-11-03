@@ -174,3 +174,36 @@ func TestGenerateOneLinerValidation(t *testing.T) {
 		t.Errorf("expected --transport anytls in one-liner, got %s", res.OneLinerCommand)
 	}
 }
+
+func TestBuildTunnelPanelIranTeardownScript(t *testing.T) {
+	iranIP := "85.9.106.159"
+	foreignIP := "91.107.160.147"
+	foreignGreIP := "10.10.1.1"
+	peerIface := "gre-b-1"
+	ports := []int{443, 8080, 2083, 2087}
+
+	cmd := buildTunnelPanelIranTeardownScript(iranIP, foreignIP, foreignGreIP, peerIface, ports)
+
+	// Verify crucial cleanup components
+	if !strings.Contains(cmd, "gre-b-1") {
+		t.Errorf("expected peer interface gre-b-1 in teardown command")
+	}
+	if !strings.Contains(cmd, "91.107.160.147") {
+		t.Errorf("expected foreign IP 91.107.160.147 in teardown command")
+	}
+	if !strings.Contains(cmd, "dport 443 -j DNAT --to-destination 10.10.1.1:443") {
+		t.Errorf("expected port 443 DNAT deletion in teardown command")
+	}
+	if !strings.Contains(cmd, "dport 2083 -j DNAT --to-destination 10.10.1.1:2083") {
+		t.Errorf("expected port 2083 DNAT deletion in teardown command")
+	}
+	if !strings.Contains(cmd, "nft delete table inet gre_panel") {
+		t.Errorf("expected nft table deletion in teardown command")
+	}
+	if !strings.Contains(cmd, "conntrack -F") {
+		t.Errorf("expected conntrack -F in teardown command")
+	}
+	if !strings.Contains(cmd, "systemctl daemon-reload") {
+		t.Errorf("expected systemctl daemon-reload in teardown command")
+	}
+}

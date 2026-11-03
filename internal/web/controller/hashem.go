@@ -36,6 +36,7 @@ func (a *HashemController) initRouter(g *gin.RouterGroup) {
 	g.POST("/auto-create-inbound", requireOwnerRole(), a.autoCreateInbound)
 	g.POST("/install", requireOwnerRole(), a.install)
 	g.POST("/remove", requireOwnerRole(), a.remove)
+	g.GET("/teardown-command", requireOwnerRole(), a.teardownCommand)
 	g.GET("/benchmark", requireOwnerRole(), a.benchmark)
 	g.POST("/benchmark/run", requireOwnerRole(), a.runBenchmark)
 	g.POST("/benchmark/autopilot", requireOwnerRole(), a.autoPilot)
@@ -151,8 +152,31 @@ func (a *HashemController) install(c *gin.Context) {
 }
 
 func (a *HashemController) remove(c *gin.Context) {
-	err := a.hashemService.Remove()
-	jsonMsg(c, "tunnel removed", err)
+	res, err := a.hashemService.Remove()
+	jsonObj(c, res, err)
+}
+
+func (a *HashemController) teardownCommand(c *gin.Context) {
+	status, _ := a.hashemService.GetStatus()
+	cmd := a.hashemService.BuildIranTeardownCommand(status)
+	foreignIP := ""
+	iranIP := ""
+	var ports []int
+	engine := ""
+	if status != nil {
+		foreignIP = status.LocalPubIP
+		iranIP = status.RemotePubIP
+		ports = status.Ports
+		engine = status.Engine
+	}
+	jsonObj(c, gin.H{
+		"cleanupCommand": cmd,
+		"iranCommand":    cmd,
+		"foreignIp":      foreignIP,
+		"iranIp":         iranIP,
+		"ports":          ports,
+		"engine":         engine,
+	}, nil)
 }
 
 func (a *HashemController) setupSSH(c *gin.Context) {

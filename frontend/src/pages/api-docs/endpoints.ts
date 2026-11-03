@@ -3086,6 +3086,11 @@ export const sections: readonly Section[] = [
       },
       {
         method: 'GET',
+        path: '/panel/api/hashem/teardown-command',
+        summary: 'Generate tailored Iran server teardown script to stop bandwidth waste and clean up routes.',
+      },
+      {
+        method: 'GET',
         path: '/panel/api/hashem/benchmark',
         summary: 'Get latest carrier benchmark and performance report.',
       },

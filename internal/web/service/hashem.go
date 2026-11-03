@@ -1238,7 +1238,7 @@ func (s *HashemService) RemovePort(port int) (*HashemPortActionResult, error) {
 		}
 	} else {
 		// If no ports remain in tunnel, tear down the whole tunnel cleanly
-		_ = s.Remove()
+		_, _ = s.Remove()
 	}
 
 	// Sever any active conntrack sessions on this port immediately
@@ -2003,7 +2003,35 @@ func (s *HashemService) GenerateOneLiner(form HashemOneLinerForm) (*HashemOneLin
 	}, nil
 }
 
-func (s *HashemService) Remove() error {
+type HashemRemoveResult struct {
+	Success        bool   `json:"success"`
+	IranCommand    string `json:"iranCommand"`
+	CleanupCommand string `json:"cleanupCommand"`
+	ForeignIP      string `json:"foreignIp"`
+	IranIP         string `json:"iranIp"`
+	Engine         string `json:"engine"`
+	Ports          []int  `json:"ports"`
+}
+
+func (s *HashemService) Remove() (*HashemRemoveResult, error) {
+	// 0. Extract current tunnel status and build the tailored teardown command BEFORE wiping host state
+	status, _ := s.GetStatus()
+	cleanupCmd := s.BuildIranTeardownCommand(status)
+
+	foreignIP := ""
+	iranIP := ""
+	engine := ""
+	var ports []int
+	if status != nil {
+		foreignIP = status.LocalPubIP
+		iranIP = status.RemotePubIP
+		engine = status.Engine
+		ports = status.Ports
+	}
+	if foreignIP == "" {
+		foreignIP = s.getForeignPubIP()
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	defer cancel()
 
@@ -2140,7 +2168,15 @@ if os.path.exists(p):
 	_, _ = s.execPrivileged(ctx, "systemctl", "daemon-reload")
 
 	logger.Info("Hashem tunnel removed completely from host and all connections severed")
-	return nil
+	return &HashemRemoveResult{
+		Success:        true,
+		IranCommand:    cleanupCmd,
+		CleanupCommand: cleanupCmd,
+		ForeignIP:      foreignIP,
+		IranIP:         iranIP,
+		Engine:         engine,
+		Ports:          ports,
+	}, nil
 }
 
 // Carrier Benchmark & Auto-Pilot Implementation
@@ -2867,5 +2903,111 @@ echo "=========================================="; echo "[✓] تانل با م�
 		dnatStr,
 		iptablesStr,
 		portsDisplay, foreignGreIP, foreignGreIP,
+	)
+}
+
+func (s *HashemService) BuildIranTeardownCommand(status *HashemStatus) string {
+	foreignIP := ""
+	iranIP := ""
+	foreignGreIP := "10.10.1.1"
+	peerIface := "gre-b-1"
+	var ports []int
+
+	if status != nil {
+		foreignIP = status.LocalPubIP
+		iranIP = status.RemotePubIP
+		if status.LocalGreIP != "" {
+			foreignGreIP = status.LocalGreIP
+		}
+		if status.RemoteGreIP != "" && strings.HasSuffix(status.RemoteGreIP, ".2") {
+			peerIface = "gre-b-1"
+		}
+		ports = status.Ports
+	}
+
+	// Also check /etc/x-ui/tunnel.json for latest persisted data if missing
+	if foreignIP == "" || iranIP == "" || len(ports) == 0 {
+		type TunnelJSON struct {
+			Iface     string `json:"iface"`
+			LocalPub  string `json:"local_pub"`
+			RemotePub string `json:"remote_pub"`
+			LocalGre  string `json:"local_gre"`
+			RemoteGre string `json:"remote_gre"`
+			Ports     []int  `json:"ports"`
+		}
+		if data, err := os.ReadFile("/etc/x-ui/tunnel.json"); err == nil {
+			var tDoc TunnelJSON
+			if err := json.Unmarshal(data, &tDoc); err == nil {
+				if foreignIP == "" {
+					foreignIP = tDoc.LocalPub
+				}
+				if iranIP == "" {
+					iranIP = tDoc.RemotePub
+				}
+				if foreignGreIP == "10.10.1.1" && tDoc.LocalGre != "" {
+					foreignGreIP = tDoc.LocalGre
+				}
+				if len(ports) == 0 && len(tDoc.Ports) > 0 {
+					ports = tDoc.Ports
+				}
+			}
+		}
+	}
+
+	if foreignIP == "" {
+		foreignIP = s.getForeignPubIP()
+	}
+
+	return buildTunnelPanelIranTeardownScript(iranIP, foreignIP, foreignGreIP, peerIface, ports)
+}
+
+func buildTunnelPanelIranTeardownScript(iranIP, foreignIP, foreignGreIP, peerIface string, ports []int) string {
+	if peerIface == "" {
+		peerIface = "gre-b-1"
+	}
+	if foreignGreIP == "" {
+		foreignGreIP = "10.10.1.1"
+	}
+
+	var dnatCleanup []string
+	var portStrs []string
+	for _, p := range ports {
+		if p < 1 || p > 65535 {
+			continue
+		}
+		portStrs = append(portStrs, strconv.Itoa(p))
+		dnatCleanup = append(dnatCleanup,
+			fmt.Sprintf("iptables -t nat -D PREROUTING -p tcp --dport %d -j DNAT --to-destination %s:%d 2>/dev/null || true;", p, foreignGreIP, p),
+			fmt.Sprintf("iptables -t nat -D PREROUTING -p udp --dport %d -j DNAT --to-destination %s:%d 2>/dev/null || true;", p, foreignGreIP, p),
+			fmt.Sprintf("ufw delete allow %d/tcp 2>/dev/null || true;", p),
+			fmt.Sprintf("ufw delete allow %d/udp 2>/dev/null || true;", p),
+		)
+	}
+
+	portsDisplay := strings.Join(portStrs, ", ")
+	if portsDisplay == "" {
+		portsDisplay = "تمامی پورت‌ها"
+	}
+	targetDisplay := foreignIP
+	if targetDisplay == "" {
+		targetDisplay = foreignGreIP
+	}
+
+	dnatCleanupStr := strings.Join(dnatCleanup, " ")
+	if dnatCleanupStr != "" {
+		dnatCleanupStr += " "
+	}
+
+	return fmt.Sprintf(`bash -c 'set -e; echo "=== پاکسازی کامل تانل سرور ایران (NOVA-X-PANEL) ==="; for s in %s gre-b-1 gre-b-2 gre-panel-rules gre-tunnel gre-panel tunnel-panel backhaul-client bh-client frpc rathole; do systemctl stop "$s" 2>/dev/null || true; systemctl disable "$s" 2>/dev/null || true; rm -f "/etc/systemd/system/$s.service" "/etc/systemd/system/multi-user.target.wants/$s.service" 2>/dev/null || true; done; for dev in %s gre-b-1 gre-b-2 gre-tunnel gretap0 gretap1 bh-client fou0; do ip link set dev "$dev" down 2>/dev/null || true; ip link del dev "$dev" 2>/dev/null || true; done; rm -f /etc/sysctl.d/99-nova-tunnel.conf /etc/sysctl.d/99-gre-panel.conf 2>/dev/null || true; nft delete table inet gre_panel 2>/dev/null || true; rm -rf /var/lib/gre-panel/rules /var/lib/gre-panel 2>/dev/null || true; %siptables -t nat -D POSTROUTING -o %s -j MASQUERADE 2>/dev/null || true; iptables -t nat -D POSTROUTING -s 10.10.0.0/16 -j MASQUERADE 2>/dev/null || true; iptables -D FORWARD -o %s -j ACCEPT 2>/dev/null || true; iptables -D FORWARD -i %s -j ACCEPT 2>/dev/null || true; iptables -D FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT 2>/dev/null || true; iptables -t mangle -D POSTROUTING -o %s -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || true; iptables -t mangle -D FORWARD -o %s -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || true; command -v conntrack >/dev/null 2>&1 && conntrack -F 2>/dev/null || true; systemctl daemon-reload; echo -e "\033[32m[✓] تانل سرور ایران به مقصد %s (پورت‌های: %s) با موفقیت پاکسازی شد و مصرف ترافیک متوقف گردید.\033[0m"'`,
+		peerIface,
+		peerIface,
+		dnatCleanupStr,
+		peerIface,
+		peerIface,
+		peerIface,
+		peerIface,
+		peerIface,
+		targetDisplay,
+		portsDisplay,
 	)
 }

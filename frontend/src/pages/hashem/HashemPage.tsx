@@ -46,9 +46,12 @@ import {
   SwapOutlined,
   SyncOutlined,
   ThunderboltOutlined,
+  WarningOutlined,
+  StopOutlined,
   WifiOutlined,
 } from '@ant-design/icons';
 
+import { HttpUtil } from '@/utils';
 import { useTheme } from '@/hooks/useTheme';
 import AppSidebar from '@/layouts/AppSidebar';
 import { useHashemQuery, type CarrierMetric } from '@/api/queries/useHashemQuery';
@@ -57,6 +60,7 @@ import {
   type HashemSetupPayload,
   type HashemOneLinerPayload,
   type HashemPortActionResult,
+  type HashemRemoveResult,
 } from '@/api/queries/useHashemMutations';
 import './HashemPage.css';
 
@@ -150,6 +154,14 @@ export default function HashemPage() {
   const [addPortAutoInbound, setAddPortAutoInbound] = useState(true);
   const [addPortResult, setAddPortResult] = useState<HashemPortActionResult | null>(null);
 
+  const [teardownModalOpen, setTeardownModalOpen] = useState(false);
+  const [teardownCmd, setTeardownCmd] = useState<string>('');
+  const [teardownDetails, setTeardownDetails] = useState<{
+    foreignIp?: string;
+    iranIp?: string;
+    ports?: number[];
+  }>({});
+
   const [oneLinerForm] = Form.useForm();
   const [form] = Form.useForm<HashemSetupPayload>();
 
@@ -158,10 +170,38 @@ export default function HashemPage() {
 
   const handleRemove = async () => {
     try {
-      await removeTunnel();
+      const res = await removeTunnel();
+      const cmd = res?.obj?.cleanupCommand || res?.obj?.iranCommand;
+      if (cmd) {
+        setTeardownCmd(cmd);
+        setTeardownDetails({
+          foreignIp: res?.obj?.foreignIp || status.localPubIP,
+          iranIp: res?.obj?.iranIp || status.remotePubIP,
+          ports: res?.obj?.ports || status.ports,
+        });
+        setTeardownModalOpen(true);
+      }
       refetch();
     } catch {
       // toast shown by mutation
+    }
+  };
+
+  const handleFetchTeardown = async () => {
+    try {
+      const res = await HttpUtil.get<HashemRemoveResult>('/panel/api/hashem/teardown-command');
+      const cmd = res?.obj?.cleanupCommand || res?.obj?.iranCommand;
+      if (cmd) {
+        setTeardownCmd(cmd);
+        setTeardownDetails({
+          foreignIp: res?.obj?.foreignIp || status.localPubIP,
+          iranIp: res?.obj?.iranIp || status.remotePubIP,
+          ports: res?.obj?.ports || status.ports,
+        });
+        setTeardownModalOpen(true);
+      }
+    } catch {
+      messageApi.error(t('error'));
     }
   };
 
@@ -443,6 +483,14 @@ export default function HashemPage() {
                         {t('pages.hashem.btnRemoveTunnel')}
                       </Button>
                     </Popconfirm>
+                    <Button
+                      danger
+                      icon={<StopOutlined />}
+                      onClick={handleFetchTeardown}
+                      className="hashem-btn-teardown"
+                    >
+                      {t('pages.hashem.teardownBtn', { defaultValue: 'دستور پاکسازی ایران' })}
+                    </Button>
                   </>
                 )}
                 <Button
@@ -1421,6 +1469,105 @@ export default function HashemPage() {
               },
             ]}
           />
+        </Modal>
+
+        <Modal
+          title={
+            <Space>
+              <WarningOutlined style={{ color: '#ff4d4f' }} />
+              <span style={{ color: '#ff4d4f', fontWeight: 600 }}>
+                {t('pages.hashem.teardownModalTitle', {
+                  defaultValue: 'دستور اختصاصی پاکسازی سرور ایران',
+                })}
+              </span>
+            </Space>
+          }
+          open={teardownModalOpen}
+          onCancel={() => setTeardownModalOpen(false)}
+          footer={[
+            <Button key="close" onClick={() => setTeardownModalOpen(false)}>
+              {t('close', { defaultValue: 'بستن' })}
+            </Button>,
+            <Button
+              key="copy"
+              type="primary"
+              danger
+              icon={<CopyOutlined />}
+              onClick={() => copyToClipboard(teardownCmd)}
+            >
+              {t('pages.hashem.copyCommand', { defaultValue: 'کپی دستور' })}
+            </Button>,
+          ]}
+          width={680}
+          wrapClassName="hashem-modal"
+          destroyOnClose
+        >
+          <div style={{ marginTop: 8 }}>
+            <Alert
+              type="warning"
+              showIcon
+              message={t('pages.hashem.teardownAlertTitle', {
+                defaultValue: 'اقدام ضروری برای جلوگیری از سوختن حجم سرور ایران',
+              })}
+              description={t('pages.hashem.teardownAlertDesc', {
+                defaultValue:
+                  'تانل روی سرور خارج متوقف گردید. اما برای جلوگیری از بلک‌هول ترافیک، لوپ بسته‌ها و قطع کامل سوکت‌های زامبی، کافیست این دستور تک‌خطی اختصاصی را یک‌بار در ترمینال سرور ایران اجرا نمایید:',
+              })}
+              style={{ marginBottom: 16 }}
+            />
+
+            {(teardownDetails.foreignIp || teardownDetails.iranIp) && (
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 16,
+                  marginBottom: 12,
+                  padding: '8px 12px',
+                  background: 'rgba(255, 77, 79, 0.08)',
+                  border: '1px solid rgba(255, 77, 79, 0.2)',
+                  borderRadius: 6,
+                  fontSize: 12,
+                }}
+              >
+                {teardownDetails.foreignIp && (
+                  <div>
+                    <span style={{ opacity: 0.7 }}>سرور خارج: </span>
+                    <Tag color="cyan">{teardownDetails.foreignIp}</Tag>
+                  </div>
+                )}
+                {teardownDetails.iranIp && (
+                  <div>
+                    <span style={{ opacity: 0.7 }}>سرور ایران: </span>
+                    <Tag color="magenta">{teardownDetails.iranIp}</Tag>
+                  </div>
+                )}
+                {teardownDetails.ports && teardownDetails.ports.length > 0 && (
+                  <div>
+                    <span style={{ opacity: 0.7 }}>پورت‌ها: </span>
+                    <Tag color="orange">{teardownDetails.ports.join(', ')}</Tag>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div
+              style={{
+                padding: 12,
+                background: 'rgba(0, 0, 0, 0.65)',
+                border: '1px solid rgba(255, 77, 79, 0.4)',
+                borderRadius: 8,
+                wordBreak: 'break-all',
+                fontFamily: 'monospace',
+                fontSize: 12,
+                color: '#ff7875',
+                maxHeight: 220,
+                overflowY: 'auto',
+                lineHeight: 1.6,
+              }}
+            >
+              {teardownCmd}
+            </div>
+          </div>
         </Modal>
 
         <Modal

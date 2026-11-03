@@ -37,7 +37,15 @@ var (
 	validClientNameRegexp = regexp.MustCompile(`^[a-zA-Z0-9_-]{1,32}$`)
 	openvpnTrafficMu      sync.Mutex
 	ccdDirOverride        string
+	mgmtAddressOverride   string
 )
+
+func getMgmtAddress() string {
+	if mgmtAddressOverride != "" {
+		return mgmtAddressOverride
+	}
+	return mgmtAddress
+}
 
 func getCcdDir() string {
 	if ccdDirOverride != "" {
@@ -232,7 +240,7 @@ func (s *OpenVPNService) KillClient(name string) error {
 
 	sessions, _ := s.QueryManagementSessions()
 
-	conn, err := net.DialTimeout("tcp", mgmtAddress, 1*time.Second)
+	conn, err := net.DialTimeout("tcp", getMgmtAddress(), 1*time.Second)
 	if err != nil {
 		return err
 	}
@@ -256,7 +264,7 @@ func (s *OpenVPNService) KillClient(name string) error {
 
 // QueryManagementSessions reads all live connected sessions from the OpenVPN management interface.
 func (s *OpenVPNService) QueryManagementSessions() ([]OpenVPNLiveSession, error) {
-	conn, err := net.DialTimeout("tcp", mgmtAddress, 1*time.Second)
+	conn, err := net.DialTimeout("tcp", getMgmtAddress(), 1*time.Second)
 	if err != nil {
 		return nil, err
 	}
@@ -502,10 +510,69 @@ func (s *OpenVPNService) SyncAllCCD() error {
 	return nil
 }
 
-// SyncTrafficAndEnforceLimits performs both delta traffic sync and CCD quota enforcement.
+// EnforceDeviceLimits terminates excess active OpenVPN sessions exceeding user.LimitIP.
+func (s *OpenVPNService) EnforceDeviceLimits() {
+	db := database.GetDB()
+	if db == nil {
+		return
+	}
+
+	var limitedUsers []*model.OpenVPNUser
+	if err := db.Where("limit_ip > 0").Find(&limitedUsers).Error; err != nil || len(limitedUsers) == 0 {
+		return
+	}
+
+	sessions, err := s.QueryManagementSessions()
+	if err != nil || len(sessions) == 0 {
+		return
+	}
+
+	userLimitMap := make(map[string]int)
+	for _, u := range limitedUsers {
+		userLimitMap[strings.ToLower(strings.TrimSpace(u.Name))] = u.LimitIP
+	}
+
+	// Group sessions by common name
+	sessionsByCN := make(map[string][]OpenVPNLiveSession)
+	for _, sess := range sessions {
+		cn := strings.ToLower(strings.TrimSpace(sess.CommonName))
+		if cn == "" || cn == "undef" || cn == "server" {
+			continue
+		}
+		if _, ok := userLimitMap[cn]; ok {
+			sessionsByCN[cn] = append(sessionsByCN[cn], sess)
+		}
+	}
+
+	if len(sessionsByCN) == 0 {
+		return
+	}
+
+	conn, dialErr := net.DialTimeout("tcp", getMgmtAddress(), 1*time.Second)
+	if dialErr != nil {
+		return
+	}
+	defer conn.Close()
+	_ = conn.SetDeadline(time.Now().Add(2 * time.Second))
+
+	for cn, userSessions := range sessionsByCN {
+		limit := userLimitMap[cn]
+		if limit > 0 && len(userSessions) > limit {
+			// Kill excess sessions beyond limit
+			for i := limit; i < len(userSessions); i++ {
+				if userSessions[i].RealAddress != "" {
+					_, _ = fmt.Fprintf(conn, "kill %s\n", userSessions[i].RealAddress)
+				}
+			}
+		}
+	}
+}
+
+// SyncTrafficAndEnforceLimits performs both delta traffic sync, CCD quota enforcement, and device limit enforcement.
 func (s *OpenVPNService) SyncTrafficAndEnforceLimits() {
 	_ = s.SyncTraffic()
 	_ = s.SyncAllCCD()
+	s.EnforceDeviceLimits()
 }
 
 // isPortInUseByInbounds checks if a given port is already used by an active Xray inbound.
@@ -534,11 +601,351 @@ done
 	_, _ = s.execPrivilegedBash(ctx, script)
 }
 
+const openvpnVerifyPyScript = `#!/usr/bin/env python3
+"""
+NOVA-X-PANEL OpenVPN Authentication Verifier Hook
+Invoked by OpenVPN: auth-user-pass-verify <cred_file_path> via-file
+"""
+import sys
+import os
+import sqlite3
+import time
+
+DB_PATH = "/etc/x-ui/x-ui.db"
+LOG_PATH = "/var/log/openvpn_auth_exec.log"
+
+def log_debug(msg):
+    try:
+        with open(LOG_PATH, "a") as f:
+            f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} [VERIFY] {msg}\n")
+    except Exception:
+        pass
+
+def main():
+    if len(sys.argv) < 2:
+        log_debug("Rejected: no arguments provided")
+        sys.exit(1)
+
+    cred_file = sys.argv[1]
+    username = ""
+    password = ""
+    if os.path.isfile(cred_file):
+        try:
+            with open(cred_file, "r", encoding="utf-8", errors="ignore") as f:
+                lines = f.read().splitlines()
+                if len(lines) > 0:
+                    username = lines[0].strip()
+                if len(lines) > 1:
+                    password = lines[1].strip()
+        except Exception as e:
+            log_debug(f"Failed to read cred_file: {e}")
+            sys.exit(1)
+
+    common_name = os.environ.get("common_name", "").strip()
+    remote_ip = os.environ.get("untrusted_ip", "").strip()
+
+    # If certificate common_name is present and valid, enforce that username must match common_name
+    if common_name and common_name != "UNDEF" and common_name != "server":
+        if username and username.lower() != common_name.lower():
+            log_debug(f"REJECT: username mismatch! cert cn='{common_name}' != user='{username}' (IP: {remote_ip})")
+            sys.exit(1)
+        if not username:
+            username = common_name
+
+    if not username or username == "server":
+        log_debug(f"REJECT: invalid or empty username (cn='{common_name}')")
+        sys.exit(1)
+
+    if not os.path.exists(DB_PATH):
+        log_debug(f"REJECT: DB {DB_PATH} not found")
+        sys.exit(1)
+
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=5.0)
+        c = conn.cursor()
+        c.execute("PRAGMA table_info(open_vpn_users)")
+        cols = [r[1] for r in c.fetchall()]
+        has_pwd = "password" in cols
+        if has_pwd:
+            c.execute("SELECT password, enable, expiry_time, total_gb, up, down FROM open_vpn_users WHERE LOWER(name) = LOWER(?)", (username,))
+        else:
+            c.execute("SELECT '', enable, expiry_time, total_gb, up, down FROM open_vpn_users WHERE LOWER(name) = LOWER(?)", (username,))
+        row = c.fetchone()
+        conn.close()
+
+        if not row:
+            log_debug(f"REJECT: User '{username}' NOT found in database")
+            sys.exit(1)
+
+        db_password, enable, expiry_time, total_gb, up, down = row
+
+        # 1. Enable check
+        if not enable:
+            log_debug(f"REJECT: User '{username}' is DISABLED")
+            sys.exit(1)
+
+        # 2. Password check:
+        # If user has a password in DB, verify exact match
+        if db_password and db_password.strip() != "":
+            if password != db_password.strip():
+                log_debug(f"REJECT: User '{username}' password mismatch! Provided wrong password from {remote_ip}")
+                sys.exit(1)
+
+        # 3. Expiry check
+        now_ms = int(time.time() * 1000)
+        if expiry_time > 0 and now_ms >= expiry_time:
+            log_debug(f"REJECT: User '{username}' is EXPIRED")
+            sys.exit(1)
+
+        # 4. Traffic quota check
+        total_used = (up or 0) + (down or 0)
+        if total_gb > 0 and total_used >= (total_gb * 1024 * 1024 * 1024):
+            log_debug(f"REJECT: User '{username}' traffic limit exceeded ({total_used} >= {total_gb}GB)")
+            sys.exit(1)
+
+        log_debug(f"ACCEPT: User '{username}' auth verified successfully from {remote_ip}")
+        sys.exit(0)
+
+    except Exception as e:
+        log_debug(f"ERROR: Exception verifying user '{username}': {e}")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
+`
+
+const openvpnAuthPyScript = `#!/usr/bin/env python3
+"""
+NOVA-X-PANEL OpenVPN Client Connect & Disconnect Hook
+Enforces:
+  - Account enabled / disabled status
+  - Expiry date & traffic quota
+  - Mandatory password check if user has password set in DB
+  - Concurrent device / IP limit (LimitIP) queried against OpenVPN live management socket
+  - Traffic delta accounting on disconnect
+"""
+import sys
+import os
+import sqlite3
+import time
+import socket
+
+DB_PATH = "/etc/x-ui/x-ui.db"
+LOG_PATH = "/var/log/openvpn_auth_exec.log"
+MGMT_HOST = "127.0.0.1"
+MGMT_PORT = 7505
+
+def log_debug(msg):
+    try:
+        with open(LOG_PATH, "a") as f:
+            f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} {msg}\n")
+    except Exception:
+        pass
+
+def count_live_sessions_mgmt(target_cn, exclude_real_port=None):
+    """Query OpenVPN management socket to get live session count for user."""
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(1.5)
+        s.connect((MGMT_HOST, MGMT_PORT))
+        # Read initial banner
+        _ = s.recv(512)
+        s.sendall(b"status 2\n")
+        data = b""
+        while True:
+            chunk = s.recv(4096)
+            if not chunk:
+                break
+            data += chunk
+            if b"END\r\n" in data or b"END\n" in data:
+                break
+        try:
+            s.sendall(b"quit\n")
+        except Exception:
+            pass
+        s.close()
+
+        count = 0
+        target = target_cn.lower().strip()
+        lines = data.decode("utf-8", errors="ignore").splitlines()
+        for line in lines:
+            if line.startswith("CLIENT_LIST,"):
+                parts = line.split(",")
+                if len(parts) >= 3:
+                    cn = parts[1].strip().lower()
+                    uname = parts[9].strip().lower() if len(parts) >= 10 else ""
+                    real_addr = parts[2].strip()
+                    port = real_addr.split(":")[-1] if ":" in real_addr else ""
+                    if exclude_real_port and port == exclude_real_port:
+                        continue
+                    if cn == target or (uname and uname == target):
+                        count += 1
+        return count
+    except Exception as e:
+        log_debug(f"MGMT query error: {e}")
+        return -1
+
+def main():
+    script_type = os.environ.get("script_type", "")
+    cn = os.environ.get("common_name", "").strip() or os.environ.get("username", "").strip()
+    username_env = os.environ.get("username", "").strip()
+
+    if cn == "server" or not cn or cn == "UNDEF":
+        if username_env and username_env != "UNDEF":
+            cn = username_env
+
+    t_ip = os.environ.get("trusted_ip", "").strip() or os.environ.get("untrusted_ip", "").strip()
+    t_port = os.environ.get("trusted_port", "").strip() or os.environ.get("untrusted_port", "").strip()
+    v_ip = os.environ.get("ifconfig_pool_remote_ip", "").strip()
+    now_ms = int(time.time() * 1000)
+
+    if not os.path.exists(DB_PATH):
+        sys.exit(1)
+
+    # 1. Handle Disconnect
+    if script_type == "client-disconnect":
+        bytes_rx = os.environ.get("bytes_received")
+        bytes_tx = os.environ.get("bytes_sent")
+        try:
+            conn = sqlite3.connect(DB_PATH, timeout=5.0)
+            c = conn.cursor()
+            if bytes_rx is not None and bytes_tx is not None and cn:
+                try:
+                    rx = int(bytes_rx)
+                    tx = int(bytes_tx)
+                    c.execute("UPDATE open_vpn_users SET up = up + ?, down = down + ?, updated_at = ? WHERE LOWER(name) = LOWER(?)", (rx, tx, now_ms, cn))
+                except Exception as e:
+                    log_debug(f"Disconnect accounting error: {e}")
+            if t_port:
+                c.execute("DELETE FROM open_vpn_sessions WHERE real_port = ?", (t_port,))
+            elif cn:
+                c.execute("DELETE FROM open_vpn_sessions WHERE LOWER(name) = LOWER(?)", (cn,))
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            log_debug(f"Disconnect DB exception: {e}")
+        log_debug(f"[DISCONNECT] cn={cn}, ip={t_ip}:{t_port}, rx={bytes_rx}, tx={bytes_tx}")
+        sys.exit(0)
+
+    # 2. Handle Connect
+    if script_type == "client-connect" or not script_type:
+        try:
+            conn = sqlite3.connect(DB_PATH, timeout=5.0)
+            c = conn.cursor()
+            c.execute('''
+            CREATE TABLE IF NOT EXISTS open_vpn_sessions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                real_ip TEXT NOT NULL,
+                real_port TEXT NOT NULL,
+                virtual_ip TEXT DEFAULT '',
+                connected_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL,
+                UNIQUE(name, real_ip, real_port)
+            )
+            ''')
+            c.execute("PRAGMA table_info(open_vpn_users)")
+            cols = [r[1] for r in c.fetchall()]
+            has_pwd = "password" in cols
+            if has_pwd:
+                c.execute("SELECT enable, total_gb, expiry_time, limit_ip, up, down, password FROM open_vpn_users WHERE LOWER(name) = LOWER(?)", (cn,))
+            else:
+                c.execute("SELECT enable, total_gb, expiry_time, limit_ip, up, down, '' FROM open_vpn_users WHERE LOWER(name) = LOWER(?)", (cn,))
+            row = c.fetchone()
+
+            if not row:
+                conn.close()
+                log_debug(f"[REJECT-CONNECT] User '{cn}' not in DB")
+                sys.exit(1)
+
+            enable, total_gb, expiry_time, limit_ip, up, down, db_password = row
+
+            if not enable:
+                conn.close()
+                log_debug(f"[REJECT-CONNECT] User '{cn}' is disabled")
+                sys.exit(1)
+
+            if expiry_time > 0 and now_ms >= expiry_time:
+                conn.close()
+                log_debug(f"[REJECT-CONNECT] User '{cn}' is expired")
+                sys.exit(1)
+
+            total_used = (up or 0) + (down or 0)
+            if total_gb > 0 and total_used >= (total_gb * 1024 * 1024 * 1024):
+                conn.close()
+                log_debug(f"[REJECT-CONNECT] User '{cn}' traffic limit exceeded")
+                sys.exit(1)
+
+            # Security check: If user has a password in DB, ensure credentials were provided
+            if db_password and db_password.strip() != "":
+                if not username_env:
+                    conn.close()
+                    log_debug(f"[REJECT-CONNECT] User '{cn}' has password set but client sent no credentials (bypassed auth-user-pass)")
+                    sys.exit(1)
+
+            # Check concurrent device / IP limit (LimitIP)
+            if limit_ip and limit_ip > 0:
+                active_count = count_live_sessions_mgmt(cn, exclude_real_port=t_port)
+                if active_count < 0:
+                    c.execute("SELECT id, real_port, updated_at FROM open_vpn_sessions WHERE LOWER(name) = LOWER(?)", (cn,))
+                    db_rows = c.fetchall()
+                    valid = [r for r in db_rows if (not t_port or r[1] != t_port) and (now_ms - r[2] < 300000)]
+                    active_count = len(valid)
+
+                log_debug(f"[LIMIT-CHECK] cn={cn}, active={active_count}, limit={limit_ip}, incoming={t_ip}:{t_port}")
+
+                if active_count >= limit_ip:
+                    conn.close()
+                    log_debug(f"[REJECT-CONNECT] cn={cn} DEVICE LIMIT REACHED! active={active_count} >= limit={limit_ip}")
+                    sys.exit(1)
+
+            if t_port:
+                c.execute('''
+                CREATE TABLE IF NOT EXISTS open_vpn_sessions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    real_ip TEXT NOT NULL,
+                    real_port TEXT NOT NULL,
+                    virtual_ip TEXT DEFAULT '',
+                    connected_at INTEGER NOT NULL,
+                    updated_at INTEGER NOT NULL,
+                    UNIQUE(name, real_ip, real_port)
+                )
+                ''')
+                c.execute("INSERT OR REPLACE INTO open_vpn_sessions (name, real_ip, real_port, virtual_ip, connected_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)", (cn, t_ip or "", t_port, v_ip or "", now_ms, now_ms))
+                conn.commit()
+
+            conn.close()
+            log_debug(f"[ACCEPT-CONNECT] cn={cn}, ip={t_ip}:{t_port}")
+            sys.exit(0)
+
+        except Exception as e:
+            log_debug(f"[ERROR-CONNECT] Exception: {e}")
+            sys.exit(1)
+
+if __name__ == "__main__":
+    main()
+`
+
+func (s *OpenVPNService) deployAuthHooks() {
+	binDir := "/usr/local/x-ui/bin"
+	if err := os.MkdirAll(binDir, 0755); err != nil {
+		return
+	}
+	verifyPath := filepath.Join(binDir, "openvpn-verify.py")
+	authPath := filepath.Join(binDir, "openvpn-auth.py")
+
+	_ = os.WriteFile(verifyPath, []byte(openvpnVerifyPyScript), 0755)
+	_ = os.WriteFile(authPath, []byte(openvpnAuthPyScript), 0755)
+}
+
 // EnsureNAT enables IPv4 forwarding and adds iptables MASQUERADE for the VPN subnet,
 // while actively removing any dangerous or legacy port redirection rules that conflict with Xray inbounds or Tunnels.
 func (s *OpenVPNService) EnsureNAT() {
 	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
 	defer cancel()
+
+	s.deployAuthHooks()
 
 	script := `
 sysctl -w net.ipv4.ip_forward=1 >/dev/null 2>&1
@@ -554,29 +961,53 @@ iptables -t nat -D POSTROUTING -s 10.8.0.0/24 -j MASQUERADE 2>/dev/null || true
 iptables -C FORWARD -s 10.8.0.0/24 -j ACCEPT 2>/dev/null || iptables -A FORWARD -s 10.8.0.0/24 -j ACCEPT
 iptables -C FORWARD -d 10.8.0.0/24 -m state --state RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || iptables -A FORWARD -d 10.8.0.0/24 -m state --state RELATED,ESTABLISHED -j ACCEPT
 
-# Ensure duplicate-cn and client-config-dir in server.conf
+# Ensure duplicate-cn, client-config-dir, script-security, and auth verification hooks in server.conf
 mkdir -p /etc/openvpn/ccd
+mkdir -p /usr/local/x-ui/bin
+restart_needed=0
 for c in /etc/openvpn/server/server.conf /etc/openvpn/server.conf; do
     if [ -f "$c" ]; then
         if ! grep -q "duplicate-cn" "$c"; then
             echo "duplicate-cn" >> "$c"
+            restart_needed=1
         fi
         if ! grep -q "client-config-dir" "$c"; then
             echo "client-config-dir /etc/openvpn/ccd" >> "$c"
-            systemctl restart openvpn-server@server.service 2>/dev/null || systemctl restart openvpn@server.service 2>/dev/null || systemctl restart openvpn 2>/dev/null || true
+            restart_needed=1
+        fi
+        if ! grep -q "script-security" "$c"; then
+            echo "script-security 2" >> "$c"
+            restart_needed=1
+        fi
+        if ! grep -q "auth-user-pass-verify" "$c"; then
+            echo "auth-user-pass-verify /usr/local/x-ui/bin/openvpn-verify.py via-file" >> "$c"
+            restart_needed=1
+        fi
+        if ! grep -q "auth-user-pass-optional" "$c"; then
+            echo "auth-user-pass-optional" >> "$c"
+            restart_needed=1
+        fi
+        if ! grep -q "client-connect /usr/local/x-ui/bin/openvpn-auth.py" "$c"; then
+            echo "client-connect /usr/local/x-ui/bin/openvpn-auth.py" >> "$c"
+            restart_needed=1
+        fi
+        if ! grep -q "client-disconnect /usr/local/x-ui/bin/openvpn-auth.py" "$c"; then
+            echo "client-disconnect /usr/local/x-ui/bin/openvpn-auth.py" >> "$c"
+            restart_needed=1
         fi
         sed -i '/username-as-common-name/d' "$c"
-        sed -i '/tls-verify \/usr\/local\/x-ui\/bin\/openvpn-verify.py/d' "$c"
-        sed -i '/auth-user-pass-verify/d' "$c"
-        sed -i '/client-connect \/usr\/local\/x-ui\/bin\/openvpn-auth.py/d' "$c"
-        sed -i '/client-disconnect \/usr\/local\/x-ui\/bin\/openvpn-auth.py/d' "$c"
+        sed -i '/tls-verify/d' "$c"
         # Auto-migrate legacy port 2083 to standard 1194
         if grep -qE '^port 2083$' "$c"; then
             sed -i 's/^port 2083$/port 1194/' "$c"
-            systemctl restart openvpn-server@server.service 2>/dev/null || systemctl restart openvpn@server.service 2>/dev/null || systemctl restart openvpn 2>/dev/null || true
+            restart_needed=1
         fi
     fi
 done
+
+if [ "$restart_needed" -eq 1 ]; then
+    systemctl restart openvpn-server@server.service 2>/dev/null || systemctl restart openvpn@server.service 2>/dev/null || systemctl restart openvpn 2>/dev/null || true
+fi
 
 # Actively purge any legacy or rogue PREROUTING REDIRECT rules targeting OpenVPN so VLESS / Xray ports are never hijacked
 iptables -t nat -S PREROUTING 2>/dev/null | grep -E -- '(-j REDIRECT|--to-ports)' | while read -r r; do
@@ -1162,7 +1593,7 @@ func (s *OpenVPNService) UpdateClient(name string, password string, totalGB int6
 				}
 			}
 			if len(matching) > user.LimitIP {
-				conn, dialErr := net.DialTimeout("tcp", mgmtAddress, 1*time.Second)
+				conn, dialErr := net.DialTimeout("tcp", getMgmtAddress(), 1*time.Second)
 				if dialErr == nil {
 					for i := user.LimitIP; i < len(matching); i++ {
 						if matching[i].RealAddress != "" {
@@ -1575,6 +2006,11 @@ verb 3
 management 127.0.0.1 7505
 duplicate-cn
 client-config-dir /etc/openvpn/ccd
+script-security 2
+auth-user-pass-verify /usr/local/x-ui/bin/openvpn-verify.py via-file
+auth-user-pass-optional
+client-connect /usr/local/x-ui/bin/openvpn-auth.py
+client-disconnect /usr/local/x-ui/bin/openvpn-auth.py
 EOF_CONF
 
 cp -f /etc/openvpn/server/server.conf /etc/openvpn/server.conf 2>/dev/null || true

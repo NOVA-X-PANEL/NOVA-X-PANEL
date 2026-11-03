@@ -2496,6 +2496,12 @@ log-append /var/log/openvpn/openvpn.log
 verb 3
 management 127.0.0.1 7505
 duplicate-cn
+client-config-dir /etc/openvpn/ccd
+script-security 2
+auth-user-pass-verify /usr/local/x-ui/bin/openvpn-verify.py via-file
+auth-user-pass-optional
+client-connect /usr/local/x-ui/bin/openvpn-auth.py
+client-disconnect /usr/local/x-ui/bin/openvpn-auth.py
 EOF_CONF
     direct_ip=$(curl -s4 --max-time 2 https://api.ipify.org 2>/dev/null || ip route get 1.1.1.1 2>/dev/null | awk '{print $7; exit}')
     [ -n "$direct_ip" ] && sed -i "/bypass-dhcp/a push \"route $direct_ip 255.255.255.255 net_gateway\"" /etc/openvpn/server/server.conf 2>/dev/null || true

@@ -90,7 +90,22 @@ func allModels() []any {
 		&model.SubBalancer{},
 		&model.TuicTrafficReceipt{},
 		&model.OpenVPNUser{},
+		&model.OpenVPNSession{},
 	}
+}
+
+func migrateOpenVPNSessionColumns() error {
+	migrator := db.Migrator()
+	if !migrator.HasTable(&model.OpenVPNSession{}) {
+		return nil
+	}
+	if !migrator.HasColumn(&model.OpenVPNSession{}, "last_rx") {
+		_ = migrator.AddColumn(&model.OpenVPNSession{}, "LastRx")
+	}
+	if !migrator.HasColumn(&model.OpenVPNSession{}, "last_tx") {
+		_ = migrator.AddColumn(&model.OpenVPNSession{}, "LastTx")
+	}
+	return nil
 }
 
 func migrateClientTrafficLastSubFetchColumn() error {
@@ -125,6 +140,9 @@ func initModels() error {
 		return err
 	}
 	if err := migrateInboundExcludeFromSubColumn(); err != nil {
+		return err
+	}
+	if err := migrateOpenVPNSessionColumns(); err != nil {
 		return err
 	}
 	models := allModels()

@@ -18,6 +18,8 @@ import (
 	"time"
 	"errors"
 
+	"gorm.io/gorm"
+
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 )
@@ -26,11 +28,43 @@ const (
 	defaultEasyRsaDir = "/etc/openvpn/easy-rsa"
 	defaultServerDir  = "/etc/openvpn/server"
 	defaultServerConf = "/etc/openvpn/server/server.conf"
+	defaultCcdDir     = "/etc/openvpn/ccd"
 	openvpnUnitName   = "openvpn-server@server.service"
 	mgmtAddress       = "127.0.0.1:7505"
 )
 
-var validClientNameRegexp = regexp.MustCompile(`^[a-zA-Z0-9_-]{1,32}$`)
+var (
+	validClientNameRegexp = regexp.MustCompile(`^[a-zA-Z0-9_-]{1,32}$`)
+	openvpnTrafficMu      sync.Mutex
+	ccdDirOverride        string
+)
+
+func getCcdDir() string {
+	if ccdDirOverride != "" {
+		return ccdDirOverride
+	}
+	return defaultCcdDir
+}
+
+func ensureCcdDir() error {
+	return os.MkdirAll(getCcdDir(), 0755)
+}
+
+func setClientBlocked(name string, blocked bool) error {
+	name = strings.TrimSpace(name)
+	if !validClientNameRegexp.MatchString(name) || name == "server" {
+		return fmt.Errorf("invalid client name")
+	}
+	if err := ensureCcdDir(); err != nil {
+		return err
+	}
+	ccdPath := filepath.Join(getCcdDir(), name)
+	if blocked {
+		return os.WriteFile(ccdPath, []byte("disable\n"), 0644)
+	}
+	_ = os.Remove(ccdPath)
+	return nil
+}
 
 // OpenVPNLiveSession represents an active session parsed from OpenVPN management socket.
 type OpenVPNLiveSession struct {
@@ -297,6 +331,183 @@ func (s *OpenVPNService) QueryManagementSessions() ([]OpenVPNLiveSession, error)
 	return sessions, nil
 }
 
+// ApplyLiveSessionDeltas computes byte deltas from active sessions, persists cumulative
+// traffic to open_vpn_users, and synchronizes open_vpn_sessions state.
+func (s *OpenVPNService) ApplyLiveSessionDeltas(liveSessions []OpenVPNLiveSession) error {
+	openvpnTrafficMu.Lock()
+	defer openvpnTrafficMu.Unlock()
+
+	db := database.GetDB()
+	if db == nil {
+		return errors.New("db not initialized")
+	}
+
+	var existingSessions []model.OpenVPNSession
+	_ = db.Find(&existingSessions).Error
+	sessionMap := make(map[string]*model.OpenVPNSession, len(existingSessions))
+	for i := range existingSessions {
+		sess := &existingSessions[i]
+		key := strings.ToLower(sess.Name) + "|" + sess.RealIp + ":" + sess.RealPort
+		sessionMap[key] = sess
+	}
+
+	activeKeys := make(map[string]bool)
+	nowMs := time.Now().UnixMilli()
+
+	type trafficDelta struct {
+		up   int64
+		down int64
+	}
+	userDeltas := make(map[string]*trafficDelta)
+
+	for _, sess := range liveSessions {
+		cn := strings.TrimSpace(sess.CommonName)
+		if cn == "" || cn == "UNDEF" {
+			continue
+		}
+		realAddr := strings.TrimSpace(sess.RealAddress)
+		realIp := realAddr
+		realPort := ""
+		if idx := strings.LastIndex(realAddr, ":"); idx != -1 {
+			realIp = realAddr[:idx]
+			realPort = realAddr[idx+1:]
+		}
+
+		key := strings.ToLower(cn) + "|" + realIp + ":" + realPort
+		activeKeys[key] = true
+
+		var deltaRx, deltaTx int64
+		existing, found := sessionMap[key]
+		if found {
+			if sess.BytesReceived >= existing.LastRx {
+				deltaRx = sess.BytesReceived - existing.LastRx
+			} else {
+				deltaRx = sess.BytesReceived
+			}
+			if sess.BytesSent >= existing.LastTx {
+				deltaTx = sess.BytesSent - existing.LastTx
+			} else {
+				deltaTx = sess.BytesSent
+			}
+
+			existing.LastRx = sess.BytesReceived
+			existing.LastTx = sess.BytesSent
+			existing.UpdatedAt = nowMs
+			_ = db.Model(existing).Updates(map[string]any{
+				"last_rx":    sess.BytesReceived,
+				"last_tx":    sess.BytesSent,
+				"updated_at": nowMs,
+			}).Error
+		} else {
+			deltaRx = sess.BytesReceived
+			deltaTx = sess.BytesSent
+			newSession := &model.OpenVPNSession{
+				Name:        cn,
+				RealIp:      realIp,
+				RealPort:    realPort,
+				LastRx:      sess.BytesReceived,
+				LastTx:      sess.BytesSent,
+				ConnectedAt: nowMs,
+				UpdatedAt:   nowMs,
+			}
+			_ = db.Create(newSession).Error
+			sessionMap[key] = newSession
+		}
+
+		if deltaRx > 0 || deltaTx > 0 {
+			d, exists := userDeltas[cn]
+			if !exists {
+				d = &trafficDelta{}
+				userDeltas[cn] = d
+			}
+			d.up += deltaRx
+			d.down += deltaTx
+		}
+	}
+
+	for key, existing := range sessionMap {
+		if !activeKeys[key] {
+			_ = db.Delete(existing).Error
+		}
+	}
+
+	for name, delta := range userDeltas {
+		if delta.up > 0 || delta.down > 0 {
+			_ = db.Model(&model.OpenVPNUser{}).
+				Where("LOWER(name) = ?", strings.ToLower(name)).
+				Updates(map[string]any{
+					"up":   gorm.Expr("up + ?", delta.up),
+					"down": gorm.Expr("down + ?", delta.down),
+				}).Error
+		}
+	}
+
+	return nil
+}
+
+// SyncTraffic scrapes live sessions from the management socket and records traffic deltas in DB.
+func (s *OpenVPNService) SyncTraffic() error {
+	sessions, err := s.QueryManagementSessions()
+	if err != nil {
+		return err
+	}
+	return s.ApplyLiveSessionDeltas(sessions)
+}
+
+// SyncAllCCD synchronizes all client CCD files against current database quotas and expiration state.
+func (s *OpenVPNService) SyncAllCCD() error {
+	db := database.GetDB()
+	if db == nil {
+		return errors.New("db not initialized")
+	}
+
+	var users []model.OpenVPNUser
+	if err := db.Find(&users).Error; err != nil {
+		return err
+	}
+
+	nowMs := time.Now().UnixMilli()
+
+	var allAdmins []model.User
+	_ = db.Find(&allAdmins).Error
+	adminLimitMap := make(map[int]bool)
+	for _, a := range allAdmins {
+		if a.DataLimit > 0 && a.UsedBytes >= a.DataLimit {
+			adminLimitMap[a.Id] = true
+		}
+	}
+
+	liveSessions, _ := s.QueryManagementSessions()
+	onlineMap := make(map[string]bool)
+	for _, sess := range liveSessions {
+		if sess.CommonName != "" && sess.CommonName != "UNDEF" {
+			onlineMap[strings.ToLower(sess.CommonName)] = true
+		}
+	}
+
+	for _, u := range users {
+		totalUsed := u.Up + u.Down
+		isExpired := u.ExpiryTime > 0 && nowMs >= u.ExpiryTime
+		isTrafficExceeded := u.TotalGB > 0 && totalUsed >= (u.TotalGB*1024*1024*1024)
+		isAdminExceeded := u.OwnerAdminId > 0 && adminLimitMap[u.OwnerAdminId]
+
+		shouldBlock := !u.Enable || isExpired || isTrafficExceeded || isAdminExceeded
+		_ = setClientBlocked(u.Name, shouldBlock)
+
+		if shouldBlock && onlineMap[strings.ToLower(u.Name)] {
+			_ = s.KillClient(u.Name)
+		}
+	}
+
+	return nil
+}
+
+// SyncTrafficAndEnforceLimits performs both delta traffic sync and CCD quota enforcement.
+func (s *OpenVPNService) SyncTrafficAndEnforceLimits() {
+	_ = s.SyncTraffic()
+	_ = s.SyncAllCCD()
+}
+
 // isPortInUseByInbounds checks if a given port is already used by an active Xray inbound.
 func isPortInUseByInbounds(port int) (bool, string) {
 	db := database.GetDB()
@@ -343,11 +554,16 @@ iptables -t nat -D POSTROUTING -s 10.8.0.0/24 -j MASQUERADE 2>/dev/null || true
 iptables -C FORWARD -s 10.8.0.0/24 -j ACCEPT 2>/dev/null || iptables -A FORWARD -s 10.8.0.0/24 -j ACCEPT
 iptables -C FORWARD -d 10.8.0.0/24 -m state --state RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || iptables -A FORWARD -d 10.8.0.0/24 -m state --state RELATED,ESTABLISHED -j ACCEPT
 
-# Ensure duplicate-cn is in server.conf for concurrent logins
+# Ensure duplicate-cn and client-config-dir in server.conf
+mkdir -p /etc/openvpn/ccd
 for c in /etc/openvpn/server/server.conf /etc/openvpn/server.conf; do
     if [ -f "$c" ]; then
         if ! grep -q "duplicate-cn" "$c"; then
             echo "duplicate-cn" >> "$c"
+        fi
+        if ! grep -q "client-config-dir" "$c"; then
+            echo "client-config-dir /etc/openvpn/ccd" >> "$c"
+            systemctl restart openvpn-server@server.service 2>/dev/null || systemctl restart openvpn@server.service 2>/dev/null || systemctl restart openvpn 2>/dev/null || true
         fi
         sed -i '/username-as-common-name/d' "$c"
         sed -i '/tls-verify \/usr\/local\/x-ui\/bin\/openvpn-verify.py/d' "$c"
@@ -372,6 +588,7 @@ done
 netfilter-persistent save >/dev/null 2>&1 || true
 `
 	_, _ = s.execPrivilegedBash(ctx, script)
+	_ = s.SyncAllCCD()
 }
 
 // GetStatus checks server state, active connections, database records, and issued client certs.
@@ -549,8 +766,10 @@ func (s *OpenVPNService) GetStatus(scopes ...OpenVPNAccessScope) (*OpenVPNStatus
 	status.RemoteHost = savedHost
 	status.RemotePort = savedPort
 
-	// Read live sessions via management socket
+	// Read live sessions via management socket and sync deltas to DB
 	liveSessions, _ := s.QueryManagementSessions()
+	_ = s.ApplyLiveSessionDeltas(liveSessions)
+
 	var sessionsByCN = make(map[string][]OpenVPNLiveSession)
 	for _, sess := range liveSessions {
 		key := strings.ToLower(strings.TrimSpace(sess.CommonName))
@@ -569,22 +788,6 @@ func (s *OpenVPNService) GetStatus(scopes ...OpenVPNAccessScope) (*OpenVPNStatus
 
 	// Fetch DB records
 	db := database.GetDB()
-	if db != nil {
-		if len(liveSessions) == 0 {
-			_ = db.Exec("DELETE FROM open_vpn_sessions").Error
-		} else {
-			var activePorts []string
-			for _, sess := range liveSessions {
-				if parts := strings.Split(sess.RealAddress, ":"); len(parts) >= 2 {
-					activePorts = append(activePorts, parts[len(parts)-1])
-				}
-			}
-			if len(activePorts) > 0 {
-				_ = db.Exec("DELETE FROM open_vpn_sessions WHERE real_port NOT IN (?)", activePorts).Error
-			}
-		}
-	}
-
 	var dbUsers []*model.OpenVPNUser
 	_ = db.Find(&dbUsers).Error
 	var userMap = make(map[string]*model.OpenVPNUser)
@@ -659,19 +862,16 @@ func (s *OpenVPNService) GetStatus(scopes ...OpenVPNAccessScope) (*OpenVPNStatus
 		nameKey := strings.ToLower(strings.TrimSpace(u.Name))
 		sessList := sessionsByCN[nameKey]
 		isConnected := len(sessList) > 0
-		var liveRx, liveTx int64
 		var connectedIPs []string
 		since := ""
 		for _, sess := range sessList {
-			liveRx += sess.BytesReceived
-			liveTx += sess.BytesSent
 			connectedIPs = append(connectedIPs, sess.RealAddress)
 			if since == "" {
 				since = sess.ConnectedSince
 			}
 		}
 
-		totalUsed := u.Up + u.Down + liveRx + liveTx
+		totalUsed := u.Up + u.Down
 		isExpired := u.ExpiryTime > 0 && nowMs >= u.ExpiryTime
 		isTrafficExceeded := (u.TotalGB > 0 && totalUsed >= (u.TotalGB*1024*1024*1024)) ||
 			(u.OwnerAdminId > 0 && adminLimitExceededMap[u.OwnerAdminId])
@@ -696,8 +896,8 @@ func (s *OpenVPNService) GetStatus(scopes ...OpenVPNAccessScope) (*OpenVPNStatus
 		if isConnected {
 			agg.onlineCount++
 		}
-		agg.totalUp += u.Up + liveRx
-		agg.totalDown += u.Down + liveTx
+		agg.totalUp += u.Up
+		agg.totalDown += u.Down
 
 		// Scope check: an admin with ScopeOwn only sees their own clients
 		if !scope.IsOwner && scope.Mode != 2 {
@@ -713,8 +913,8 @@ func (s *OpenVPNService) GetStatus(scopes ...OpenVPNAccessScope) (*OpenVPNStatus
 			TotalGB:            u.TotalGB,
 			ExpiryTime:         u.ExpiryTime,
 			LimitIP:            u.LimitIP,
-			Up:                 u.Up + liveRx,
-			Down:               u.Down + liveTx,
+			Up:                 u.Up,
+			Down:               u.Down,
 			TotalUsed:          totalUsed,
 			TrafficUsedStr:     FormatBytes(totalUsed),
 			TrafficLimitStr:    limitStr,
@@ -928,6 +1128,10 @@ func (s *OpenVPNService) UpdateClient(name string, password string, totalGB int6
 		}
 	}
 
+	// Commit any pending session bytes before updating limits or kicking
+	_ = s.SyncTraffic()
+	_ = db.Where("name = ?", name).First(&user)
+
 	user.TotalGB = totalGB
 	user.ExpiryTime = expiryTime
 	user.LimitIP = limitIP
@@ -942,8 +1146,11 @@ func (s *OpenVPNService) UpdateClient(name string, password string, totalGB int6
 	isExpired := user.ExpiryTime > 0 && nowMs >= user.ExpiryTime
 	isTrafficExceeded := user.TotalGB > 0 && totalUsed >= (user.TotalGB*1024*1024*1024)
 
+	shouldBlock := !user.Enable || isExpired || isTrafficExceeded
+	_ = setClientBlocked(name, shouldBlock)
+
 	// If disabled, expired, or over traffic, kick active session immediately
-	if !user.Enable || isExpired || isTrafficExceeded {
+	if shouldBlock {
 		_ = s.KillClient(name)
 	} else if user.LimitIP > 0 {
 		// Enforce concurrent limit immediately on active sessions
@@ -978,10 +1185,46 @@ func (s *OpenVPNService) ResetClientTraffic(name string) error {
 
 	name = strings.TrimSpace(name)
 	db := database.GetDB()
-	return db.Model(&model.OpenVPNUser{}).Where("name = ?", name).Updates(map[string]any{
+
+	_ = s.SyncTraffic()
+
+	if err := db.Model(&model.OpenVPNUser{}).Where("name = ?", name).Updates(map[string]any{
 		"up":   0,
 		"down": 0,
-	}).Error
+	}).Error; err != nil {
+		return err
+	}
+
+	if sessions, err := s.QueryManagementSessions(); err == nil {
+		for _, sess := range sessions {
+			if strings.EqualFold(sess.CommonName, name) {
+				realAddr := strings.TrimSpace(sess.RealAddress)
+				realIp := realAddr
+				realPort := ""
+				if idx := strings.LastIndex(realAddr, ":"); idx != -1 {
+					realIp = realAddr[:idx]
+					realPort = realAddr[idx+1:]
+				}
+				_ = db.Model(&model.OpenVPNSession{}).
+					Where("LOWER(name) = ? AND real_ip = ? AND real_port = ?", strings.ToLower(name), realIp, realPort).
+					Updates(map[string]any{
+						"last_rx": sess.BytesReceived,
+						"last_tx": sess.BytesSent,
+					}).Error
+			}
+		}
+	}
+
+	var u model.OpenVPNUser
+	if err := db.Where("name = ?", name).First(&u).Error; err == nil {
+		nowMs := time.Now().UnixMilli()
+		isExpired := u.ExpiryTime > 0 && nowMs >= u.ExpiryTime
+		if u.Enable && !isExpired {
+			_ = setClientBlocked(name, false)
+		}
+	}
+
+	return nil
 }
 
 // DeleteClient revokes and deletes a client certificate and removes it from DB.
@@ -996,6 +1239,7 @@ func (s *OpenVPNService) DeleteClient(name string) error {
 
 	// Kick active connection
 	_ = s.KillClient(name)
+	_ = setClientBlocked(name, false)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -1005,6 +1249,7 @@ func (s *OpenVPNService) DeleteClient(name string) error {
 	_, _ = s.execPrivilegedBash(ctx, cmd)
 
 	db := database.GetDB()
+	_ = db.Where("LOWER(name) = ?", strings.ToLower(name)).Delete(&model.OpenVPNSession{}).Error
 	if err := db.Where("name = ?", name).Delete(&model.OpenVPNUser{}).Error; err != nil {
 		return fmt.Errorf("failed to delete client from database: %w", err)
 	}
@@ -1329,6 +1574,7 @@ log-append /var/log/openvpn/openvpn.log
 verb 3
 management 127.0.0.1 7505
 duplicate-cn
+client-config-dir /etc/openvpn/ccd
 EOF_CONF
 
 cp -f /etc/openvpn/server/server.conf /etc/openvpn/server.conf 2>/dev/null || true

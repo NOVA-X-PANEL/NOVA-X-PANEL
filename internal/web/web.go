@@ -410,6 +410,7 @@ const (
 	cadenceMtproto       = "@every 10s"
 	cadenceAmneziaWG     = "@every 10s"
 	cadenceTuic          = "@every 10s"
+	cadenceOpenVPN       = "@every 10s"
 	cadenceClientIPScan  = "@every 10s"
 	cadenceNodeHeartbeat = "@every 5s"
 	cadenceNodeTraffic   = "@every 5s"
@@ -459,6 +460,10 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 	tuicJob := job.NewTuicJob()
 	_, _ = s.cron.AddJob(cadenceTuic, tuicJob)
 	go tuicJob.Run()
+
+	ovpnJob := job.NewOpenVPNJob()
+	_, _ = s.cron.AddJob(cadenceOpenVPN, ovpnJob)
+	go ovpnJob.Run()
 
 	// check client ips from log file every 10 sec
 	_, _ = s.cron.AddJob(cadenceClientIPScan, job.NewCheckClientIpJob())

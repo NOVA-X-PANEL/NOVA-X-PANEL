@@ -839,11 +839,13 @@ def main():
                 real_ip TEXT NOT NULL,
                 real_port TEXT NOT NULL,
                 virtual_ip TEXT DEFAULT '',
+                last_rx INTEGER DEFAULT 0,
+                last_tx INTEGER DEFAULT 0,
                 connected_at INTEGER NOT NULL,
-                updated_at INTEGER NOT NULL,
-                UNIQUE(name, real_ip, real_port)
+                updated_at INTEGER NOT NULL
             )
             ''')
+            c.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_ovpn_sess_name_port ON open_vpn_sessions(name, real_port)")
             c.execute("PRAGMA table_info(open_vpn_users)")
             cols = [r[1] for r in c.fetchall()]
             has_pwd = "password" in cols
@@ -900,18 +902,6 @@ def main():
                     sys.exit(1)
 
             if t_port:
-                c.execute('''
-                CREATE TABLE IF NOT EXISTS open_vpn_sessions (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT NOT NULL,
-                    real_ip TEXT NOT NULL,
-                    real_port TEXT NOT NULL,
-                    virtual_ip TEXT DEFAULT '',
-                    connected_at INTEGER NOT NULL,
-                    updated_at INTEGER NOT NULL,
-                    UNIQUE(name, real_ip, real_port)
-                )
-                ''')
                 c.execute("INSERT OR REPLACE INTO open_vpn_sessions (name, real_ip, real_port, virtual_ip, connected_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)", (cn, t_ip or "", t_port, v_ip or "", now_ms, now_ms))
                 conn.commit()
 

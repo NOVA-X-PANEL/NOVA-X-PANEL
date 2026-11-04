@@ -605,13 +605,12 @@ const openvpnVerifyPyScript = `#!/usr/bin/env python3
 """
 NOVA-X-PANEL OpenVPN Authentication Verifier Hook
 Invoked by OpenVPN: auth-user-pass-verify <cred_file_path> via-file
+Supports both PostgreSQL (XUI_DB_TYPE=postgres) and SQLite (/etc/x-ui/x-ui.db)
 """
 import sys
 import os
-import sqlite3
 import time
 
-DB_PATH = "/etc/x-ui/x-ui.db"
 LOG_PATH = "/var/log/openvpn_auth_exec.log"
 
 def log_debug(msg):
@@ -620,6 +619,63 @@ def log_debug(msg):
             f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} [VERIFY] {msg}\n")
     except Exception:
         pass
+
+class DB:
+    def __init__(self):
+        self.backend, self.conn = self._connect()
+        if not self.conn:
+            raise RuntimeError("No database connection available")
+
+    def _connect(self):
+        db_type = os.environ.get("XUI_DB_TYPE", "")
+        dsn = os.environ.get("XUI_DB_DSN", "")
+        if os.path.exists("/etc/default/x-ui"):
+            try:
+                with open("/etc/default/x-ui") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line.startswith("XUI_DB_TYPE="):
+                            db_type = line.split("=", 1)[1].strip().strip("\"'")
+                        elif line.startswith("XUI_DB_DSN="):
+                            dsn = line.split("=", 1)[1].strip().strip("\"'")
+            except Exception:
+                pass
+
+        if db_type == "postgres" and dsn:
+            try:
+                import psycopg2
+                conn = psycopg2.connect(dsn)
+                return "postgres", conn
+            except Exception as e:
+                log_debug(f"psycopg2 connect failed: {e}")
+
+        db_path = "/etc/x-ui/x-ui.db"
+        if os.path.exists(db_path):
+            try:
+                import sqlite3
+                conn = sqlite3.connect(db_path, timeout=5.0)
+                return "sqlite", conn
+            except Exception as e:
+                log_debug(f"sqlite3 connect failed: {e}")
+
+        return None, None
+
+    def query_one(self, sql_pg, sql_lite, params):
+        cur = self.conn.cursor()
+        try:
+            if self.backend == "postgres":
+                cur.execute(sql_pg, params)
+            else:
+                cur.execute(sql_lite, params)
+            return cur.fetchone()
+        finally:
+            cur.close()
+
+    def close(self):
+        try:
+            self.conn.close()
+        except Exception:
+            pass
 
 def main():
     if len(sys.argv) < 2:
@@ -656,22 +712,19 @@ def main():
         log_debug(f"REJECT: invalid or empty username (cn='{common_name}')")
         sys.exit(1)
 
-    if not os.path.exists(DB_PATH):
-        log_debug(f"REJECT: DB {DB_PATH} not found")
+    try:
+        db = DB()
+    except Exception as e:
+        log_debug(f"REJECT: Database connection failed: {e}")
         sys.exit(1)
 
     try:
-        conn = sqlite3.connect(DB_PATH, timeout=5.0)
-        c = conn.cursor()
-        c.execute("PRAGMA table_info(open_vpn_users)")
-        cols = [r[1] for r in c.fetchall()]
-        has_pwd = "password" in cols
-        if has_pwd:
-            c.execute("SELECT password, enable, expiry_time, total_gb, up, down FROM open_vpn_users WHERE LOWER(name) = LOWER(?)", (username,))
-        else:
-            c.execute("SELECT '', enable, expiry_time, total_gb, up, down FROM open_vpn_users WHERE LOWER(name) = LOWER(?)", (username,))
-        row = c.fetchone()
-        conn.close()
+        row = db.query_one(
+            "SELECT password, enable, expiry_time, total_gb, up, down FROM open_vpn_users WHERE LOWER(name) = LOWER(%s);",
+            "SELECT password, enable, expiry_time, total_gb, up, down FROM open_vpn_users WHERE LOWER(name) = LOWER(?);",
+            (username,)
+        )
+        db.close()
 
         if not row:
             log_debug(f"REJECT: User '{username}' NOT found in database")
@@ -686,21 +739,23 @@ def main():
 
         # 2. Password check:
         # If user has a password in DB, verify exact match
-        if db_password and db_password.strip() != "":
-            if password != db_password.strip():
+        if db_password and str(db_password).strip() != "":
+            if password != str(db_password).strip():
                 log_debug(f"REJECT: User '{username}' password mismatch! Provided wrong password from {remote_ip}")
                 sys.exit(1)
 
         # 3. Expiry check
         now_ms = int(time.time() * 1000)
-        if expiry_time > 0 and now_ms >= expiry_time:
+        expiry_val = int(expiry_time or 0)
+        if expiry_val > 0 and now_ms >= expiry_val:
             log_debug(f"REJECT: User '{username}' is EXPIRED")
             sys.exit(1)
 
         # 4. Traffic quota check
-        total_used = (up or 0) + (down or 0)
-        if total_gb > 0 and total_used >= (total_gb * 1024 * 1024 * 1024):
-            log_debug(f"REJECT: User '{username}' traffic limit exceeded ({total_used} >= {total_gb}GB)")
+        total_used = int(up or 0) + int(down or 0)
+        quota_gb = int(total_gb or 0)
+        if quota_gb > 0 and total_used >= (quota_gb * 1024 * 1024 * 1024):
+            log_debug(f"REJECT: User '{username}' traffic limit exceeded ({total_used} >= {quota_gb}GB)")
             sys.exit(1)
 
         log_debug(f"ACCEPT: User '{username}' auth verified successfully from {remote_ip}")
@@ -723,14 +778,13 @@ Enforces:
   - Mandatory password check if user has password set in DB
   - Concurrent device / IP limit (LimitIP) queried against OpenVPN live management socket
   - Traffic delta accounting on disconnect
+Supports both PostgreSQL (XUI_DB_TYPE=postgres) and SQLite (/etc/x-ui/x-ui.db)
 """
 import sys
 import os
-import sqlite3
 import time
 import socket
 
-DB_PATH = "/etc/x-ui/x-ui.db"
 LOG_PATH = "/var/log/openvpn_auth_exec.log"
 MGMT_HOST = "127.0.0.1"
 MGMT_PORT = 7505
@@ -748,7 +802,6 @@ def count_live_sessions_mgmt(target_cn, exclude_real_port=None):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(1.5)
         s.connect((MGMT_HOST, MGMT_PORT))
-        # Read initial banner
         _ = s.recv(512)
         s.sendall(b"status 2\n")
         data = b""
@@ -785,6 +838,85 @@ def count_live_sessions_mgmt(target_cn, exclude_real_port=None):
         log_debug(f"MGMT query error: {e}")
         return -1
 
+class DB:
+    def __init__(self):
+        self.backend, self.conn = self._connect()
+        if not self.conn:
+            raise RuntimeError("No database connection available")
+
+    def _connect(self):
+        db_type = os.environ.get("XUI_DB_TYPE", "")
+        dsn = os.environ.get("XUI_DB_DSN", "")
+        if os.path.exists("/etc/default/x-ui"):
+            try:
+                with open("/etc/default/x-ui") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line.startswith("XUI_DB_TYPE="):
+                            db_type = line.split("=", 1)[1].strip().strip("\"'")
+                        elif line.startswith("XUI_DB_DSN="):
+                            dsn = line.split("=", 1)[1].strip().strip("\"'")
+            except Exception:
+                pass
+
+        if db_type == "postgres" and dsn:
+            try:
+                import psycopg2
+                conn = psycopg2.connect(dsn)
+                return "postgres", conn
+            except Exception as e:
+                log_debug(f"psycopg2 connect failed: {e}")
+
+        db_path = "/etc/x-ui/x-ui.db"
+        if os.path.exists(db_path):
+            try:
+                import sqlite3
+                conn = sqlite3.connect(db_path, timeout=5.0)
+                return "sqlite", conn
+            except Exception as e:
+                log_debug(f"sqlite3 connect failed: {e}")
+
+        return None, None
+
+    def query_one(self, sql_pg, sql_lite, params):
+        cur = self.conn.cursor()
+        try:
+            if self.backend == "postgres":
+                cur.execute(sql_pg, params)
+            else:
+                cur.execute(sql_lite, params)
+            return cur.fetchone()
+        finally:
+            cur.close()
+
+    def query_all(self, sql_pg, sql_lite, params=()):
+        cur = self.conn.cursor()
+        try:
+            if self.backend == "postgres":
+                cur.execute(sql_pg, params)
+            else:
+                cur.execute(sql_lite, params)
+            return cur.fetchall()
+        finally:
+            cur.close()
+
+    def execute(self, sql_pg, sql_lite, params=()):
+        cur = self.conn.cursor()
+        try:
+            if self.backend == "postgres":
+                cur.execute(sql_pg, params)
+            else:
+                cur.execute(sql_lite, params)
+            self.conn.commit()
+        finally:
+            cur.close()
+
+    def close(self):
+        try:
+            self.conn.close()
+        except Exception:
+            pass
+
 def main():
     script_type = os.environ.get("script_type", "")
     cn = os.environ.get("common_name", "").strip() or os.environ.get("username", "").strip()
@@ -799,7 +931,10 @@ def main():
     v_ip = os.environ.get("ifconfig_pool_remote_ip", "").strip()
     now_ms = int(time.time() * 1000)
 
-    if not os.path.exists(DB_PATH):
+    try:
+        db = DB()
+    except Exception as e:
+        log_debug(f"DB init failed: {e}")
         sys.exit(1)
 
     # 1. Handle Disconnect
@@ -807,21 +942,30 @@ def main():
         bytes_rx = os.environ.get("bytes_received")
         bytes_tx = os.environ.get("bytes_sent")
         try:
-            conn = sqlite3.connect(DB_PATH, timeout=5.0)
-            c = conn.cursor()
             if bytes_rx is not None and bytes_tx is not None and cn:
                 try:
                     rx = int(bytes_rx)
                     tx = int(bytes_tx)
-                    c.execute("UPDATE open_vpn_users SET up = up + ?, down = down + ?, updated_at = ? WHERE LOWER(name) = LOWER(?)", (rx, tx, now_ms, cn))
+                    db.execute(
+                        "UPDATE open_vpn_users SET up = up + %s, down = down + %s, updated_at = %s WHERE LOWER(name) = LOWER(%s);",
+                        "UPDATE open_vpn_users SET up = up + ?, down = down + ?, updated_at = ? WHERE LOWER(name) = LOWER(?);",
+                        (rx, tx, now_ms, cn)
+                    )
                 except Exception as e:
                     log_debug(f"Disconnect accounting error: {e}")
             if t_port:
-                c.execute("DELETE FROM open_vpn_sessions WHERE real_port = ?", (t_port,))
+                db.execute(
+                    "DELETE FROM open_vpn_sessions WHERE real_port = %s;",
+                    "DELETE FROM open_vpn_sessions WHERE real_port = ?;",
+                    (t_port,)
+                )
             elif cn:
-                c.execute("DELETE FROM open_vpn_sessions WHERE LOWER(name) = LOWER(?)", (cn,))
-            conn.commit()
-            conn.close()
+                db.execute(
+                    "DELETE FROM open_vpn_sessions WHERE LOWER(name) = LOWER(%s);",
+                    "DELETE FROM open_vpn_sessions WHERE LOWER(name) = LOWER(?);",
+                    (cn,)
+                )
+            db.close()
         except Exception as e:
             log_debug(f"Disconnect DB exception: {e}")
         log_debug(f"[DISCONNECT] cn={cn}, ip={t_ip}:{t_port}, rx={bytes_rx}, tx={bytes_tx}")
@@ -830,82 +974,99 @@ def main():
     # 2. Handle Connect
     if script_type == "client-connect" or not script_type:
         try:
-            conn = sqlite3.connect(DB_PATH, timeout=5.0)
-            c = conn.cursor()
-            c.execute('''
-            CREATE TABLE IF NOT EXISTS open_vpn_sessions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                real_ip TEXT NOT NULL,
-                real_port TEXT NOT NULL,
-                virtual_ip TEXT DEFAULT '',
-                last_rx INTEGER DEFAULT 0,
-                last_tx INTEGER DEFAULT 0,
-                connected_at INTEGER NOT NULL,
-                updated_at INTEGER NOT NULL
+            if db.backend == "sqlite":
+                db.execute("", '''
+                CREATE TABLE IF NOT EXISTS open_vpn_sessions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    real_ip TEXT NOT NULL,
+                    real_port TEXT NOT NULL,
+                    virtual_ip TEXT DEFAULT '',
+                    last_rx INTEGER DEFAULT 0,
+                    last_tx INTEGER DEFAULT 0,
+                    connected_at INTEGER NOT NULL,
+                    updated_at INTEGER NOT NULL
+                );
+                ''')
+
+            row = db.query_one(
+                "SELECT enable, total_gb, expiry_time, limit_ip, up, down, password FROM open_vpn_users WHERE LOWER(name) = LOWER(%s);",
+                "SELECT enable, total_gb, expiry_time, limit_ip, up, down, password FROM open_vpn_users WHERE LOWER(name) = LOWER(?);",
+                (cn,)
             )
-            ''')
-            c.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_ovpn_sess_name_port ON open_vpn_sessions(name, real_port)")
-            c.execute("PRAGMA table_info(open_vpn_users)")
-            cols = [r[1] for r in c.fetchall()]
-            has_pwd = "password" in cols
-            if has_pwd:
-                c.execute("SELECT enable, total_gb, expiry_time, limit_ip, up, down, password FROM open_vpn_users WHERE LOWER(name) = LOWER(?)", (cn,))
-            else:
-                c.execute("SELECT enable, total_gb, expiry_time, limit_ip, up, down, '' FROM open_vpn_users WHERE LOWER(name) = LOWER(?)", (cn,))
-            row = c.fetchone()
 
             if not row:
-                conn.close()
+                db.close()
                 log_debug(f"[REJECT-CONNECT] User '{cn}' not in DB")
                 sys.exit(1)
 
             enable, total_gb, expiry_time, limit_ip, up, down, db_password = row
 
             if not enable:
-                conn.close()
+                db.close()
                 log_debug(f"[REJECT-CONNECT] User '{cn}' is disabled")
                 sys.exit(1)
 
-            if expiry_time > 0 and now_ms >= expiry_time:
-                conn.close()
+            expiry_val = int(expiry_time or 0)
+            if expiry_val > 0 and now_ms >= expiry_val:
+                db.close()
                 log_debug(f"[REJECT-CONNECT] User '{cn}' is expired")
                 sys.exit(1)
 
-            total_used = (up or 0) + (down or 0)
-            if total_gb > 0 and total_used >= (total_gb * 1024 * 1024 * 1024):
-                conn.close()
+            total_used = int(up or 0) + int(down or 0)
+            quota_gb = int(total_gb or 0)
+            if quota_gb > 0 and total_used >= (quota_gb * 1024 * 1024 * 1024):
+                db.close()
                 log_debug(f"[REJECT-CONNECT] User '{cn}' traffic limit exceeded")
                 sys.exit(1)
 
             # Security check: If user has a password in DB, ensure credentials were provided
-            if db_password and db_password.strip() != "":
+            if db_password and str(db_password).strip() != "":
                 if not username_env:
-                    conn.close()
+                    db.close()
                     log_debug(f"[REJECT-CONNECT] User '{cn}' has password set but client sent no credentials (bypassed auth-user-pass)")
                     sys.exit(1)
 
             # Check concurrent device / IP limit (LimitIP)
-            if limit_ip and limit_ip > 0:
+            limit_ip_val = int(limit_ip or 0)
+            if limit_ip_val > 0:
                 active_count = count_live_sessions_mgmt(cn, exclude_real_port=t_port)
                 if active_count < 0:
-                    c.execute("SELECT id, real_port, updated_at FROM open_vpn_sessions WHERE LOWER(name) = LOWER(?)", (cn,))
-                    db_rows = c.fetchall()
-                    valid = [r for r in db_rows if (not t_port or r[1] != t_port) and (now_ms - r[2] < 300000)]
+                    db_rows = db.query_all(
+                        "SELECT id, real_port, updated_at FROM open_vpn_sessions WHERE LOWER(name) = LOWER(%s);",
+                        "SELECT id, real_port, updated_at FROM open_vpn_sessions WHERE LOWER(name) = LOWER(?);",
+                        (cn,)
+                    )
+                    valid = [r for r in db_rows if (not t_port or str(r[1]) != str(t_port)) and (now_ms - int(r[2] or 0) < 300000)]
                     active_count = len(valid)
 
-                log_debug(f"[LIMIT-CHECK] cn={cn}, active={active_count}, limit={limit_ip}, incoming={t_ip}:{t_port}")
+                log_debug(f"[LIMIT-CHECK] cn={cn}, active={active_count}, limit={limit_ip_val}, incoming={t_ip}:{t_port}")
 
-                if active_count >= limit_ip:
-                    conn.close()
-                    log_debug(f"[REJECT-CONNECT] cn={cn} DEVICE LIMIT REACHED! active={active_count} >= limit={limit_ip}")
+                if active_count >= limit_ip_val:
+                    db.close()
+                    log_debug(f"[REJECT-CONNECT] cn={cn} DEVICE LIMIT REACHED! active={active_count} >= limit={limit_ip_val}")
                     sys.exit(1)
 
             if t_port:
-                c.execute("INSERT OR REPLACE INTO open_vpn_sessions (name, real_ip, real_port, virtual_ip, connected_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)", (cn, t_ip or "", t_port, v_ip or "", now_ms, now_ms))
-                conn.commit()
+                if db.backend == "postgres":
+                    db.execute(
+                        "DELETE FROM open_vpn_sessions WHERE real_port = %s;",
+                        "",
+                        (t_port,)
+                    )
+                    db.execute(
+                        "INSERT INTO open_vpn_sessions (name, real_ip, real_port, virtual_ip, last_rx, last_tx, connected_at, updated_at) VALUES (%s, %s, %s, %s, 0, 0, %s, %s);",
+                        "",
+                        (cn, t_ip or "", t_port, v_ip or "", now_ms, now_ms)
+                    )
+                else:
+                    db.execute(
+                        "",
+                        "INSERT OR REPLACE INTO open_vpn_sessions (name, real_ip, real_port, virtual_ip, connected_at, updated_at) VALUES (?, ?, ?, ?, ?, ?);",
+                        (cn, t_ip or "", t_port, v_ip or "", now_ms, now_ms)
+                    )
 
-            conn.close()
+            db.close()
             log_debug(f"[ACCEPT-CONNECT] cn={cn}, ip={t_ip}:{t_port}")
             sys.exit(0)
 

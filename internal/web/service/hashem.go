@@ -795,6 +795,20 @@ func (s *HashemService) Restart() error {
 
 	_ = s.ensureHashemCore(ctx)
 
+	_, _ = s.execPrivilegedBash(ctx, `
+sysctl -w net.ipv4.tcp_keepalive_time=30 >/dev/null 2>&1 || true
+sysctl -w net.ipv4.tcp_keepalive_intvl=10 >/dev/null 2>&1 || true
+sysctl -w net.ipv4.tcp_keepalive_probes=3 >/dev/null 2>&1 || true
+echo "net.ipv4.tcp_keepalive_time=30" >> /etc/sysctl.d/99-nova-tunnel.conf 2>/dev/null || true
+echo "net.ipv4.tcp_keepalive_intvl=10" >> /etc/sysctl.d/99-nova-tunnel.conf 2>/dev/null || true
+echo "net.ipv4.tcp_keepalive_probes=3" >> /etc/sysctl.d/99-nova-tunnel.conf 2>/dev/null || true
+for svc in gre-a-1 gre-b-1 gre-keepalive gre-panel-rules; do
+    if [ -f "/etc/systemd/system/${svc}.service" ]; then
+        systemctl restart "$svc" 2>/dev/null || true
+    fi
+done
+`)
+
 	if _, err := os.Stat(hashemBinPath); err == nil {
 		out, err := s.execPrivileged(ctx, hashemBinPath, "restart")
 		if err == nil {
@@ -805,7 +819,7 @@ func (s *HashemService) Restart() error {
 
 	restartCmd := `
 systemctl daemon-reload 2>/dev/null || true
-for svc in gre-tunnel frpc frps backhaul-client backhaul-server gre-panel; do
+for svc in gre-tunnel frpc frps backhaul-client backhaul-server gre-panel gre-a-1 gre-b-1 gre-keepalive gre-panel-rules; do
     if [ -f "/etc/systemd/system/${svc}.service" ]; then
         systemctl restart "$svc" 2>/dev/null || true
     fi
@@ -1880,12 +1894,12 @@ func buildIranSetupCommands(iranIP, foreignIP string, frpPort, bhPort int, token
 	var oneLiner string
 	if engine == "backhaul" {
 		oneLiner = fmt.Sprintf(
-			"%s bash /tmp/hashem.sh setup-backhaul-iran --local-pub %s --remote-pub %s --port %d --transport %s --token %s --ports \"%s\" --force; systemctl enable backhaul-server 2>/dev/null || true; rm -f /tmp/hashem.sh",
+			"%s bash /tmp/hashem.sh setup-backhaul-iran --local-pub %s --remote-pub %s --port %d --transport %s --token %s --ports \"%s\" --force; sed -i 's/keepalive_period = [0-9]*/keepalive_period = 20/g; s/heartbeat = [0-9]*/heartbeat = 20/g' /root/hashem/backhaul/*.toml 2>/dev/null || true; systemctl restart backhaul-server 2>/dev/null || true; systemctl enable backhaul-server 2>/dev/null || true; rm -f /tmp/hashem.sh",
 			downloadPipe, iranIP, foreignIP, bhPort, transport, token, portsSafe,
 		)
 	} else if engine == "gre-backhaul" {
 		oneLiner = fmt.Sprintf(
-			"%s bash /tmp/hashem.sh setup-gre-backhaul-iran --local-pub %s --remote-pub %s --port %d --transport %s --token %s --ports \"%s\" --force && %s%s; systemctl enable gre-tunnel backhaul-server 2>/dev/null || true; rm -f /tmp/hashem.sh",
+			"%s bash /tmp/hashem.sh setup-gre-backhaul-iran --local-pub %s --remote-pub %s --port %d --transport %s --token %s --ports \"%s\" --force && %s%s; sed -i 's/keepalive_period = [0-9]*/keepalive_period = 20/g; s/heartbeat = [0-9]*/heartbeat = 20/g' /root/hashem/backhaul/*.toml 2>/dev/null || true; systemctl restart backhaul-server 2>/dev/null || true; systemctl enable gre-tunnel backhaul-server 2>/dev/null || true; rm -f /tmp/hashem.sh",
 			downloadPipe, iranIP, foreignIP, bhPort, transport, token, portsSafe, carrierCmd, optimizeCmd,
 		)
 	} else {
@@ -1968,6 +1982,13 @@ func (s *HashemService) GenerateOneLiner(form HashemOneLinerForm) (*HashemOneLin
 	outForeign, errForeign := s.execPrivileged(ctx, hashemBinPath, argsForeign...)
 	if errForeign != nil {
 		logger.Warningf("hashem setup-foreign failed: %v, out: %s", errForeign, string(outForeign))
+	}
+
+	if engine == "backhaul" || engine == "gre-backhaul" {
+		_, _ = s.execPrivilegedBash(ctx, `
+sed -i 's/keepalive_period = [0-9]*/keepalive_period = 20/g; s/heartbeat = [0-9]*/heartbeat = 20/g' /root/hashem/backhaul/*.toml 2>/dev/null || true
+systemctl restart backhaul-client 2>/dev/null || true
+`)
 	}
 
 	if engine != "backhaul" {
@@ -2698,8 +2719,14 @@ modprobe ip_gre 2>/dev/null || true
 sysctl -w net.ipv4.ip_forward=1 >/dev/null 2>&1 || true
 sysctl -w net.ipv4.conf.all.rp_filter=2 >/dev/null 2>&1 || true
 sysctl -w net.ipv4.conf.default.rp_filter=2 >/dev/null 2>&1 || true
+sysctl -w net.ipv4.tcp_keepalive_time=30 >/dev/null 2>&1 || true
+sysctl -w net.ipv4.tcp_keepalive_intvl=10 >/dev/null 2>&1 || true
+sysctl -w net.ipv4.tcp_keepalive_probes=3 >/dev/null 2>&1 || true
 echo "net.ipv4.ip_forward=1" > /etc/sysctl.d/99-nova-tunnel.conf 2>/dev/null || true
 echo "net.ipv4.conf.all.rp_filter=2" >> /etc/sysctl.d/99-nova-tunnel.conf 2>/dev/null || true
+echo "net.ipv4.tcp_keepalive_time=30" >> /etc/sysctl.d/99-nova-tunnel.conf 2>/dev/null || true
+echo "net.ipv4.tcp_keepalive_intvl=10" >> /etc/sysctl.d/99-nova-tunnel.conf 2>/dev/null || true
+echo "net.ipv4.tcp_keepalive_probes=3" >> /etc/sysctl.d/99-nova-tunnel.conf 2>/dev/null || true
 IFNAME="%s"
 ip link del $IFNAME 2>/dev/null || true
 ip link add name $IFNAME type gretap local %s remote %s ttl 255 tos inherit ikey 2749365187 okey 2749365187 nopmtudisc 2>/dev/null || ip link add name $IFNAME type gretap remote %s ttl 255 tos inherit ikey 2749365187 okey 2749365187 nopmtudisc
@@ -2826,7 +2853,7 @@ func buildTunnelPanelIranScript(iranIP, foreignIP, iranGreIP, foreignGreIP, port
 	iptablesStr := strings.Join(iptablesRules, "\n")
 	portsDisplay := strings.Join(portList, ", ")
 
-	return fmt.Sprintf(`bash -c 'set -e; echo "=== NOVA-X-PANEL NOVA-TUNELL Fast Setup ==="; sysctl -w net.ipv4.ip_forward=1 >/dev/null 2>&1 || true; sysctl -w net.ipv4.conf.all.rp_filter=2 >/dev/null 2>&1 || true; sysctl -w net.ipv4.conf.default.rp_filter=2 >/dev/null 2>&1 || true; echo "net.ipv4.ip_forward=1" > /etc/sysctl.d/99-nova-tunnel.conf 2>/dev/null || true; echo "net.ipv4.conf.all.rp_filter=2" >> /etc/sysctl.d/99-nova-tunnel.conf 2>/dev/null || true; modprobe ip_gre 2>/dev/null || true; IFNAME="gre-b-1"; ip link del $IFNAME 2>/dev/null || true; ip link add name $IFNAME type gretap local %s remote %s ttl 255 tos inherit ikey 2749365187 okey 2749365187 nopmtudisc 2>/dev/null || ip link add name $IFNAME type gretap remote %s ttl 255 tos inherit ikey 2749365187 okey 2749365187 nopmtudisc; ip addr add %s/30 dev $IFNAME; ip link set dev $IFNAME mtu 1280; ip link set dev $IFNAME up; iptables -t mangle -C POSTROUTING -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || iptables -t mangle -A POSTROUTING -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || true; iptables -t mangle -C FORWARD -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || iptables -t mangle -A FORWARD -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || true; cat << UNIT_EOF > /etc/systemd/system/${IFNAME}.service
+	return fmt.Sprintf(`bash -c 'set -e; echo "=== NOVA-X-PANEL NOVA-TUNELL Fast Setup ==="; sysctl -w net.ipv4.ip_forward=1 >/dev/null 2>&1 || true; sysctl -w net.ipv4.conf.all.rp_filter=2 >/dev/null 2>&1 || true; sysctl -w net.ipv4.conf.default.rp_filter=2 >/dev/null 2>&1 || true; sysctl -w net.ipv4.tcp_keepalive_time=30 >/dev/null 2>&1 || true; sysctl -w net.ipv4.tcp_keepalive_intvl=10 >/dev/null 2>&1 || true; sysctl -w net.ipv4.tcp_keepalive_probes=3 >/dev/null 2>&1 || true; echo "net.ipv4.ip_forward=1" > /etc/sysctl.d/99-nova-tunnel.conf 2>/dev/null || true; echo "net.ipv4.conf.all.rp_filter=2" >> /etc/sysctl.d/99-nova-tunnel.conf 2>/dev/null || true; echo "net.ipv4.tcp_keepalive_time=30" >> /etc/sysctl.d/99-nova-tunnel.conf 2>/dev/null || true; echo "net.ipv4.tcp_keepalive_intvl=10" >> /etc/sysctl.d/99-nova-tunnel.conf 2>/dev/null || true; echo "net.ipv4.tcp_keepalive_probes=3" >> /etc/sysctl.d/99-nova-tunnel.conf 2>/dev/null || true; modprobe ip_gre 2>/dev/null || true; IFNAME="gre-b-1"; ip link del $IFNAME 2>/dev/null || true; ip link add name $IFNAME type gretap local %s remote %s ttl 255 tos inherit ikey 2749365187 okey 2749365187 nopmtudisc 2>/dev/null || ip link add name $IFNAME type gretap remote %s ttl 255 tos inherit ikey 2749365187 okey 2749365187 nopmtudisc; ip addr add %s/30 dev $IFNAME; ip link set dev $IFNAME mtu 1280; ip link set dev $IFNAME up; iptables -t mangle -C POSTROUTING -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || iptables -t mangle -A POSTROUTING -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || true; iptables -t mangle -C FORWARD -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || iptables -t mangle -A FORWARD -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || true; cat << UNIT_EOF > /etc/systemd/system/${IFNAME}.service
 [Unit]
 Description=GRETAP Tunnel ${IFNAME} (NOVA-X-PANEL)
 After=network-online.target
@@ -2851,7 +2878,22 @@ ExecStopPost=-/usr/sbin/iptables -t mangle -D FORWARD -o ${IFNAME} -p tcp --tcp-
 [Install]
 WantedBy=multi-user.target
 UNIT_EOF
-systemctl daemon-reload && systemctl enable --now ${IFNAME}.service >/dev/null 2>&1 || true; mkdir -p /var/lib/gre-panel/rules; cat << "NFT_EOF" > /var/lib/gre-panel/rules/gre-panel.nft
+systemctl daemon-reload && systemctl enable --now ${IFNAME}.service >/dev/null 2>&1 || true; cat << "UNIT_KA" > /etc/systemd/system/gre-keepalive.service
+[Unit]
+Description=GRETAP Keepalive Ping (NOVA-X-PANEL)
+After=network-online.target ${IFNAME}.service
+Wants=${IFNAME}.service
+
+[Service]
+Type=simple
+ExecStart=/bin/bash -c 'while true; do ping -c 1 -W 2 %s >/dev/null 2>&1 || true; sleep 20; done'
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+UNIT_KA
+systemctl daemon-reload && systemctl enable --now gre-keepalive.service >/dev/null 2>&1 || true; mkdir -p /var/lib/gre-panel/rules; cat << "NFT_EOF" > /var/lib/gre-panel/rules/gre-panel.nft
 table inet gre_panel
 flush table inet gre_panel
 table inet gre_panel {
@@ -2900,6 +2942,7 @@ iptables -t mangle -C FORWARD -o gre-b-1 -p tcp --tcp-flags SYN,RST SYN -j TCPMS
 echo "=========================================="; echo "[✓] تانل با موفقیت برقرار شد! پورت‌های فعال: %s"; echo "پینگ به سرور خارج (%s):"; ping -c 3 -W 2 %s || true; echo "=========================================="'`,
 		iranIP, foreignIP, foreignIP, iranGreIP,
 		foreignIP, iranGreIP,
+		foreignGreIP,
 		dnatStr,
 		iptablesStr,
 		portsDisplay, foreignGreIP, foreignGreIP,
@@ -2998,7 +3041,7 @@ func buildTunnelPanelIranTeardownScript(iranIP, foreignIP, foreignGreIP, peerIfa
 		dnatCleanupStr += " "
 	}
 
-	return fmt.Sprintf(`bash -c 'set -e; echo "=== پاکسازی کامل تانل سرور ایران (NOVA-X-PANEL) ==="; for s in %s gre-b-1 gre-b-2 gre-panel-rules gre-tunnel gre-panel tunnel-panel backhaul-client bh-client frpc rathole; do systemctl stop "$s" 2>/dev/null || true; systemctl disable "$s" 2>/dev/null || true; rm -f "/etc/systemd/system/$s.service" "/etc/systemd/system/multi-user.target.wants/$s.service" 2>/dev/null || true; done; for dev in %s gre-b-1 gre-b-2 gre-tunnel gretap0 gretap1 bh-client fou0; do ip link set dev "$dev" down 2>/dev/null || true; ip link del dev "$dev" 2>/dev/null || true; done; rm -f /etc/sysctl.d/99-nova-tunnel.conf /etc/sysctl.d/99-gre-panel.conf 2>/dev/null || true; nft delete table inet gre_panel 2>/dev/null || true; rm -rf /var/lib/gre-panel/rules /var/lib/gre-panel 2>/dev/null || true; %siptables -t nat -D POSTROUTING -o %s -j MASQUERADE 2>/dev/null || true; iptables -t nat -D POSTROUTING -s 10.10.0.0/16 -j MASQUERADE 2>/dev/null || true; iptables -D FORWARD -o %s -j ACCEPT 2>/dev/null || true; iptables -D FORWARD -i %s -j ACCEPT 2>/dev/null || true; iptables -D FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT 2>/dev/null || true; iptables -t mangle -D POSTROUTING -o %s -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || true; iptables -t mangle -D FORWARD -o %s -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || true; command -v conntrack >/dev/null 2>&1 && conntrack -F 2>/dev/null || true; systemctl daemon-reload; echo -e "\033[32m[✓] تانل سرور ایران به مقصد %s (پورت‌های: %s) با موفقیت پاکسازی شد و مصرف ترافیک متوقف گردید.\033[0m"'`,
+	return fmt.Sprintf(`bash -c 'set -e; echo "=== پاکسازی کامل تانل سرور ایران (NOVA-X-PANEL) ==="; for s in %s gre-b-1 gre-b-2 gre-keepalive gre-panel-rules gre-tunnel gre-panel tunnel-panel backhaul-client bh-client frpc rathole; do systemctl stop "$s" 2>/dev/null || true; systemctl disable "$s" 2>/dev/null || true; rm -f "/etc/systemd/system/$s.service" "/etc/systemd/system/multi-user.target.wants/$s.service" 2>/dev/null || true; done; for dev in %s gre-b-1 gre-b-2 gre-tunnel gretap0 gretap1 bh-client fou0; do ip link set dev "$dev" down 2>/dev/null || true; ip link del dev "$dev" 2>/dev/null || true; done; rm -f /etc/sysctl.d/99-nova-tunnel.conf /etc/sysctl.d/99-gre-panel.conf 2>/dev/null || true; nft delete table inet gre_panel 2>/dev/null || true; rm -rf /var/lib/gre-panel/rules /var/lib/gre-panel 2>/dev/null || true; %siptables -t nat -D POSTROUTING -o %s -j MASQUERADE 2>/dev/null || true; iptables -t nat -D POSTROUTING -s 10.10.0.0/16 -j MASQUERADE 2>/dev/null || true; iptables -D FORWARD -o %s -j ACCEPT 2>/dev/null || true; iptables -D FORWARD -i %s -j ACCEPT 2>/dev/null || true; iptables -D FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT 2>/dev/null || true; iptables -t mangle -D POSTROUTING -o %s -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || true; iptables -t mangle -D FORWARD -o %s -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || true; command -v conntrack >/dev/null 2>&1 && conntrack -F 2>/dev/null || true; systemctl daemon-reload; echo -e "\033[32m[✓] تانل سرور ایران به مقصد %s (پورت‌های: %s) با موفقیت پاکسازی شد و مصرف ترافیک متوقف گردید.\033[0m"'`,
 		peerIface,
 		peerIface,
 		dnatCleanupStr,

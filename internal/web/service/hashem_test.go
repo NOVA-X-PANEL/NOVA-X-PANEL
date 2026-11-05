@@ -188,6 +188,9 @@ func TestBuildTunnelPanelIranTeardownScript(t *testing.T) {
 	if !strings.Contains(cmd, "gre-b-1") {
 		t.Errorf("expected peer interface gre-b-1 in teardown command")
 	}
+	if !strings.Contains(cmd, "gre-keepalive") {
+		t.Errorf("expected gre-keepalive in teardown command")
+	}
 	if !strings.Contains(cmd, "91.107.160.147") {
 		t.Errorf("expected foreign IP 91.107.160.147 in teardown command")
 	}
@@ -205,5 +208,36 @@ func TestBuildTunnelPanelIranTeardownScript(t *testing.T) {
 	}
 	if !strings.Contains(cmd, "systemctl daemon-reload") {
 		t.Errorf("expected systemctl daemon-reload in teardown command")
+	}
+}
+
+func TestBuildTunnelPanelIranScript_ContainsKeepalive(t *testing.T) {
+	iranIP := "1.2.3.4"
+	foreignIP := "5.6.7.8"
+	iranGreIP := "10.10.1.2"
+	foreignGreIP := "10.10.1.1"
+	ports := "8080,443"
+
+	script := buildTunnelPanelIranScript(iranIP, foreignIP, iranGreIP, foreignGreIP, ports)
+
+	expectedSysctls := []string{
+		"net.ipv4.tcp_keepalive_time=30",
+		"net.ipv4.tcp_keepalive_intvl=10",
+		"net.ipv4.tcp_keepalive_probes=3",
+	}
+	for _, sys := range expectedSysctls {
+		if !strings.Contains(script, sys) {
+			t.Errorf("script missing sysctl %q", sys)
+		}
+	}
+
+	if !strings.Contains(script, "gre-keepalive.service") {
+		t.Errorf("script missing gre-keepalive.service")
+	}
+	if !strings.Contains(script, "ping -c 1 -W 2 10.10.1.1") {
+		t.Errorf("script missing periodic ping to foreign GRE IP 10.10.1.1")
+	}
+	if !strings.Contains(script, "systemctl enable --now gre-keepalive.service") {
+		t.Errorf("script does not enable and start gre-keepalive.service")
 	}
 }

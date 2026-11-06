@@ -1112,6 +1112,12 @@ iptables -t nat -D POSTROUTING -s 10.8.0.0/24 -j MASQUERADE 2>/dev/null || true
 iptables -C FORWARD -s 10.8.0.0/24 -j ACCEPT 2>/dev/null || iptables -A FORWARD -s 10.8.0.0/24 -j ACCEPT
 iptables -C FORWARD -d 10.8.0.0/24 -m state --state RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || iptables -A FORWARD -d 10.8.0.0/24 -m state --state RELATED,ESTABLISHED -j ACCEPT
 
+if [ -f /etc/default/x-ui ] && grep -q "postgres" /etc/default/x-ui; then
+    if ! python3 -c "import psycopg2" >/dev/null 2>&1; then
+        apt-get update -qq >/dev/null 2>&1 && apt-get install -y -qq python3-psycopg2 >/dev/null 2>&1 || true
+    fi
+fi
+
 # Ensure duplicate-cn, client-config-dir, script-security, and auth verification hooks in server.conf
 mkdir -p /etc/openvpn/ccd
 mkdir -p /usr/local/x-ui/bin
@@ -1134,8 +1140,8 @@ for c in /etc/openvpn/server/server.conf /etc/openvpn/server.conf; do
             echo "auth-user-pass-verify /usr/local/x-ui/bin/openvpn-verify.py via-file" >> "$c"
             restart_needed=1
         fi
-        if ! grep -q "auth-user-pass-optional" "$c"; then
-            echo "auth-user-pass-optional" >> "$c"
+        if grep -q "auth-user-pass-optional" "$c"; then
+            sed -i '/auth-user-pass-optional/d' "$c"
             restart_needed=1
         fi
         if ! grep -q "client-connect /usr/local/x-ui/bin/openvpn-auth.py" "$c"; then
@@ -1157,6 +1163,8 @@ for c in /etc/openvpn/server/server.conf /etc/openvpn/server.conf; do
 done
 
 if [ "$restart_needed" -eq 1 ]; then
+    systemctl stop openvpn@server.service 2>/dev/null || true
+    systemctl disable openvpn@server.service 2>/dev/null || true
     systemctl restart openvpn-server@server.service 2>/dev/null || systemctl restart openvpn@server.service 2>/dev/null || systemctl restart openvpn 2>/dev/null || true
 fi
 
@@ -1889,11 +1897,13 @@ func (s *OpenVPNService) GetClientConfig(name string, remoteIP string, remotePor
 	}
 
 	authPassBlock := ""
-	if user.Password != "" {
-		authPassBlock = "auth-user-pass\n"
-		if inlineAuth {
-			authPassBlock = fmt.Sprintf("auth-user-pass\n<auth-user-pass>\n%s\n%s\n</auth-user-pass>\n", user.Name, user.Password)
-		}
+	pwd := user.Password
+	if pwd == "" {
+		pwd = "nopassword"
+	}
+	authPassBlock = "auth-user-pass\n"
+	if inlineAuth {
+		authPassBlock = fmt.Sprintf("auth-user-pass\n<auth-user-pass>\n%s\n%s\n</auth-user-pass>\n", user.Name, pwd)
 	}
 
 	proto := getOpenVPNSetting("openvpn_proto", "tcp")
@@ -1945,11 +1955,13 @@ func (s *OpenVPNService) RestartService() error {
 
 	s.EnsureNAT()
 
+	_, _ = s.execPrivileged(ctx, "systemctl", "stop", "openvpn@server.service")
+	_, _ = s.execPrivileged(ctx, "systemctl", "disable", "openvpn@server.service")
 	_, err := s.execPrivileged(ctx, "systemctl", "restart", openvpnUnitName)
 	if err != nil {
 		_, errAlt := s.execPrivileged(ctx, "systemctl", "restart", "openvpn@server.service")
 		if errAlt != nil {
-			diagCmd := "journalctl -u openvpn-server@server -u openvpn@server -n 12 --no-pager 2>&1 || cat /var/log/openvpn/openvpn.log 2>&1 | tail -n 12"
+			diagCmd := "cat /var/log/openvpn/openvpn.log 2>&1 | tail -n 12 || journalctl -u openvpn-server@server -u openvpn@server -n 12 --no-pager 2>&1"
 			diagOut, _ := s.execPrivilegedBash(ctx, diagCmd)
 			return fmt.Errorf("restart failed: %v\nDiagnostic logs:\n%s", errAlt, strings.TrimSpace(string(diagOut)))
 		}
@@ -1996,9 +2008,9 @@ func (s *OpenVPNService) SaveSettings(remoteHost string, remotePort int, serverP
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 		s.EnsureNAT()
+		_, _ = s.execPrivileged(ctx, "systemctl", "stop", "openvpn@server.service")
+		_, _ = s.execPrivileged(ctx, "systemctl", "disable", "openvpn@server.service")
 		_, _ = s.execPrivileged(ctx, "systemctl", "restart", openvpnUnitName)
-		_, _ = s.execPrivileged(ctx, "systemctl", "restart", "openvpn-server@server.service")
-		_, _ = s.execPrivileged(ctx, "systemctl", "restart", "openvpn@server.service")
 	}
 
 	// Always refresh NAT & purge legacy redirects whenever settings are saved
@@ -2159,7 +2171,6 @@ duplicate-cn
 client-config-dir /etc/openvpn/ccd
 script-security 2
 auth-user-pass-verify /usr/local/x-ui/bin/openvpn-verify.py via-file
-auth-user-pass-optional
 client-connect /usr/local/x-ui/bin/openvpn-auth.py
 client-disconnect /usr/local/x-ui/bin/openvpn-auth.py
 EOF_CONF
@@ -2172,8 +2183,10 @@ sed -i '/net.ipv4.ip_forward/d' /etc/sysctl.conf 2>/dev/null || true
 echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf 2>/dev/null || true
 
 systemctl daemon-reload >/dev/null 2>&1 || true
-systemctl enable openvpn-server@server >/dev/null 2>&1 || systemctl enable openvpn@server >/dev/null 2>&1 || true
-systemctl restart openvpn-server@server >/dev/null 2>&1 || systemctl restart openvpn@server >/dev/null 2>&1 || true
+systemctl stop openvpn@server >/dev/null 2>&1 || true
+systemctl disable openvpn@server >/dev/null 2>&1 || true
+systemctl enable openvpn-server@server >/dev/null 2>&1 || true
+systemctl restart openvpn-server@server >/dev/null 2>&1 || true
 `, port, proto, bypassRoutes)
 
 	_, err := s.execPrivilegedBash(ctx, script)
@@ -2192,8 +2205,14 @@ func (s *OpenVPNService) GetLog() (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	cmd := "journalctl -u openvpn-server@server -u openvpn@server -n 100 --no-pager 2>/dev/null || cat /var/log/openvpn/openvpn.log 2>/dev/null | tail -n 100"
+	cmd := "cat /var/log/openvpn/openvpn.log 2>/dev/null | tail -n 100"
 	out, err := s.execPrivilegedBash(ctx, cmd)
+	if err == nil && len(strings.TrimSpace(string(out))) > 0 {
+		return string(out), nil
+	}
+
+	cmd = "journalctl -u openvpn-server@server -u openvpn@server -n 100 --no-pager 2>/dev/null"
+	out, err = s.execPrivilegedBash(ctx, cmd)
 	if err != nil {
 		return "", err
 	}

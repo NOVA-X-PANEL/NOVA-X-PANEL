@@ -130,7 +130,7 @@ func TestBuildIranSetupCommands(t *testing.T) {
 	if !strings.Contains(oneLinerGreBh, "setup-gre-backhaul-iran") {
 		t.Errorf("expected setup-gre-backhaul-iran in one-liner, got %s", oneLinerGreBh)
 	}
-	if !strings.Contains(optGreBh, "dev gre-test mtu 1280") {
+	if !strings.Contains(optGreBh, "dev gre-test mtu 1380") {
 		t.Errorf("expected optimizeCmd to use gre-test interface, got %s", optGreBh)
 	}
 
@@ -211,7 +211,7 @@ func TestBuildTunnelPanelIranTeardownScript(t *testing.T) {
 	}
 }
 
-func TestBuildTunnelPanelIranScript_ContainsKeepalive(t *testing.T) {
+func TestBuildTunnelPanelIranScript_StandardGRETAP(t *testing.T) {
 	iranIP := "1.2.3.4"
 	foreignIP := "5.6.7.8"
 	iranGreIP := "10.10.1.2"
@@ -220,24 +220,18 @@ func TestBuildTunnelPanelIranScript_ContainsKeepalive(t *testing.T) {
 
 	script := buildTunnelPanelIranScript(iranIP, foreignIP, iranGreIP, foreignGreIP, ports)
 
-	expectedSysctls := []string{
-		"net.ipv4.tcp_keepalive_time=30",
-		"net.ipv4.tcp_keepalive_intvl=10",
-		"net.ipv4.tcp_keepalive_probes=3",
+	expectedTokens := []string{
+		"type gretap",
+		"ikey 2749365187",
+		"okey 2749365187",
+		"mtu 1372",
+		"table inet gre_panel",
+		"10.10.1.1",
+		"gre-b-1",
 	}
-	for _, sys := range expectedSysctls {
-		if !strings.Contains(script, sys) {
-			t.Errorf("script missing sysctl %q", sys)
+	for _, tok := range expectedTokens {
+		if !strings.Contains(script, tok) {
+			t.Errorf("script missing expected token %q", tok)
 		}
-	}
-
-	if !strings.Contains(script, "gre-keepalive.service") {
-		t.Errorf("script missing gre-keepalive.service")
-	}
-	if !strings.Contains(script, "ping -c 1 -W 2 10.10.1.1") {
-		t.Errorf("script missing periodic ping to foreign GRE IP 10.10.1.1")
-	}
-	if !strings.Contains(script, "systemctl enable --now gre-keepalive.service") {
-		t.Errorf("script does not enable and start gre-keepalive.service")
 	}
 }

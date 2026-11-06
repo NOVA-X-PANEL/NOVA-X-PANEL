@@ -1200,20 +1200,31 @@ func (s *HashemService) AddPort(port int, autoInbound bool) (*HashemPortActionRe
 		_ = s.AutoCreateMatchingInbounds(strconv.Itoa(port), host, host)
 	}
 
+	peerGre := "10.10.1.1"
+	if status != nil && status.LocalGreIP != "" {
+		peerGre = status.LocalGreIP
+	}
+
 	iranCommand := fmt.Sprintf(
-		`bash -c 'PORT="%d"; `+
+		`bash -c 'PORT="%d"; PEER="%s"; `+
 			`for f in /etc/backhaul/config.toml /etc/backhaul/iran.toml /etc/backhaul/*.toml /root/backhaul-core/*.toml; do `+
 			`[ -f "$f" ] && ! grep -q "\"$PORT\"" "$f" && sed -i "/ports\s*=\s*\[/a \ \ \ \ \"$PORT\"," "$f" && systemctl restart backhaul-server backhaul-iran 2>/dev/null; done; `+
 			`if [ -f /etc/gre-panel/peers.json ]; then python3 -c "import json; p=\"/etc/gre-panel/peers.json\"; d=json.load(open(p)); [x.setdefault(\"ports\", []).append($PORT) for x in d.get(\"peers\", []) if $PORT not in x.get(\"ports\", [])]; json.dump(d, open(p, \"w\"), indent=2)" 2>/dev/null; fi; `+
 			`if [ -f /var/lib/gre-panel/panel.db ]; then python3 -c "import sqlite3; c=sqlite3.connect(\"/var/lib/gre-panel/panel.db\"); c.execute(\"INSERT OR IGNORE INTO RouteDestination (Port, IsEnabled) VALUES (?, 1)\", ($PORT,)); c.commit()" 2>/dev/null; fi; `+
-			`if ip link show gre1 >/dev/null 2>&1 || ip link show gre-tunnel >/dev/null 2>&1; then `+
-			`iptables -t nat -C PREROUTING -p tcp --dport ${PORT} -j DNAT --to-destination 10.10.10.2:${PORT} 2>/dev/null || iptables -t nat -A PREROUTING -p tcp --dport ${PORT} -j DNAT --to-destination 10.10.10.2:${PORT} 2>/dev/null || true; `+
-			`iptables -t nat -C PREROUTING -p udp --dport ${PORT} -j DNAT --to-destination 10.10.10.2:${PORT} 2>/dev/null || iptables -t nat -A PREROUTING -p udp --dport ${PORT} -j DNAT --to-destination 10.10.10.2:${PORT} 2>/dev/null || true; `+
-			`fi; `+
+			`if [ -f /var/lib/gre-panel/rules/gre-panel.nft ]; then `+
+			`if ! grep -q "dport $PORT " /var/lib/gre-panel/rules/gre-panel.nft; then `+
+			`sed -i "/chain prerouting {/a \ \ \ \ \ \ \ \ tcp dport $PORT dnat ip to ${PEER}:$PORT\n        udp dport $PORT dnat ip to ${PEER}:$PORT" /var/lib/gre-panel/rules/gre-panel.nft; `+
+			`which nft >/dev/null 2>&1 && nft -f /var/lib/gre-panel/rules/gre-panel.nft 2>/dev/null || true; `+
+			`fi; fi; `+
+			`for dev in gre-b-1 gre-b-2 gre-tunnel gre1 gretap0; do `+
+			`if ip link show "$dev" >/dev/null 2>&1; then `+
+			`iptables -t nat -C PREROUTING -p tcp --dport ${PORT} -j DNAT --to-destination ${PEER}:${PORT} 2>/dev/null || iptables -t nat -A PREROUTING -p tcp --dport ${PORT} -j DNAT --to-destination ${PEER}:${PORT} 2>/dev/null || true; `+
+			`iptables -t nat -C PREROUTING -p udp --dport ${PORT} -j DNAT --to-destination ${PEER}:${PORT} 2>/dev/null || iptables -t nat -A PREROUTING -p udp --dport ${PORT} -j DNAT --to-destination ${PEER}:${PORT} 2>/dev/null || true; `+
+			`break; fi; done; `+
 			`ufw allow ${PORT}/tcp 2>/dev/null; ufw allow ${PORT}/udp 2>/dev/null; `+
 			`iptables -I INPUT -p tcp --dport ${PORT} -j ACCEPT 2>/dev/null; iptables -I INPUT -p udp --dport ${PORT} -j ACCEPT 2>/dev/null; `+
 			`echo "✔️ پورت $PORT بدون اختلال در پورت‌های قبلی با موفقیت به تانل سرور ایران متصل شد."'`,
-		port,
+		port, peerGre,
 	)
 
 	return &HashemPortActionResult{
@@ -1527,30 +1538,70 @@ func (s *HashemService) AutoCreateMatchingInbounds(portsStr string, iranIP strin
 
 	createdAny := false
 
+	// Look for existing active VLESS/VMess WebSocket inbound with TLS to use as template
+	var templateInbound *model.Inbound
+	for _, ib := range existingInbounds {
+		if (ib.Protocol == model.VLESS || ib.Protocol == model.VMESS) && ib.Enable && ib.StreamSettings != "" {
+			var st map[string]any
+			if json.Unmarshal([]byte(ib.StreamSettings), &st) == nil {
+				if sec, _ := st["security"].(string); sec == "tls" {
+					templateInbound = ib
+					break
+				}
+			}
+		}
+	}
+
 	for _, port := range ports {
 		if _, exists := existingMap[port]; exists {
 			continue
 		}
 
-		settingsMap := map[string]any{
-			"clients":    []any{},
-			"decryption": "none",
-			"fallbacks":  []any{},
-		}
-		settingsBytes, _ := json.Marshal(settingsMap)
+		var settingsBytes []byte
+		var streamBytes []byte
+		remark := "NOVA-X-PANEL"
 
-		streamMap := map[string]any{
-			"network":  "ws",
-			"security": "none",
-			"wsSettings": map[string]any{
-				"acceptProxyProtocol": false,
-				"path":                "/@NOVA-X-PANEL",
-				"host":                hostHeader,
-				"headers":             map[string]any{},
-				"heartbeatPeriod":     0,
-			},
+		if templateInbound != nil {
+			settingsBytes = []byte(templateInbound.Settings)
+			remark = templateInbound.Remark
+
+			var streamMap map[string]any
+			if json.Unmarshal([]byte(templateInbound.StreamSettings), &streamMap) == nil {
+				if ws, ok := streamMap["wsSettings"].(map[string]any); ok {
+					ws["host"] = hostHeader
+					streamMap["wsSettings"] = ws
+				}
+				if tls, ok := streamMap["tlsSettings"].(map[string]any); ok {
+					tls["alpn"] = []any{"http/1.1"}
+					streamMap["tlsSettings"] = tls
+				}
+				streamBytes, _ = json.Marshal(streamMap)
+			}
 		}
-		streamBytes, _ := json.Marshal(streamMap)
+
+		if len(settingsBytes) == 0 {
+			settingsMap := map[string]any{
+				"clients":    []any{},
+				"decryption": "none",
+				"fallbacks":  []any{},
+			}
+			settingsBytes, _ = json.Marshal(settingsMap)
+		}
+
+		if len(streamBytes) == 0 {
+			streamMap := map[string]any{
+				"network":  "ws",
+				"security": "none",
+				"wsSettings": map[string]any{
+					"acceptProxyProtocol": false,
+					"path":                "/@NOVA-X-PANEL",
+					"host":                hostHeader,
+					"headers":             map[string]any{},
+					"heartbeatPeriod":     0,
+				},
+			}
+			streamBytes, _ = json.Marshal(streamMap)
+		}
 
 		sniffingMap := map[string]any{
 			"enabled": false,
@@ -1563,7 +1614,7 @@ func (s *HashemService) AutoCreateMatchingInbounds(portsStr string, iranIP strin
 			Protocol:          model.VLESS,
 			Port:              port,
 			Tag:               fmt.Sprintf("in-%d-nova", port),
-			Remark:            "NOVA-X-PANEL",
+			Remark:            remark,
 			Listen:            "",
 			Settings:          string(settingsBytes),
 			StreamSettings:    string(streamBytes),
@@ -1575,6 +1626,29 @@ func (s *HashemService) AutoCreateMatchingInbounds(portsStr string, iranIP strin
 		addedInbound, _, err := s.inboundService.AddInbound(newInbound)
 		if err == nil && addedInbound != nil {
 			createdAny = true
+
+			// Link clients in client_inbounds and register host mapping if template was used
+			if templateInbound != nil {
+				var clientIds []int
+				database.GetDB().Table("client_inbounds").Where("inbound_id = ?", templateInbound.Id).Pluck("client_id", &clientIds)
+				for _, cid := range clientIds {
+					database.GetDB().Exec("INSERT OR IGNORE INTO client_inbounds (client_id, inbound_id) VALUES (?, ?)", cid, addedInbound.Id)
+				}
+
+				var templateHost model.Host
+				if err := database.GetDB().Where("inbound_id = ?", templateInbound.Id).First(&templateHost).Error; err == nil && templateHost.Id > 0 {
+					newHost := templateHost
+					newHost.Id = 0
+					newHost.InboundId = addedInbound.Id
+					newHost.Port = port
+					if hostHeader != "" {
+						newHost.Address = hostHeader
+					}
+					newHost.CreatedAt = time.Now().UnixMilli()
+					newHost.UpdatedAt = time.Now().UnixMilli()
+					database.GetDB().Create(&newHost)
+				}
+			}
 		} else {
 			logger.Warningf("AutoCreateMatchingInbounds failed for port %d: %v", port, err)
 		}
@@ -2756,9 +2830,10 @@ echo "net.ipv4.tcp_keepalive_intvl=10" >> /etc/sysctl.d/99-nova-tunnel.conf 2>/d
 echo "net.ipv4.tcp_keepalive_probes=3" >> /etc/sysctl.d/99-nova-tunnel.conf 2>/dev/null || true
 IFNAME="%s"
 ip link del $IFNAME 2>/dev/null || true
+ip fou del port 8443 2>/dev/null || true
 ip fou del port 443 2>/dev/null || true
-ip fou add port 443 ipproto 47 2>/dev/null || true
-ip link add name $IFNAME type gretap local %s remote %s encap fou encap-sport 443 encap-dport 443 ttl 255 2>/dev/null || ip link add name $IFNAME type gretap remote %s encap fou encap-sport 443 encap-dport 443 ttl 255 2>/dev/null || ip link add name $IFNAME type gretap local %s remote %s ttl 255 tos inherit ikey 2749365187 okey 2749365187 nopmtudisc 2>/dev/null || ip link add name $IFNAME type gretap remote %s ttl 255 tos inherit ikey 2749365187 okey 2749365187 nopmtudisc
+ip fou add port 8443 ipproto 47 2>/dev/null || true
+ip link add name $IFNAME type gretap local %s remote %s encap fou encap-sport 8443 encap-dport 8443 ttl 255 2>/dev/null || ip link add name $IFNAME type gretap remote %s encap fou encap-sport 8443 encap-dport 8443 ttl 255 2>/dev/null || ip link add name $IFNAME type gretap local %s remote %s ttl 255 tos inherit ikey 2749365187 okey 2749365187 nopmtudisc 2>/dev/null || ip link add name $IFNAME type gretap remote %s ttl 255 tos inherit ikey 2749365187 okey 2749365187 nopmtudisc
 ip addr add %s/30 dev $IFNAME
 ip link set dev $IFNAME mtu 1280
 ip link set dev $IFNAME up
@@ -2777,9 +2852,10 @@ RemainAfterExit=yes
 ExecStartPre=-/usr/sbin/modprobe fou
 ExecStartPre=-/usr/sbin/modprobe ip_gre
 ExecStartPre=-/usr/sbin/ip link del ${IFNAME}
+ExecStartPre=-/usr/sbin/ip fou del port 8443
 ExecStartPre=-/usr/sbin/ip fou del port 443
-ExecStartPre=-/usr/sbin/ip fou add port 443 ipproto 47
-ExecStart=/bin/bash -c "ip link add name ${IFNAME} type gretap remote %s encap fou encap-sport 443 encap-dport 443 ttl 255 2>/dev/null || ip link add name ${IFNAME} type gretap remote %s ttl 255 tos inherit ikey 2749365187 okey 2749365187 nopmtudisc"
+ExecStartPre=-/usr/sbin/ip fou add port 8443 ipproto 47
+ExecStart=/bin/bash -c "ip link add name ${IFNAME} type gretap remote %s encap fou encap-sport 8443 encap-dport 8443 ttl 255 2>/dev/null || ip link add name ${IFNAME} type gretap remote %s ttl 255 tos inherit ikey 2749365187 okey 2749365187 nopmtudisc"
 ExecStart=/usr/sbin/ip addr add %s/30 dev ${IFNAME}
 ExecStart=/usr/sbin/ip link set dev ${IFNAME} mtu 1280
 ExecStart=/usr/sbin/ip link set dev ${IFNAME} up
@@ -2787,6 +2863,7 @@ ExecStartPost=-/usr/sbin/iptables -t mangle -A POSTROUTING -o ${IFNAME} -p tcp -
 ExecStartPost=-/usr/sbin/iptables -t mangle -A FORWARD -o ${IFNAME} -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240
 ExecStop=-/usr/sbin/ip link set dev ${IFNAME} down
 ExecStop=-/usr/sbin/ip link del ${IFNAME}
+ExecStopPost=-/usr/sbin/ip fou del port 8443
 ExecStopPost=-/usr/sbin/ip fou del port 443
 ExecStopPost=-/usr/sbin/iptables -t mangle -D POSTROUTING -o ${IFNAME} -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240
 ExecStopPost=-/usr/sbin/iptables -t mangle -D FORWARD -o ${IFNAME} -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240
@@ -2795,7 +2872,7 @@ ExecStopPost=-/usr/sbin/iptables -t mangle -D FORWARD -o ${IFNAME} -p tcp --tcp-
 WantedBy=multi-user.target
 UNIT_EOF
 systemctl daemon-reload >/dev/null 2>&1 || true
-systemctl enable ${IFNAME}.service >/dev/null 2>&1 || true
+systemctl enable --now ${IFNAME}.service >/dev/null 2>&1 || true
 `, iface, foreignIP, iranIP, iranIP, foreignIP, iranIP, iranIP, localGre, iranIP, iranIP, localGre)
 
 	_, _ = s.execPrivileged(ctx, "bash", "-c", foreignSetupBash)
@@ -2887,7 +2964,7 @@ func buildTunnelPanelIranScript(iranIP, foreignIP, iranGreIP, foreignGreIP, port
 	iptablesStr := strings.Join(iptablesRules, "\n")
 	portsDisplay := strings.Join(portList, ", ")
 
-	return fmt.Sprintf(`bash -c 'set -e; echo "=== NOVA-X-PANEL NOVA-TUNELL Fast Setup ==="; sysctl -w net.ipv4.ip_forward=1 >/dev/null 2>&1 || true; sysctl -w net.ipv4.conf.all.rp_filter=2 >/dev/null 2>&1 || true; sysctl -w net.ipv4.conf.default.rp_filter=2 >/dev/null 2>&1 || true; sysctl -w net.ipv4.tcp_keepalive_time=30 >/dev/null 2>&1 || true; sysctl -w net.ipv4.tcp_keepalive_intvl=10 >/dev/null 2>&1 || true; sysctl -w net.ipv4.tcp_keepalive_probes=3 >/dev/null 2>&1 || true; echo "net.ipv4.ip_forward=1" > /etc/sysctl.d/99-nova-tunnel.conf 2>/dev/null || true; echo "net.ipv4.conf.all.rp_filter=2" >> /etc/sysctl.d/99-nova-tunnel.conf 2>/dev/null || true; echo "net.ipv4.tcp_keepalive_time=30" >> /etc/sysctl.d/99-nova-tunnel.conf 2>/dev/null || true; echo "net.ipv4.tcp_keepalive_intvl=10" >> /etc/sysctl.d/99-nova-tunnel.conf 2>/dev/null || true; echo "net.ipv4.tcp_keepalive_probes=3" >> /etc/sysctl.d/99-nova-tunnel.conf 2>/dev/null || true; modprobe fou 2>/dev/null || true; modprobe ip_gre 2>/dev/null || true; IFNAME="gre-b-1"; ip link del $IFNAME 2>/dev/null || true; ip fou del port 443 2>/dev/null || true; ip fou add port 443 ipproto 47 2>/dev/null || true; ip link add name $IFNAME type gretap local %s remote %s encap fou encap-sport 443 encap-dport 443 ttl 255 2>/dev/null || ip link add name $IFNAME type gretap remote %s encap fou encap-sport 443 encap-dport 443 ttl 255 2>/dev/null || ip link add name $IFNAME type gretap local %s remote %s ttl 255 tos inherit ikey 2749365187 okey 2749365187 nopmtudisc 2>/dev/null || ip link add name $IFNAME type gretap remote %s ttl 255 tos inherit ikey 2749365187 okey 2749365187 nopmtudisc; ip addr add %s/30 dev $IFNAME; ip link set dev $IFNAME mtu 1280; ip link set dev $IFNAME up; iptables -t mangle -C POSTROUTING -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || iptables -t mangle -A POSTROUTING -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || true; iptables -t mangle -C FORWARD -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || iptables -t mangle -A FORWARD -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || true; cat << UNIT_EOF > /etc/systemd/system/${IFNAME}.service
+	return fmt.Sprintf(`bash -c 'set -e; echo "=== NOVA-X-PANEL NOVA-TUNELL Fast Setup ==="; sysctl -w net.ipv4.ip_forward=1 >/dev/null 2>&1 || true; sysctl -w net.ipv4.conf.all.rp_filter=2 >/dev/null 2>&1 || true; sysctl -w net.ipv4.conf.default.rp_filter=2 >/dev/null 2>&1 || true; sysctl -w net.ipv4.tcp_keepalive_time=30 >/dev/null 2>&1 || true; sysctl -w net.ipv4.tcp_keepalive_intvl=10 >/dev/null 2>&1 || true; sysctl -w net.ipv4.tcp_keepalive_probes=3 >/dev/null 2>&1 || true; echo "net.ipv4.ip_forward=1" > /etc/sysctl.d/99-nova-tunnel.conf 2>/dev/null || true; echo "net.ipv4.conf.all.rp_filter=2" >> /etc/sysctl.d/99-nova-tunnel.conf 2>/dev/null || true; echo "net.ipv4.tcp_keepalive_time=30" >> /etc/sysctl.d/99-nova-tunnel.conf 2>/dev/null || true; echo "net.ipv4.tcp_keepalive_intvl=10" >> /etc/sysctl.d/99-nova-tunnel.conf 2>/dev/null || true; echo "net.ipv4.tcp_keepalive_probes=3" >> /etc/sysctl.d/99-nova-tunnel.conf 2>/dev/null || true; modprobe fou 2>/dev/null || true; modprobe ip_gre 2>/dev/null || true; IFNAME="gre-b-1"; ip link del $IFNAME 2>/dev/null || true; ip fou del port 8443 2>/dev/null || true; ip fou del port 443 2>/dev/null || true; ip fou add port 8443 ipproto 47 2>/dev/null || true; ip link add name $IFNAME type gretap local %s remote %s encap fou encap-sport 8443 encap-dport 8443 ttl 255 2>/dev/null || ip link add name $IFNAME type gretap remote %s encap fou encap-sport 8443 encap-dport 8443 ttl 255 2>/dev/null || ip link add name $IFNAME type gretap local %s remote %s ttl 255 tos inherit ikey 2749365187 okey 2749365187 nopmtudisc 2>/dev/null || ip link add name $IFNAME type gretap remote %s ttl 255 tos inherit ikey 2749365187 okey 2749365187 nopmtudisc; ip addr add %s/30 dev $IFNAME; ip link set dev $IFNAME mtu 1280; ip link set dev $IFNAME up; iptables -t mangle -C POSTROUTING -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || iptables -t mangle -A POSTROUTING -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || true; iptables -t mangle -C FORWARD -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || iptables -t mangle -A FORWARD -o $IFNAME -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240 2>/dev/null || true; cat << "UNIT_EOF" > /etc/systemd/system/${IFNAME}.service
 [Unit]
 Description=GRETAP Tunnel ${IFNAME} (NOVA-X-PANEL)
 After=network-online.target
@@ -2899,9 +2976,10 @@ RemainAfterExit=yes
 ExecStartPre=-/usr/sbin/modprobe fou
 ExecStartPre=-/usr/sbin/modprobe ip_gre
 ExecStartPre=-/usr/sbin/ip link del ${IFNAME}
+ExecStartPre=-/usr/sbin/ip fou del port 8443
 ExecStartPre=-/usr/sbin/ip fou del port 443
-ExecStartPre=-/usr/sbin/ip fou add port 443 ipproto 47
-ExecStart=/bin/bash -c "ip link add name ${IFNAME} type gretap remote %s encap fou encap-sport 443 encap-dport 443 ttl 255 2>/dev/null || ip link add name ${IFNAME} type gretap remote %s ttl 255 tos inherit ikey 2749365187 okey 2749365187 nopmtudisc"
+ExecStartPre=-/usr/sbin/ip fou add port 8443 ipproto 47
+ExecStart=/bin/bash -c "ip link add name ${IFNAME} type gretap remote %s encap fou encap-sport 8443 encap-dport 8443 ttl 255 2>/dev/null || ip link add name ${IFNAME} type gretap remote %s ttl 255 tos inherit ikey 2749365187 okey 2749365187 nopmtudisc"
 ExecStart=/usr/sbin/ip addr add %s/30 dev ${IFNAME}
 ExecStart=/usr/sbin/ip link set dev ${IFNAME} mtu 1280
 ExecStart=/usr/sbin/ip link set dev ${IFNAME} up
@@ -2909,6 +2987,7 @@ ExecStartPost=-/usr/sbin/iptables -t mangle -A POSTROUTING -o ${IFNAME} -p tcp -
 ExecStartPost=-/usr/sbin/iptables -t mangle -A FORWARD -o ${IFNAME} -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240
 ExecStop=-/usr/sbin/ip link set dev ${IFNAME} down
 ExecStop=-/usr/sbin/ip link del ${IFNAME}
+ExecStopPost=-/usr/sbin/ip fou del port 8443
 ExecStopPost=-/usr/sbin/ip fou del port 443
 ExecStopPost=-/usr/sbin/iptables -t mangle -D POSTROUTING -o ${IFNAME} -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240
 ExecStopPost=-/usr/sbin/iptables -t mangle -D FORWARD -o ${IFNAME} -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240

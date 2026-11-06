@@ -716,6 +716,47 @@ func (s *InboundService) normalizeStreamSettings(inbound *model.Inbound) {
 	}
 	inbound.StreamSettings = canonicalizeStreamNetworkKey(inbound.StreamSettings)
 	inbound.StreamSettings = canonicalizeLegacyXdnsMasks(inbound.StreamSettings)
+	inbound.StreamSettings = canonicalizeWebSocketALPN(inbound.StreamSettings)
+}
+
+// canonicalizeWebSocketALPN locks WebSocket+TLS inbounds to http/1.1 ALPN,
+// stripping h2 which causes HTTP/2 400 Bad Request in modern v2rayNG and Sing-box.
+func canonicalizeWebSocketALPN(streamSettings string) string {
+	if streamSettings == "" {
+		return streamSettings
+	}
+	var stream map[string]any
+	if err := json.Unmarshal([]byte(streamSettings), &stream); err != nil {
+		return streamSettings
+	}
+	net, _ := stream["network"].(string)
+	sec, _ := stream["security"].(string)
+	if (net == "ws" || net == "websocket") && sec == "tls" {
+		tls, _ := stream["tlsSettings"].(map[string]any)
+		if tls != nil {
+			rawAlpn, hasAlpn := tls["alpn"].([]any)
+			if hasAlpn && len(rawAlpn) > 0 {
+				var newAlpn []any
+				for _, a := range rawAlpn {
+					s, _ := a.(string)
+					if s != "h2" {
+						newAlpn = append(newAlpn, s)
+					}
+				}
+				if len(newAlpn) == 0 {
+					newAlpn = []any{"http/1.1"}
+				}
+				tls["alpn"] = newAlpn
+			} else {
+				tls["alpn"] = []any{"http/1.1"}
+			}
+			stream["tlsSettings"] = tls
+			if out, err := json.Marshal(stream); err == nil {
+				return string(out)
+			}
+		}
+	}
+	return streamSettings
 }
 
 // canonicalizeLegacyXdnsMasks stores an xdns mask posted in a pre-26.10.10 shape in

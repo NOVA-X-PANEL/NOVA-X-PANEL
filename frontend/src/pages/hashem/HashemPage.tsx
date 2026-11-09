@@ -175,8 +175,8 @@ export default function HashemPage() {
       if (cmd) {
         setTeardownCmd(cmd);
         setTeardownDetails({
-          foreignIp: res?.obj?.foreignIp || status.localPubIP,
-          iranIp: res?.obj?.iranIp || status.remotePubIP,
+          foreignIp: res?.obj?.foreignIp || status.localPubIp,
+          iranIp: res?.obj?.iranIp || status.remotePubIp,
           ports: res?.obj?.ports || status.ports,
         });
         setTeardownModalOpen(true);
@@ -194,8 +194,8 @@ export default function HashemPage() {
       if (cmd) {
         setTeardownCmd(cmd);
         setTeardownDetails({
-          foreignIp: res?.obj?.foreignIp || status.localPubIP,
-          iranIp: res?.obj?.iranIp || status.remotePubIP,
+          foreignIp: res?.obj?.foreignIp || status.localPubIp,
+          iranIp: res?.obj?.iranIp || status.remotePubIp,
           ports: res?.obj?.ports || status.ports,
         });
         setTeardownModalOpen(true);

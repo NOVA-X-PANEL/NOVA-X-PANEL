@@ -719,8 +719,8 @@ func (s *InboundService) normalizeStreamSettings(inbound *model.Inbound) {
 	inbound.StreamSettings = canonicalizeWebSocketALPN(inbound.StreamSettings)
 }
 
-// canonicalizeWebSocketALPN locks WebSocket+TLS inbounds to http/1.1 ALPN,
-// stripping h2 which causes HTTP/2 400 Bad Request in modern v2rayNG and Sing-box.
+// canonicalizeWebSocketALPN ensures WebSocket+TLS inbounds have a default ALPN of http/1.1
+// when none is specified, while allowing explicit user configurations (including h2).
 func canonicalizeWebSocketALPN(streamSettings string) string {
 	if streamSettings == "" {
 		return streamSettings
@@ -735,24 +735,12 @@ func canonicalizeWebSocketALPN(streamSettings string) string {
 		tls, _ := stream["tlsSettings"].(map[string]any)
 		if tls != nil {
 			rawAlpn, hasAlpn := tls["alpn"].([]any)
-			if hasAlpn && len(rawAlpn) > 0 {
-				var newAlpn []any
-				for _, a := range rawAlpn {
-					s, _ := a.(string)
-					if s != "h2" {
-						newAlpn = append(newAlpn, s)
-					}
-				}
-				if len(newAlpn) == 0 {
-					newAlpn = []any{"http/1.1"}
-				}
-				tls["alpn"] = newAlpn
-			} else {
+			if !hasAlpn || len(rawAlpn) == 0 {
 				tls["alpn"] = []any{"http/1.1"}
-			}
-			stream["tlsSettings"] = tls
-			if out, err := json.Marshal(stream); err == nil {
-				return string(out)
+				stream["tlsSettings"] = tls
+				if out, err := json.Marshal(stream); err == nil {
+					return string(out)
+				}
 			}
 		}
 	}

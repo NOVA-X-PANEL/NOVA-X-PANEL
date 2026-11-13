@@ -1175,7 +1175,6 @@ for c in /etc/openvpn/server/server.conf /etc/openvpn/server.conf; do
         if ! grep -q "tun-mtu" "$c"; then
             echo "tun-mtu 1400" >> "$c"
             echo "mssfix 1240" >> "$c"
-            echo 'push "tun-mtu 1400"' >> "$c"
             echo 'push "mssfix 1240"' >> "$c"
             echo "sndbuf 524288" >> "$c"
             echo "rcvbuf 524288" >> "$c"
@@ -2240,7 +2239,6 @@ sndbuf 524288
 rcvbuf 524288
 push "sndbuf 524288"
 push "rcvbuf 524288"
-push "tun-mtu 1400"
 push "mssfix 1240"
 tcp-nodelay
 

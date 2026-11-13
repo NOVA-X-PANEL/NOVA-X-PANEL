@@ -420,14 +420,17 @@
   cursor: default;
 }
 
-/* Table Fit without horizontal scroll */
+/* Table Fit with smooth horizontal scroll for smaller monitors and laptops */
 .inbound-list-card .ant-table-wrapper,
 .inbound-list-card .ant-table-container,
 .inbound-list-card .ant-table-content {
-  overflow-x: hidden !important;
+  overflow-x: auto !important;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(34, 211, 238, 0.25) transparent;
+  -webkit-overflow-scrolling: touch;
 }
 
 .inbound-list-card .ant-table table {
-  width: 100% !important;
+  min-width: 100% !important;
   table-layout: auto !important;
 }

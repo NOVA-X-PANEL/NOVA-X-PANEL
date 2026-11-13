@@ -803,6 +803,39 @@
   }
 }
 
+@media (max-width: 768px) {
+  .nx-hero {
+    display: none !important;
+  }
+
+  .nova-login {
+    grid-template-columns: 1fr !important;
+    min-height: 100dvh !important;
+  }
+
+  .nx-auth {
+    min-height: 100dvh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    padding: 24px 16px !important;
+  }
+
+  .nx-card {
+    padding: 24px 18px 20px !important;
+    width: 100% !important;
+    max-width: 440px !important;
+    margin: auto !important;
+  }
+
+  .nx-form__meta {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+}
+
 @media (max-width: 640px) {
   .nx-hero {
     padding: 28px 20px 0;

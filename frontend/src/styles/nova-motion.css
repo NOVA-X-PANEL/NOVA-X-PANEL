@@ -1,0 +1,212 @@
+/* ==========================================================================
+   NOVA-X-PANEL — Motion, Fluid Transitions & Responsive Harmony
+   ========================================================================== */
+
+/* ---- 1. MacBook-Style Fluid Tab Transitions ----------------------------- */
+
+@keyframes macTabFadeSlide {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0) scale(0.992);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+.ant-tabs-tabpane-active {
+  animation: macTabFadeSlide 0.28s cubic-bezier(0.16, 1, 0.3, 1) both !important;
+  will-change: transform, opacity;
+}
+
+/* MacBook / macOS Tactile Capsule Tabs */
+.ant-tabs-nav .ant-tabs-tab {
+  border-radius: 8px !important;
+  transition: all 0.24s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.ant-tabs-nav .ant-tabs-tab:hover {
+  background: rgba(34, 211, 238, 0.08) !important;
+  transform: translate3d(0, -1px, 0);
+}
+
+.ant-tabs-nav .ant-tabs-tab.ant-tabs-tab-active {
+  background: rgba(34, 211, 238, 0.12) !important;
+}
+
+.ant-tabs-nav .ant-tabs-ink-bar {
+  height: 3px !important;
+  border-radius: 4px !important;
+  transition: all 0.32s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  background: linear-gradient(90deg, #22d3ee, #818cf8, #c084fc) !important;
+  box-shadow:
+    0 0 12px rgba(34, 211, 238, 0.65),
+    0 0 22px rgba(129, 140, 248, 0.4) !important;
+}
+
+/* ---- 2. Page & Card Fluid Transitions ----------------------------------- */
+
+@keyframes macPageEntrance {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0) scale(0.996);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+.content-area {
+  animation: macPageEntrance 0.26s cubic-bezier(0.16, 1, 0.3, 1) both !important;
+  will-change: transform, opacity;
+}
+
+/* Modal Spring Elevation */
+@keyframes macModalEntrance {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 28px, 0) scale(0.97);
+  }
+  60% {
+    opacity: 1;
+    transform: translate3d(0, -2px, 0) scale(1.002);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+.ant-modal .ant-modal-content {
+  animation: macModalEntrance 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
+}
+
+/* ---- 3. Multi-Monitor Responsive Harmony (1366x768 to 4K) --------------- */
+
+/* Table Scroll Container: Prevent forced clipping on narrower desktop monitors */
+.ant-table-wrapper,
+.ant-table-container,
+.ant-table-content {
+  overflow-x: auto !important;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(34, 211, 238, 0.25) transparent;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Ensure action toolbars never overflow or break */
+.card-toolbar,
+.inb-hud-banner,
+.header-row {
+  min-width: 0;
+}
+
+@media (max-width: 1280px) {
+  .inb-hud-banner {
+    flex-wrap: wrap;
+    gap: 14px;
+    padding: 16px 20px;
+  }
+
+  .inb-hud-left {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .inb-hud-right {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 1024px) {
+  .inb-hud-banner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .inb-hud-left {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .inb-hud-right {
+    justify-content: flex-start;
+  }
+}
+
+/* ---- 4. Mobile Screen Polish (<= 768px) ---------------------------------- */
+
+@media (max-width: 768px) {
+  /* Modals: fit viewport cleanly as a sleek mobile sheet */
+  .ant-modal {
+    width: 95vw !important;
+    max-width: 95vw !important;
+    margin: 8px auto !important;
+    top: 8px !important;
+    padding-bottom: 8px;
+  }
+
+  .ant-modal .ant-modal-content {
+    border-radius: 16px !important;
+    padding: 16px 14px !important;
+  }
+
+  .ant-modal .ant-modal-body {
+    max-height: calc(100dvh - 140px) !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  /* Compact button actions on mobile */
+  .ant-btn {
+    border-radius: 8px !important;
+  }
+
+  /* Table cards on mobile */
+  .ant-card {
+    border-radius: 14px !important;
+  }
+
+  /* Prevent horizontal screen sway */
+  body, #root, .ant-layout {
+    overflow-x: hidden !important;
+  }
+}
+
+/* ---- 5. Neon Scrollbars -------------------------------------------------- */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(10, 15, 26, 0.4);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(34, 211, 238, 0.25);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(34, 211, 238, 0.5);
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.4);
+}
+
+/* Accessibility: respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .ant-tabs-tabpane-active,
+  .content-area,
+  .ant-modal .ant-modal-content {
+    animation: none !important;
+    will-change: auto !important;
+  }
+}

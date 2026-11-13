@@ -1,3 +1,7 @@
+/* ==========================================================================
+   NOVA-X-PANEL — Client Form Modal (Waterfall Animation & Responsive Layout)
+   ========================================================================== */
+
 /* The body is capped at the viewport and scrolls; a trailing item margin
    alone must not push it past the cap and summon a scrollbar. */
 .client-form-modal .ant-tabs-content > .ant-form-item:last-child {
@@ -10,4 +14,145 @@
   color: var(--nc-text-2, rgba(255, 255, 255, 0.72));
   font-size: 13px;
   line-height: 1.6;
+}
+
+/* ---- 1. MacBook-style Spring Entrance for Modal Window ------------------ */
+
+@keyframes macModalSpringUp {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 34px, 0) scale(0.96);
+  }
+  60% {
+    opacity: 1;
+    transform: translate3d(0, -3px, 0) scale(1.003);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes waterfallCascade {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.client-form-modal.ant-modal {
+  max-width: calc(100vw - 24px);
+  margin: 0 auto;
+}
+
+.client-form-modal .ant-modal-content {
+  animation: macModalSpringUp 0.36s cubic-bezier(0.16, 1, 0.3, 1) both !important;
+  transform-origin: center bottom;
+  will-change: transform, opacity;
+  border-radius: 18px !important;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(34, 211, 238, 0.15) !important;
+}
+
+/* ---- 2. Staggered Waterfall Entrance on Form Sections ------------------- */
+
+.client-form-modal .ant-modal-header {
+  animation: waterfallCascade 0.32s cubic-bezier(0.16, 1, 0.3, 1) 0.04s both;
+  will-change: transform, opacity;
+}
+
+.client-form-modal .ant-tabs-nav {
+  animation: waterfallCascade 0.32s cubic-bezier(0.16, 1, 0.3, 1) 0.08s both;
+  will-change: transform, opacity;
+}
+
+/* Cascading rows inside tabs */
+.client-form-modal .ant-tabs-content .ant-row > div:nth-child(1),
+.client-form-modal .ant-tabs-content .ant-row > div:nth-child(2) {
+  animation: waterfallCascade 0.32s cubic-bezier(0.16, 1, 0.3, 1) 0.12s both;
+  will-change: transform, opacity;
+}
+
+.client-form-modal .ant-tabs-content .ant-row > div:nth-child(3),
+.client-form-modal .ant-tabs-content .ant-row > div:nth-child(4) {
+  animation: waterfallCascade 0.32s cubic-bezier(0.16, 1, 0.3, 1) 0.16s both;
+  will-change: transform, opacity;
+}
+
+.client-form-modal .ant-tabs-content .ant-row > div:nth-child(5),
+.client-form-modal .ant-tabs-content .ant-row > div:nth-child(6) {
+  animation: waterfallCascade 0.32s cubic-bezier(0.16, 1, 0.3, 1) 0.20s both;
+  will-change: transform, opacity;
+}
+
+.client-form-modal .ant-tabs-content .ant-row > div:nth-child(n+7) {
+  animation: waterfallCascade 0.32s cubic-bezier(0.16, 1, 0.3, 1) 0.24s both;
+  will-change: transform, opacity;
+}
+
+.client-form-modal .ant-modal-footer {
+  animation: waterfallCascade 0.32s cubic-bezier(0.16, 1, 0.3, 1) 0.28s both;
+  will-change: transform, opacity;
+  padding-top: 14px;
+}
+
+/* ---- 3. Responsive Styling for Mobile & All Monitor Sizes ---------------- */
+
+@media (max-width: 768px) {
+  .client-form-modal.ant-modal {
+    width: 95vw !important;
+    max-width: 95vw !important;
+    top: 12px !important;
+    margin: 0 auto !important;
+    padding-bottom: 12px;
+  }
+
+  .client-form-modal .ant-modal-content {
+    border-radius: 16px !important;
+    padding: 16px 14px !important;
+  }
+
+  .client-form-modal .ant-modal-header {
+    margin-bottom: 12px !important;
+  }
+
+  .client-form-modal .ant-modal-title {
+    font-size: 17px !important;
+  }
+
+  .client-form-modal .ant-modal-body {
+    max-height: calc(100dvh - 150px) !important;
+    padding: 2px 4px !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .client-form-modal .ant-modal-footer {
+    padding-top: 10px !important;
+  }
+
+  .client-form-modal .ant-modal-footer > div {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .client-form-modal .ant-modal-footer .ant-btn {
+    flex: 1 1 45%;
+    min-height: 40px !important;
+    font-size: 14px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .client-form-modal .ant-modal-content,
+  .client-form-modal .ant-modal-header,
+  .client-form-modal .ant-tabs-nav,
+  .client-form-modal .ant-tabs-content .ant-row > div,
+  .client-form-modal .ant-modal-footer {
+    animation: none !important;
+    will-change: auto !important;
+  }
 }

@@ -9,7 +9,6 @@ import (
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
-	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/entity"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/session"
@@ -480,7 +479,7 @@ func (a *ClientController) create(c *gin.Context) {
 			if payload.Client.Password != "" {
 				ovpnPassword = payload.Client.Password
 			} else {
-				ovpnPassword = common.RandomLetterAndNum(8)
+				ovpnPassword = service.RandomOpenVPNSubId()[:8]
 			}
 		}
 		ovpnName := service.SanitizeOpenVPNClientName(payload.Client.Email, subId)

@@ -838,6 +838,49 @@ def count_live_sessions_mgmt(target_cn, exclude_real_port=None):
         log_debug(f"MGMT query error: {e}")
         return -1
 
+def kill_older_sessions_mgmt(target_cn, exclude_real_port=None):
+    """Evict older/stale session for single-device accounts on reconnect."""
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(1.5)
+        s.connect((MGMT_HOST, MGMT_PORT))
+        _ = s.recv(512)
+        s.sendall(b"status 2\n")
+        data = b""
+        while True:
+            chunk = s.recv(4096)
+            if not chunk:
+                break
+            data += chunk
+            if b"END\r\n" in data or b"END\n" in data:
+                break
+        target = target_cn.lower().strip()
+        lines = data.decode("utf-8", errors="ignore").splitlines()
+        for line in lines:
+            if line.startswith("CLIENT_LIST,"):
+                parts = line.split(",")
+                if len(parts) >= 3:
+                    cn = parts[1].strip().lower()
+                    uname = parts[9].strip().lower() if len(parts) >= 10 else ""
+                    real_addr = parts[2].strip()
+                    port = real_addr.split(":")[-1] if ":" in real_addr else ""
+                    if exclude_real_port and port == exclude_real_port:
+                        continue
+                    if cn == target or (uname and uname == target):
+                        client_id = parts[10].strip() if len(parts) >= 11 else ""
+                        if client_id:
+                            s.sendall(f"client-kill {client_id}\n".encode())
+                        else:
+                            s.sendall(f"kill {real_addr}\n".encode())
+                        _ = s.recv(256)
+        try:
+            s.sendall(b"quit\n")
+        except Exception:
+            pass
+        s.close()
+    except Exception as e:
+        log_debug(f"MGMT kill error: {e}")
+
 class DB:
     def __init__(self):
         self.backend, self.conn = self._connect()
@@ -1043,9 +1086,13 @@ def main():
                 log_debug(f"[LIMIT-CHECK] cn={cn}, active={active_count}, limit={limit_ip_val}, incoming={t_ip}:{t_port}")
 
                 if active_count >= limit_ip_val:
-                    db.close()
-                    log_debug(f"[REJECT-CONNECT] cn={cn} DEVICE LIMIT REACHED! active={active_count} >= limit={limit_ip_val}")
-                    sys.exit(1)
+                    if limit_ip_val == 1:
+                        log_debug(f"[LIMIT-KILL-OLD] cn={cn} evicting previous session for single-device user")
+                        kill_older_sessions_mgmt(cn, exclude_real_port=t_port)
+                    else:
+                        db.close()
+                        log_debug(f"[REJECT-CONNECT] cn={cn} DEVICE LIMIT REACHED! active={active_count} >= limit={limit_ip_val}")
+                        sys.exit(1)
 
             if t_port:
                 if db.backend == "postgres":
@@ -1122,8 +1169,46 @@ fi
 mkdir -p /etc/openvpn/ccd
 mkdir -p /usr/local/x-ui/bin
 restart_needed=0
+
+# Ensure tls-crypt key exists
+if [ ! -f /etc/openvpn/server/tc.key ]; then
+    openvpn --genkey secret /etc/openvpn/server/tc.key 2>/dev/null || true
+    chmod 600 /etc/openvpn/server/tc.key 2>/dev/null || true
+fi
+
 for c in /etc/openvpn/server/server.conf /etc/openvpn/server.conf; do
     if [ -f "$c" ]; then
+        if [ -f /etc/openvpn/server/tc.key ] && ! grep -q "tls-crypt" "$c"; then
+            echo "tls-crypt /etc/openvpn/server/tc.key" >> "$c"
+            restart_needed=1
+        fi
+        if ! grep -q "tun-mtu" "$c"; then
+            echo "tun-mtu 1400" >> "$c"
+            restart_needed=1
+        fi
+        if ! grep -q "mssfix" "$c"; then
+            echo "mssfix 1240" >> "$c"
+            restart_needed=1
+        fi
+        if ! grep -q "tcp-nodelay" "$c"; then
+            echo "tcp-nodelay" >> "$c"
+            restart_needed=1
+        fi
+        if ! grep -q "sndbuf" "$c"; then
+            echo "sndbuf 524288" >> "$c"
+            echo "rcvbuf 524288" >> "$c"
+            echo 'push "sndbuf 524288"' >> "$c"
+            echo 'push "rcvbuf 524288"' >> "$c"
+            restart_needed=1
+        fi
+        if grep -q 'push "mssfix' "$c"; then
+            sed -i '/push "mssfix/d' "$c"
+            restart_needed=1
+        fi
+        if grep -q 'keepalive 10 60' "$c"; then
+            sed -i 's/keepalive 10 60/keepalive 10 30/' "$c"
+            restart_needed=1
+        fi
         if ! grep -q "duplicate-cn" "$c"; then
             echo "duplicate-cn" >> "$c"
             restart_needed=1
@@ -1911,6 +1996,15 @@ func (s *OpenVPNService) GetClientConfig(name string, remoteIP string, remotePor
 		proto = "tcp"
 	}
 
+	// Read optional tls-crypt key to obfuscate DPI handshakes
+	tlsCryptBlock := ""
+	for _, tcPath := range []string{"/etc/openvpn/server/tc.key", "/etc/openvpn/tc.key"} {
+		if tcData, err := os.ReadFile(tcPath); err == nil && len(tcData) > 0 {
+			tlsCryptBlock = fmt.Sprintf("\n<tls-crypt>\n%s\n</tls-crypt>", strings.TrimSpace(string(tcData)))
+			break
+		}
+	}
+
 	ovpn := fmt.Sprintf(`client
 dev tun
 proto %s
@@ -1920,6 +2014,13 @@ nobind
 persist-key
 persist-tun
 ;remote-cert-tls server
+tun-mtu 1400
+mssfix 1240
+tcp-nodelay
+sndbuf 524288
+rcvbuf 524288
+auth-nocache
+block-outside-dns
 data-ciphers AES-256-GCM:AES-128-GCM:CHACHA20-POLY1305
 data-ciphers-fallback AES-256-GCM
 cipher AES-256-GCM
@@ -1934,8 +2035,8 @@ verb 3
 </cert>
 <key>
 %s
-</key>
-`, proto, remoteIP, remotePort, authPassBlock, strings.TrimSpace(string(caData)), strings.TrimSpace(cleanCert), strings.TrimSpace(string(keyData)))
+</key>%s
+`, proto, remoteIP, remotePort, authPassBlock, strings.TrimSpace(string(caData)), strings.TrimSpace(cleanCert), strings.TrimSpace(string(keyData)), tlsCryptBlock)
 
 	return ovpn, nil
 }
@@ -2136,6 +2237,12 @@ cp -f /etc/openvpn/server/ca.key /etc/openvpn/easy-rsa/pki/private/ca.key 2>/dev
 cp -f /etc/openvpn/server/server.crt /etc/openvpn/easy-rsa/pki/issued/server.crt 2>/dev/null || true
 cp -f /etc/openvpn/server/server.key /etc/openvpn/easy-rsa/pki/private/server.key 2>/dev/null || true
 
+# Ensure tls-crypt key exists
+if [ ! -f /etc/openvpn/server/tc.key ]; then
+    openvpn --genkey secret /etc/openvpn/server/tc.key 2>/dev/null || true
+    chmod 600 /etc/openvpn/server/tc.key 2>/dev/null || true
+fi
+
 # 5. Write server.conf
 cat << 'EOF_CONF' > /etc/openvpn/server/server.conf
 port %d
@@ -2147,6 +2254,7 @@ ca /etc/openvpn/server/ca.crt
 cert /etc/openvpn/server/server.crt
 key /etc/openvpn/server/server.key
 dh none
+tls-crypt /etc/openvpn/server/tc.key
 
 server 10.8.0.0 255.255.255.0
 ifconfig-pool-persist /etc/openvpn/server/ipp.txt
@@ -2155,10 +2263,18 @@ push "redirect-gateway def1 bypass-dhcp"
 %spush "dhcp-option DNS 1.1.1.1"
 push "dhcp-option DNS 8.8.8.8"
 
-keepalive 10 60
+keepalive 10 30
 data-ciphers AES-256-GCM:AES-128-GCM:AES-256-CBC:AES-128-CBC
 cipher AES-256-GCM
 auth SHA256
+
+tun-mtu 1400
+mssfix 1240
+tcp-nodelay
+sndbuf 524288
+rcvbuf 524288
+push "sndbuf 524288"
+push "rcvbuf 524288"
 
 persist-key
 persist-tun

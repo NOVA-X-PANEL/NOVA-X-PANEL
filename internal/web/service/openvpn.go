@@ -1787,7 +1787,7 @@ func (s *OpenVPNService) AddClientWithSub(name string, password string, totalGB 
 		if email != "" {
 			existing.Email = email
 		}
-		_ = s.ensureCCD(existing.Name, totalGB, expiryTime, limitIP, true)
+		_ = setClientBlocked(existing.Name, false)
 		return db.Save(&existing).Error
 	}
 
@@ -1823,7 +1823,7 @@ func (s *OpenVPNService) AddClientWithSub(name string, password string, totalGB 
 		defer cancel()
 
 		cmd := fmt.Sprintf("cd %s && ./easyrsa --batch build-client-full %s nopass", defaultEasyRsaDir, name)
-		out, err := s.execPrivilegedBash(ctx, cmd)
+		_, err := s.execPrivilegedBash(ctx, cmd)
 		if err != nil || func() bool { _, e := os.Stat(crtFile); return e != nil }() {
 			opensslCmd := fmt.Sprintf(`
 mkdir -p /etc/openvpn/easy-rsa/pki/reqs /etc/openvpn/easy-rsa/pki/issued /etc/openvpn/easy-rsa/pki/private /etc/openvpn/easy-rsa/pki/inline
@@ -1870,7 +1870,7 @@ rm -f /tmp/%s.csr /tmp/%s.ext
 		return fmt.Errorf("failed to save openvpn user to database: %w", err)
 	}
 
-	_ = s.ensureCCD(name, totalGB, expiryTime, limitIP, true)
+	_ = setClientBlocked(name, false)
 	return nil
 }
 

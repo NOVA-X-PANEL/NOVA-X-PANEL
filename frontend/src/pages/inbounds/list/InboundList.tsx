@@ -64,6 +64,10 @@ export default function InboundList({
   onGeneralAction,
   onRowAction,
   onBulkDelete,
+  canEdit = true,
+  canCreate = true,
+  canDelete = true,
+  canResetUsage = true,
 }: InboundListProps) {
   const { t } = useTranslation();
   const [statsRecord, setStatsRecord] = useState<DBInboundRecord | null>(null);
@@ -177,6 +181,10 @@ export default function InboundList({
     subEnable,
     expireDiff,
     trafficDiff,
+    canEdit,
+    canDelete,
+    canClone: canCreate,
+    canResetUsage,
     onRowAction,
     onSwitchEnable,
   });
@@ -188,7 +196,9 @@ export default function InboundList({
 
   const generalActionsMenu: MenuProps = {
     items: [
-      { key: 'import', icon: <ImportOutlined />, label: t('pages.inbounds.importInbound') },
+      ...(canCreate
+        ? [{ key: 'import', icon: <ImportOutlined />, label: t('pages.inbounds.importInbound') }]
+        : []),
       { key: 'export', icon: <ExportOutlined />, label: t('pages.inbounds.export') },
       ...(subEnable
         ? [
@@ -199,11 +209,15 @@ export default function InboundList({
             },
           ]
         : []),
-      {
-        key: 'resetInbounds',
-        icon: <ReloadOutlined />,
-        label: t('pages.inbounds.resetAllTraffic'),
-      },
+      ...(canResetUsage
+        ? [
+            {
+              key: 'resetInbounds',
+              icon: <ReloadOutlined />,
+              label: t('pages.inbounds.resetAllTraffic'),
+            },
+          ]
+        : []),
     ],
     onClick: ({ key }) => onGeneralAction(key as GeneralAction),
   };
@@ -213,14 +227,26 @@ export default function InboundList({
       hoverable
       title={
         <Space>
-          <Button
-            type="primary"
-            onClick={onAddInbound}
-            icon={<PlusOutlined />}
-            aria-label={t('pages.inbounds.addInbound')}
-          >
-            {!isMobile && t('pages.inbounds.addInbound')}
-          </Button>
+          {canCreate && (
+            <Button
+              type="primary"
+              onClick={onAddInbound}
+              icon={<PlusOutlined />}
+              aria-label={t('pages.inbounds.addInbound')}
+            >
+              {!isMobile && t('pages.inbounds.addInbound')}
+            </Button>
+          )}
+          {canDelete && selectedRowKeys.length > 0 && (
+            <Button
+              type="primary"
+              danger
+              onClick={handleBulkDelete}
+              icon={<DeleteOutlined />}
+            >
+              {t('pages.inbounds.bulkDelete')} ({selectedRowKeys.length})
+            </Button>
+          )}
           <Dropdown trigger={['click']} menu={generalActionsMenu}>
             <Button
               type="primary"
@@ -324,6 +350,7 @@ export default function InboundList({
                         <Switch
                           checked={record.enable}
                           size="small"
+                          disabled={!canEdit}
                           onChange={(next) => onSwitchEnable(record, next)}
                         />
                         <Dropdown
@@ -336,6 +363,10 @@ export default function InboundList({
                               t,
                               isMobile: true,
                               hasClients: (clientCount[record.id]?.clients || 0) > 0,
+                              canEdit,
+                              canDelete,
+                              canClone: canCreate,
+                              canResetUsage,
                             }),
                             onClick: ({ key }) =>
                               onRowAction({ key: key as RowAction, dbInbound: record }),
@@ -361,10 +392,14 @@ export default function InboundList({
             columns={columns}
             dataSource={visibleInbounds}
             rowKey={(r) => r.id}
-            rowSelection={{
-              selectedRowKeys,
-              onChange: (keys: Key[]) => setSelectedRowKeys(keys as number[]),
-            }}
+            rowSelection={
+              canDelete
+                ? {
+                    selectedRowKeys,
+                    onChange: (keys: Key[]) => setSelectedRowKeys(keys as number[]),
+                  }
+                : undefined
+            }
             pagination={paginationFor(visibleInbounds)}
             scroll={undefined}
             style={{ marginTop: 10 }}

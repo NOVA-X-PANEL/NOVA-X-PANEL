@@ -22,6 +22,8 @@ import { useNodesQuery } from '@/api/queries/useNodesQuery';
 import { useHostsQuery } from '@/api/queries/useHostsQuery';
 import { withHostEndpoints } from '@/lib/hosts/host-link';
 import AppSidebar from '@/layouts/AppSidebar';
+import { useAdmin } from '@/pg-ui/hooks/use-admin';
+import { isOwner, hasPermission } from '@/pg-ui/utils/rbac';
 const TextModal = lazy(() => import('@/components/feedback/TextModal'));
 import type { TextModalTab } from '@/components/feedback/TextModal';
 const PromptModal = lazy(() => import('@/components/feedback/PromptModal'));
@@ -92,6 +94,13 @@ export default function InboundsPage() {
   useEffect(() => {
     setMessageInstance(messageApi);
   }, [messageApi]);
+
+  const { admin } = useAdmin();
+  const isOwnerAdmin = isOwner(admin);
+  const canEdit = isOwnerAdmin || hasPermission(admin, 'inbounds', 'update');
+  const canCreate = isOwnerAdmin || hasPermission(admin, 'inbounds', 'create');
+  const canDelete = isOwnerAdmin || hasPermission(admin, 'inbounds', 'delete');
+  const canResetUsage = isOwnerAdmin || hasPermission(admin, 'inbounds', 'reset_usage');
 
   const { nodes: nodesList, fetched: nodesFetched } = useNodesQuery();
   // MTProto share links are generated from this list, so an empty one must mean
@@ -446,19 +455,22 @@ export default function InboundsPage() {
   }, [openPrompt, refresh, t]);
 
   const onAddInbound = useCallback(() => {
+    if (!canCreate) return;
     setFormMode('add');
     setFormDbInbound(null);
     setFormOpen(true);
-  }, []);
+  }, [canCreate]);
 
   const openEdit = useCallback((dbInbound: DBInbound) => {
+    if (!canEdit) return;
     setFormMode('edit');
     setFormDbInbound(dbInbound);
     setFormOpen(true);
-  }, []);
+  }, [canEdit]);
 
   const confirmDelete = useCallback(
     (dbInbound: DBInbound) => {
+      if (!canDelete) return;
       modal.confirm({
         title: t('pages.inbounds.deleteConfirmTitle', { remark: dbInbound.remark }),
         content: t('pages.inbounds.deleteConfirmContent'),
@@ -471,13 +483,13 @@ export default function InboundsPage() {
         },
       });
     },
-    [modal, refresh, t],
+    [canDelete, modal, refresh, t],
   );
 
   const confirmBulkDelete = useCallback(
     (ids: number[]) =>
       new Promise<boolean>((resolve) => {
-        if (ids.length === 0) {
+        if (ids.length === 0 || !canDelete) {
           resolve(false);
           return;
         }
@@ -515,11 +527,12 @@ export default function InboundsPage() {
           onCancel: () => resolve(false),
         });
       }),
-    [modal, refresh, t, messageApi],
+    [canDelete, modal, refresh, t, messageApi],
   );
 
   const confirmResetTraffic = useCallback(
     (dbInbound: DBInbound) => {
+      if (!canResetUsage) return;
       modal.confirm({
         title: t('pages.inbounds.resetConfirmTitle', { remark: dbInbound.remark }),
         content: t('pages.inbounds.resetConfirmContent'),
@@ -531,11 +544,12 @@ export default function InboundsPage() {
         },
       });
     },
-    [modal, refresh, t],
+    [canResetUsage, modal, refresh, t],
   );
 
   const confirmDelAllClients = useCallback(
     (dbInbound: DBInbound) => {
+      if (!canDelete) return;
       const count = clientCount[dbInbound.id]?.clients || 0;
       modal.confirm({
         title: t('pages.inbounds.delAllClientsConfirmTitle', { remark: dbInbound.remark, count }),
@@ -549,11 +563,12 @@ export default function InboundsPage() {
         },
       });
     },
-    [modal, refresh, t, clientCount],
+    [canDelete, modal, refresh, t, clientCount],
   );
 
   const confirmClone = useCallback(
     (dbInbound: DBInbound) => {
+      if (!canCreate) return;
       // Node-eligible protocol with at least one deployable node → open the
       // target picker; anything else keeps the original one-click local clone.
       if (
@@ -578,14 +593,14 @@ export default function InboundsPage() {
         },
       });
     },
-    [modal, nodesList, refresh, t],
+    [canCreate, modal, nodesList, refresh, t],
   );
 
   const onGeneralAction = useCallback(
     (key: GeneralAction) => {
       switch (key) {
         case 'import':
-          importInbound();
+          if (canCreate) importInbound();
           break;
         case 'export':
           exportAllLinks();
@@ -594,6 +609,7 @@ export default function InboundsPage() {
           exportAllSubs();
           break;
         case 'resetInbounds':
+          if (!canResetUsage) return;
           modal.confirm({
             title: t('pages.inbounds.resetAllTrafficTitle'),
             okText: t('reset'),
@@ -608,7 +624,7 @@ export default function InboundsPage() {
           messageApi.info(`General action "${key}" — coming in a later 5f subphase`);
       }
     },
-    [modal, importInbound, exportAllLinks, exportAllSubs, refresh, messageApi, t],
+    [canCreate, canResetUsage, modal, importInbound, exportAllLinks, exportAllSubs, refresh, messageApi, t],
   );
 
   const totalClients = useMemo(
@@ -618,6 +634,20 @@ export default function InboundsPage() {
 
   const onRowAction = useCallback(
     async ({ key, dbInbound }: { key: RowAction; dbInbound: DBInbound }) => {
+      if (key === 'edit' && !canEdit) return;
+      if (key === 'clone' && !canCreate) return;
+      if (key === 'delete' && !canDelete) return;
+      if (key === 'delAllClients' && !canDelete) return;
+      if (key === 'resetTraffic' && !canResetUsage) return;
+      if (
+        (key === 'attachClients' ||
+          key === 'attachExisting' ||
+          key === 'detachClients' ||
+          key === 'addToGroup') &&
+        !canEdit
+      )
+        return;
+
       // Actions that touch per-client secrets (uuid, password, flow, ...) need
       // the full payload that the slim list view does not ship. Hydrate first
       // and then operate on the rehydrated record.
@@ -699,6 +729,10 @@ export default function InboundsPage() {
       confirmDelAllClients,
       confirmClone,
       messageApi,
+      canEdit,
+      canCreate,
+      canDelete,
+      canResetUsage,
     ],
   );
 
@@ -768,6 +802,10 @@ export default function InboundsPage() {
                         onRowAction({ key, dbInbound: dbInbound as unknown as DBInbound })
                       }
                       onBulkDelete={confirmBulkDelete}
+                      canEdit={canEdit}
+                      canCreate={canCreate}
+                      canDelete={canDelete}
+                      canResetUsage={canResetUsage}
                     />
                   </div>
 

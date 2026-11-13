@@ -83,4 +83,8 @@ export interface InboundListProps {
   onGeneralAction: (key: GeneralAction) => void;
   onRowAction: (action: { key: RowAction; dbInbound: DBInboundRecord }) => void;
   onBulkDelete: (ids: number[]) => Promise<boolean>;
+  canEdit?: boolean;
+  canCreate?: boolean;
+  canDelete?: boolean;
+  canResetUsage?: boolean;
 }

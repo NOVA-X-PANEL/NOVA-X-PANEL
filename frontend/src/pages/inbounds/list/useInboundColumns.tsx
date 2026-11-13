@@ -38,6 +38,10 @@ interface UseInboundColumnsParams {
   subEnable: boolean;
   expireDiff: number;
   trafficDiff: number;
+  canEdit?: boolean;
+  canDelete?: boolean;
+  canClone?: boolean;
+  canResetUsage?: boolean;
   onRowAction: (action: { key: RowAction; dbInbound: DBInboundRecord }) => void;
   onSwitchEnable: (dbInbound: DBInboundRecord, next: boolean) => void;
 }
@@ -53,6 +57,10 @@ export function useInboundColumns({
   subEnable,
   expireDiff,
   trafficDiff,
+  canEdit = true,
+  canDelete = true,
+  canClone = true,
+  canResetUsage = true,
   onRowAction,
   onSwitchEnable,
 }: UseInboundColumnsParams): TableColumnType<DBInboundRecord>[] {
@@ -121,6 +129,10 @@ export function useInboundColumns({
             subEnable={subEnable}
             hasClients={(clientCount[record.id]?.clients || 0) > 0}
             onClick={(key) => onRowAction({ key, dbInbound: record })}
+            canEdit={canEdit}
+            canDelete={canDelete}
+            canClone={canClone}
+            canResetUsage={canResetUsage}
           />
         ),
       },
@@ -134,6 +146,7 @@ export function useInboundColumns({
             <Switch
               size="small"
               checked={record.enable}
+              disabled={!canEdit}
               onChange={(next) => onSwitchEnable(record, next)}
             />
             <span className={`inb-switch-label ${record.enable ? 'is-armed' : 'is-off'}`}>
@@ -485,5 +498,9 @@ export function useInboundColumns({
     datepicker,
     onRowAction,
     onSwitchEnable,
+    canEdit,
+    canDelete,
+    canClone,
+    canResetUsage,
   ]);
 }

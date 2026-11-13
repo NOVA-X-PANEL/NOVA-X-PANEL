@@ -350,6 +350,8 @@ func (a *SUBController) initRouter(g *gin.RouterGroup) {
 		rg.HEAD(":subid/plain", a.subPlain)
 		rg.GET(":subid/openvpn", a.subOpenVPN)
 		rg.HEAD(":subid/openvpn", a.subOpenVPN)
+		rg.GET(":subid/openvpn.ovpn", a.subOpenVPN)
+		rg.HEAD(":subid/openvpn.ovpn", a.subOpenVPN)
 		rg.GET(":subid/ovpn", a.subOpenVPN)
 		rg.HEAD(":subid/ovpn", a.subOpenVPN)
 		rg.GET(":subid/info", a.subInfo)
@@ -624,6 +626,13 @@ func (a *SUBController) subOpenVPN(c *gin.Context) {
 			if len(clientEmails) > 0 {
 				_ = db.Where("name IN ? OR email IN ?", clientEmails, clientEmails).First(&ovpnUser).Error
 			}
+			// 4. Try matching ClientRecord by subId
+			if ovpnUser.Id == 0 {
+				var clientRec model.ClientRecord
+				if db.Where("sub_id = ?", subId).First(&clientRec).Error == nil && clientRec.Email != "" {
+					_ = db.Where("name = ? OR email = ?", clientRec.Email, clientRec.Email).First(&ovpnUser).Error
+				}
+			}
 		}
 	}
 
@@ -868,9 +877,17 @@ func (a *SUBController) subPageContext(page PageData) map[string]any {
 		if db.Where("name IN ? OR email IN ?", page.Emails, page.Emails).First(&ovpnUser).Error == nil && ovpnUser.Id > 0 {
 			hasOvpn = true
 		}
+	} else if page.SId != "" {
+		var clientRec model.ClientRecord
+		if db.Where("sub_id = ?", page.SId).First(&clientRec).Error == nil && clientRec.Email != "" {
+			if db.Where("name = ? OR email = ?", clientRec.Email, clientRec.Email).First(&ovpnUser).Error == nil && ovpnUser.Id > 0 {
+				hasOvpn = true
+			}
+		}
 	}
 	var ovpnMap map[string]any
-	if hasOvpn {
+	var vpnMap map[string]any
+	if hasOvpn && ovpnUser.Enable {
 		downloadUrl := page.SubUrl
 		if downloadUrl == "" {
 			downloadUrl = "/sub/" + page.SId
@@ -883,6 +900,13 @@ func (a *SUBController) subPageContext(page PageData) map[string]any {
 			"name":        ovpnUser.Name,
 			"password":    ovpnUser.Password,
 			"downloadUrl": downloadUrl,
+		}
+		vpnMap = map[string]any{
+			"username": ovpnUser.Name,
+			"password": ovpnUser.Password,
+			"openvpn": map[string]any{
+				"downloadUrl": downloadUrl,
+			},
 		}
 	}
 
@@ -911,6 +935,7 @@ func (a *SUBController) subPageContext(page PageData) map[string]any {
 		"datepicker":    datepicker,
 		"announce":      page.SubAnnounce,
 		"openvpn":       ovpnMap,
+		"vpn":           vpnMap,
 	}
 }
 

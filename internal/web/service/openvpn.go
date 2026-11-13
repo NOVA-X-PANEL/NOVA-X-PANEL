@@ -1725,6 +1725,176 @@ rm -f /tmp/%s.csr /tmp/%s.ext
 	return nil
 }
 
+// SanitizeOpenVPNClientName transforms an email/username to a safe, valid OpenVPN CN (1-32 chars, [a-zA-Z0-9_-]).
+func SanitizeOpenVPNClientName(email, subId string) string {
+	clean := strings.ToLower(strings.TrimSpace(email))
+	var sb strings.Builder
+	for _, r := range clean {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '_' || r == '-' {
+			sb.WriteRune(r)
+		} else if r == '@' || r == '.' || r == '+' {
+			sb.WriteRune('_')
+		}
+	}
+	res := sb.String()
+	res = strings.Trim(res, "_-")
+	if len(res) == 0 || len(res) > 32 || !validClientNameRegexp.MatchString(res) || res == "server" {
+		if subId != "" && len(subId) >= 8 {
+			cleanSub := regexp.MustCompile(`[^a-zA-Z0-9]`).ReplaceAllString(subId, "")
+			if len(cleanSub) > 16 {
+				cleanSub = cleanSub[:16]
+			}
+			res = "u_" + cleanSub
+		} else {
+			res = "u_" + RandomOpenVPNSubId()[:8]
+		}
+	}
+	if len(res) > 32 {
+		res = res[:32]
+	}
+	return res
+}
+
+func (s *OpenVPNService) AddClientWithSub(name string, password string, totalGB int64, expiryTime int64, limitIP int, subId string, email string, ownerAdminId ...int) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	name = strings.TrimSpace(name)
+	password = strings.TrimSpace(password)
+	db := database.GetDB()
+
+	// Check if user already exists in DB by sub_id, email, or name
+	var existing model.OpenVPNUser
+	found := false
+	if subId != "" && db.Where("sub_id = ?", subId).First(&existing).Error == nil && existing.Id > 0 {
+		found = true
+	} else if email != "" && db.Where("email = ?", email).First(&existing).Error == nil && existing.Id > 0 {
+		found = true
+	} else if name != "" && db.Where("name = ?", name).First(&existing).Error == nil && existing.Id > 0 {
+		found = true
+	}
+
+	if found {
+		existing.Enable = true
+		existing.TotalGB = totalGB
+		existing.ExpiryTime = expiryTime
+		if password != "" {
+			existing.Password = password
+		}
+		if subId != "" {
+			existing.SubId = subId
+		}
+		if email != "" {
+			existing.Email = email
+		}
+		_ = s.ensureCCD(existing.Name, totalGB, expiryTime, limitIP, true)
+		return db.Save(&existing).Error
+	}
+
+	if !validClientNameRegexp.MatchString(name) {
+		name = SanitizeOpenVPNClientName(name, subId)
+	}
+	if name == "server" {
+		name = "u_" + RandomOpenVPNSubId()[:8]
+	}
+
+	// Make sure name is unique in DB
+	var nameCount int64
+	db.Model(&model.OpenVPNUser{}).Where("name = ?", name).Count(&nameCount)
+	if nameCount > 0 {
+		prefix := name
+		if len(prefix) > 24 {
+			prefix = prefix[:24]
+		}
+		suffix := RandomOpenVPNSubId()[:6]
+		if subId != "" && len(subId) >= 6 {
+			suffix = subId[:6]
+		}
+		name = SanitizeOpenVPNClientName(prefix+"_"+suffix, subId)
+	}
+
+	if err := s.ensureEasyRSALocked(); err != nil {
+		return fmt.Errorf("failed to initialize openvpn easy-rsa environment: %w", err)
+	}
+
+	crtFile := filepath.Join(defaultEasyRsaDir, "pki", "issued", name+".crt")
+	if _, err := os.Stat(crtFile); err != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+		defer cancel()
+
+		cmd := fmt.Sprintf("cd %s && ./easyrsa --batch build-client-full %s nopass", defaultEasyRsaDir, name)
+		out, err := s.execPrivilegedBash(ctx, cmd)
+		if err != nil || func() bool { _, e := os.Stat(crtFile); return e != nil }() {
+			opensslCmd := fmt.Sprintf(`
+mkdir -p /etc/openvpn/easy-rsa/pki/reqs /etc/openvpn/easy-rsa/pki/issued /etc/openvpn/easy-rsa/pki/private /etc/openvpn/easy-rsa/pki/inline
+[ -f /etc/openvpn/easy-rsa/vars ] || touch /etc/openvpn/easy-rsa/vars
+openssl req -new -nodes -newkey rsa:2048 \
+    -keyout /etc/openvpn/easy-rsa/pki/private/%s.key \
+    -out /tmp/%s.csr -subj "/CN=%s" >/dev/null 2>&1
+cat << 'EOF_EXT' > /tmp/%s.ext
+basicConstraints = CA:FALSE
+keyUsage = digitalSignature
+extendedKeyUsage = clientAuth
+EOF_EXT
+openssl x509 -req -in /tmp/%s.csr \
+    -CA /etc/openvpn/easy-rsa/pki/ca.crt -CAkey /etc/openvpn/easy-rsa/pki/private/ca.key \
+    -CAcreateserial -out /etc/openvpn/easy-rsa/pki/issued/%s.crt -days 3650 -extfile /tmp/%s.ext >/dev/null 2>&1
+rm -f /tmp/%s.csr /tmp/%s.ext
+`, name, name, name, name, name, name, name, name, name)
+			_, _ = s.execPrivilegedBash(ctx, opensslCmd)
+		}
+	}
+
+	uOwner := 0
+	if len(ownerAdminId) > 0 {
+		uOwner = ownerAdminId[0]
+	}
+
+	finalSubId := subId
+	if finalSubId == "" {
+		finalSubId = RandomOpenVPNSubId()
+	}
+
+	user := &model.OpenVPNUser{
+		Name:         name,
+		Password:     password,
+		Enable:       true,
+		TotalGB:      totalGB,
+		ExpiryTime:   expiryTime,
+		LimitIP:      limitIP,
+		OwnerAdminId: uOwner,
+		SubId:        finalSubId,
+		Email:        email,
+	}
+	if err := db.Create(user).Error; err != nil {
+		return fmt.Errorf("failed to save openvpn user to database: %w", err)
+	}
+
+	_ = s.ensureCCD(name, totalGB, expiryTime, limitIP, true)
+	return nil
+}
+
+func (s *OpenVPNService) DeleteClientBySubOrEmail(subId string, email string) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	db := database.GetDB()
+	var users []model.OpenVPNUser
+	if subId != "" {
+		db.Where("sub_id = ?", subId).Find(&users)
+	}
+	if len(users) == 0 && email != "" {
+		db.Where("email = ? OR name = ?", email, email).Find(&users)
+	}
+
+	for _, user := range users {
+		db.Delete(&user)
+		ccdPath := filepath.Join("/etc/openvpn/ccd", user.Name)
+		_ = os.Remove(ccdPath)
+	}
+	return nil
+}
+
 // UpdateClient updates limits and enable status of an OpenVPN client.
 func (s *OpenVPNService) UpdateClient(name string, password string, totalGB int64, expiryTime int64, limitIP int, enable bool) error {
 	s.lock.Lock()

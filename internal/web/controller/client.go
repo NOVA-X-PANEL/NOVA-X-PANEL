@@ -41,11 +41,13 @@ type ClientController struct {
 	inboundService service.InboundService
 	xrayService    service.XrayService
 	settingService service.SettingService
+	openvpnService *service.OpenVPNService
 	happGenerator  service.HappLinkGenerator
 }
 
 func NewClientController(g *gin.RouterGroup) *ClientController {
 	a := &ClientController{}
+	a.openvpnService = service.NewOpenVPNService()
 	a.happGenerator = service.NewHappService(&a.clientService, &a.settingService)
 	a.initRouter(g)
 	return a
@@ -464,6 +466,36 @@ func (a *ClientController) create(c *gin.Context) {
 	}
 	subUrl := a.settingService.BuildFullSubURL(resolveHost(c), subId)
 
+	if payload.EnableOpenVPN && payload.Client.Email != "" {
+		totalGB := int64(0)
+		if payload.Client.TotalGB > 0 {
+			totalGB = payload.Client.TotalGB / (1024 * 1024 * 1024)
+			if totalGB == 0 && payload.Client.TotalGB > 0 {
+				totalGB = 1
+			}
+		}
+		ovpnPassword := strings.TrimSpace(payload.OpenVPNPassword)
+		if ovpnPassword == "" {
+			if payload.Client.Password != "" {
+				ovpnPassword = payload.Client.Password
+			} else {
+				ovpnPassword = common.RandomLetterAndNum(8)
+			}
+		}
+		ovpnName := service.SanitizeOpenVPNClientName(payload.Client.Email, subId)
+		ownerId := 0
+		if user != nil {
+			ownerId = user.Id
+		}
+		if a.openvpnService != nil {
+			if err := a.openvpnService.AddClientWithSub(ovpnName, ovpnPassword, totalGB, payload.Client.ExpiryTime, 0, subId, payload.Client.Email, ownerId); err != nil {
+				logger.Warning("failed to create associated openvpn account for client:", err)
+			} else {
+				logger.Info("successfully created associated openvpn client:", ovpnName, "for subId:", subId)
+			}
+		}
+	}
+
 	respObj := gin.H{
 		"email":  payload.Client.Email,
 		"subId":  subId,
@@ -534,6 +566,9 @@ func (a *ClientController) delete(c *gin.Context) {
 	// nothing, and broadcasting those would refetch every panel for nothing.
 	if needRestart || err == nil {
 		notifyClientsChanged()
+		if a.openvpnService != nil {
+			_ = a.openvpnService.DeleteClientBySubOrEmail("", email)
+		}
 	}
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)

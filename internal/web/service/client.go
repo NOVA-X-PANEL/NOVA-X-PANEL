@@ -66,10 +66,12 @@ type ClientService struct{}
 var ErrClientNotInInbound = errors.New("client not found in inbound")
 
 type ClientCreatePayload struct {
-	Client     model.Client           `json:"client"`
-	InboundIds []int                  `json:"inboundIds"`
-	LimitHwid  int                    `json:"-"`
-	Traffic    *ClientPortableTraffic `json:"traffic,omitempty"`
+	Client          model.Client           `json:"client"`
+	InboundIds      []int                  `json:"inboundIds"`
+	LimitHwid       int                    `json:"-"`
+	Traffic         *ClientPortableTraffic `json:"traffic,omitempty"`
+	EnableOpenVPN   bool                   `json:"enableOpenvpn"`
+	OpenVPNPassword string                 `json:"openvpnPassword"`
 }
 
 const sqlInChunk = 400
@@ -81,9 +83,11 @@ type clientPayloadWithHwid struct {
 
 func (p *ClientCreatePayload) UnmarshalJSON(data []byte) error {
 	var raw struct {
-		Client     json.RawMessage        `json:"client"`
-		InboundIds []int                  `json:"inboundIds"`
-		Traffic    *ClientPortableTraffic `json:"traffic"`
+		Client          json.RawMessage        `json:"client"`
+		InboundIds      []int                  `json:"inboundIds"`
+		Traffic         *ClientPortableTraffic `json:"traffic"`
+		EnableOpenVPN   bool                   `json:"enableOpenvpn"`
+		OpenVPNPassword string                 `json:"openvpnPassword"`
 	}
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return err
@@ -98,6 +102,8 @@ func (p *ClientCreatePayload) UnmarshalJSON(data []byte) error {
 	p.InboundIds = raw.InboundIds
 	p.LimitHwid = withHwid.LimitHwid
 	p.Traffic = raw.Traffic
+	p.EnableOpenVPN = raw.EnableOpenVPN
+	p.OpenVPNPassword = raw.OpenVPNPassword
 	// Omit enable → true (legacy API); explicit false is preserved (#6478).
 	var keys map[string]json.RawMessage
 	if len(raw.Client) > 0 && json.Unmarshal(raw.Client, &keys) == nil {

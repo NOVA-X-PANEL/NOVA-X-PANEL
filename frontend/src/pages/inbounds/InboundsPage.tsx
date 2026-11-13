@@ -603,10 +603,10 @@ export default function InboundsPage() {
           if (canCreate) importInbound();
           break;
         case 'export':
-          exportAllLinks();
+          if (canEdit) exportAllLinks();
           break;
         case 'subs':
-          exportAllSubs();
+          if (canEdit) exportAllSubs();
           break;
         case 'resetInbounds':
           if (!canResetUsage) return;
@@ -634,7 +634,15 @@ export default function InboundsPage() {
 
   const onRowAction = useCallback(
     async ({ key, dbInbound }: { key: RowAction; dbInbound: DBInbound }) => {
-      if (key === 'edit' && !canEdit) return;
+      if (
+        (key === 'edit' ||
+          key === 'subs' ||
+          key === 'clipboard' ||
+          key === 'showInfo' ||
+          key === 'export') &&
+        !canEdit
+      )
+        return;
       if (key === 'clone' && !canCreate) return;
       if (key === 'delete' && !canDelete) return;
       if (key === 'delAllClients' && !canDelete) return;

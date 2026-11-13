@@ -247,15 +247,17 @@ export default function InboundList({
               {t('pages.inbounds.bulkDelete')} ({selectedRowKeys.length})
             </Button>
           )}
-          <Dropdown trigger={['click']} menu={generalActionsMenu}>
-            <Button
-              type="primary"
-              icon={<MenuOutlined />}
-              aria-label={t('pages.inbounds.generalActions')}
-            >
-              {!isMobile && t('pages.inbounds.generalActions')}
-            </Button>
-          </Dropdown>
+          {canEdit && (
+            <Dropdown trigger={['click']} menu={generalActionsMenu}>
+              <Button
+                type="primary"
+                icon={<MenuOutlined />}
+                aria-label={t('pages.inbounds.generalActions')}
+              >
+                {!isMobile && t('pages.inbounds.generalActions')}
+              </Button>
+            </Dropdown>
+          )}
           {showNodeFilter && (
             <Select
               value={nodeFilter}
@@ -353,33 +355,35 @@ export default function InboundList({
                           disabled={!canEdit}
                           onChange={(next) => onSwitchEnable(record, next)}
                         />
-                        <Dropdown
-                          trigger={['click']}
-                          placement="bottomRight"
-                          menu={{
-                            items: buildRowActionsMenu({
-                              record,
-                              subEnable,
-                              t,
-                              isMobile: true,
-                              hasClients: (clientCount[record.id]?.clients || 0) > 0,
-                              canEdit,
-                              canDelete,
-                              canClone: canCreate,
-                              canResetUsage,
-                            }),
-                            onClick: ({ key }) =>
-                              onRowAction({ key: key as RowAction, dbInbound: record }),
-                          }}
-                        >
-                          <Button
-                            type="text"
-                            size="small"
-                            className="row-action-trigger"
-                            icon={<MoreOutlined />}
-                            aria-label={t('more')}
-                          />
-                        </Dropdown>
+                        {canEdit && (
+                          <Dropdown
+                            trigger={['click']}
+                            placement="bottomRight"
+                            menu={{
+                              items: buildRowActionsMenu({
+                                record,
+                                subEnable,
+                                t,
+                                isMobile: true,
+                                hasClients: (clientCount[record.id]?.clients || 0) > 0,
+                                canEdit,
+                                canDelete,
+                                canClone: canCreate,
+                                canResetUsage,
+                              }),
+                              onClick: ({ key }) =>
+                                onRowAction({ key: key as RowAction, dbInbound: record }),
+                            }}
+                          >
+                            <Button
+                              type="text"
+                              size="small"
+                              className="row-action-trigger"
+                              icon={<MoreOutlined />}
+                              aria-label={t('more')}
+                            />
+                          </Dropdown>
+                        )}
                       </div>
                     </div>
                   </div>

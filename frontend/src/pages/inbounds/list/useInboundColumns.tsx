@@ -118,24 +118,28 @@ export function useInboundColumns({
         width: 48,
         sorter: (a, b) => a.id - b.id,
       },
-      {
-        title: t('pages.inbounds.operate'),
-        key: 'action',
-        align: 'center',
-        width: 60,
-        render: (_, record) => (
-          <RowActionsCell
-            record={record}
-            subEnable={subEnable}
-            hasClients={(clientCount[record.id]?.clients || 0) > 0}
-            onClick={(key) => onRowAction({ key, dbInbound: record })}
-            canEdit={canEdit}
-            canDelete={canDelete}
-            canClone={canClone}
-            canResetUsage={canResetUsage}
-          />
-        ),
-      },
+      ...(canEdit
+        ? [
+            {
+              title: t('pages.inbounds.operate'),
+              key: 'action',
+              align: 'center' as const,
+              width: 60,
+              render: (_: unknown, record: DBInboundRecord) => (
+                <RowActionsCell
+                  record={record}
+                  subEnable={subEnable}
+                  hasClients={(clientCount[record.id]?.clients || 0) > 0}
+                  onClick={(key: RowAction) => onRowAction({ key, dbInbound: record })}
+                  canEdit={canEdit}
+                  canDelete={canDelete}
+                  canClone={canClone}
+                  canResetUsage={canResetUsage}
+                />
+              ),
+            },
+          ]
+        : []),
       {
         title: t('pages.inbounds.enable'),
         key: 'enable',

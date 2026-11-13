@@ -90,8 +90,8 @@ func (a *InboundController) initRouter(g *gin.RouterGroup) {
 		panelPermissionRequirement{Section: "inbounds", Permission: "view"},
 		panelPermissionRequirement{Section: "inbounds", Permission: "viewSimple"},
 	), a.getInboundOptions)
-	g.GET("/allLinks", requirePanelPermission("inbounds", "view"), a.getAllInboundLinks)
-	g.GET("/get/:id", requirePanelPermission("inbounds", "view"), a.getInbound)
+	g.GET("/allLinks", requirePanelPermission("inbounds", "update"), a.getAllInboundLinks)
+	g.GET("/get/:id", requirePanelPermission("inbounds", "update"), a.getInbound)
 	g.GET("/:id/fallbacks", requirePanelPermission("inbounds", "view"), a.getFallbacks)
 
 	g.POST("/add", requirePanelPermission("inbounds", "create"), a.addInbound)

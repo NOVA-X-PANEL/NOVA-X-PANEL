@@ -54,27 +54,29 @@ export function buildRowActionsMenu({
   if (isMobile && canEdit) {
     items.push({ key: 'edit', icon: <EditOutlined />, label: t('edit') });
   }
-  if (isInboundMultiUser(record)) {
-    items.push({ key: 'export', icon: <ExportOutlined />, label: t('pages.inbounds.export') });
-    if (subEnable) {
+  if (canEdit) {
+    if (isInboundMultiUser(record)) {
+      items.push({ key: 'export', icon: <ExportOutlined />, label: t('pages.inbounds.export') });
+      if (subEnable) {
+        items.push({
+          key: 'subs',
+          icon: <ExportOutlined />,
+          label: `${t('pages.inbounds.export')} — ${t('pages.settings.subSettings')}`,
+        });
+      }
+    } else {
       items.push({
-        key: 'subs',
-        icon: <ExportOutlined />,
-        label: `${t('pages.inbounds.export')} — ${t('pages.settings.subSettings')}`,
+        key: 'showInfo',
+        icon: <InfoCircleOutlined />,
+        label: t('pages.inbounds.inboundInfo'),
       });
     }
-  } else {
     items.push({
-      key: 'showInfo',
-      icon: <InfoCircleOutlined />,
-      label: t('pages.inbounds.inboundInfo'),
+      key: 'clipboard',
+      icon: <CopyOutlined />,
+      label: t('pages.inbounds.exportInbound'),
     });
   }
-  items.push({
-    key: 'clipboard',
-    icon: <CopyOutlined />,
-    label: t('pages.inbounds.exportInbound'),
-  });
   if (canResetUsage) {
     items.push({
       key: 'resetTraffic',
@@ -139,6 +141,9 @@ export function RowActionsCell({
   canResetUsage = true,
 }: RowActionsMenuProps) {
   const { t } = useTranslation();
+  if (!canEdit) {
+    return null;
+  }
   return (
     <div className="action-buttons cyber-action-buttons">
       {canEdit && (

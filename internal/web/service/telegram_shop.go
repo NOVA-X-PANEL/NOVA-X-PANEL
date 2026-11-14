@@ -182,7 +182,7 @@ User=www-data
 Group=www-data
 WorkingDirectory=/var/www/mirzabot
 Environment="PHP_CLI_SERVER_WORKERS=8"
-ExecStart=${PHP_BIN} -d memory_limit=256M -d max_execution_time=60 -S 127.0.0.1:9099 -t /var/www/mirzabot
+ExecStart=/usr/bin/php -d memory_limit=256M -d max_execution_time=60 -S 127.0.0.1:9099 -t /var/www/mirzabot
 Restart=always
 RestartSec=2
 StandardOutput=journal

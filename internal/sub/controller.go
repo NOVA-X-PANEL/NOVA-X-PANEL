@@ -334,8 +334,13 @@ func NewSUBController(g *gin.RouterGroup, options ...SUBControllerOption) *SUBCo
 // on the provided router group.
 func (a *SUBController) initRouter(g *gin.RouterGroup) {
 	registerFormatRoutes := func(rg *gin.RouterGroup) {
-		rg.GET(":subid", a.subs)
-		rg.HEAD(":subid", a.subs)
+		// Specific routes first (more specific than generic :subid)
+		rg.GET(":subid/openvpn", a.subOpenVPN)
+		rg.HEAD(":subid/openvpn", a.subOpenVPN)
+		rg.GET(":subid/openvpn.ovpn", a.subOpenVPN)
+		rg.HEAD(":subid/openvpn.ovpn", a.subOpenVPN)
+		rg.GET(":subid/ovpn", a.subOpenVPN)
+		rg.HEAD(":subid/ovpn", a.subOpenVPN)
 		rg.GET(":subid/hwid-status", a.hwidStatus)
 		rg.HEAD(":subid/hwid-status", a.hwidStatus)
 		rg.GET(":subid/clash", a.subClashs)
@@ -348,16 +353,13 @@ func (a *SUBController) initRouter(g *gin.RouterGroup) {
 		rg.HEAD(":subid/json", a.subJsons)
 		rg.GET(":subid/plain", a.subPlain)
 		rg.HEAD(":subid/plain", a.subPlain)
-		rg.GET(":subid/openvpn", a.subOpenVPN)
-		rg.HEAD(":subid/openvpn", a.subOpenVPN)
-		rg.GET(":subid/openvpn.ovpn", a.subOpenVPN)
-		rg.HEAD(":subid/openvpn.ovpn", a.subOpenVPN)
-		rg.GET(":subid/ovpn", a.subOpenVPN)
-		rg.HEAD(":subid/ovpn", a.subOpenVPN)
 		rg.GET(":subid/info", a.subInfo)
 		rg.HEAD(":subid/info", a.subInfo)
 		rg.GET(":subid/page", a.subPage)
 		rg.HEAD(":subid/page", a.subPage)
+		// Generic :subid LAST - catches everything else
+		rg.GET(":subid", a.subs)
+		rg.HEAD(":subid", a.subs)
 	}
 
 	gLink := g.Group(a.subPath)

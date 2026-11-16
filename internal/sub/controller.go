@@ -21,8 +21,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/mhsanaei/3x-ui/v3/internal/database"
+	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
+	"github.com/mhsanaei/3x-ui/v3/internal/xray"
 )
 
 const (
@@ -345,6 +348,10 @@ func (a *SUBController) initRouter(g *gin.RouterGroup) {
 		rg.HEAD(":subid/json", a.subJsons)
 		rg.GET(":subid/plain", a.subPlain)
 		rg.HEAD(":subid/plain", a.subPlain)
+		rg.GET(":subid/openvpn", a.subOpenVPN)
+		rg.HEAD(":subid/openvpn", a.subOpenVPN)
+		rg.GET(":subid/ovpn", a.subOpenVPN)
+		rg.HEAD(":subid/ovpn", a.subOpenVPN)
 		rg.GET(":subid/info", a.subInfo)
 		rg.HEAD(":subid/info", a.subInfo)
 		rg.GET(":subid/page", a.subPage)
@@ -449,9 +456,26 @@ func (a *SUBController) buildSubPageData(c *gin.Context) (PageData, bool) {
 	subReq := a.subService.ForRequest(host)
 	subReq.subscriptionBody = false
 	subs, emails, lastOnline, traffic, err := subReq.getSubs(subId)
-	if err != nil || subs == nil {
-		writeSubError(c, err)
-		return PageData{}, false
+	if err != nil || subs == nil || len(subs) == 0 {
+		var ovpnUser model.OpenVPNUser
+		db := database.GetDB()
+		if dbErr := db.Where("sub_id = ? OR name = ? OR email = ?", subId, subId, subId).First(&ovpnUser).Error; dbErr == nil && ovpnUser.Id > 0 {
+			totalByte := ovpnUser.TotalGB * 1024 * 1024 * 1024
+			traffic = xray.ClientTraffic{
+				Email:      ovpnUser.Name,
+				Up:         ovpnUser.Up,
+				Down:       ovpnUser.Down,
+				Total:      totalByte,
+				ExpiryTime: ovpnUser.ExpiryTime,
+				Enable:     ovpnUser.Enable,
+			}
+			emails = []string{ovpnUser.Name}
+			subs = []string{}
+			err = nil
+		} else if err != nil || subs == nil {
+			writeSubError(c, err)
+			return PageData{}, false
+		}
 	}
 	subURL, subJsonURL, subClashURL := subReq.BuildURLs(a.subPath, a.subJsonPath, a.subClashPath, subId)
 	if !a.jsonEnabled {
@@ -518,6 +542,10 @@ func (a *SUBController) subs(c *gin.Context) {
 			logSubscriptionRoute(userAgent, "json")
 			return
 		}
+	case "openvpn", "ovpn":
+		a.subOpenVPN(c)
+		logSubscriptionRoute(userAgent, "openvpn")
+		return
 	case "plain", "raw":
 		if !a.enforceHwid(c) {
 			return
@@ -570,6 +598,56 @@ func (a *SUBController) subPlain(c *gin.Context) {
 		return
 	}
 	a.serveRawSubs(c, false)
+}
+
+func (a *SUBController) subOpenVPN(c *gin.Context) {
+	subId := c.Param("subid")
+	var ovpnUser model.OpenVPNUser
+	db := database.GetDB()
+
+	// 1. Try finding OpenVPNUser by sub_id
+	if err := db.Where("sub_id = ?", subId).First(&ovpnUser).Error; err != nil || ovpnUser.Id == 0 {
+		// 2. Try by name or email
+		if err := db.Where("name = ? OR email = ?", subId, subId).First(&ovpnUser).Error; err != nil || ovpnUser.Id == 0 {
+			// 3. Try matching VLESS client emails
+			_, host, _, _ := a.subService.ResolveRequest(c)
+			subReq := a.subService.ForRequest(host)
+			inbounds, _ := subReq.getInboundsBySubId(subId)
+			var clientEmails []string
+			for _, ib := range inbounds {
+				for _, cl := range subReq.matchingClients(ib, subId) {
+					if cl.Email != "" {
+						clientEmails = append(clientEmails, cl.Email)
+					}
+				}
+			}
+			if len(clientEmails) > 0 {
+				_ = db.Where("name IN ? OR email IN ?", clientEmails, clientEmails).First(&ovpnUser).Error
+			}
+		}
+	}
+
+	if ovpnUser.Id == 0 {
+		c.String(http.StatusNotFound, "OpenVPN profile not found for this subscription")
+		return
+	}
+
+	if !ovpnUser.Enable {
+		c.String(http.StatusForbidden, "OpenVPN account is disabled")
+		return
+	}
+
+	ovpnService := service.NewOpenVPNService()
+	conf, err := ovpnService.GetClientConfig(ovpnUser.Name, "", 0, true)
+	if err != nil {
+		c.String(http.StatusInternalServerError, "failed to generate configuration: "+err.Error())
+		return
+	}
+
+	setNoCacheHeaders(c)
+	c.Header("Content-Type", "application/x-openvpn-profile")
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s.ovpn\"", ovpnUser.Name))
+	c.String(http.StatusOK, conf)
 }
 
 func (a *SUBController) subInfo(c *gin.Context) {
@@ -781,6 +859,33 @@ func (a *SUBController) subPageContext(page PageData) map[string]any {
 	subUpdates, _ := a.settingService.GetSubUpdates()
 	updateHours, _ := strconv.Atoi(subUpdates)
 
+	var ovpnUser model.OpenVPNUser
+	db := database.GetDB()
+	hasOvpn := false
+	if db.Where("sub_id = ?", page.SId).First(&ovpnUser).Error == nil && ovpnUser.Id > 0 {
+		hasOvpn = true
+	} else if len(page.Emails) > 0 {
+		if db.Where("name IN ? OR email IN ?", page.Emails, page.Emails).First(&ovpnUser).Error == nil && ovpnUser.Id > 0 {
+			hasOvpn = true
+		}
+	}
+	var ovpnMap map[string]any
+	if hasOvpn {
+		downloadUrl := page.SubUrl
+		if downloadUrl == "" {
+			downloadUrl = "/sub/" + page.SId
+		}
+		if !strings.HasSuffix(downloadUrl, "/openvpn") {
+			downloadUrl = strings.TrimSuffix(downloadUrl, "/") + "/openvpn"
+		}
+		ovpnMap = map[string]any{
+			"enabled":     true,
+			"name":        ovpnUser.Name,
+			"password":    ovpnUser.Password,
+			"downloadUrl": downloadUrl,
+		}
+	}
+
 	return map[string]any{
 		"sId":           page.SId,
 		"enabled":       page.Enabled,
@@ -805,6 +910,7 @@ func (a *SUBController) subPageContext(page PageData) map[string]any {
 		"emails":        page.Emails,
 		"datepicker":    datepicker,
 		"announce":      page.SubAnnounce,
+		"openvpn":       ovpnMap,
 	}
 }
 

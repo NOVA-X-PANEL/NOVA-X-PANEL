@@ -31,6 +31,7 @@ const subTitle = subData.subTitle || '';
 const subSupportUrl = subData.subSupportUrl || '';
 const updateHours = Number(subData.subUpdates || 0);
 const announce = subData.announce || '';
+const openvpn = (subData as any).openvpn || null;
 const links: string[] = Array.isArray(subData.links) ? subData.links : [];
 const linkEmails: string[] = Array.isArray(subData.emails) ? subData.emails : [];
 const totalByte = Number(subData.totalByte || 0);
@@ -106,7 +107,7 @@ export default function SubPage() {
 
   const tabs = useMemo(() => {
     const items: NonNullable<TabsProps['items']> = [];
-    if (subUrl || subJsonUrl || subClashUrl) {
+    if (subUrl || subJsonUrl || subClashUrl || openvpn?.enabled) {
       items.push({
         key: 'subscription',
         icon: <LinkOutlined />,
@@ -116,6 +117,7 @@ export default function SubPage() {
             subUrl={subUrl}
             subJsonUrl={subJsonUrl}
             subClashUrl={subClashUrl}
+            openvpn={openvpn}
             onCopy={copy}
           />
         ),

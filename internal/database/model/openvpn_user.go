@@ -13,6 +13,8 @@ type OpenVPNUser struct {
 	Up           int64  `json:"up" gorm:"default:0"`         // cumulative bytes uploaded
 	Down         int64  `json:"down" gorm:"default:0"`       // cumulative bytes downloaded
 	OwnerAdminId int    `json:"ownerAdminId" gorm:"column:owner_admin_id;default:0;index"`
+	SubId        string `json:"subId" gorm:"column:sub_id;default:'';index"`
+	Email        string `json:"email" gorm:"column:email;default:'';index"`
 	CreatedAt    int64  `json:"createdAt" gorm:"autoCreateTime"`
 	UpdatedAt  int64  `json:"updatedAt" gorm:"autoUpdateTime"`
 }

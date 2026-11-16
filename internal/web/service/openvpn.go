@@ -3,6 +3,8 @@ package service
 import (
 	"bufio"
 	"context"
+	crand "crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -45,6 +47,15 @@ func getMgmtAddress() string {
 		return mgmtAddressOverride
 	}
 	return mgmtAddress
+}
+
+// RandomOpenVPNSubId generates a cryptographically secure 16-character hex string for OpenVPN subscriptions.
+func RandomOpenVPNSubId() string {
+	b := make([]byte, 8)
+	if _, err := crand.Read(b); err != nil {
+		return fmt.Sprintf("%016x", time.Now().UnixNano())
+	}
+	return hex.EncodeToString(b)
 }
 
 func getCcdDir() string {
@@ -115,6 +126,8 @@ type OpenVPNClientInfo struct {
 	IsTrafficExceeded  bool     `json:"is_traffic_exceeded"`
 	OwnerAdminId       int      `json:"owner_admin_id"`
 	OwnerAdminUsername string   `json:"owner_admin_username"`
+	SubId              string   `json:"sub_id"`
+	SubUrl             string   `json:"sub_url"`
 }
 
 // OpenVPNAccessScope defines the permission boundary for the acting admin.
@@ -1159,6 +1172,18 @@ for c in /etc/openvpn/server/server.conf /etc/openvpn/server.conf; do
             sed -i 's/^port 2083$/port 1194/' "$c"
             restart_needed=1
         fi
+        if ! grep -q "tun-mtu" "$c"; then
+            echo "tun-mtu 1400" >> "$c"
+            echo "mssfix 1240" >> "$c"
+            echo 'push "tun-mtu 1400"' >> "$c"
+            echo 'push "mssfix 1240"' >> "$c"
+            echo "sndbuf 524288" >> "$c"
+            echo "rcvbuf 524288" >> "$c"
+            echo 'push "sndbuf 524288"' >> "$c"
+            echo 'push "rcvbuf 524288"' >> "$c"
+            echo "tcp-nodelay" >> "$c"
+            restart_needed=1
+        fi
     fi
 done
 
@@ -1496,6 +1521,12 @@ func (s *OpenVPNService) GetStatus(scopes ...OpenVPNAccessScope) (*OpenVPNStatus
 			}
 		}
 
+		if u.SubId == "" {
+			u.SubId = RandomOpenVPNSubId()
+			_ = db.Model(&u).Update("sub_id", u.SubId)
+		}
+		subUrl := s.BuildClientSubUrl(u.SubId)
+
 		clientInfo := OpenVPNClientInfo{
 			Name:               u.Name,
 			Password:           u.Password,
@@ -1518,6 +1549,8 @@ func (s *OpenVPNService) GetStatus(scopes ...OpenVPNAccessScope) (*OpenVPNStatus
 			IsTrafficExceeded:  isTrafficExceeded,
 			OwnerAdminId:       u.OwnerAdminId,
 			OwnerAdminUsername: adminNameMap[u.OwnerAdminId],
+			SubId:              u.SubId,
+			SubUrl:             subUrl,
 		}
 
 		status.Clients = append(status.Clients, clientInfo)
@@ -1684,6 +1717,7 @@ rm -f /tmp/%s.csr /tmp/%s.ext
 		ExpiryTime:   expiryTime,
 		LimitIP:      limitIP,
 		OwnerAdminId: uOwner,
+		SubId:        RandomOpenVPNSubId(),
 	}
 	if err := db.Create(user).Error; err != nil {
 		return fmt.Errorf("client cert created but failed to save to database: %w", err)
@@ -1924,6 +1958,11 @@ data-ciphers AES-256-GCM:AES-128-GCM:CHACHA20-POLY1305
 data-ciphers-fallback AES-256-GCM
 cipher AES-256-GCM
 auth SHA256
+tun-mtu 1400
+mssfix 1240
+sndbuf 524288
+rcvbuf 524288
+tcp-nodelay
 verb 3
 %s
 <ca>
@@ -1938,6 +1977,41 @@ verb 3
 `, proto, remoteIP, remotePort, authPassBlock, strings.TrimSpace(string(caData)), strings.TrimSpace(cleanCert), strings.TrimSpace(string(keyData)))
 
 	return ovpn, nil
+}
+
+// BuildClientSubUrl builds the complete subscription URL for an OpenVPN user.
+func (s *OpenVPNService) BuildClientSubUrl(subId string) string {
+	if subId == "" {
+		return ""
+	}
+	subURI := getOpenVPNSetting("subURI", "")
+	if subURI == "" {
+		subDomain := getOpenVPNSetting("subDomain", "")
+		subPort := getOpenVPNSetting("subPort", "2096")
+		if subDomain != "" {
+			subURI = fmt.Sprintf("https://%s:%s/sub/", subDomain, subPort)
+		} else {
+			serverIP := detectServerIP()
+			subURI = fmt.Sprintf("https://%s:2096/sub/", serverIP)
+		}
+	}
+	if !strings.HasSuffix(subURI, "/") {
+		subURI += "/"
+	}
+	return subURI + subId
+}
+
+// FindUserBySubIdOrEmail finds an OpenVPN user by subscription ID or name/email.
+func (s *OpenVPNService) FindUserBySubIdOrEmail(id string) (*model.OpenVPNUser, error) {
+	var user model.OpenVPNUser
+	db := database.GetDB()
+	if err := db.Where("sub_id = ?", id).First(&user).Error; err == nil && user.Id > 0 {
+		return &user, nil
+	}
+	if err := db.Where("name = ? OR email = ?", id, id).First(&user).Error; err == nil && user.Id > 0 {
+		return &user, nil
+	}
+	return nil, errors.New("openvpn user not found")
 }
 
 // RestartService restarts OpenVPN and ensures firewall rules.
@@ -2159,6 +2233,16 @@ keepalive 10 60
 data-ciphers AES-256-GCM:AES-128-GCM:AES-256-CBC:AES-128-CBC
 cipher AES-256-GCM
 auth SHA256
+
+tun-mtu 1400
+mssfix 1240
+sndbuf 524288
+rcvbuf 524288
+push "sndbuf 524288"
+push "rcvbuf 524288"
+push "tun-mtu 1400"
+push "mssfix 1240"
+tcp-nodelay
 
 persist-key
 persist-tun

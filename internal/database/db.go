@@ -108,6 +108,20 @@ func migrateOpenVPNSessionColumns() error {
 	return nil
 }
 
+func migrateOpenVPNUserColumns() error {
+	migrator := db.Migrator()
+	if !migrator.HasTable(&model.OpenVPNUser{}) {
+		return nil
+	}
+	if !migrator.HasColumn(&model.OpenVPNUser{}, "sub_id") {
+		_ = migrator.AddColumn(&model.OpenVPNUser{}, "SubId")
+	}
+	if !migrator.HasColumn(&model.OpenVPNUser{}, "email") {
+		_ = migrator.AddColumn(&model.OpenVPNUser{}, "Email")
+	}
+	return nil
+}
+
 func migrateClientTrafficLastSubFetchColumn() error {
 	migrator := db.Migrator()
 	if !migrator.HasTable(&xray.ClientTraffic{}) || migrator.HasColumn(&xray.ClientTraffic{}, "last_sub_fetch") {
@@ -143,6 +157,9 @@ func initModels() error {
 		return err
 	}
 	if err := migrateOpenVPNSessionColumns(); err != nil {
+		return err
+	}
+	if err := migrateOpenVPNUserColumns(); err != nil {
 		return err
 	}
 	models := allModels()

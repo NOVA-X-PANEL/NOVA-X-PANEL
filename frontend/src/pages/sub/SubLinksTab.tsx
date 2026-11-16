@@ -4,16 +4,24 @@ import { CopyOutlined, DownloadOutlined } from '@ant-design/icons';
 
 import SubQrButton from './SubQrButton';
 
+export interface OpenVPNSubData {
+  enabled?: boolean;
+  name?: string;
+  password?: string;
+  downloadUrl?: string;
+}
+
 interface SubLinksTabProps {
   subUrl: string;
   subJsonUrl: string;
   subClashUrl: string;
+  openvpn?: OpenVPNSubData | null;
   onCopy: (value: string) => void;
 }
 
 const appendRawView = (url: string) => `${url}${url.includes('?') ? '&' : '?'}view=raw`;
 
-export default function SubLinksTab({ subUrl, subJsonUrl, subClashUrl, onCopy }: SubLinksTabProps) {
+export default function SubLinksTab({ subUrl, subJsonUrl, subClashUrl, openvpn, onCopy }: SubLinksTabProps) {
   const { t } = useTranslation();
   const subLabel = t('pages.settings.subSettings');
   const rows = [
@@ -26,6 +34,9 @@ export default function SubLinksTab({ subUrl, subJsonUrl, subClashUrl, onCopy }:
       downloadable: true,
     },
     { kind: 'CLASH', color: 'gold', url: subClashUrl, title: 'Clash / Mihomo', downloadable: true },
+    ...(openvpn?.enabled && openvpn.downloadUrl
+      ? [{ kind: 'OPENVPN', color: 'cyan', url: openvpn.downloadUrl, title: 'OpenVPN (.ovpn)', downloadable: true }]
+      : []),
   ].filter((row) => row.url);
 
   return (
@@ -64,6 +75,51 @@ export default function SubLinksTab({ subUrl, subJsonUrl, subClashUrl, onCopy }:
           </div>
         </div>
       ))}
+      {openvpn?.enabled && (
+        <div className="sub-row" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 12, padding: '16px 20px', background: 'rgba(6, 182, 212, 0.05)', borderColor: 'rgba(6, 182, 212, 0.25)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Tag color="cyan" style={{ fontWeight: 600 }}>OPENVPN</Tag>
+              <span style={{ fontWeight: 600, fontSize: 15 }}>تنظیمات اتصال کلاینت و روتر OpenVPN</span>
+            </div>
+            {openvpn.downloadUrl && (
+              <Button
+                type="primary"
+                icon={<DownloadOutlined />}
+                href={openvpn.downloadUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ background: '#0891b2', borderColor: '#0891b2' }}
+              >
+                دانلود مستقیم فایل کانفیگ (.ovpn)
+              </Button>
+            )}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10, marginTop: 4 }}>
+            {openvpn.name && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--sub-row-bg, rgba(0,0,0,0.03))', borderRadius: 6, border: '1px solid rgba(140, 140, 140, 0.15)' }}>
+                <span style={{ fontSize: 13, color: 'var(--text-muted, #888)' }}>نام کاربری (Username):</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <code style={{ fontSize: 13, fontWeight: 600 }}>{openvpn.name}</code>
+                  <Button size="small" type="text" icon={<CopyOutlined />} onClick={() => onCopy(openvpn.name || '')} />
+                </div>
+              </div>
+            )}
+            {openvpn.password && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--sub-row-bg, rgba(0,0,0,0.03))', borderRadius: 6, border: '1px solid rgba(140, 140, 140, 0.15)' }}>
+                <span style={{ fontSize: 13, color: 'var(--text-muted, #888)' }}>رمز عبور (Password):</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <code style={{ fontSize: 13, fontWeight: 600 }}>{openvpn.password}</code>
+                  <Button size="small" type="text" icon={<CopyOutlined />} onClick={() => onCopy(openvpn.password || '')} />
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="sub-muted" style={{ fontSize: 12 }}>
+            💡 مشخصات فوق برای راه‌اندازی دستی در روترهای میکروتیک، ایسوس و کانفیگ‌های بدون Auth درون‌خطی است. با ایمپورت فایل کانفیگ در نرم‌افزار OpenVPN Connect، اتصال به صورت خودکار برقرار می‌شود.
+          </div>
+        </div>
+      )}
       {subUrl && (
         <div className="sub-qr-card">
           <div className="sub-qr-code">

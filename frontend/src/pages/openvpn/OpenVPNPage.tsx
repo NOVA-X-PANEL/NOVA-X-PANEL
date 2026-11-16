@@ -51,6 +51,7 @@ import {
   ShareAltOutlined,
   SaveOutlined,
   FileTextOutlined,
+  LinkOutlined,
 } from '@ant-design/icons';
 import { HttpUtil } from '@/utils';
 import { useTheme } from '@/hooks/useTheme';
@@ -83,6 +84,8 @@ interface OpenVPNClientInfo {
   is_traffic_exceeded: boolean;
   owner_admin_id?: number;
   owner_admin_username?: string;
+  sub_id?: string;
+  sub_url?: string;
 }
 
 interface OpenVPNConnectedClient {
@@ -189,6 +192,7 @@ export default function OpenVPNPage() {
     password: string;
     host: string;
     portStr: string;
+    subUrl: string;
     inlineAuth: boolean;
     previewContent: string;
     loadingPreview: boolean;
@@ -198,6 +202,7 @@ export default function OpenVPNPage() {
     password: '',
     host: '',
     portStr: '',
+    subUrl: '',
     inlineAuth: false,
     previewContent: '',
     loadingPreview: false,
@@ -603,6 +608,7 @@ export default function OpenVPNPage() {
       password: client.password || '',
       host: activeHost,
       portStr: activePort.toString(),
+      subUrl: client.sub_url || '',
       inlineAuth: false,
       previewContent: '',
       loadingPreview: true,
@@ -905,6 +911,22 @@ export default function OpenVPNPage() {
               <Tooltip title="مشاهده کانفیگ، تنظیمات IP و پورت، و کپی جزئیات">
                 <Button size="small" icon={<EyeOutlined />} onClick={() => openConfigModal(record)}>
                   کانفیگ
+                </Button>
+              </Tooltip>
+            )}
+
+            {record.sub_url && (
+              <Tooltip title="کپی لینک سابسکریپشن اختصاصی OpenVPN">
+                <Button
+                  size="small"
+                  icon={<LinkOutlined />}
+                  style={{ color: '#10b981', borderColor: 'rgba(16, 185, 129, 0.4)' }}
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(record.sub_url || '');
+                    messageApi.success(`لینک ساب '${record.name}' کپی شد`);
+                  }}
+                >
+                  لینک ساب
                 </Button>
               </Tooltip>
             )}
@@ -1771,6 +1793,19 @@ export default function OpenVPNPage() {
 
                         {/* Secondary Actions on Mobile */}
                         <div className="openvpn-mobile-actions-secondary">
+                          {client.sub_url && (
+                            <Button
+                              icon={<LinkOutlined />}
+                              className="openvpn-mobile-btn-sub"
+                              style={{ color: '#10b981', borderColor: 'rgba(16, 185, 129, 0.4)' }}
+                              onClick={async () => {
+                                await navigator.clipboard.writeText(client.sub_url || '');
+                                messageApi.success(`لینک ساب '${client.name}' کپی شد`);
+                              }}
+                            >
+                              لینک ساب
+                            </Button>
+                          )}
                           <Button
                             icon={<EyeOutlined />}
                             className="openvpn-mobile-btn-sub"
@@ -2254,6 +2289,51 @@ export default function OpenVPNPage() {
                 </Button>,
               ]}
             >
+              {configModal.subUrl && (
+                <div
+                  style={{
+                    marginBottom: 16,
+                    padding: '12px 16px',
+                    background: 'rgba(16, 185, 129, 0.08)',
+                    borderRadius: 8,
+                    border: '1px solid rgba(16, 185, 129, 0.3)',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      marginBottom: 8,
+                      flexWrap: 'wrap',
+                      gap: 6,
+                    }}
+                  >
+                    <Text strong style={{ color: '#10b981', fontSize: 13 }}>
+                      🔗 لینک سابسکریپشن کاربر (Subscription Link):
+                    </Text>
+                    <Tag color="green">دریافت مستقیم و صفحه وب</Tag>
+                  </div>
+                  <Space.Compact style={{ width: '100%' }}>
+                    <Input readOnly value={configModal.subUrl} dir="ltr" style={{ fontWeight: 500 }} />
+                    <Button
+                      type="primary"
+                      icon={<CopyOutlined />}
+                      style={{ background: '#10b981', borderColor: '#10b981' }}
+                      onClick={() => {
+                        navigator.clipboard.writeText(configModal.subUrl);
+                        messageApi.success('لینک سابسکریپشن کپی شد');
+                      }}
+                    >
+                      کپی
+                    </Button>
+                  </Space.Compact>
+                  <Paragraph type="secondary" style={{ fontSize: 11, margin: '6px 0 0 0' }}>
+                    کاربر با باز کردن این لینک می‌تواند فایل کانفیگ .ovpn را دریافت یا در مرورگر باز کند.
+                  </Paragraph>
+                </div>
+              )}
+
               {/* Account Credentials Card */}
               <Card
                 size="small"

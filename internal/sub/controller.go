@@ -341,6 +341,13 @@ func (a *SUBController) initRouter(g *gin.RouterGroup) {
 		rg.HEAD(":subid/openvpn.ovpn", a.subOpenVPN)
 		rg.GET(":subid/ovpn", a.subOpenVPN)
 		rg.HEAD(":subid/ovpn", a.subOpenVPN)
+		// UDP-specific OpenVPN routes
+		rg.GET(":subid/openvpn-udp", a.subOpenVPN)
+		rg.HEAD(":subid/openvpn-udp", a.subOpenVPN)
+		rg.GET(":subid/openvpn.ovpn.udp", a.subOpenVPN)
+		rg.HEAD(":subid/openvpn.ovpn.udp", a.subOpenVPN)
+		rg.GET(":subid/ovpn.udp", a.subOpenVPN)
+		rg.HEAD(":subid/ovpn.udp", a.subOpenVPN)
 		rg.GET(":subid/hwid-status", a.hwidStatus)
 		rg.HEAD(":subid/hwid-status", a.hwidStatus)
 		rg.GET(":subid/clash", a.subClashs)
@@ -608,6 +615,10 @@ func (a *SUBController) subOpenVPN(c *gin.Context) {
 	var ovpnUser model.OpenVPNUser
 	db := database.GetDB()
 
+	// Detect UDP-specific routes
+	requestPath := c.Request.URL.Path
+	isUDP := strings.Contains(requestPath, ".udp") || strings.Contains(requestPath, "-udp")
+
 	// 1. Try finding OpenVPNUser by sub_id
 	if err := db.Where("sub_id = ?", subId).First(&ovpnUser).Error; err != nil || ovpnUser.Id == 0 {
 		// 2. Try by name or email
@@ -648,7 +659,11 @@ func (a *SUBController) subOpenVPN(c *gin.Context) {
 	}
 
 	ovpnService := service.NewOpenVPNService()
-	conf, err := ovpnService.GetClientConfig(ovpnUser.Name, "", 0, true)
+	proto := "tcp"
+	if isUDP {
+		proto = "udp"
+	}
+	conf, err := ovpnService.GetClientConfigWithProto(ovpnUser.Name, "", 0, true, proto)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "failed to generate configuration: "+err.Error())
 		return
@@ -898,17 +913,22 @@ func (a *SUBController) subPageContext(page PageData) map[string]any {
 		} else if !strings.HasSuffix(downloadUrl, "/openvpn.ovpn") {
 			downloadUrl = strings.TrimSuffix(downloadUrl, "/") + "/openvpn.ovpn"
 		}
+		// UDP download URL
+		udpDownloadUrl := strings.TrimSuffix(downloadUrl, "/openvpn.ovpn") + "/openvpn.ovpn.udp"
+		
 		ovpnMap = map[string]any{
-			"enabled":     true,
-			"name":        ovpnUser.Name,
-			"password":    ovpnUser.Password,
-			"downloadUrl": downloadUrl,
+			"enabled":      true,
+			"name":         ovpnUser.Name,
+			"password":     ovpnUser.Password,
+			"downloadUrl":  downloadUrl,
+			"udpDownloadUrl": udpDownloadUrl,
 		}
 		vpnMap = map[string]any{
 			"username": ovpnUser.Name,
 			"password": ovpnUser.Password,
 			"openvpn": map[string]any{
-				"downloadUrl": downloadUrl,
+				"downloadUrl":    downloadUrl,
+				"udpDownloadUrl": udpDownloadUrl,
 			},
 		}
 	}

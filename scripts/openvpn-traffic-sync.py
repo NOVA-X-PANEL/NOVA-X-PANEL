@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """
-NOVA-X-PANEL OpenVPN Real-time Traffic Sync Daemon
-Polls OpenVPN management socket periodically and syncs traffic stats to database.
-Runs as a systemd service alongside OpenVPN.
+NOVA-X-PANEL OpenVPN Real-time Traffic Sync Daemon (TCP + UDP)
+Polls OpenVPN management sockets (ports 7505 and 7506) periodically and syncs traffic stats to database.
 """
 import sys
 import os
@@ -12,7 +11,7 @@ import signal
 
 LOG_PATH = "/var/log/openvpn_traffic_sync.log"
 MGMT_HOST = "127.0.0.1"
-MGMT_PORT = 7505
+MGMT_PORTS = [7505, 7506]
 SYNC_INTERVAL = 30  # seconds
 
 def log_debug(msg):
@@ -56,17 +55,16 @@ def get_db_connection():
 
     return None, None
 
-def query_management_status():
+def query_management_status(port):
     """Query OpenVPN management socket for current client list with traffic."""
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.settimeout(20)
-        s.connect((MGMT_HOST, MGMT_PORT))
+        s.settimeout(10)
+        s.connect((MGMT_HOST, port))
         
-        # Read welcome banner
         banner = b""
         start = time.time()
-        while time.time() - start < 5:
+        while time.time() - start < 3:
             try:
                 chunk = s.recv(512)
                 if not chunk:
@@ -77,12 +75,10 @@ def query_management_status():
             except socket.timeout:
                 break
         
-        log_debug(f"Banner: {repr(banner[:100])}")
-        
         s.sendall(b"status 2\n")
         data = b""
         start = time.time()
-        while time.time() - start < 15:
+        while time.time() - start < 10:
             try:
                 chunk = s.recv(4096)
                 if not chunk:
@@ -98,19 +94,15 @@ def query_management_status():
         except Exception:
             pass
         s.close()
-        
-        decoded = data.decode("utf-8", errors="ignore")
-        log_debug(f"Status response len: {len(decoded)} chars, ends with END: {decoded.strip().endswith('END')}")
-        return decoded
+        return data.decode("utf-8", errors="ignore")
     except Exception as e:
-        log_debug(f"MGMT query error: {e}")
+        log_debug(f"MGMT query error on port {port}: {e}")
         return ""
 
 def parse_status(status_text):
     """Parse status output to extract client traffic."""
     clients = {}
     lines = status_text.splitlines()
-    log_debug(f"Parsing {len(lines)} lines")
     for line in lines:
         if line.startswith("CLIENT_LIST,"):
             parts = line.split(",")
@@ -129,18 +121,15 @@ def parse_status(status_text):
                     clients[key]["tx"] += bytes_sent
                     if port:
                         clients[key]["ports"].add(port)
-    log_debug(f"Parsed clients: {list(clients.keys())}")
     return clients
 
 def sync_traffic(db, backend, clients, now_ms):
     """Sync traffic deltas to database."""
     if not clients:
-        log_debug("No clients to sync")
         return
 
     for name, data in clients.items():
         try:
-            # Get current DB values
             row = db.execute(
                 "SELECT up, down FROM open_vpn_users WHERE LOWER(name) = LOWER(?);",
                 "SELECT up, down FROM open_vpn_users WHERE LOWER(name) = LOWER(?);",
@@ -148,14 +137,12 @@ def sync_traffic(db, backend, clients, now_ms):
             ).fetchone()
 
             if not row:
-                log_debug(f"User {name} not found in DB")
                 continue
 
             db_up, db_down = row
             current_total_rx = int(db_up or 0)
             current_total_tx = int(db_down or 0)
 
-            # Get last synced values from session table
             session_row = db.execute(
                 "SELECT last_rx, last_tx FROM open_vpn_sessions WHERE LOWER(name) = LOWER(?);",
                 "SELECT last_rx, last_tx FROM open_vpn_sessions WHERE LOWER(name) = LOWER(?);",
@@ -165,7 +152,6 @@ def sync_traffic(db, backend, clients, now_ms):
             last_rx = int(session_row[0]) if session_row and session_row[0] else 0
             last_tx = int(session_row[1]) if session_row and session_row[1] else 0
 
-            # Calculate delta
             live_rx = data["rx"]
             live_tx = data["tx"]
             delta_rx = max(0, live_rx - last_rx)
@@ -181,7 +167,6 @@ def sync_traffic(db, backend, clients, now_ms):
                     (new_up, new_down, now_ms, name)
                 )
 
-                # Update session table with latest live values
                 db.execute(
                     "UPDATE open_vpn_sessions SET last_rx = ?, last_tx = ?, updated_at = ? WHERE LOWER(name) = LOWER(?);",
                     "UPDATE open_vpn_sessions SET last_rx = ?, last_tx = ?, updated_at = ? WHERE LOWER(name) = LOWER(?);",
@@ -189,14 +174,12 @@ def sync_traffic(db, backend, clients, now_ms):
                 )
 
                 log_debug(f"SYNC: {name} delta_rx={delta_rx} delta_tx={delta_tx} total_up={new_up} total_down={new_down}")
-            else:
-                log_debug(f"No delta for {name}: live_rx={live_rx} last_rx={last_rx} live_tx={live_tx} last_tx={last_tx}")
 
         except Exception as e:
             log_debug(f"SYNC ERROR for {name}: {e}")
 
 def main():
-    log_debug("Starting OpenVPN Traffic Sync Daemon")
+    log_debug("Starting OpenVPN Traffic Sync Daemon (TCP + UDP)")
     
     db_backend, db_conn = get_db_connection()
     if not db_conn:
@@ -226,13 +209,12 @@ def main():
 
     db = DB(db_conn, db_backend)
 
-    # Ensure sessions table has last_rx/last_tx columns
     try:
         if db_backend == "sqlite":
             db.execute("", "ALTER TABLE open_vpn_sessions ADD COLUMN last_rx INTEGER DEFAULT 0;")
             db.execute("", "ALTER TABLE open_vpn_sessions ADD COLUMN last_tx INTEGER DEFAULT 0;")
     except Exception:
-        pass  # columns may already exist
+        pass
 
     running = True
     def signal_handler(sig, frame):
@@ -243,14 +225,20 @@ def main():
 
     while running:
         now_ms = int(time.time() * 1000)
-        status = query_management_status()
-        if status:
-            clients = parse_status(status)
-            sync_traffic(db, db_backend, clients, now_ms)
-        else:
-            log_debug("Empty status response")
+        combined_clients = {}
+        for port in MGMT_PORTS:
+            status = query_management_status(port)
+            if status:
+                clients = parse_status(status)
+                for k, v in clients.items():
+                    if k not in combined_clients:
+                        combined_clients[k] = {"rx": 0, "tx": 0, "ports": set()}
+                    combined_clients[k]["rx"] += v["rx"]
+                    combined_clients[k]["tx"] += v["tx"]
         
-        # Sleep in small chunks to respond to signals
+        if combined_clients:
+            sync_traffic(db, db_backend, combined_clients, now_ms)
+        
         for _ in range(SYNC_INTERVAL):
             if not running:
                 break

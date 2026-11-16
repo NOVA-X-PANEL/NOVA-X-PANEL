@@ -2052,6 +2052,11 @@ func (s *OpenVPNService) DeleteClient(name string) error {
 
 // GetClientConfig returns the complete .ovpn profile content for the client.
 func (s *OpenVPNService) GetClientConfig(name string, remoteIP string, remotePort int, inlineAuth bool) (string, error) {
+	return s.GetClientConfigWithProto(name, remoteIP, remotePort, inlineAuth, "")
+}
+
+// GetClientConfigWithProto returns the complete .ovpn profile content for the client with explicit protocol/port override.
+func (s *OpenVPNService) GetClientConfigWithProto(name string, remoteIP string, remotePort int, inlineAuth bool, overrideProto string) (string, error) {
 	name = strings.TrimSpace(name)
 	if !validClientNameRegexp.MatchString(name) || name == "server" {
 		return "", fmt.Errorf("invalid client name")
@@ -2064,12 +2069,29 @@ func (s *OpenVPNService) GetClientConfig(name string, remoteIP string, remotePor
 	if remoteIP == "" {
 		remoteIP = getOpenVPNSetting("openvpn_remote_host", detectServerIP())
 	}
-	if remotePort <= 0 {
-		savedPort, _ := strconv.Atoi(getOpenVPNSetting("openvpn_remote_port", "1194"))
-		if savedPort <= 0 {
-			savedPort = 1194
+
+	proto := strings.ToLower(strings.TrimSpace(overrideProto))
+	if proto != "udp" && proto != "tcp" {
+		proto = getOpenVPNSetting("openvpn_proto", "tcp")
+		if proto != "udp" && proto != "tcp" {
+			proto = "tcp"
 		}
-		remotePort = savedPort
+	}
+
+	if remotePort <= 0 {
+		if proto == "udp" {
+			savedPort, _ := strconv.Atoi(getOpenVPNSetting("openvpn_udp_remote_port", "1195"))
+			if savedPort <= 0 {
+				savedPort = 1195
+			}
+			remotePort = savedPort
+		} else {
+			savedPort, _ := strconv.Atoi(getOpenVPNSetting("openvpn_remote_port", "1194"))
+			if savedPort <= 0 {
+				savedPort = 1194
+			}
+			remotePort = savedPort
+		}
 	}
 
 	caPath := filepath.Join(defaultServerDir, "ca.crt")

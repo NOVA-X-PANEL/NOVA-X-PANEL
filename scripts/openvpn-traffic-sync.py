@@ -60,24 +60,48 @@ def query_management_status():
     """Query OpenVPN management socket for current client list with traffic."""
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.settimeout(5)
+        s.settimeout(20)
         s.connect((MGMT_HOST, MGMT_PORT))
-        _ = s.recv(512)  # welcome banner
+        
+        # Read welcome banner
+        banner = b""
+        start = time.time()
+        while time.time() - start < 5:
+            try:
+                chunk = s.recv(512)
+                if not chunk:
+                    break
+                banner += chunk
+                if b">INFO:" in banner:
+                    break
+            except socket.timeout:
+                break
+        
+        log_debug(f"Banner: {repr(banner[:100])}")
+        
         s.sendall(b"status 2\n")
         data = b""
-        while True:
-            chunk = s.recv(4096)
-            if not chunk:
+        start = time.time()
+        while time.time() - start < 15:
+            try:
+                chunk = s.recv(4096)
+                if not chunk:
+                    break
+                data += chunk
+                if b"END\r\n" in data or b"END\n" in data:
+                    break
+            except socket.timeout:
                 break
-            data += chunk
-            if b"END\r\n" in data or b"END\n" in data:
-                break
+        
         try:
             s.sendall(b"quit\n")
         except Exception:
             pass
         s.close()
-        return data.decode("utf-8", errors="ignore")
+        
+        decoded = data.decode("utf-8", errors="ignore")
+        log_debug(f"Status response len: {len(decoded)} chars, ends with END: {decoded.strip().endswith('END')}")
+        return decoded
     except Exception as e:
         log_debug(f"MGMT query error: {e}")
         return ""
@@ -86,6 +110,7 @@ def parse_status(status_text):
     """Parse status output to extract client traffic."""
     clients = {}
     lines = status_text.splitlines()
+    log_debug(f"Parsing {len(lines)} lines")
     for line in lines:
         if line.startswith("CLIENT_LIST,"):
             parts = line.split(",")
@@ -104,11 +129,13 @@ def parse_status(status_text):
                     clients[key]["tx"] += bytes_sent
                     if port:
                         clients[key]["ports"].add(port)
+    log_debug(f"Parsed clients: {list(clients.keys())}")
     return clients
 
 def sync_traffic(db, backend, clients, now_ms):
     """Sync traffic deltas to database."""
     if not clients:
+        log_debug("No clients to sync")
         return
 
     for name, data in clients.items():
@@ -121,6 +148,7 @@ def sync_traffic(db, backend, clients, now_ms):
             ).fetchone()
 
             if not row:
+                log_debug(f"User {name} not found in DB")
                 continue
 
             db_up, db_down = row
@@ -161,6 +189,8 @@ def sync_traffic(db, backend, clients, now_ms):
                 )
 
                 log_debug(f"SYNC: {name} delta_rx={delta_rx} delta_tx={delta_tx} total_up={new_up} total_down={new_down}")
+            else:
+                log_debug(f"No delta for {name}: live_rx={live_rx} last_rx={last_rx} live_tx={live_tx} last_tx={last_tx}")
 
         except Exception as e:
             log_debug(f"SYNC ERROR for {name}: {e}")
@@ -217,6 +247,8 @@ def main():
         if status:
             clients = parse_status(status)
             sync_traffic(db, db_backend, clients, now_ms)
+        else:
+            log_debug("Empty status response")
         
         # Sleep in small chunks to respond to signals
         for _ in range(SYNC_INTERVAL):

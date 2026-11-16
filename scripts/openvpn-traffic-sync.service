@@ -1,0 +1,16 @@
+[Unit]
+Description=NOVA-X-PANEL OpenVPN Traffic Sync Daemon
+After=network.target openvpn-server@server.service openvpn-panel.service
+Requires=openvpn-server@server.service
+
+[Service]
+Type=simple
+EnvironmentFile=-/etc/default/x-ui
+ExecStart=/usr/local/x-ui/bin/openvpn-traffic-sync.py
+Restart=on-failure
+RestartSec=10s
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

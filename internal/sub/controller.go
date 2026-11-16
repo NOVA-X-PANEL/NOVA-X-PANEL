@@ -893,8 +893,10 @@ func (a *SUBController) subPageContext(page PageData) map[string]any {
 		if downloadUrl == "" {
 			downloadUrl = "/sub/" + page.SId
 		}
-		if !strings.HasSuffix(downloadUrl, "/openvpn") {
-			downloadUrl = strings.TrimSuffix(downloadUrl, "/") + "/openvpn"
+		if strings.HasSuffix(downloadUrl, "/openvpn") {
+			downloadUrl = downloadUrl + ".ovpn"
+		} else if !strings.HasSuffix(downloadUrl, "/openvpn.ovpn") {
+			downloadUrl = strings.TrimSuffix(downloadUrl, "/") + "/openvpn.ovpn"
 		}
 		ovpnMap = map[string]any{
 			"enabled":     true,

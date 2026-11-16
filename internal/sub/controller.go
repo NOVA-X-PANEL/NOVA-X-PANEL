@@ -458,26 +458,25 @@ func (a *SUBController) buildSubPageData(c *gin.Context) (PageData, bool) {
 	subReq := a.subService.ForRequest(host)
 	subReq.subscriptionBody = false
 	subs, emails, lastOnline, traffic, err := subReq.getSubs(subId)
-	if err != nil || subs == nil || len(subs) == 0 {
-		var ovpnUser model.OpenVPNUser
-		db := database.GetDB()
-		if dbErr := db.Where("sub_id = ? OR name = ? OR email = ?", subId, subId, subId).First(&ovpnUser).Error; dbErr == nil && ovpnUser.Id > 0 {
-			totalByte := ovpnUser.TotalGB * 1024 * 1024 * 1024
-			traffic = xray.ClientTraffic{
-				Email:      ovpnUser.Name,
-				Up:         ovpnUser.Up,
-				Down:       ovpnUser.Down,
-				Total:      totalByte,
-				ExpiryTime: ovpnUser.ExpiryTime,
-				Enable:     ovpnUser.Enable,
-			}
-			emails = []string{ovpnUser.Name}
-			subs = []string{}
-			err = nil
-		} else if err != nil || subs == nil {
-			writeSubError(c, err)
-			return PageData{}, false
+
+	var ovpnUser model.OpenVPNUser
+	db := database.GetDB()
+	if db.Where("sub_id = ? OR name = ? OR email = ?", subId, subId, subId).First(&ovpnUser).Error == nil && ovpnUser.Id > 0 {
+		totalByte := ovpnUser.TotalGB * 1024 * 1024 * 1024
+		traffic = xray.ClientTraffic{
+			Email:      ovpnUser.Name,
+			Up:         ovpnUser.Up,
+			Down:       ovpnUser.Down,
+			Total:      totalByte,
+			ExpiryTime: ovpnUser.ExpiryTime,
+			Enable:     ovpnUser.Enable,
 		}
+		emails = []string{ovpnUser.Name}
+		subs = []string{}
+		err = nil
+	} else if err != nil || subs == nil || len(subs) == 0 {
+		writeSubError(c, err)
+		return PageData{}, false
 	}
 	subURL, subJsonURL, subClashURL := subReq.BuildURLs(a.subPath, a.subJsonPath, a.subClashPath, subId)
 	if !a.jsonEnabled {

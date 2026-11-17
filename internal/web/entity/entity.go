@@ -131,7 +131,8 @@ type AllSetting struct {
 	SubThemeDir                 string `json:"subThemeDir" form:"subThemeDir"`
 	SubHideSettings             bool   `json:"subHideSettings" form:"subHideSettings"`
 
-	// Happ client customization settings (app-management / routing / UX).
+	// OpenVPN-specific subscription settings
+	OpenVPNSubDomain            string `json:"openvpnSubDomain" form:"openvpnSubDomain"`
 	SubHappAutoDetect          bool   `json:"subHappAutoDetect" form:"subHappAutoDetect"`
 	SubHappProviderId          string `json:"subHappProviderId" form:"subHappProviderId"`
 	SubHappNewUrl              string `json:"subHappNewUrl" form:"subHappNewUrl"`

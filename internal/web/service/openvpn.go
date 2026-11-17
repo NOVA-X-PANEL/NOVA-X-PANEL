@@ -157,26 +157,27 @@ type OpenVPNAdminUsage struct {
 
 // OpenVPNStatus contains overall OpenVPN server status and client list.
 type OpenVPNStatus struct {
-	Installed        bool                     `json:"installed"`
-	Running          bool                     `json:"running"`
-	Port             int                      `json:"port"`
-	Proto            string                   `json:"proto"`
-	Subnet           string                   `json:"subnet"`
-	DirectIP         string                   `json:"direct_ip"`
-	IranIP           string                   `json:"iran_ip"`
-	RemoteHost       string                   `json:"remote_host"`
-	RemotePort       int                      `json:"remote_port"`
-	TotalClients     int                      `json:"total_clients"`
-	OnlineClients    int                      `json:"online_clients"`
-	TotalUp          int64                    `json:"total_up"`
-	TotalDown        int64                    `json:"total_down"`
-	TotalUsed        int64                    `json:"total_used"`
-	TotalUsedStr     string                   `json:"total_used_str"`
-	TotalUpStr       string                   `json:"total_up_str"`
-	TotalDownStr     string                   `json:"total_down_str"`
-	ConnectedClients []OpenVPNConnectedClient `json:"connected_clients"`
-	Clients          []OpenVPNClientInfo      `json:"clients"`
-	AdminStats       []OpenVPNAdminUsage      `json:"admin_stats"`
+	Installed          bool                     `json:"installed"`
+	Running            bool                     `json:"running"`
+	Port               int                      `json:"port"`
+	Proto              string                   `json:"proto"`
+	Subnet             string                   `json:"subnet"`
+	DirectIP           string                   `json:"direct_ip"`
+	IranIP             string                   `json:"iran_ip"`
+	RemoteHost         string                   `json:"remote_host"`
+	RemotePort         int                      `json:"remote_port"`
+	SubscriptionDomain string                   `json:"subscription_domain"`
+	TotalClients       int                      `json:"total_clients"`
+	OnlineClients      int                      `json:"online_clients"`
+	TotalUp            int64                    `json:"total_up"`
+	TotalDown          int64                    `json:"total_down"`
+	TotalUsed          int64                    `json:"total_used"`
+	TotalUsedStr       string                   `json:"total_used_str"`
+	TotalUpStr         string                   `json:"total_up_str"`
+	TotalDownStr       string                   `json:"total_down_str"`
+	ConnectedClients   []OpenVPNConnectedClient `json:"connected_clients"`
+	Clients            []OpenVPNClientInfo      `json:"clients"`
+	AdminStats         []OpenVPNAdminUsage      `json:"admin_stats"`
 }
 
 // OpenVPNService manages OpenVPN server, easy-rsa certificates, client configs, and accounting.
@@ -1165,7 +1166,15 @@ for c in /etc/openvpn/server/server.conf /etc/openvpn/server.conf; do
             echo "client-disconnect /usr/local/x-ui/bin/openvpn-auth.py" >> "$c"
             restart_needed=1
         fi
-        sed -i '/username-as-common-name/d' "$c"
+        if ! grep -q "verify-client-cert none" "$c"; then
+            echo "verify-client-cert none" >> "$c"
+            restart_needed=1
+        fi
+        sed -i '/client-cert-not-required/d' "$c"
+        if ! grep -q "username-as-common-name" "$c"; then
+            echo "username-as-common-name" >> "$c"
+            restart_needed=1
+        fi
         sed -i '/tls-verify/d' "$c"
         # Auto-migrate legacy port 2083 to standard 1194
         if grep -qE '^port 2083$' "$c"; then
@@ -1228,6 +1237,14 @@ func setOpenVPNSetting(key, val string) error {
 		return db.Model(&s).Update("value", val).Error
 	}
 	return db.Create(&model.Setting{Key: key, Value: val}).Error
+}
+
+func GetOpenVPNSubDomain() string {
+	return getOpenVPNSetting("openvpn_sub_domain", "")
+}
+
+func SetOpenVPNSubDomain(domain string) error {
+	return setOpenVPNSetting("openvpn_sub_domain", domain)
 }
 
 func detectServerIP() string {
@@ -2148,6 +2165,62 @@ verb 3
 	return ovpn, nil
 }
 
+// GetGenericClientConfig returns a generic .ovpn profile template that authenticates via username and password.
+func (s *OpenVPNService) GetGenericClientConfig(remoteIP string, remotePort int) (string, error) {
+	if remoteIP == "" {
+		remoteIP = getOpenVPNSetting("openvpn_remote_host", detectServerIP())
+	}
+	if remotePort <= 0 {
+		savedPort, _ := strconv.Atoi(getOpenVPNSetting("openvpn_remote_port", "1194"))
+		if savedPort <= 0 {
+			savedPort = 1194
+		}
+		remotePort = savedPort
+	}
+
+	caPath := filepath.Join(defaultServerDir, "ca.crt")
+	if _, err := os.Stat(caPath); os.IsNotExist(err) {
+		caPath = filepath.Join(defaultEasyRsaDir, "pki", "ca.crt")
+	}
+
+	caData, err := os.ReadFile(caPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to read ca.crt: %w", err)
+	}
+
+	proto := getOpenVPNSetting("openvpn_proto", "tcp")
+	if proto != "udp" && proto != "tcp" {
+		proto = "tcp"
+	}
+
+	ovpn := fmt.Sprintf(`client
+dev tun
+proto %s
+remote %s %d
+resolv-retry infinite
+nobind
+persist-key
+persist-tun
+remote-cert-tls server
+data-ciphers AES-256-GCM:AES-128-GCM:CHACHA20-POLY1305
+data-ciphers-fallback AES-256-GCM
+cipher AES-256-GCM
+auth SHA256
+tun-mtu 1400
+mssfix 1240
+sndbuf 524288
+rcvbuf 524288
+tcp-nodelay
+verb 3
+auth-user-pass
+<ca>
+%s
+</ca>
+`, proto, remoteIP, remotePort, strings.TrimSpace(string(caData)))
+
+	return ovpn, nil
+}
+
 // BuildClientSubUrl builds the complete subscription URL for an OpenVPN user.
 func (s *OpenVPNService) BuildClientSubUrl(subId string) string {
 	if subId == "" {
@@ -2155,8 +2228,13 @@ func (s *OpenVPNService) BuildClientSubUrl(subId string) string {
 	}
 	subURI := getOpenVPNSetting("subURI", "")
 	if subURI == "" {
-		subDomain := getOpenVPNSetting("subDomain", "")
+		// First check for OpenVPN-specific domain
+		subDomain := GetOpenVPNSubDomain()
 		subPort := getOpenVPNSetting("subPort", "2096")
+		if subDomain == "" {
+			// Fall back to generic subscription domain
+			subDomain = getOpenVPNSetting("subDomain", "")
+		}
 		if subDomain != "" {
 			subURI = fmt.Sprintf("https://%s:%s/sub/", subDomain, subPort)
 		} else {

@@ -123,6 +123,7 @@ interface OpenVPNStatus {
   iran_ip: string;
   remote_host?: string;
   remote_port?: number;
+  subscription_domain?: string;
   total_clients: number;
   online_clients: number;
   total_up?: number;
@@ -184,6 +185,9 @@ export default function OpenVPNPage() {
   const [portInput, setPortInput] = useState<string>(() => {
     return localStorage.getItem('nova_openvpn_endpoint_port') || '1194';
   });
+  const [subDomain, setSubDomain] = useState<string>(() => {
+    return localStorage.getItem('nova_openvpn_sub_domain') || '';
+  });
 
   // Dedicated Config Modal for downloading/copying .ovpn
   const [configModal, setConfigModal] = useState<{
@@ -229,6 +233,12 @@ export default function OpenVPNPage() {
     if (digits) {
       localStorage.setItem('nova_openvpn_endpoint_port', digits);
     }
+  };
+
+  const handleSubDomainChange = (val: string) => {
+    const trimmed = val.trim();
+    setSubDomain(trimmed);
+    localStorage.setItem('nova_openvpn_sub_domain', trimmed);
   };
 
   const setPresetPort = (p: number) => {
@@ -312,6 +322,7 @@ export default function OpenVPNPage() {
         remote_host: endpointHost.trim(),
         remote_port: finalPort,
         server_port: status?.port || 1194,
+        subscription_domain: subDomain.trim(),
       });
       if (res && res.success) {
         messageApi.success('تنظیمات OpenVPN با موفقیت در پایگاه داده سرور ذخیره شد و پایدار ماند');
@@ -349,6 +360,10 @@ export default function OpenVPNPage() {
         if (res.obj.remote_port && res.obj.remote_port > 0) {
           setPortInput(res.obj.remote_port.toString());
           localStorage.setItem('nova_openvpn_endpoint_port', res.obj.remote_port.toString());
+        }
+        if (res.obj.subscription_domain !== undefined) {
+          setSubDomain(res.obj.subscription_domain || '');
+          localStorage.setItem('nova_openvpn_sub_domain', res.obj.subscription_domain || '');
         }
       }
     } catch {
@@ -1423,9 +1438,18 @@ export default function OpenVPNPage() {
                 </Col>
                 <Col xs={24} md={8}>
                   <Text strong style={{ display: 'block', marginBottom: 6 }}>
-                    انتخاب سریع پیش‌فرض‌ها
+                    دامنه لینک اشتراک OpenVPN (اختیاری)
                   </Text>
-                  <div className="openvpn-presets-bar">
+                  <Input
+                    dir="ltr"
+                    style={{ width: '100%', direction: 'ltr', textAlign: 'left' }}
+                    prefix={<GlobalOutlined style={{ color: '#0891b2' }} />}
+                    value={subDomain}
+                    placeholder="sub.example.com"
+                    onChange={(e) => handleSubDomainChange(e.target.value)}
+                    allowClear
+                  />
+                </Col>
                     <Button
                       size="small"
                       className="openvpn-preset-chip"

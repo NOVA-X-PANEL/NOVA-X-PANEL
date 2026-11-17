@@ -648,7 +648,9 @@ func (a *SUBController) subOpenVPN(c *gin.Context) {
 	}
 
 	ovpnService := service.NewOpenVPNService()
-	conf, err := ovpnService.GetClientConfig(ovpnUser.Name, "", 0, true)
+	// Keep account credentials out of subscription downloads. OpenVPN clients
+	// will prompt the user for username and password when the tunnel connects.
+	conf, err := ovpnService.GetClientConfig(ovpnUser.Name, "", 0, false)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "failed to generate configuration: "+err.Error())
 		return

@@ -6,6 +6,24 @@ import (
 	"testing"
 )
 
+func TestOpenVPNAuthPassBlockModes(t *testing.T) {
+	username := "sample-user"
+	password := "sample-secret"
+
+	promptBlock := openVPNAuthPassBlock(username, password, false)
+	if promptBlock != "auth-user-pass\n" {
+		t.Fatalf("non-inline auth block = %q, want prompt directive only", promptBlock)
+	}
+	if strings.Contains(promptBlock, username) || strings.Contains(promptBlock, password) || strings.Contains(promptBlock, "<auth-user-pass>") {
+		t.Fatalf("non-inline auth block contains embedded credentials: %q", promptBlock)
+	}
+
+	inlineBlock := openVPNAuthPassBlock(username, password, true)
+	if !strings.Contains(inlineBlock, "<auth-user-pass>\n"+username+"\n"+password+"\n</auth-user-pass>") {
+		t.Fatalf("inline auth block does not contain its expected credential block: %q", inlineBlock)
+	}
+}
+
 func TestOpenVPNClientConfigFormat(t *testing.T) {
 	// Sample mock data
 	caData := "-----BEGIN CERTIFICATE-----\nCA_SAMPLE\n-----END CERTIFICATE-----"

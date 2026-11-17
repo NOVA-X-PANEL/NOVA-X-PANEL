@@ -2064,6 +2064,16 @@ func (s *OpenVPNService) DeleteClient(name string) error {
 	return nil
 }
 
+func openVPNAuthPassBlock(username, password string, inlineAuth bool) string {
+	if !inlineAuth {
+		return "auth-user-pass\n"
+	}
+	if password == "" {
+		password = "nopassword"
+	}
+	return fmt.Sprintf("auth-user-pass\n<auth-user-pass>\n%s\n%s\n</auth-user-pass>\n", username, password)
+}
+
 // GetClientConfig returns the complete .ovpn profile content for the client.
 func (s *OpenVPNService) GetClientConfig(name string, remoteIP string, remotePort int, inlineAuth bool) (string, error) {
 	name = strings.TrimSpace(name)
@@ -2113,15 +2123,7 @@ func (s *OpenVPNService) GetClientConfig(name string, remoteIP string, remotePor
 		cleanCert = matches[0]
 	}
 
-	authPassBlock := ""
-	pwd := user.Password
-	if pwd == "" {
-		pwd = "nopassword"
-	}
-	authPassBlock = "auth-user-pass\n"
-	if inlineAuth {
-		authPassBlock = fmt.Sprintf("auth-user-pass\n<auth-user-pass>\n%s\n%s\n</auth-user-pass>\n", user.Name, pwd)
-	}
+	authPassBlock := openVPNAuthPassBlock(user.Name, user.Password, inlineAuth)
 
 	proto := getOpenVPNSetting("openvpn_proto", "tcp")
 	if proto != "udp" && proto != "tcp" {

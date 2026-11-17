@@ -321,8 +321,17 @@ EOF_EXT
     cp -f /etc/openvpn/server/server.crt /etc/openvpn/easy-rsa/pki/issued/server.crt 2>/dev/null || true
     cp -f /etc/openvpn/server/server.key /etc/openvpn/easy-rsa/pki/private/server.key 2>/dev/null || true
 
-    # Write clean server.conf if not present or broken
-    if [[ ! -f "/etc/openvpn/server/server.conf" ]] || grep -q "dh /etc/openvpn/server/dh.pem" "/etc/openvpn/server/server.conf" 2>/dev/null; then
+    # Keep legacy config and connection parameters intact during panel updates.
+    # Older static .ovpn files contain the original port/proto/cipher contract.
+    if [[ ! -f "/etc/openvpn/server/server.conf" ]] && [[ -f "/etc/openvpn/server.conf" ]]; then
+        if ! cp -p /etc/openvpn/server.conf /etc/openvpn/server/server.conf 2>/dev/null; then
+            echo -e "${yellow}Could not preserve legacy OpenVPN config; leaving it untouched.${plain}"
+            return 0
+        fi
+    fi
+
+    # Create a default config only when neither current nor legacy config exists.
+    if [[ ! -f "/etc/openvpn/server/server.conf" ]]; then
         cat << 'EOF_CONF' > /etc/openvpn/server/server.conf
 port 1194
 proto tcp
@@ -378,13 +387,6 @@ EOF_CONF
         fi
     fi
 
-    # Migrate legacy port 2083 to standard 1194 in existing server configs
-    for c in /etc/openvpn/server/server.conf /etc/openvpn/server.conf; do
-        if [ -f "$c" ] && grep -qE '^port 2083$' "$c"; then
-            sed -i 's/^port 2083$/port 1194/' "$c" 2>/dev/null || true
-            systemctl restart openvpn-server@server.service 2>/dev/null || systemctl restart openvpn@server.service 2>/dev/null || systemctl restart openvpn 2>/dev/null || true
-        fi
-    done
     return 0
 }
 

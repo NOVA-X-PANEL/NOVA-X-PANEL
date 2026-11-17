@@ -1177,22 +1177,9 @@ for c in /etc/openvpn/server/server.conf /etc/openvpn/server.conf; do
             restart_needed=1
         fi
         sed -i '/tls-verify/d' "$c"
-        # Auto-migrate legacy port 2083 to standard 1194
-        if grep -qE '^port 2083$' "$c"; then
-            sed -i 's/^port 2083$/port 1194/' "$c"
-            restart_needed=1
-        fi
-        if ! grep -q "tun-mtu" "$c"; then
-            echo "tun-mtu 1400" >> "$c"
-            echo "mssfix 1240" >> "$c"
-            echo 'push "mssfix 1240"' >> "$c"
-            echo "sndbuf 524288" >> "$c"
-            echo "rcvbuf 524288" >> "$c"
-            echo 'push "sndbuf 524288"' >> "$c"
-            echo 'push "rcvbuf 524288"' >> "$c"
-            echo "tcp-nodelay" >> "$c"
-            restart_needed=1
-        fi
+        # Do not rewrite existing port/proto/MTU/MSS settings here. Static .ovpn
+        # files encode these values; changing the server during panel startup can
+        # silently disconnect users who have not downloaded a new profile.
     fi
 done
 

@@ -672,6 +672,16 @@ a.sub-row-title:hover {
   margin-bottom: 4px;
 }
 
+@keyframes sub-openvpn-scanline {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
 /* footer */
 .sub-footer {
   position: relative;

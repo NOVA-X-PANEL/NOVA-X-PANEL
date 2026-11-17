@@ -1449,7 +1449,12 @@ export default function OpenVPNPage() {
                     onChange={(e) => handleSubDomainChange(e.target.value)}
                     allowClear
                   />
+                  <Text type="secondary" style={{ display: 'block', marginTop: 6, fontSize: 12 }}>
+                    فقط دامنهٔ دریافت لینک اشتراک؛ آدرس سرور داخل فایل .ovpn را تغییر نمی‌دهد.
+                  </Text>
                 </Col>
+                <Col xs={24}>
+                  <div className="openvpn-presets-bar">
                     <Button
                       size="small"
                       className="openvpn-preset-chip"
@@ -2339,7 +2344,12 @@ export default function OpenVPNPage() {
                     <Tag color="green">دریافت مستقیم و صفحه وب</Tag>
                   </div>
                   <Space.Compact style={{ width: '100%' }}>
-                    <Input readOnly value={configModal.subUrl} dir="ltr" style={{ fontWeight: 500 }} />
+                    <Input
+                      readOnly
+                      value={configModal.subUrl}
+                      dir="ltr"
+                      style={{ fontWeight: 500 }}
+                    />
                     <Button
                       type="primary"
                       icon={<CopyOutlined />}
@@ -2353,7 +2363,8 @@ export default function OpenVPNPage() {
                     </Button>
                   </Space.Compact>
                   <Paragraph type="secondary" style={{ fontSize: 11, margin: '6px 0 0 0' }}>
-                    کاربر با باز کردن این لینک می‌تواند فایل کانفیگ .ovpn را دریافت یا در مرورگر باز کند.
+                    کاربر با باز کردن این لینک می‌تواند فایل کانفیگ .ovpn را دریافت یا در مرورگر باز
+                    کند.
                   </Paragraph>
                 </div>
               )}

@@ -6,10 +6,12 @@ import (
 	crand "crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -18,7 +20,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"errors"
 
 	"gorm.io/gorm"
 
@@ -1244,6 +1245,14 @@ func GetOpenVPNSubDomain() string {
 }
 
 func SetOpenVPNSubDomain(domain string) error {
+	domain = strings.TrimSpace(domain)
+	if domain != "" {
+		parsed, err := url.Parse("https://" + domain)
+		if err != nil || parsed.Host != domain || parsed.Hostname() == "" || parsed.User != nil || parsed.Port() != "" {
+			return errors.New("subscription domain must be a hostname without scheme, path, or port")
+		}
+		domain = strings.ToLower(strings.TrimSuffix(domain, "."))
+	}
 	return setOpenVPNSetting("openvpn_sub_domain", domain)
 }
 
@@ -1296,16 +1305,17 @@ func (s *OpenVPNService) GetStatus(scopes ...OpenVPNAccessScope) (*OpenVPNStatus
 	}
 
 	status := &OpenVPNStatus{
-		Installed:        false,
-		Running:          false,
-		Port:             1194,
-		Proto:            "tcp",
-		Subnet:           "10.8.0.0/24",
-		DirectIP:         detectServerIP(),
-		IranIP:           getIranTunnelIP(),
-		ConnectedClients: []OpenVPNConnectedClient{},
-		Clients:          []OpenVPNClientInfo{},
-		AdminStats:       []OpenVPNAdminUsage{},
+		Installed:          false,
+		Running:            false,
+		Port:               1194,
+		Proto:              "tcp",
+		Subnet:             "10.8.0.0/24",
+		DirectIP:           detectServerIP(),
+		IranIP:             getIranTunnelIP(),
+		SubscriptionDomain: GetOpenVPNSubDomain(),
+		ConnectedClients:   []OpenVPNConnectedClient{},
+		Clients:            []OpenVPNClientInfo{},
+		AdminStats:         []OpenVPNAdminUsage{},
 	}
 
 	hasOpenvpn := false

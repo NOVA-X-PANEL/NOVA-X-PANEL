@@ -392,9 +392,9 @@ func (a *OpenVPNController) restart(c *gin.Context) {
 }
 
 type openVPNSettingsForm struct {
-	RemoteHost     string `json:"remote_host" form:"remote_host"`
-	RemotePort     int    `json:"remote_port" form:"remote_port"`
-	ServerPort     int    `json:"server_port" form:"server_port"`
+	RemoteHost         string `json:"remote_host" form:"remote_host"`
+	RemotePort         int    `json:"remote_port" form:"remote_port"`
+	ServerPort         int    `json:"server_port" form:"server_port"`
 	SubscriptionDomain string `json:"subscription_domain" form:"subscription_domain"`
 }
 
@@ -405,8 +405,8 @@ func (a *OpenVPNController) saveSettings(c *gin.Context) {
 		form.RemoteHost = c.PostForm("remote_host")
 	}
 	err := a.openvpnService.SaveSettings(form.RemoteHost, form.RemotePort, form.ServerPort)
-	if form.SubscriptionDomain != "" {
-		_ = service.SetOpenVPNSubDomain(form.SubscriptionDomain)
+	if err == nil {
+		err = service.SetOpenVPNSubDomain(form.SubscriptionDomain)
 	}
 	jsonMsg(c, "OpenVPN settings saved successfully", err)
 }

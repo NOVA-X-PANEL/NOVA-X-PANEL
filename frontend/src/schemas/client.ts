@@ -340,8 +340,6 @@ export const ClientFormSchema = z.object({
   comment: z.string(),
   enable: z.boolean(),
   inboundIds: z.array(z.number()),
-  enableOpenvpn: z.boolean().optional().default(false),
-  openvpnPassword: z.string().optional().default(''),
 });
 
 export const ClientCreateFormSchema = ClientFormSchema.extend({

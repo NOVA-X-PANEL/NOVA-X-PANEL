@@ -179,8 +179,6 @@ const EMPTY: Values = {
   wgKeepAlive: 25,
   secret: '',
   adTag: '',
-  enableOpenvpn: false,
-  openvpnPassword: '',
 };
 
 function toExternalLinkRows(links: ExternalLink[] | undefined): ExternalLinkRow[] {
@@ -280,8 +278,6 @@ export default function ClientFormModal({
   const auth = useWatch({ control: methods.control, name: 'auth' });
   const wgPrivateKey = useWatch({ control: methods.control, name: 'wgPrivateKey' });
   const limitIp = useWatch({ control: methods.control, name: 'limitIp' });
-  const enableOpenvpn = useWatch({ control: methods.control, name: 'enableOpenvpn' });
-  const openvpnPassword = useWatch({ control: methods.control, name: 'openvpnPassword' });
   const {
     fields: externalLinkFields,
     append: appendExternalLink,
@@ -675,8 +671,6 @@ export default function ClientFormModal({
       comment: values.comment,
       enable: values.enable,
       inboundIds: values.inboundIds,
-      enableOpenvpn: values.enableOpenvpn,
-      openvpnPassword: values.openvpnPassword,
     });
     if (!validated.success) {
       const issue = validated.error.issues[0];
@@ -795,8 +789,6 @@ export default function ClientFormModal({
           {
             client: clientPayload,
             inboundIds: values.inboundIds,
-            enableOpenvpn: !!values.enableOpenvpn,
-            openvpnPassword: values.openvpnPassword || '',
           },
           { isEdit: false, email: clientPayload.email as string, externalLinks },
         );
@@ -1142,61 +1134,6 @@ export default function ClientFormModal({
                         >
                           {t('enable')}
                         </span>
-                      </div>
-
-                      <div
-                        style={{
-                          background: 'rgba(234, 88, 12, 0.08)',
-                          border: '1px solid rgba(234, 88, 12, 0.3)',
-                          borderRadius: 12,
-                          padding: '12px 16px',
-                          marginTop: 16,
-                          marginBottom: 12,
-                        }}
-                      >
-                        <div
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                          }}
-                        >
-                          <Space align="center" size={10}>
-                            <span style={{ fontSize: 20 }}>🌐</span>
-                            <div>
-                              <div style={{ fontWeight: 700, fontSize: 13, color: '#fed7aa' }}>
-                                ایجاد همزمان اکانت OpenVPN
-                              </div>
-                              <div style={{ fontSize: 11, color: '#fdba74' }}>
-                                اتصال خودکار کلاینت به OpenVPN (پورت ۱۱۹۴) با همین سقف حجم و نمایش در یک لینک سابسکریپشن واحد
-                              </div>
-                            </div>
-                          </Space>
-                          <Switch
-                            checked={enableOpenvpn}
-                            onChange={(v) => methods.setValue('enableOpenvpn', v)}
-                          />
-                        </div>
-
-                        {enableOpenvpn && (
-                          <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px dashed rgba(234, 88, 12, 0.25)' }}>
-                            <Row gutter={12}>
-                              <Col xs={24} sm={16}>
-                                <Form.Item
-                                  label="رمز عبور OpenVPN (اختیاری)"
-                                  tooltip="در صورت خالی گذاشتن، رمز عبور کلاینت به صورت خودکار تولید می‌شود"
-                                  style={{ marginBottom: 0 }}
-                                >
-                                  <Input
-                                    value={openvpnPassword}
-                                    placeholder="تولید خودکار یا وارد کردن رمز دلخواه"
-                                    onChange={(e) => methods.setValue('openvpnPassword', e.target.value)}
-                                  />
-                                </Form.Item>
-                              </Col>
-                            </Row>
-                          </div>
-                        )}
                       </div>
                     </>
                   ),

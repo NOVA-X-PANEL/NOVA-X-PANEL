@@ -476,9 +476,22 @@ func (a *SUBController) buildSubPageData(c *gin.Context) (PageData, bool) {
 		emails = []string{ovpnUser.Name}
 		subs = []string{}
 		err = nil
-	} else if err != nil || subs == nil || len(subs) == 0 {
+	} else if err != nil {
 		writeSubError(c, err)
 		return PageData{}, false
+	} else if len(subs) == 0 {
+		// A known client can legitimately have no active links when disabled or
+		// expired. Keep its info page available, but never infer or expose links
+		// from the underlying external-link records here.
+		var knownClients int64
+		if queryErr := db.Model(&model.ClientRecord{}).Where("sub_id = ?", subId).Count(&knownClients).Error; queryErr != nil {
+			writeSubError(c, queryErr)
+			return PageData{}, false
+		}
+		if knownClients == 0 {
+			writeSubError(c, nil)
+			return PageData{}, false
+		}
 	}
 	subURL, subJsonURL, subClashURL := subReq.BuildURLs(a.subPath, a.subJsonPath, a.subClashPath, subId)
 	if !a.jsonEnabled {

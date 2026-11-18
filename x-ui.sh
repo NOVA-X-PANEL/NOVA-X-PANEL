@@ -172,7 +172,7 @@ update_dev() {
     fi
     # XUI_UPDATE_TAG tells update.sh to install the dev-latest pre-release
     # instead of the latest stable tag.
-    XUI_UPDATE_TAG="dev-latest" bash <(curl -Ls https://raw.githubusercontent.com/NOVA-X-PANEL/NOVA-X-PANEL/main/update.sh)
+    XUI_UPDATE_TAG="dev-latest" bash <(curl -Ls https://raw.githubusercontent.com/NOVA-X-PANEL/NOVA-X-PANEL/dev/update.sh)
     if [[ $? == 0 ]]; then
         LOGI "Dev update is complete, Panel has automatically restarted "
         before_show_menu
@@ -218,6 +218,10 @@ replace_xui_script() {
 # tag; fall back to main only when no script is published for the version.
 installed_script_url() {
     local ver
+    if [[ -f "${xui_folder}/.dev-channel" ]]; then
+        echo "https://raw.githubusercontent.com/NOVA-X-PANEL/NOVA-X-PANEL/dev/x-ui.sh"
+        return 0
+    fi
     ver=$("${xui_folder}/x-ui" -v 2> /dev/null | tr -d '[:space:]')
     if [[ "$ver" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] && curl -fsIL -o /dev/null "https://raw.githubusercontent.com/NOVA-X-PANEL/NOVA-X-PANEL/v${ver}/x-ui.sh"; then
         echo "https://raw.githubusercontent.com/NOVA-X-PANEL/NOVA-X-PANEL/v${ver}/x-ui.sh"

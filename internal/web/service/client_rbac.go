@@ -569,12 +569,12 @@ func ClientAccessScopeForAdmin(user *model.User, permission string) ClientAccess
 		})
 	}
 
-	// A role that says "all" means all: every client on the panel, including the
-	// ones other admins created. Roles that must stay inside their own records
-	// ask for "own" explicitly. (Until v1.21 this was silently downgraded to
-	// "own", so an admin whose role granted "all" saw an empty list whenever they
-	// had not created clients themselves.)
 	mode := ClientAccessModeFromPermission(rolePermissionValue(role, "users", permission))
+	// A non-owner grant cannot expose or modify another admin's clients, even if
+	// the stored permission says all. A missing or denied grant stays denied.
+	if mode == ClientAccessAll {
+		mode = ClientAccessOwn
+	}
 	return normalizeClientAccessScope(ClientAccessScope{
 		AdminID:           user.Id,
 		Mode:              mode,
@@ -703,7 +703,7 @@ func (s *ClientService) ListForScope(scope ClientAccessScope) ([]ClientWithAttac
 		return nil, err
 	}
 	scope = normalizeClientAccessScope(scope)
-	if scope.Mode == ClientAccessAll && (!scope.RestrictGroups || scope.AllowAllGroups) {
+	if !clientScopeRestricts(scope) {
 		return rows, nil
 	}
 

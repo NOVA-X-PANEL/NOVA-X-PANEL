@@ -117,6 +117,9 @@ func TestHappLinkRouteIsScopedToAllowedInbounds(t *testing.T) {
 	if err := database.GetDB().Create(user).Error; err != nil {
 		t.Fatalf("create user: %v", err)
 	}
+	if err := database.GetDB().Model(&model.ClientRecord{}).Where("id IN ?", []int{allowedID, forbiddenID}).Update("owner_admin_id", user.Id).Error; err != nil {
+		t.Fatalf("assign client owners: %v", err)
+	}
 
 	fake := &fakeHappLinkGenerator{result: service.HappLinkResult{EncryptedLink: "happ://crypt5/x"}}
 	router := newScopedClientRouter(t, user, fake)
@@ -225,6 +228,9 @@ func TestLiveStatusReadsAreScoped(t *testing.T) {
 	user := &model.User{Username: "scoped-status", RoleId: role.Id, Status: model.AdminStatusActive}
 	if err := database.GetDB().Create(user).Error; err != nil {
 		t.Fatalf("create user: %v", err)
+	}
+	if err := database.GetDB().Model(&model.ClientRecord{}).Where("email IN ?", []string{"allowed@route", "forbidden@route"}).Update("owner_admin_id", user.Id).Error; err != nil {
+		t.Fatalf("assign client owners: %v", err)
 	}
 
 	// last_online lives on the traffic counters, one row per email.

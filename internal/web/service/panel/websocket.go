@@ -37,7 +37,7 @@ func NewWebSocketService(hub *websocket.Hub) *WebSocketService {
 // HandleConnection takes ownership of an upgraded WebSocket connection:
 // registers a new client, starts the read/write pumps, and returns
 // immediately. The connection is closed when both pumps exit.
-func (s *WebSocketService) HandleConnection(conn *ws.Conn, remoteIP string) {
+func (s *WebSocketService) HandleConnection(conn *ws.Conn, remoteIP string, filter func([]byte) []byte) {
 	if s == nil || s.hub == nil || conn == nil {
 		if conn != nil {
 			conn.Close()
@@ -49,7 +49,7 @@ func (s *WebSocketService) HandleConnection(conn *ws.Conn, remoteIP string) {
 	s.hub.Register(client)
 	logger.Debugf("WebSocket client %s registered from %s", client.ID, remoteIP)
 
-	go s.writePump(client, conn)
+	go s.writePump(client, conn, filter)
 	go s.readPump(client, conn)
 }
 
@@ -81,7 +81,7 @@ func (s *WebSocketService) readPump(client *websocket.Client, conn *ws.Conn) {
 }
 
 // writePump pushes hub messages to the connection and emits keepalive pings.
-func (s *WebSocketService) writePump(client *websocket.Client, conn *ws.Conn) {
+func (s *WebSocketService) writePump(client *websocket.Client, conn *ws.Conn, filter func([]byte) []byte) {
 	ticker := time.NewTicker(wsPingPeriod)
 	defer func() {
 		if r := common.Recover("WebSocket writePump panic"); r != nil {
@@ -98,6 +98,12 @@ func (s *WebSocketService) writePump(client *websocket.Client, conn *ws.Conn) {
 			if !ok {
 				_ = conn.WriteMessage(ws.CloseMessage, []byte{})
 				return
+			}
+			if filter != nil {
+				msg = filter(msg)
+				if msg == nil {
+					continue
+				}
 			}
 			if err := conn.WriteMessage(ws.TextMessage, msg); err != nil {
 				logger.Debugf("WebSocket write error for client %s: %v", client.ID, err)

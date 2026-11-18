@@ -375,16 +375,23 @@ func (a *AdminController) disable(c *gin.Context) {
 }
 
 // canManageAdminUsers reports whether the calling admin may perform bulk
-// operations on the target admin's users. An admin may always manage its own
-// users; touching another admin's users requires full ownership or ScopeAll on
-// the required client permission.
+// operations on the target admin's users. An admin may manage its own users;
+// touching another admin's users requires the owner or a panel-wide token.
 func (a *AdminController) canManageAdminUsers(c *gin.Context, targetAdminId int, permission string) bool {
-	if c.GetBool("api_authed") || gin.Mode() == gin.TestMode {
+	if c.GetBool("api_authed") && c.GetInt("api_token_admin_id") <= 0 {
 		return true
 	}
-	self := session.GetLoginUser(c)
-	if self == nil {
+	var self *model.User
+	if c.GetBool("api_authed") {
+		self = apiTokenAdmin(c)
+	} else if session.Available(c) {
+		self = session.GetLoginUser(c)
+	} else if gin.Mode() == gin.TestMode {
 		return true
+	}
+	if self == nil {
+		pureJsonMsg(c, http.StatusForbidden, false, "this operation requires permission to manage clients")
+		return false
 	}
 	if self.Id == targetAdminId {
 		return true

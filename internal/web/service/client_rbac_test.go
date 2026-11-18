@@ -234,17 +234,16 @@ func TestClientAccessScopeForAdminHonoursStoredScope(t *testing.T) {
 		t.Fatalf("load administrator role: %v", err)
 	}
 
-	// "all" means all: every client on the panel, including other admins'.
-	// Downgrading this to "own" made a role that granted "all" show an empty
-	// list whenever the admin had not created clients themselves.
+	// Non-owner administrators are always capped to their own clients, even
+	// when their stored permission grants all.
 	adminRole.PermissionsJSON = `{"users":{"read":{"scope":2}}}`
 	if err := db.Model(&model.AdminRole{}).Where("id = ?", adminRole.Id).
 		Update("permissions", adminRole.PermissionsJSON).Error; err != nil {
 		t.Fatalf("update role: %v", err)
 	}
 	user := &model.User{Id: 42, Username: "op", RoleId: adminRole.Id, Status: model.AdminStatusActive}
-	if scope := ClientAccessScopeForAdmin(user, "read"); scope.Mode != ClientAccessAll {
-		t.Fatalf("stored scope 2 resolved to %q, want %q", scope.Mode, ClientAccessAll)
+	if scope := ClientAccessScopeForAdmin(user, "read"); scope.Mode != ClientAccessOwn || scope.AdminID != user.Id {
+		t.Fatalf("stored scope 2 resolved to %+v, want own scope for %d", scope, user.Id)
 	}
 
 	// "own" stays inside the admin's own records.

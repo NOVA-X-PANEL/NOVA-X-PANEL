@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/entity"
@@ -132,10 +133,16 @@ func (a *ClientController) clientScope(c *gin.Context, permission string) servic
 	}
 
 	user := a.loginUser(c)
-	if user == nil && gin.Mode() == gin.TestMode {
+	if user == nil && gin.Mode() == gin.TestMode && !c.GetBool("api_authed") {
 		return service.ClientAccessScope{Mode: service.ClientAccessAll}
 	}
-	return a.clientService.ClientScopeFor(user, permission)
+	scope := a.clientService.ClientScopeFor(user, permission)
+	// The read gate permits either full or simple view; resolve the same grant
+	// here rather than returning an empty list for a simple-view-only role.
+	if permission == "view" && scope.Mode == service.ClientAccessNone {
+		return a.clientService.ClientScopeFor(user, "view_simple")
+	}
+	return scope
 }
 
 func (a *ClientController) loginUser(c *gin.Context) *model.User {
@@ -155,13 +162,13 @@ func (a *ClientController) loginUser(c *gin.Context) *model.User {
 // when the acting scope covers every client. An "own" or "none" scoped role must
 // not be able to wipe another admin's traffic by calling a bulk endpoint.
 func (a *ClientController) requireGlobalClientScope(c *gin.Context, permission string) bool {
-	if c.GetBool("api_authed") || gin.Mode() == gin.TestMode {
+	if c.GetBool("api_authed") && c.GetInt("api_token_admin_id") <= 0 {
 		return true
 	}
-	if a.loginUser(c) == nil {
+	if a.loginUser(c) == nil && gin.Mode() == gin.TestMode && !c.GetBool("api_authed") {
 		return true
 	}
-	if a.clientScope(c, permission).Mode == service.ClientAccessAll {
+	if !service.ScopeRestrictsClients(a.clientScope(c, permission)) {
 		return true
 	}
 	pureJsonMsg(c, http.StatusForbidden, false, "this operation requires access to every client")
@@ -220,30 +227,6 @@ func (a *ClientController) requireClientInScopeByID(c *gin.Context, id int, perm
 		return nil, false
 	}
 	return rec, true
-}
-
-// filterByScopedUUIDs keeps only the entries whose key is a client uuid the acting
-// scope may see. The live-status endpoints are keyed by uuid, so this is the uuid
-// counterpart of FilterClientEmailsForScope.
-//
-// On any failure it returns an empty map rather than the unfiltered one: an error
-// resolving the scope must not widen what a caller receives.
-func filterByScopedUUIDs[V any](a *ClientController, c *gin.Context, data map[string]V) map[string]V {
-	scope := a.clientScope(c, "view")
-	if !service.ScopeRestrictsClients(scope) {
-		return data
-	}
-	allowed, err := a.clientService.UUIDsForScope(scope)
-	if err != nil {
-		return map[string]V{}
-	}
-	out := make(map[string]V, len(allowed))
-	for uuid, value := range data {
-		if _, ok := allowed[uuid]; ok {
-			out[uuid] = value
-		}
-	}
-	return out
 }
 
 func (a *ClientController) list(c *gin.Context) {
@@ -510,7 +493,8 @@ func (a *ClientController) create(c *gin.Context) {
 
 func (a *ClientController) update(c *gin.Context) {
 	email := c.Param("email")
-	if _, ok := a.requireClientInScope(c, email, "update"); !ok {
+	existing, ok := a.requireClientInScope(c, email, "update")
+	if !ok {
 		return
 	}
 	var req struct {
@@ -527,9 +511,12 @@ func (a *ClientController) update(c *gin.Context) {
 			jsonMsg(c, err.Error(), err)
 			return
 		}
-		if user.RoleId != 0 {
-			req.Client.OwnerAdminId = int64(user.Id)
-		}
+		// An ordinary edit is not an ownership transfer. In particular an owner
+		// editing another admin's client must not stamp their own account onto it,
+		// nor may a supplied ownerAdminId override the stored assignment. Carry it
+		// into attached inbound settings as well as the detached record path.
+		// Panel-wide node-sync tokens have no user and retain their wire behavior.
+		req.Client.OwnerAdminId = existing.OwnerAdminId
 	}
 	inboundFilter := parseInboundIdsQuery(c.Query("inboundIds"))
 	needRestart, err := a.clientService.UpdateByEmail(&a.inboundService, email, req.Client, req.LimitHwid, inboundFilter...)
@@ -1004,7 +991,31 @@ func (a *ClientController) clientIpsByGuid(c *gin.Context) {
 		jsonObj(c, data, err)
 		return
 	}
-	jsonObj(c, filterByScopedUUIDs(a, c, data), nil)
+	scope := a.clientScope(c, "view")
+	if !service.ScopeRestrictsClients(scope) {
+		jsonObj(c, data, nil)
+		return
+	}
+	// This is node GUID -> client email -> IPs, not client UUID -> IPs.
+	emails := make([]string, 0)
+	for _, perEmail := range data {
+		for email := range perEmail {
+			emails = append(emails, email)
+		}
+	}
+	allowed := scopedEmailSet(scope, emails)
+	filtered := make(map[string]map[string][]model.ClientIpEntry)
+	for guid, perEmail := range data {
+		for email, ips := range perEmail {
+			if _, ok := allowed[email]; ok {
+				if filtered[guid] == nil {
+					filtered[guid] = make(map[string][]model.ClientIpEntry)
+				}
+				filtered[guid][email] = ips
+			}
+		}
+	}
+	jsonObj(c, filtered, nil)
 }
 
 func (a *ClientController) clearIps(c *gin.Context) {
@@ -1064,11 +1075,142 @@ func (a *ClientController) onlines(c *gin.Context) {
 }
 
 func (a *ClientController) onlinesByGuid(c *gin.Context) {
-	jsonObj(c, filterByScopedUUIDs(a, c, a.inboundService.GetOnlineClientsByGuid()), nil)
+	// The keys are panel GUIDs, not client UUIDs; each value is a list of
+	// emails and needs the same client scope as the flat online endpoint.
+	scope := a.clientScope(c, "view")
+	data := a.inboundService.GetOnlineClientsByGuid()
+	if !service.ScopeRestrictsClients(scope) {
+		jsonObj(c, data, nil)
+		return
+	}
+	filtered := make(map[string][]string, len(data))
+	for guid, emails := range data {
+		if allowed := service.FilterClientEmailsForScope(scope, emails); len(allowed) > 0 {
+			filtered[guid] = allowed
+		}
+	}
+	jsonObj(c, filtered, nil)
+}
+
+// scopedEmailSet uses the same ownership, group and inbound restrictions as the
+// clients list. Batch the lookup to stay below database bind-variable limits.
+func scopedEmailSet(scope service.ClientAccessScope, emails []string) map[string]struct{} {
+	allowed := make(map[string]struct{})
+	seen := make(map[string]struct{}, len(emails))
+	unique := make([]string, 0, len(emails))
+	for _, email := range emails {
+		if email == "" {
+			continue
+		}
+		if _, ok := seen[email]; !ok {
+			seen[email] = struct{}{}
+			unique = append(unique, email)
+		}
+	}
+	const batchSize = 400
+	for start := 0; start < len(unique); start += batchSize {
+		end := min(start+batchSize, len(unique))
+		for _, email := range service.FilterClientEmailsForScope(scope, unique[start:end]) {
+			allowed[email] = struct{}{}
+		}
+	}
+	return allowed
+}
+
+// scopedActiveInbounds filters node GUID -> inbound tags. Activity is aggregate
+// per inbound, not per client: expose tags only for inbounds linked to a visible
+// client, and only on the physical node identified by that inbound. Keep an
+// empty list for a known node with no visible active tags: a missing node means
+// "do not gate" to the status UI, while an empty list means "gate all".
+func (a *ClientController) scopedActiveInbounds(scope service.ClientAccessScope, data map[string][]string) (map[string][]string, error) {
+	out := make(map[string][]string)
+	if len(data) == 0 {
+		return out, nil
+	}
+	db := database.GetDB()
+	if db == nil {
+		return nil, errors.New("database is not initialized")
+	}
+	var inbounds []model.Inbound
+	if err := db.Select("id", "tag", "node_id", "origin_node_guid").Find(&inbounds).Error; err != nil {
+		return nil, err
+	}
+	localGUID, err := a.settingService.GetPanelGuid()
+	if err != nil {
+		return nil, err
+	}
+	type inboundIdentity struct{ guid, tag string }
+	byID := make(map[int]inboundIdentity)
+	ids := make([]int, 0)
+	for _, ib := range inbounds {
+		if !service.ClientInboundsAllowedForScope(scope, []int{ib.Id}) {
+			continue
+		}
+		guid := ib.OriginNodeGuid
+		if guid == "" {
+			if ib.NodeID == nil {
+				guid = localGUID
+			} else {
+				guid = "node:" + strconv.Itoa(*ib.NodeID)
+			}
+		}
+		if _, present := data[guid]; guid != "" && present {
+			byID[ib.Id] = inboundIdentity{guid: guid, tag: ib.Tag}
+			ids = append(ids, ib.Id)
+		}
+	}
+	type clientLink struct {
+		InboundID int
+		Email     string
+	}
+	links := make([]clientLink, 0)
+	const batchSize = 400
+	for start := 0; start < len(ids); start += batchSize {
+		end := min(start+batchSize, len(ids))
+		var batch []clientLink
+		if err := db.Table("client_inbounds").Select("client_inbounds.inbound_id, clients.email").
+			Joins("JOIN clients ON clients.id = client_inbounds.client_id").
+			Where("client_inbounds.inbound_id IN ?", ids[start:end]).Scan(&batch).Error; err != nil {
+			return nil, err
+		}
+		links = append(links, batch...)
+	}
+	emails := make([]string, 0, len(links))
+	for _, link := range links {
+		emails = append(emails, link.Email)
+	}
+	allowed := scopedEmailSet(scope, emails)
+	visibleTags := make(map[string]map[string]struct{})
+	for _, link := range links {
+		if _, ok := allowed[link.Email]; !ok {
+			continue
+		}
+		ib := byID[link.InboundID]
+		if visibleTags[ib.guid] == nil {
+			visibleTags[ib.guid] = make(map[string]struct{})
+			out[ib.guid] = []string{}
+		}
+		visibleTags[ib.guid][ib.tag] = struct{}{}
+	}
+	for guid, tags := range data {
+		for _, tag := range tags {
+			if _, ok := visibleTags[guid][tag]; ok {
+				out[guid] = append(out[guid], tag)
+			}
+		}
+	}
+	return out, nil
 }
 
 func (a *ClientController) activeInbounds(c *gin.Context) {
-	jsonObj(c, filterByScopedUUIDs(a, c, a.inboundService.GetActiveInboundsByGuid()), nil)
+	data := a.inboundService.GetActiveInboundsByGuid()
+	scope := a.clientScope(c, "view")
+	if !service.ScopeRestrictsClients(scope) {
+		jsonObj(c, data, nil)
+		return
+	}
+	filtered, err := a.scopedActiveInbounds(scope, data)
+	jsonObj(c, filtered, err)
 }
 
 func (a *ClientController) lastOnline(c *gin.Context) {

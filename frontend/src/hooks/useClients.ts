@@ -605,7 +605,16 @@ export function useClients(options: UseClientsOptions = {}) {
       skipUnlimited = true,
     ) => {
       if (!all && (!Array.isArray(emails) || emails.length === 0)) return Promise.resolve(null);
-      return bulkAdjustMut.mutateAsync({ emails, addDays, addBytes, flow, limitHwid, adTag, all, skipUnlimited });
+      return bulkAdjustMut.mutateAsync({
+        emails,
+        addDays,
+        addBytes,
+        flow,
+        limitHwid,
+        adTag,
+        all,
+        skipUnlimited,
+      });
     },
     [bulkAdjustMut],
   );
@@ -759,7 +768,10 @@ export function useClients(options: UseClientsOptions = {}) {
         clientTrafficIntervalMs?: number;
       };
       if (Array.isArray(p.onlineClients)) {
-        queryClient.setQueryData(keys.clients.onlines(), p.onlineClients);
+        // Traffic broadcasts may contain the whole panel's online set. The
+        // REST endpoint applies the current admin's client scope; do not replace
+        // that shared cache with an unscoped websocket snapshot.
+        void queryClient.invalidateQueries({ queryKey: keys.clients.onlines(), exact: true });
       }
       if (Array.isArray(p.clientTraffics)) {
         // Xray reports a row per client whether or not it moved a byte, so most of

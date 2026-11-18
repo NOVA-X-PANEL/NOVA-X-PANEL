@@ -599,7 +599,7 @@ func (q clientQuery) onlineEmails(onlines []string) ([]string, int, error) {
 	count := 0
 	for _, batch := range chunkStrings(onlines, sqlInChunk) {
 		var page []string
-		if err := q.db.Model(&model.ClientRecord{}).
+		if err := applyClientAccessScope(q.db.Model(&model.ClientRecord{}), q.scope).
 			Where("COALESCE(enable, FALSE) = TRUE AND email IN ?", batch).
 			Order("id ASC").
 			Pluck("email", &page).Error; err != nil {

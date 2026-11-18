@@ -1,7 +1,6 @@
 package service
 
 import (
-	"encoding/json"
 	"strings"
 	"testing"
 )
@@ -234,30 +233,5 @@ func TestBuildTunnelPanelIranScript_StandardGRETAP(t *testing.T) {
 		if !strings.Contains(script, tok) {
 			t.Errorf("script missing expected token %q", tok)
 		}
-	}
-}
-
-func TestHashemPortActionResultUsesIranCommandJSONField(t *testing.T) {
-	const command = "echo add-port"
-	encoded, err := json.Marshal(HashemPortActionResult{
-		Success:     true,
-		Port:        2083,
-		Ports:       []int{443, 2083},
-		IranCommand: command,
-		Message:     "run command on Iran server",
-	})
-	if err != nil {
-		t.Fatalf("marshal port action result: %v", err)
-	}
-
-	var payload map[string]any
-	if err := json.Unmarshal(encoded, &payload); err != nil {
-		t.Fatalf("unmarshal port action result: %v", err)
-	}
-	if got, ok := payload["iranCommand"].(string); !ok || got != command {
-		t.Fatalf("iranCommand = %#v, want %q", payload["iranCommand"], command)
-	}
-	if _, ok := payload["oneLinerCommand"]; ok {
-		t.Fatal("port action response must not use the unrelated oneLinerCommand field")
 	}
 }

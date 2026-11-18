@@ -411,9 +411,7 @@ export default function HashemPage() {
                       {isHealthy
                         ? t('pages.hashem.statusHealthy')
                         : isWaitingPeer
-                          ? t('pages.hashem.statusWaitingPeer', {
-                              defaultValue: 'در انتظار اتصال سرور رله',
-                            })
+                          ? t('pages.hashem.statusWaitingPeer', { defaultValue: 'در انتظار اتصال سرور رله' })
                           : isConnecting
                             ? t('pages.hashem.statusConnecting')
                             : t('pages.hashem.statusDisconnected')}
@@ -559,7 +557,6 @@ export default function HashemPage() {
                         <Text type="secondary">{t('pages.hashem.localGreIp')}: </Text>
                         <Text
                           code
-                          className="hashem-inline-code"
                           style={{
                             background: 'rgba(0,0,0,0.4)',
                             borderColor: 'rgba(56,189,248,0.2)',
@@ -572,7 +569,6 @@ export default function HashemPage() {
                         <Text type="secondary">{t('pages.hashem.peerGreIp')}: </Text>
                         <Text
                           code
-                          className="hashem-inline-code"
                           style={{
                             background: 'rgba(0,0,0,0.4)',
                             borderColor: 'rgba(56,189,248,0.2)',
@@ -612,7 +608,7 @@ export default function HashemPage() {
                         style={{ fontSize: 12, padding: '2px 8px', borderRadius: 6, margin: 0 }}
                       >
                         {status.running
-                          ? status.activeCarrier || status.carrier || t('pages.hashem.unknown')
+                          ? (status.activeCarrier || status.carrier || t('pages.hashem.unknown'))
                           : t('pages.hashem.greInterfaceDown', { defaultValue: 'Disconnected' })}
                       </Tag>
                     </div>
@@ -712,7 +708,6 @@ export default function HashemPage() {
                         </Text>
                         <Text
                           code
-                          className="hashem-inline-code"
                           style={{
                             background: 'rgba(0,0,0,0.4)',
                             borderColor: 'rgba(56,189,248,0.2)',
@@ -1064,7 +1059,6 @@ export default function HashemPage() {
                       <Descriptions.Item label={t('pages.hashem.localPublicIp')}>
                         <Text
                           code
-                          className="hashem-inline-code"
                           style={{
                             background: 'rgba(0,0,0,0.4)',
                             borderColor: 'rgba(56,189,248,0.2)',
@@ -1076,7 +1070,6 @@ export default function HashemPage() {
                       <Descriptions.Item label={t('pages.hashem.remotePublicIp')}>
                         <Text
                           code
-                          className="hashem-inline-code"
                           style={{
                             background: 'rgba(0,0,0,0.4)',
                             borderColor: 'rgba(56,189,248,0.2)',
@@ -1119,7 +1112,7 @@ export default function HashemPage() {
           footer={null}
           destroyOnClose
           width={640}
-          wrapClassName={`hashem-modal${!isDark ? ' hashem-modal-light' : ''}`}
+          wrapClassName="hashem-modal"
         >
           <Tabs
             activeKey={setupTab}
@@ -1271,7 +1264,6 @@ export default function HashemPage() {
                           {t('pages.hashem.oneLinerModalDesc')}
                         </Text>
                         <div
-                          className="hashem-generated-command"
                           style={{
                             marginTop: 8,
                             padding: 12,
@@ -1507,7 +1499,7 @@ export default function HashemPage() {
             </Button>,
           ]}
           width={680}
-          wrapClassName={`hashem-modal${!isDark ? ' hashem-modal-light' : ''}`}
+          wrapClassName="hashem-modal"
           destroyOnClose
         >
           <div style={{ marginTop: 8 }}>
@@ -1559,7 +1551,6 @@ export default function HashemPage() {
             )}
 
             <div
-              className="hashem-teardown-command"
               style={{
                 padding: 12,
                 background: 'rgba(0, 0, 0, 0.65)',
@@ -1609,7 +1600,7 @@ export default function HashemPage() {
               {t('pages.hashem.saveAndApply', { defaultValue: 'Save & Apply Immediately' })}
             </Button>,
           ]}
-          className={`hashem-modal${!isDark ? ' hashem-modal-light' : ''}`}
+          className="hashem-modal"
         >
           <Paragraph
             style={{ color: 'var(--nc-subtext, #94a3b8)', fontSize: 13, marginBottom: 16 }}
@@ -1628,7 +1619,6 @@ export default function HashemPage() {
               {t('pages.hashem.forwardedPortsList', { defaultValue: 'Current Ports' })}:
             </Text>
             <div
-              className="hashem-edit-ports-list"
               style={{
                 display: 'flex',
                 flexWrap: 'wrap',
@@ -1696,9 +1686,7 @@ export default function HashemPage() {
           title={
             <Space>
               <PlusCircleOutlined style={{ color: '#10b981' }} />
-              <span>
-                {t('pages.hashem.addPortModalTitle', { defaultValue: 'Add Tunnel Port' })}
-              </span>
+              <span>{t('pages.hashem.addPortModalTitle', { defaultValue: 'Add Tunnel Port' })}</span>
             </Space>
           }
           open={addPortModalOpen}
@@ -1746,7 +1734,7 @@ export default function HashemPage() {
                   </Button>,
                 ]
           }
-          className={`hashem-modal${!isDark ? ' hashem-modal-light' : ''}`}
+          className="hashem-modal"
           width={620}
         >
           {!addPortResult ? (
@@ -1806,7 +1794,7 @@ export default function HashemPage() {
                 description={addPortResult.message}
                 style={{ marginBottom: 16 }}
               />
-              {addPortResult.iranCommand && (
+              {addPortResult.oneLinerCommand && (
                 <div>
                   <Paragraph
                     style={{ fontWeight: 600, color: 'var(--nc-text, #f1f5f9)', marginBottom: 8 }}
@@ -1817,7 +1805,6 @@ export default function HashemPage() {
                     })}
                   </Paragraph>
                   <div
-                    className="hashem-generated-command"
                     style={{
                       background: 'rgba(0, 0, 0, 0.45)',
                       padding: 14,
@@ -1829,14 +1816,14 @@ export default function HashemPage() {
                       position: 'relative',
                     }}
                   >
-                    {addPortResult.iranCommand}
+                    {addPortResult.oneLinerCommand}
                   </div>
                   <div style={{ marginTop: 14, textAlign: 'right' }}>
                     <Button
                       type="primary"
                       icon={<CopyOutlined />}
                       onClick={() => {
-                        copyToClipboard(addPortResult.iranCommand);
+                        copyToClipboard(addPortResult.oneLinerCommand);
                       }}
                       style={{
                         background: 'linear-gradient(135deg, #0284c7, #2563eb)',

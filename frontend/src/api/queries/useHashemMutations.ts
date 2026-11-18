@@ -74,8 +74,9 @@ export interface HashemOneLinerResult {
 
 export interface HashemPortActionResult {
   port: number;
+  action: 'add' | 'remove';
   ports: number[];
-  iranCommand: string;
+  oneLinerCommand: string;
   message: string;
 }
 

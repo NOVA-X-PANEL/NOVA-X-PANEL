@@ -65,6 +65,12 @@ acme_listen_flag() {
 # check root
 [[ $EUID -ne 0 ]] && LOGE "ERROR: You must be root to run this script! \n" && exit 1
 
+# Keep the short menu command available on existing installations after the
+# updated menu script is first run. Never replace an unrelated /usr/bin/nova.
+if [[ -x /usr/bin/x-ui && ( ! -e /usr/bin/nova || -L /usr/bin/nova ) ]]; then
+    ln -sfn /usr/bin/x-ui /usr/bin/nova 2> /dev/null || true
+fi
+
 # Check OS and set release variable
 if [[ -f /etc/os-release ]]; then
     source /etc/os-release
@@ -3591,70 +3597,70 @@ migrate_db_prompt() {
 
 show_usage() {
     echo -e "┌────────────────────────────────────────────────────────────────┐
-│  ${blue}x-ui control menu usages (subcommands):${plain}                       │
-│                                                                │
-│  ${blue}x-ui${plain}                       - Admin Management Script          │
-│  ${blue}x-ui start${plain}                 - Start                            │
-│  ${blue}x-ui stop${plain}                  - Stop                             │
-│  ${blue}x-ui restart${plain}               - Restart                          │
-|  ${blue}x-ui restart-xray${plain}          - Restart Xray                     │
-│  ${blue}x-ui status${plain}                - Current Status                   │
-│  ${blue}x-ui settings${plain}              - Current Settings                 │
-│  ${blue}x-ui enable${plain}                - Enable Autostart on OS Startup   │
-│  ${blue}x-ui disable${plain}               - Disable Autostart on OS Startup  │
-│  ${blue}x-ui log${plain}                   - Check logs                       │
-│  ${blue}x-ui banlog${plain}                - Check Fail2ban ban logs          │
-│  ${blue}x-ui update${plain}                - Update                           │
-│  ${blue}x-ui update-dev${plain}            - Update to Dev channel (latest)   │
-│  ${blue}x-ui update-all-geofiles${plain}   - Update all geo files             │
-│  ${blue}x-ui migrateDB [file]${plain}      - Convert .db <-> .dump (SQLite)   │
-│  ${blue}x-ui pgclient [ver]${plain}        - Upgrade pg_dump/pg_restore tools │
-│  ${blue}x-ui legacy${plain}                - Legacy version                   │
-│  ${blue}x-ui install${plain}               - Install                          │
-│  ${blue}x-ui uninstall${plain}             - Uninstall                        │
+${blue}│  ${blue}x-ui control menu usages (subcommands):${plain}                       │
+${blue}│                                                                │
+${blue}│  ${blue}x-ui${plain}                       - Admin Management Script          │
+${blue}│  ${blue}x-ui start${plain}                 - Start                            │
+${blue}│  ${blue}x-ui stop${plain}                  - Stop                             │
+${blue}│  ${blue}x-ui restart${plain}               - Restart                          │
+${blue}│  ${blue}x-ui restart-xray${plain}          - Restart Xray                     │
+${blue}│  ${blue}x-ui status${plain}                - Current Status                   │
+${blue}│  ${blue}x-ui settings${plain}              - Current Settings                 │
+${blue}│  ${blue}x-ui enable${plain}                - Enable Autostart on OS Startup   │
+${blue}│  ${blue}x-ui disable${plain}               - Disable Autostart on OS Startup  │
+${blue}│  ${blue}x-ui log${plain}                   - Check logs                       │
+${blue}│  ${blue}x-ui banlog${plain}                - Check Fail2ban ban logs          │
+${blue}│  ${blue}x-ui update${plain}                - Update                           │
+${blue}│  ${blue}x-ui update-dev${plain}            - Update to Dev channel (latest)   │
+${blue}│  ${blue}x-ui update-all-geofiles${plain}   - Update all geo files             │
+${blue}│  ${blue}x-ui migrateDB [file]${plain}      - Convert .db <-> .dump (SQLite)   │
+${blue}│  ${blue}x-ui pgclient [ver]${plain}        - Upgrade pg_dump/pg_restore tools │
+${blue}│  ${blue}x-ui legacy${plain}                - Legacy version                   │
+${blue}│  ${blue}x-ui install${plain}               - Install                          │
+${blue}│  ${blue}x-ui uninstall${plain}             - Uninstall                        │
 └────────────────────────────────────────────────────────────────┘"
 }
 
 show_menu() {
     echo -e "
-╔────────────────────────────────────────────────╗
-│  ${green}3X-UI Panel Management Script${plain}                │
-│  ${green}0.${plain} Exit Script                               │
-│────────────────────────────────────────────────│
-│  ${green}1.${plain} Install                                   │
-│  ${green}2.${plain} Update                                    │
-│  ${green}3.${plain} Update to Dev Channel (latest commit)     │
-│  ${green}4.${plain} Update Menu                               │
-│  ${green}5.${plain} Legacy Version                            │
-│  ${green}6.${plain} Uninstall                                 │
-│────────────────────────────────────────────────│
-│  ${green}7.${plain} Reset Username & Password                 │
-│  ${green}8.${plain} Reset Web Base Path                       │
-│  ${green}9.${plain} Reset Settings                            │
-│  ${green}10.${plain} Change Port                              │
-│  ${green}11.${plain} View Current Settings                    │
-│────────────────────────────────────────────────│
-│  ${green}12.${plain} Start                                    │
-│  ${green}13.${plain} Stop                                     │
-│  ${green}14.${plain} Restart                                  │
-|  ${green}15.${plain} Restart Xray                             │
-│  ${green}16.${plain} Check Status                             │
-│  ${green}17.${plain} Logs Management                          │
-│────────────────────────────────────────────────│
-│  ${green}18.${plain} Enable Autostart                         │
-│  ${green}19.${plain} Disable Autostart                        │
-│────────────────────────────────────────────────│
-│  ${green}20.${plain} SSL Certificate Management               │
-│  ${green}21.${plain} Cloudflare SSL Certificate               │
-│  ${green}22.${plain} IP Limit Management                      │
-│  ${green}23.${plain} Firewall Management                      │
-│  ${green}24.${plain} SSH Port Forwarding Management           │
-│  ${green}25.${plain} PostgreSQL Management                    │
-│────────────────────────────────────────────────│
-│  ${green}26.${plain} Enable BBR                               │
-│  ${green}27.${plain} Update Geo Files                         │
-│  ${green}28.${plain} Speedtest by Ookla                       │
-╚────────────────────────────────────────────────╝
+${blue}╔────────────────────────────────────────────────╗
+${blue}│${plain}  ${green}3X-UI Panel Management Script${plain}                ${blue}│
+${blue}│  ${blue}0.${plain} Exit Script                               ${blue}│
+${blue}│────────────────────────────────────────────────│
+${blue}│  ${blue}1.${plain} Install                                   ${blue}│
+${blue}│  ${blue}2.${plain} Update                                    ${blue}│
+${blue}│  ${blue}3.${plain} Update to Dev Channel (latest commit)     ${blue}│
+${blue}│  ${blue}4.${plain} Update Menu                               ${blue}│
+${blue}│  ${blue}5.${plain} Legacy Version                            ${blue}│
+${blue}│  ${blue}6.${plain} Uninstall                                 ${blue}│
+${blue}│────────────────────────────────────────────────│
+${blue}│  ${blue}7.${plain} Reset Username & Password                 ${blue}│
+${blue}│  ${blue}8.${plain} Reset Web Base Path                       ${blue}│
+${blue}│  ${blue}9.${plain} Reset Settings                            ${blue}│
+${blue}│  ${blue}10.${plain} Change Port                              ${blue}│
+${blue}│  ${blue}11.${plain} View Current Settings                    ${blue}│
+${blue}│────────────────────────────────────────────────│
+${blue}│  ${blue}12.${plain} Start                                    ${blue}│
+${blue}│  ${blue}13.${plain} Stop                                     ${blue}│
+${blue}│  ${blue}14.${plain} Restart                                  ${blue}│
+${blue}│  ${blue}15.${plain} Restart Xray                             ${blue}│
+${blue}│  ${blue}16.${plain} Check Status                             ${blue}│
+${blue}│  ${blue}17.${plain} Logs Management                          ${blue}│
+${blue}│────────────────────────────────────────────────│
+${blue}│  ${blue}18.${plain} Enable Autostart                         ${blue}│
+${blue}│  ${blue}19.${plain} Disable Autostart                        ${blue}│
+${blue}│────────────────────────────────────────────────│
+${blue}│  ${blue}20.${plain} SSL Certificate Management               ${blue}│
+${blue}│  ${blue}21.${plain} Cloudflare SSL Certificate               ${blue}│
+${blue}│  ${blue}22.${plain} IP Limit Management                      ${blue}│
+${blue}│  ${blue}23.${plain} Firewall Management                      ${blue}│
+${blue}│  ${blue}24.${plain} SSH Port Forwarding Management           ${blue}│
+${blue}│  ${blue}25.${plain} PostgreSQL Management                    ${blue}│
+${blue}│────────────────────────────────────────────────│
+${blue}│  ${blue}26.${plain} Enable BBR                               ${blue}│
+${blue}│  ${blue}27.${plain} Update Geo Files                         ${blue}│
+${blue}│  ${blue}28.${plain} Speedtest by Ookla                       ${blue}│
+${blue}╚────────────────────────────────────────────────╝${plain}
 "
     show_status
     echo && read -rp "Please enter your selection [0-28]: " num

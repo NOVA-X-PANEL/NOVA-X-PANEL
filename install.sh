@@ -2085,6 +2085,11 @@ install_x-ui() {
         exit 1
     fi
     chmod +x /usr/bin/x-ui
+    if [[ ! -e /usr/bin/nova || -L /usr/bin/nova ]]; then
+        ln -sfn /usr/bin/x-ui /usr/bin/nova
+    else
+        echo -e "${yellow}/usr/bin/nova already exists and was left untouched.${plain}"
+    fi
     mkdir -p /var/log/x-ui
     if [[ -e /etc/systemd/system/x-ui.service ]]; then
         systemctl daemon-reload >/dev/null 2>&1 || true

@@ -368,3 +368,145 @@
     height: 36px !important;
   }
 }
+
+/* Keep OpenVPN surfaces in sync with the selected application theme. */
+.openvpn-page:not(.is-dark) .openvpn-hero {
+  border-color: rgba(37, 99, 255, 0.18);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 8px 24px rgba(31, 54, 92, 0.08);
+}
+
+.openvpn-page:not(.is-dark) .openvpn-hero::before {
+  background: linear-gradient(90deg, transparent, rgba(37, 99, 255, 0.42), transparent);
+}
+
+.openvpn-page:not(.is-dark) .openvpn-hero-title-text {
+  background: linear-gradient(135deg, #1d4ed8 0%, #0891b2 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.openvpn-page:not(.is-dark) .openvpn-hero-subtitle {
+  color: #52627a !important;
+}
+
+.openvpn-page:not(.is-dark) .openvpn-hero .anticon {
+  color: #1d4ed8 !important;
+  filter: none !important;
+}
+
+.openvpn-page:not(.is-dark) .openvpn-card {
+  border-color: rgba(37, 99, 255, 0.16) !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  box-shadow: 0 6px 20px rgba(31, 54, 92, 0.07) !important;
+}
+
+.openvpn-page:not(.is-dark) .openvpn-card::before {
+  background: linear-gradient(90deg, transparent, rgba(37, 99, 255, 0.3), transparent);
+}
+
+.openvpn-page:not(.is-dark) .openvpn-card:hover {
+  border-color: rgba(37, 99, 255, 0.32) !important;
+  box-shadow: 0 10px 26px rgba(37, 99, 255, 0.1) !important;
+}
+
+.openvpn-page:not(.is-dark) .openvpn-card .ant-card-head {
+  border-bottom-color: rgba(37, 99, 255, 0.12) !important;
+}
+
+.openvpn-page:not(.is-dark) .openvpn-card .ant-card-head-title {
+  color: #1d4ed8;
+}
+
+.openvpn-page:not(.is-dark) .openvpn-stat-value[style*='background'] {
+  background: none !important;
+  color: #1d4ed8 !important;
+  -webkit-text-fill-color: #1d4ed8 !important;
+}
+
+.openvpn-page:not(.is-dark) .openvpn-stat-value > span:not(.openvpn-pulse-dot) {
+  color: #52627a !important;
+}
+
+.openvpn-page:not(.is-dark) .ant-progress .ant-progress-inner {
+  background-color: #e4eaf5 !important;
+}
+
+.openvpn-page:not(.is-dark) .openvpn-presets-bar {
+  background: rgba(239, 244, 255, 0.85);
+  border-color: rgba(37, 99, 255, 0.15);
+}
+
+.openvpn-page:not(.is-dark) .openvpn-preset-chip {
+  background: #f8faff !important;
+  border-color: rgba(37, 99, 255, 0.2) !important;
+  color: #34445e !important;
+}
+
+.openvpn-page:not(.is-dark) .openvpn-preset-chip:hover {
+  background: rgba(37, 99, 255, 0.08) !important;
+  border-color: #1d4ed8 !important;
+  color: #1d4ed8 !important;
+  box-shadow: 0 0 10px rgba(37, 99, 255, 0.12) !important;
+}
+
+.openvpn-page:not(.is-dark) .openvpn-btn-action-download {
+  background: rgba(37, 99, 255, 0.06) !important;
+  border-color: rgba(37, 99, 255, 0.26) !important;
+  color: #1d4ed8 !important;
+}
+
+.openvpn-page:not(.is-dark) .openvpn-btn-action-download:hover {
+  background: rgba(37, 99, 255, 0.12) !important;
+  border-color: #1d4ed8 !important;
+  box-shadow: 0 0 12px rgba(37, 99, 255, 0.12) !important;
+}
+
+.openvpn-page:not(.is-dark) .openvpn-offline-badge {
+  background: rgba(71, 85, 105, 0.06);
+  border-color: rgba(71, 85, 105, 0.16);
+  color: #52627a;
+}
+
+.openvpn-page:not(.is-dark) .openvpn-unlimited-tag {
+  color: #52627a !important;
+  background: rgba(71, 85, 105, 0.06) !important;
+  border-color: rgba(71, 85, 105, 0.16) !important;
+}
+
+.openvpn-page:not(.is-dark) .openvpn-ovpn-tag {
+  background: rgba(37, 99, 255, 0.07);
+  color: #1d4ed8;
+  border-color: rgba(37, 99, 255, 0.2);
+}
+
+.openvpn-page:not(.is-dark) .openvpn-creds-card {
+  background: #f8faff !important;
+  border-color: rgba(37, 99, 255, 0.2) !important;
+  box-shadow: 0 4px 14px rgba(31, 54, 92, 0.07) !important;
+}
+
+@media (max-width: 768px) {
+  .openvpn-page:not(.is-dark) .openvpn-mobile-client-card {
+    background: #ffffff;
+    border-color: rgba(37, 99, 255, 0.18);
+    box-shadow: 0 4px 16px rgba(31, 54, 92, 0.08);
+  }
+
+  .openvpn-page:not(.is-dark) .openvpn-mobile-username {
+    color: #1d4ed8;
+  }
+
+  .openvpn-page:not(.is-dark) .openvpn-mobile-client-stats {
+    background: #f4f7ff;
+    border-color: rgba(37, 99, 255, 0.1);
+  }
+
+  .openvpn-page:not(.is-dark) .openvpn-mobile-stat-row .stat-label {
+    color: #52627a;
+  }
+
+  .openvpn-page:not(.is-dark) .openvpn-mobile-stat-row .stat-val {
+    color: #17243b;
+  }
+}

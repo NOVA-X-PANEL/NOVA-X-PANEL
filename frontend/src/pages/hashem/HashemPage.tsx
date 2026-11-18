@@ -1806,7 +1806,7 @@ export default function HashemPage() {
                 description={addPortResult.message}
                 style={{ marginBottom: 16 }}
               />
-              {addPortResult.oneLinerCommand && (
+              {addPortResult.iranCommand && (
                 <div>
                   <Paragraph
                     style={{ fontWeight: 600, color: 'var(--nc-text, #f1f5f9)', marginBottom: 8 }}
@@ -1829,14 +1829,14 @@ export default function HashemPage() {
                       position: 'relative',
                     }}
                   >
-                    {addPortResult.oneLinerCommand}
+                    {addPortResult.iranCommand}
                   </div>
                   <div style={{ marginTop: 14, textAlign: 'right' }}>
                     <Button
                       type="primary"
                       icon={<CopyOutlined />}
                       onClick={() => {
-                        copyToClipboard(addPortResult.oneLinerCommand);
+                        copyToClipboard(addPortResult.iranCommand);
                       }}
                       style={{
                         background: 'linear-gradient(135deg, #0284c7, #2563eb)',

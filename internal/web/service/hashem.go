@@ -1176,6 +1176,7 @@ func (s *HashemService) AddPort(port int, autoInbound bool) (*HashemPortActionRe
 
 	if err := s.EditPorts(currentPorts); err != nil {
 		logger.Warningf("EditPorts failed during AddPort: %v", err)
+		return nil, fmt.Errorf("افزودن پورت %d به تنظیمات تانل ناموفق بود: %w", port, err)
 	}
 
 	if autoInbound && status != nil {
@@ -1218,7 +1219,7 @@ func (s *HashemService) AddPort(port int, autoInbound bool) (*HashemPortActionRe
 		Port:        port,
 		Ports:       currentPorts,
 		IranCommand: iranCommand,
-		Message:     fmt.Sprintf("پورت %d با موفقیت به تانل خارج افزوده شد.", port),
+		Message:     fmt.Sprintf("پورت %d در تنظیمات این پنل اضافه شد؛ برای تکمیل تانل، دستور تولیدشده را روی سرور ایران اجرا کنید.", port),
 	}, nil
 }
 

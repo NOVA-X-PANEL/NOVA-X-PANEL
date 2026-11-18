@@ -727,11 +727,11 @@ update_x-ui() {
         update_docker "${tag_version}"
         return 0
     fi
-    # x-ui.sh, x-ui.rc and the unit files must come from the same channel as
-    # the binary: stable tags use their tag, while dev-latest tracks dev.
+    # x-ui.sh, x-ui.rc and the unit files must come from the same release as
+    # the binary; only the rolling dev build tracks main.
     script_ref="${tag_version}"
     if [[ "${tag_version}" == "dev-latest" ]]; then
-        script_ref="dev"
+        script_ref="main"
     fi
     # The unit files are only fetched when the release tarball lacks them, so
     # they are checked at that point instead of here.
@@ -877,11 +877,6 @@ update_x-ui() {
         ln -sfn /usr/bin/x-ui /usr/bin/nova
     else
         echo -e "${yellow}/usr/bin/nova already exists and was left untouched.${plain}"
-    fi
-    if [[ "${tag_version}" == "dev-latest" ]]; then
-        touch "${xui_folder}/.dev-channel"
-    else
-        rm -f "${xui_folder}/.dev-channel"
     fi
     mkdir -p /var/log/x-ui > /dev/null 2>&1
 

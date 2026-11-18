@@ -110,6 +110,99 @@ func TestSetRemoteTraffic_PartialSnapshotStillPrunes(t *testing.T) {
 	}
 }
 
+// A node may omit disabled users from a partial snapshot while still reporting
+// active users from other admins. Those disabled users remain master-owned and
+// must stay linked so a later quota refill can reactivate them.
+func TestSetRemoteTraffic_PartialSnapshotKeepsMasterDisabledClient(t *testing.T) {
+	db := initTrafficTestDB(t)
+	svc := &InboundService{}
+	clientSvc := &ClientService{}
+
+	seedNodeRow(t, db, &model.Node{Id: 1, Name: "n1", Address: "127.0.0.1", Port: 2096, ApiToken: "tok", Enable: true})
+	createNodeInboundWithClient(t, db, 1, "n1-in", 41001, "quota@x")
+
+	const bothSettings = `{"clients":[{"email":"quota@x","enable":true},{"email":"other@x","enable":true}]}`
+	if _, err := svc.setRemoteTrafficLocked(1, snapshotWithClients(t, "n1-in", bothSettings,
+		xray.ClientTraffic{Email: "quota@x", Enable: true},
+		xray.ClientTraffic{Email: "other@x", Enable: true}), false, false); err != nil {
+		t.Fatalf("seed sync: %v", err)
+	}
+
+	const disabledHubSettings = `{"clients":[{"email":"quota@x","enable":false},{"email":"other@x","enable":true}]}`
+	if err := db.Model(&model.Inbound{}).Where("tag = ?", "n1-in").Update("settings", disabledHubSettings).Error; err != nil {
+		t.Fatalf("mark hub client disabled: %v", err)
+	}
+	if err := db.Model(&model.ClientRecord{}).Where("email = ?", "quota@x").Updates(map[string]any{
+		"owner_admin_id": 17,
+		"enable":         false,
+	}).Error; err != nil {
+		t.Fatalf("set client owner and disabled state: %v", err)
+	}
+	if err := db.Model(xray.ClientTraffic{}).Where("email = ?", "quota@x").Update("enable", false).Error; err != nil {
+		t.Fatalf("set traffic row disabled: %v", err)
+	}
+
+	// The node now reports only the other admin's active user. The missing user
+	// is absent from the live snapshot but explicitly disabled in hub settings.
+	keepOnlySettings := `{"clients":[{"email":"other@x","enable":true}]}`
+	if _, err := svc.setRemoteTrafficLocked(1, snapshotWithClients(t, "n1-in", keepOnlySettings,
+		xray.ClientTraffic{Email: "other@x", Enable: true}), false, false); err != nil {
+		t.Fatalf("partial snapshot sync: %v", err)
+	}
+
+	var client model.ClientRecord
+	if err := db.Where("email = ?", "quota@x").First(&client).Error; err != nil {
+		t.Fatalf("disabled client was deleted: %v", err)
+	}
+	if client.OwnerAdminId != 17 || client.Enable {
+		t.Fatalf("disabled client state = owner %d, enable %t; want owner 17, disabled", client.OwnerAdminId, client.Enable)
+	}
+	if n := linkCount(t, db, "quota@x"); n != 1 {
+		t.Fatalf("disabled client links=%d, want 1", n)
+	}
+	if at := readOrphanMark(t, db, "quota@x"); at != 0 {
+		t.Fatalf("disabled client was marked orphaned: sync_orphaned_at=%d", at)
+	}
+
+	var inbound model.Inbound
+	if err := db.Where("tag = ?", "n1-in").First(&inbound).Error; err != nil {
+		t.Fatalf("read central inbound: %v", err)
+	}
+	clients, err := ParseInboundSettingsClients(inbound.Settings)
+	if err != nil {
+		t.Fatalf("parse central settings: %v", err)
+	}
+	foundDisabled := false
+	for i := range clients {
+		if clients[i].Email == "quota@x" && !clients[i].Enable {
+			foundDisabled = true
+		}
+	}
+	if !foundDisabled {
+		t.Fatalf("central settings did not retain disabled quota client: %s", inbound.Settings)
+	}
+
+	if reaped, err := clientSvc.ReapSyncOrphans(); err != nil || reaped != 0 {
+		t.Fatalf("orphan reaper removed %d disabled client(s), err=%v; want 0", reaped, err)
+	}
+
+	// The surviving link and disabled record let the ordinary bulk activation
+	// path find the client again once the admin's quota is restored.
+	result, _, err := clientSvc.BulkSetEnable(&InboundService{}, []string{"quota@x"}, true)
+	if err != nil {
+		t.Fatalf("reactivate retained client: %v", err)
+	}
+	if result.Changed != 1 {
+		t.Fatalf("reactivated %d clients, want 1 (skipped=%+v)", result.Changed, result.Skipped)
+	}
+	if err := db.Where("email = ?", "quota@x").First(&client).Error; err != nil {
+		t.Fatalf("read reactivated client: %v", err)
+	}
+	if client.OwnerAdminId != 17 || !client.Enable {
+		t.Fatalf("reactivated client state = owner %d, enable %t; want owner 17, enabled", client.OwnerAdminId, client.Enable)
+	}
+}
+
 // Keeping the hub's settings is not recovery: the node is only healed once the
 // hub actually re-pushes them, which needs a dirty node and a stale fingerprint.
 func TestSetRemoteTraffic_EmptySnapshotRepushesHubClients(t *testing.T) {

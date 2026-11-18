@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
@@ -492,6 +493,70 @@ func snapshotAttachedEmails(settings string) (map[string]struct{}, bool) {
 	return emails, true
 }
 
+// retainMasterDisabledClients keeps clients that the hub explicitly disabled
+// even when a remote node omits them from its snapshot. Some node versions report
+// only live clients; treating those omissions as deletes would detach the client
+// and let ReapSyncOrphans erase its owner and quota history.
+func retainMasterDisabledClients(masterSettings, wireSettings string) string {
+	var master, wire map[string]json.RawMessage
+	if json.Unmarshal([]byte(masterSettings), &master) != nil ||
+		json.Unmarshal([]byte(wireSettings), &wire) != nil {
+		return wireSettings
+	}
+	var masterClients, wireClients []json.RawMessage
+	if json.Unmarshal(master["clients"], &masterClients) != nil ||
+		json.Unmarshal(wire["clients"], &wireClients) != nil {
+		return wireSettings
+	}
+
+	seen := make(map[string]struct{}, len(wireClients))
+	for _, raw := range wireClients {
+		var client struct {
+			Email string `json:"email"`
+		}
+		if json.Unmarshal(raw, &client) == nil {
+			if email := strings.ToLower(strings.TrimSpace(client.Email)); email != "" {
+				seen[email] = struct{}{}
+			}
+		}
+	}
+
+	added := false
+	for _, raw := range masterClients {
+		var client struct {
+			Email  string `json:"email"`
+			Enable *bool  `json:"enable"`
+		}
+		if json.Unmarshal(raw, &client) != nil || client.Enable == nil || *client.Enable {
+			continue
+		}
+		key := strings.ToLower(strings.TrimSpace(client.Email))
+		if key == "" || isClientEmailTombstoned(client.Email) {
+			continue
+		}
+		if _, exists := seen[key]; exists {
+			continue
+		}
+		wireClients = append(wireClients, raw)
+		seen[key] = struct{}{}
+		added = true
+	}
+	if !added {
+		return wireSettings
+	}
+
+	clientsJSON, err := json.Marshal(wireClients)
+	if err != nil {
+		return wireSettings
+	}
+	wire["clients"] = clientsJSON
+	merged, err := json.Marshal(wire)
+	if err != nil {
+		return wireSettings
+	}
+	return string(merged)
+}
+
 // clientEmailsOwnedElsewhere returns the emails attached only to inbounds of
 // other nodes: email is unique, so adopting one would overwrite a client this
 // node does not serve. Attached nowhere means soft-orphaned, hence adoptable.
@@ -855,8 +920,16 @@ func (s *InboundService) setRemoteTrafficLocked(nodeID int, snap *runtime.Traffi
 		if deduped, changed := dedupeSettingsClients(adoptedSettings); changed {
 			adoptedSettings = deduped
 		}
+		// An empty snapshot is treated as degraded below. For a partial snapshot,
+		// however, keep clients the hub explicitly disabled even if this node only
+		// reports active users; they must stay owned and linked for later reactivation.
+		degradedSnapshot := !dirty && snapshotDropsEveryHubClient(tx, c.Id, adoptedSettings)
+		if !dirty && !degradedSnapshot {
+			adoptedSettings = retainMasterDisabledClients(c.Settings, adoptedSettings)
+			snapIb.Settings = adoptedSettings
+		}
 		updates := map[string]any{}
-		if !dirty && snapshotDropsEveryHubClient(tx, c.Id, adoptedSettings) {
+		if degradedSnapshot {
 			degradedInbounds[c.Id] = c.Tag
 		} else if !dirty {
 			// Defer lifecycle lift until after client_traffics absorbs this tick's

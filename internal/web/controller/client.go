@@ -158,6 +158,25 @@ func (a *ClientController) loginUser(c *gin.Context) *model.User {
 	return user
 }
 
+// isOwnerAccount distinguishes the Owner role from ordinary panel accounts.
+// Ownership decisions must use the role flag rather than RoleId: role IDs are
+// database values and are not a stable indication of Owner status.
+func isOwnerAccount(user *model.User) bool {
+	role, err := adminRoleOf(user)
+	return err == nil && role != nil && role.OwnerRole
+}
+
+// forceCreateOwnership binds every client created through a panel account to
+// that account. The Owner may intentionally assign a client to another admin
+// (or leave it unassigned); non-Owner accounts never trust ownerAdminId from
+// the request body.
+func forceCreateOwnership(user *model.User, ownerAdminID *int64) {
+	if user == nil || isOwnerAccount(user) {
+		return
+	}
+	*ownerAdminID = int64(user.Id)
+}
+
 // requireGlobalClientScope allows a call that touches every client at once only
 // when the acting scope covers every client. An "own" or "none" scoped role must
 // not be able to wipe another admin's traffic by calling a bulk endpoint.
@@ -410,9 +429,7 @@ func (a *ClientController) create(c *gin.Context) {
 			jsonMsg(c, err.Error(), err)
 			return
 		}
-		if payload.Client.OwnerAdminId == 0 && user.RoleId != 0 {
-			payload.Client.OwnerAdminId = int64(user.Id)
-		}
+		forceCreateOwnership(user, &payload.Client.OwnerAdminId)
 	}
 	if !a.requireInboundsInScope(c, "create", payload.InboundIds) {
 		return
@@ -818,8 +835,8 @@ func (a *ClientController) bulkCreate(c *gin.Context) {
 		if !a.requireInboundsInScope(c, "create", payloads[i].InboundIds) {
 			return
 		}
-		if user != nil && (user.RoleId != 0 || payloads[i].Client.OwnerAdminId == 0) {
-			payloads[i].Client.OwnerAdminId = int64(user.Id)
+		if user != nil {
+			forceCreateOwnership(user, &payloads[i].Client.OwnerAdminId)
 		}
 	}
 	result, needRestart, err := a.clientService.BulkCreate(&a.inboundService, payloads)
@@ -902,8 +919,8 @@ func (a *ClientController) importClients(c *gin.Context) {
 		if !a.requireInboundsInScope(c, "create", items[i].InboundIds) {
 			return
 		}
-		if user != nil && (user.RoleId != 0 || items[i].Client.OwnerAdminId == 0) {
-			items[i].Client.OwnerAdminId = int64(user.Id)
+		if user != nil {
+			forceCreateOwnership(user, &items[i].Client.OwnerAdminId)
 		}
 	}
 	result, needRestart, err := a.clientService.ImportClients(&a.inboundService, items)

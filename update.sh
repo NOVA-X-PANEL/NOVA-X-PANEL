@@ -873,11 +873,6 @@ update_x-ui() {
 
     chmod +x ${xui_folder}/x-ui.sh > /dev/null 2>&1
     chmod +x /usr/bin/x-ui > /dev/null 2>&1
-    if [[ ! -e /usr/bin/nova || -L /usr/bin/nova ]]; then
-        ln -sfn /usr/bin/x-ui /usr/bin/nova
-    else
-        echo -e "${yellow}/usr/bin/nova already exists and was left untouched.${plain}"
-    fi
     mkdir -p /var/log/x-ui > /dev/null 2>&1
 
     echo -e "${green}Changing owner...${plain}"

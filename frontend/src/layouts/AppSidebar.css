@@ -860,3 +860,35 @@ body.dark .ant-drawer-body .drawer-menu .ant-menu-item-group-list {
     gap: 8px;
   }
 }
+
+/* The legacy drawer chrome is intentionally dark by default; soften it only
+   when the app is in light mode. */
+body:not(.dark) .drawer-handle {
+  background: rgba(255, 255, 255, 0.94) !important;
+  color: #0369a1 !important;
+  border-color: rgba(2, 132, 199, 0.28) !important;
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.14) !important;
+}
+body:not(.dark) .ant-drawer-content {
+  background: #f8fafc !important;
+  border-right: 1px solid rgba(15, 23, 42, 0.12) !important;
+  color: #0f172a;
+}
+body:not(.dark) .drawer-header {
+  background: #eef4f8 !important;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.1) !important;
+}
+body:not(.dark) .drawer-header::before {
+  background: linear-gradient(90deg, transparent, #38bdf8, #818cf8, transparent);
+}
+body:not(.dark) .drawer-close {
+  background: rgba(15, 23, 42, 0.04) !important;
+  border-color: rgba(15, 23, 42, 0.12) !important;
+  color: #475569 !important;
+}
+body:not(.dark) .drawer-close:hover,
+body:not(.dark) .drawer-close:focus-visible {
+  background: rgba(239, 68, 68, 0.12) !important;
+  border-color: #ef4444 !important;
+  color: #dc2626 !important;
+}

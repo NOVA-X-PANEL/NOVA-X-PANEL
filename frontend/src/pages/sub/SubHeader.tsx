@@ -69,18 +69,7 @@ export default function SubHeader({ title, sId, email, lang, onLangChange }: Sub
             style={{ display: 'flex', alignItems: 'center', gap: 8 }}
           >
             <span>{title || t('subscription.title')}</span>
-            <Tag
-              color="purple"
-              style={{
-                margin: 0,
-                fontSize: '10px',
-                fontWeight: 800,
-                borderRadius: '6px',
-                background: 'rgba(113, 64, 255, 0.25)',
-                borderColor: '#7140ff',
-                color: '#c4b5fd',
-              }}
-            >
+            <Tag color="purple" className="sub-pro-tunnel-tag">
               PRO TUNNEL
             </Tag>
           </div>

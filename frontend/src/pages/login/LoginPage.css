@@ -1007,3 +1007,116 @@
   filter: brightness(1.1);
   transform: scale(1.03);
 }
+
+/* Light mode is intentionally scoped to the standalone login surface. */
+.nova-login.is-light {
+  --nx-bg: #f4f7fb;
+  --nx-bg-2: #eaf0f8;
+  --nx-panel: rgba(255, 255, 255, 0.94);
+  --nx-line: rgba(37, 99, 235, 0.2);
+  --nx-line-strong: rgba(124, 58, 237, 0.45);
+  --nx-text: #172033;
+  --nx-muted: #59677d;
+  --nx-faint: #718096;
+  background-color: var(--nx-bg);
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(120, 50, 220, 0.1), transparent),
+    radial-gradient(circle at 10% 20%, rgba(34, 211, 238, 0.08), transparent 40%),
+    linear-gradient(rgba(30, 64, 120, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(30, 64, 120, 0.035) 1px, transparent 1px);
+}
+
+.nova-login.is-light .nx-hero {
+  background: linear-gradient(160deg, rgba(236, 243, 253, 0.96), rgba(248, 250, 253, 0.98));
+}
+
+.nova-login.is-light .nx-hero__tagline,
+.nova-login.is-light .nx-hero__slogan,
+.nova-login.is-light .nx-feature__title,
+.nova-login.is-light .nx-foot__brand {
+  color: #334155;
+}
+
+.nova-login.is-light .nx-feature {
+  border-color: rgba(30, 64, 120, 0.12);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.nova-login.is-light .nx-feature:hover {
+  border-color: rgba(124, 58, 237, 0.45);
+}
+
+.nova-login.is-light .nx-feature__icon {
+  color: #334155;
+}
+
+.nova-login.is-light .nx-card {
+  border-color: rgba(30, 64, 120, 0.14);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 24px 60px rgba(30, 50, 80, 0.14), 0 0 26px rgba(124, 58, 237, 0.1);
+}
+
+.nova-login.is-light .nx-toolbar__btn {
+  background: rgba(255, 255, 255, 0.8);
+  color: #475569;
+}
+
+.nova-login.is-light .nx-toolbar__btn:hover {
+  color: #1d4ed8;
+}
+
+.nova-login.is-light .nx-field__label {
+  color: #475569;
+}
+
+.nova-login.is-light .nx-input {
+  border-color: rgba(51, 65, 85, 0.2);
+  background: #f8fafc;
+}
+
+.nova-login.is-light .nx-input:focus-within {
+  border-color: #0891b2;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.16);
+}
+
+.nova-login.is-light .nx-input__icon,
+.nova-login.is-light .nx-input__toggle {
+  color: #64748b;
+}
+
+.nova-login.is-light .nx-input__toggle:hover {
+  color: #334155;
+  background: rgba(14, 165, 233, 0.1);
+}
+
+.nova-login.is-light .nx-input input::placeholder {
+  color: #8996a9;
+}
+
+.nova-login.is-light .nx-input input:-webkit-autofill,
+.nova-login.is-light .nx-input input:-webkit-autofill:hover,
+.nova-login.is-light .nx-input input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #172033;
+  -webkit-box-shadow: 0 0 0 1000px #f8fafc inset;
+}
+
+.nova-login.is-light .nx-telegram {
+  background: rgba(255, 255, 255, 0.75);
+  color: #334155;
+}
+
+.nova-login.is-light .nx-telegram:hover:not(:disabled) {
+  background: rgba(56, 189, 248, 0.1);
+  color: #1d4ed8;
+}
+
+.nova-login.is-light .nx-donate {
+  background: linear-gradient(135deg, #fffaf0, #fff3d6);
+  color: #713f12;
+  box-shadow: 0 4px 16px rgba(120, 75, 10, 0.12), 0 0 16px rgba(245, 158, 11, 0.12);
+}
+
+.nova-login.is-light .nx-donate:hover {
+  background: linear-gradient(135deg, #fff7e6, #ffedc2);
+}

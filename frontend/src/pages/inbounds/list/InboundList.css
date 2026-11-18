@@ -434,3 +434,52 @@
   min-width: 100% !important;
   table-layout: auto !important;
 }
+
+/* Keep list surfaces legible in the light application theme. */
+.inbounds-page:not(.is-dark) .inbounds-main-block .ant-card,
+.inbounds-page:not(.is-dark) .inbound-card {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border-color: rgba(37, 99, 255, 0.16) !important;
+  box-shadow: 0 6px 20px rgba(31, 54, 92, 0.07);
+}
+
+.inbounds-page:not(.is-dark) .inbounds-main-block .ant-table-thead > tr > th {
+  background: #f4f7ff !important;
+  color: var(--ant-color-text-secondary, #52627a) !important;
+  border-bottom-color: rgba(37, 99, 255, 0.12) !important;
+}
+
+.inbounds-page:not(.is-dark) .inbounds-main-block .ant-table-tbody > tr > td {
+  border-bottom-color: rgba(71, 85, 105, 0.1) !important;
+}
+
+.inbounds-page:not(.is-dark) .inbounds-main-block .ant-table-tbody > tr:hover > td {
+  background: rgba(37, 99, 255, 0.045) !important;
+}
+
+.inbounds-page:not(.is-dark) .inbound-card.is-selected {
+  background: rgba(37, 99, 255, 0.06) !important;
+}
+
+.inbounds-page:not(.is-dark) .client-count-tag.is-total {
+  background: rgba(37, 99, 255, 0.06) !important;
+  color: #1d4ed8 !important;
+}
+
+.inbounds-page:not(.is-dark) .client-count-tag.is-total:hover {
+  color: #1d4ed8 !important;
+}
+
+.inbounds-page:not(.is-dark) .inb-port-cyber {
+  color: #0e7490;
+}
+
+.inbounds-page:not(.is-dark) .inb-switch-label.is-off,
+.inbounds-page:not(.is-dark) .inb-clients-placeholder,
+.inbounds-page:not(.is-dark) .card-id,
+.inbounds-page:not(.is-dark) .stat-label,
+.inbounds-page:not(.is-dark) .card-empty,
+.inbounds-page:not(.is-dark) .inbound-host-remarks,
+.inbounds-page:not(.is-dark) .row-action-trigger {
+  color: var(--ant-color-text-secondary, #52627a);
+}

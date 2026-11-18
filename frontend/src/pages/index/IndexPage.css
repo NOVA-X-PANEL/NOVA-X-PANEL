@@ -620,3 +620,24 @@
 .index-page .ip-hidden {
   filter: blur(6px);
 }
+
+/* Light dashboard action buttons: keep the cyan accent without dark surfaces. */
+.index-page:not(.is-dark) .ov-bar-actions .ant-btn {
+  background: var(--ant-color-bg-container) !important;
+  border-color: var(--ant-color-border) !important;
+  color: var(--ant-color-text-secondary) !important;
+  backdrop-filter: none;
+}
+.index-page:not(.is-dark) .ov-bar-actions .ant-btn:hover {
+  background: rgba(0, 191, 255, 0.08) !important;
+  border-color: var(--nv-cyan) !important;
+  color: #087fa8 !important;
+  box-shadow: 0 0 10px rgba(0, 191, 255, 0.16) !important;
+}
+.index-page:not(.is-dark) .ov-bar-actions .ant-btn-primary,
+.index-page:not(.is-dark) .ov-bar-actions .ant-btn[variant='outlined'] {
+  background: rgba(0, 191, 255, 0.1) !important;
+  border-color: var(--nv-cyan) !important;
+  color: #087fa8 !important;
+  box-shadow: 0 0 8px rgba(0, 191, 255, 0.14) !important;
+}

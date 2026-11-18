@@ -2152,3 +2152,49 @@ body.dark .ant-command-palette,
 :is(.clients-page, .nc-page) .nc-full .ant-table-tbody > tr:nth-child(even) > td {
   background-color: rgba(255, 255, 255, 0.016);
 }
+
+/* Legacy sidebar's neon defaults are dark-theme-only; keep its light surfaces
+   and navigation legible without changing the pg-ui sidebar or command palette. */
+body:not(.dark) .ant-sidebar > .ant-layout-sider {
+  background: #f8fafc !important;
+  background-image: none !important;
+  border-right: 1px solid rgba(15, 23, 42, 0.1) !important;
+  border-inline-end: 1px solid rgba(15, 23, 42, 0.1) !important;
+  box-shadow: 2px 0 12px rgba(15, 23, 42, 0.06) !important;
+}
+body:not(.dark) .ant-sidebar .sider-nav .ant-menu-item,
+body:not(.dark) .ant-sidebar .sider-nav .ant-menu-submenu-title,
+body:not(.dark) .ant-sidebar .sider-utility .ant-menu-item {
+  color: #334155 !important;
+}
+body:not(.dark) .ant-sidebar .sider-nav .ant-menu-item .anticon,
+body:not(.dark) .ant-sidebar .sider-nav .ant-menu-submenu-title .anticon,
+body:not(.dark) .ant-sidebar .sider-utility .ant-menu-item .anticon {
+  color: #64748b !important;
+  filter: none !important;
+}
+body:not(.dark) .ant-sidebar .sider-nav .ant-menu-item-selected,
+body:not(.dark) .ant-sidebar .sider-utility .ant-menu-item-selected {
+  background: rgba(2, 132, 199, 0.12) !important;
+  border-left: 3px solid #0284c7 !important;
+  border-inline-start: 3px solid #0284c7 !important;
+  box-shadow: none !important;
+  color: #0f172a !important;
+}
+body:not(.dark) .ant-sidebar .sider-nav .ant-menu-item-selected .ant-menu-title-content,
+body:not(.dark) .ant-sidebar .sider-utility .ant-menu-item-selected .ant-menu-title-content {
+  color: #0f172a !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+body:not(.dark) .ant-sidebar .sider-nav .ant-menu-item-selected .anticon,
+body:not(.dark) .ant-sidebar .sider-utility .ant-menu-item-selected .anticon {
+  color: #0284c7 !important;
+  filter: none !important;
+}
+body:not(.dark) .ant-sidebar .sider-nav .ant-menu-item:not(.ant-menu-item-selected):hover,
+body:not(.dark) .ant-sidebar .sider-utility .ant-menu-item:not(.ant-menu-item-selected):hover {
+  background-color: rgba(2, 132, 199, 0.08) !important;
+  border-left: 3px solid rgba(2, 132, 199, 0.4) !important;
+  border-inline-start: 3px solid rgba(2, 132, 199, 0.4) !important;
+  color: #0284c7 !important;
+}

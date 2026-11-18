@@ -225,7 +225,11 @@ export default function LoginPage() {
   return (
     <ConfigProvider theme={antdThemeConfig} direction={isRtl ? 'rtl' : 'ltr'}>
       {messageContextHolder}
-      <div className="nova-login" dir={isRtl ? 'rtl' : 'ltr'} lang={langCode || 'en'}>
+      <div
+        className={`nova-login ${isDark ? 'is-dark' : 'is-light'}${isUltra ? ' is-ultra' : ''}`}
+        dir={isRtl ? 'rtl' : 'ltr'}
+        lang={langCode || 'en'}
+      >
         {/* ---------------- hero ---------------- */}
         <section className="nx-hero">
           <div className="nx-hero__top">

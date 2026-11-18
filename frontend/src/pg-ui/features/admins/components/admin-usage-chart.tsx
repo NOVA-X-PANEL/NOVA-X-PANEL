@@ -123,41 +123,39 @@ export default function AdminUsageChart({ admins = [] }: AdminUsageChartProps) {
 
     return (
       <div
-        className="rounded-lg p-3 text-xs shadow-2xl backdrop-blur-xl border border-cyan-500/30"
+        className="rounded-lg p-3 text-xs shadow-2xl backdrop-blur-xl border border-cyan-700/30 bg-white/95 text-slate-900 dark:border-cyan-500/30 dark:bg-slate-900/95 dark:text-slate-50"
         style={{
-          background: 'rgba(15, 23, 42, 0.92)',
-          color: '#f8fafc',
           minWidth: 200,
           direction: dir,
         }}
       >
-        <div className="flex items-center justify-between gap-2 border-b border-slate-700/60 pb-2 mb-2">
-          <div className="flex items-center gap-1.5 font-bold text-sm text-cyan-400">
-            <Zap className="h-4 w-4 text-cyan-400" />
+        <div className="flex items-center justify-between gap-2 border-b border-slate-200 pb-2 mb-2 dark:border-slate-700/60">
+          <div className="flex items-center gap-1.5 font-bold text-sm text-cyan-700 dark:text-cyan-400">
+            <Zap className="h-4 w-4 text-cyan-700 dark:text-cyan-400" />
             <span>{item.username}</span>
           </div>
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
             {item.roleName}
           </span>
         </div>
 
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <span className="text-slate-400">{t('admins.currentUsage', { defaultValue: 'مصرف دوره جاری:' })}</span>
-            <span className="font-semibold text-emerald-400 font-mono">{item.usedStr}</span>
+            <span className="text-slate-600 dark:text-slate-400">{t('admins.currentUsage', { defaultValue: 'مصرف دوره جاری:' })}</span>
+            <span className="font-semibold text-emerald-700 dark:text-emerald-400 font-mono">{item.usedStr}</span>
           </div>
 
           <div className="flex items-center justify-between">
-            <span className="text-slate-400">{t('admins.lifetimeUsage', { defaultValue: 'مصرف کل تاریخچه:' })}</span>
-            <span className="font-semibold text-indigo-400 font-mono">{item.lifetimeStr}</span>
+            <span className="text-slate-600 dark:text-slate-400">{t('admins.lifetimeUsage', { defaultValue: 'مصرف کل تاریخچه:' })}</span>
+            <span className="font-semibold text-indigo-700 dark:text-indigo-400 font-mono">{item.lifetimeStr}</span>
           </div>
 
           <div className="flex items-center justify-between">
-            <span className="text-slate-400">{t('admins.dataLimit', { defaultValue: 'سقف مجاز سهمیه:' })}</span>
+            <span className="text-slate-600 dark:text-slate-400">{t('admins.dataLimit', { defaultValue: 'سقف مجاز سهمیه:' })}</span>
             <span
               className={cn(
                 'font-semibold font-mono',
-                item.isExceeded ? 'text-red-400' : item.rawLimit > 0 ? 'text-amber-400' : 'text-slate-400'
+                item.isExceeded ? 'text-red-700 dark:text-red-400' : item.rawLimit > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-slate-600 dark:text-slate-400'
               )}
             >
               {item.limitStr}
@@ -165,14 +163,14 @@ export default function AdminUsageChart({ admins = [] }: AdminUsageChartProps) {
           </div>
 
           {item.rawLimit > 0 && (
-            <div className="pt-1 border-t border-slate-800">
+            <div className="pt-1 border-t border-slate-200 dark:border-slate-800">
               <div className="flex justify-between text-[11px] mb-1">
-                <span className="text-slate-400">درصد مصرف:</span>
-                <span className={cn('font-bold', item.isExceeded ? 'text-red-400' : 'text-cyan-400')}>
+                <span className="text-slate-600 dark:text-slate-400">درصد مصرف:</span>
+                <span className={cn('font-bold', item.isExceeded ? 'text-red-700 dark:text-red-400' : 'text-cyan-700 dark:text-cyan-400')}>
                   {item.percent}%
                 </span>
               </div>
-              <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+              <div className="w-full bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
                 <div
                   className={cn(
                     'h-full rounded-full transition-all duration-300',
@@ -188,9 +186,9 @@ export default function AdminUsageChart({ admins = [] }: AdminUsageChartProps) {
             </div>
           )}
 
-          <div className="flex items-center justify-between pt-1 text-[11px] text-slate-400">
+          <div className="flex items-center justify-between pt-1 text-[11px] text-slate-600 dark:text-slate-400">
             <span>{t('admins.totalClients', { defaultValue: 'تعداد کاربران:' })}</span>
-            <span className="text-slate-200 font-mono">{item.totalUsers}</span>
+            <span className="text-slate-800 dark:text-slate-200 font-mono">{item.totalUsers}</span>
           </div>
         </div>
       </div>
@@ -198,7 +196,7 @@ export default function AdminUsageChart({ admins = [] }: AdminUsageChartProps) {
   };
 
   return (
-    <Card className="w-full overflow-hidden border border-primary/20 bg-card/60 backdrop-blur-md shadow-xl transition-all duration-300 mb-3">
+    <Card className="w-full overflow-hidden border border-primary/20 bg-card/60 backdrop-blur-md shadow-xl transition-all duration-300 mb-3 [--admin-usage-axis:#475569] dark:[--admin-usage-axis:#94a3b8]">
       <CardHeader className="pb-3 pt-4 px-4 sm:px-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
@@ -260,7 +258,7 @@ export default function AdminUsageChart({ admins = [] }: AdminUsageChartProps) {
               <div className="text-[10px] text-muted-foreground truncate">
                 {t('admins.totalCurrentUsed', { defaultValue: 'مجموع مصرف جاری' })}
               </div>
-              <div className="font-bold text-sm text-emerald-400 font-mono truncate">{totalCurrent}</div>
+              <div className="font-bold text-sm text-emerald-700 dark:text-emerald-400 font-mono truncate">{totalCurrent}</div>
             </div>
           </div>
 
@@ -272,7 +270,7 @@ export default function AdminUsageChart({ admins = [] }: AdminUsageChartProps) {
               <div className="text-[10px] text-muted-foreground truncate">
                 {t('admins.totalLifetimeUsed', { defaultValue: 'مجموع مصرف کل' })}
               </div>
-              <div className="font-bold text-sm text-indigo-400 font-mono truncate">{totalLifetime}</div>
+              <div className="font-bold text-sm text-indigo-700 dark:text-indigo-400 font-mono truncate">{totalLifetime}</div>
             </div>
           </div>
 
@@ -284,7 +282,7 @@ export default function AdminUsageChart({ admins = [] }: AdminUsageChartProps) {
               <div className="text-[10px] text-muted-foreground truncate">
                 {t('admins.topConsumer', { defaultValue: 'پرمصرف‌ترین مدیر' })}
               </div>
-              <div className="font-bold text-sm text-cyan-400 truncate">
+              <div className="font-bold text-sm text-cyan-700 dark:text-cyan-400 truncate">
                 {topConsumer ? topConsumer.username : '-'}
               </div>
             </div>
@@ -328,7 +326,7 @@ export default function AdminUsageChart({ admins = [] }: AdminUsageChartProps) {
               <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} vertical={false} />
               <XAxis
                 dataKey="username"
-                tick={{ fill: '#94a3b8', fontSize: 11 }}
+                tick={{ fill: 'var(--admin-usage-axis)', fontSize: 11 }}
                 axisLine={{ stroke: '#475569', opacity: 0.4 }}
                 tickLine={false}
                 interval={0}
@@ -337,7 +335,7 @@ export default function AdminUsageChart({ admins = [] }: AdminUsageChartProps) {
                 height={40}
               />
               <YAxis
-                tick={{ fill: '#94a3b8', fontSize: 10 }}
+                tick={{ fill: 'var(--admin-usage-axis)', fontSize: 10 }}
                 axisLine={false}
                 tickLine={false}
                 unit=" GB"

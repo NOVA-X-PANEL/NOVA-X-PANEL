@@ -175,9 +175,7 @@ export function InboundsStats({ dbInbounds, totals, clients, online }: InboundsS
         </div>
         <div className="inb-card-sub">
           <span>Quota: Unlimited (∞)</span>
-          <span style={{ color: '#94a3b8', fontFamily: 'JetBrains Mono, monospace' }}>
-            Active Core
-          </span>
+          <span className="inb-card-neutral-metric">Active Core</span>
         </div>
         <div className="inb-micro-bar">
           <div className="inb-micro-fill" style={{ width: '15%', background: '#fbbf24' }} />
@@ -317,7 +315,7 @@ export function InboundsRail({ dbInbounds, totals, online }: InboundsRailProps) 
                   <span style={{ color: idx === 0 ? '#c084fc' : '#22d3ee', fontWeight: 700 }}>
                     {p.name.toUpperCase()} PROTOCOL
                   </span>
-                  <span style={{ color: '#94a3b8' }}>
+                  <span className="inb-matrix-neutral">
                     {p.n} INBOUNDS ({p.pct}%)
                   </span>
                 </div>
@@ -338,7 +336,7 @@ export function InboundsRail({ dbInbounds, totals, online }: InboundsRailProps) 
           ) : (
             <div className="inb-matrix-item">
               <div className="inb-matrix-label-row">
-                <span style={{ color: '#94a3b8' }}>NO INBOUNDS CONFIGURED</span>
+                <span className="inb-matrix-neutral">NO INBOUNDS CONFIGURED</span>
               </div>
             </div>
           )}

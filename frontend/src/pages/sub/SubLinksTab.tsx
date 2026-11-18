@@ -255,9 +255,9 @@ export default function SubLinksTab({
           >
             {openvpn.name && (
               <div
+                className="sub-openvpn-detail"
                 style={{
                   ...neonStyle,
-                  background: 'rgba(0, 0, 0, 0.2)',
                   borderRadius: '12px',
                   padding: '16px 20px',
                   display: 'flex',
@@ -289,10 +289,10 @@ export default function SubLinksTab({
                   }}
                 >
                   <code
+                    className="sub-openvpn-credential"
                     style={{
                       fontSize: '16px',
                       fontWeight: 700,
-                      color: '#00e5ff',
                       fontFamily: 'monospace',
                       background: 'rgba(0, 229, 255, 0.1)',
                       padding: '8px 12px',
@@ -315,9 +315,9 @@ export default function SubLinksTab({
 
             {openvpn.password && (
               <div
+                className="sub-openvpn-detail"
                 style={{
                   ...neonStyle,
-                  background: 'rgba(0, 0, 0, 0.2)',
                   borderRadius: '12px',
                   padding: '16px 20px',
                   display: 'flex',
@@ -349,10 +349,10 @@ export default function SubLinksTab({
                   }}
                 >
                   <code
+                    className="sub-openvpn-credential"
                     style={{
                       fontSize: '16px',
                       fontWeight: 700,
-                      color: '#00e5ff',
                       fontFamily: 'monospace',
                       background: 'rgba(0, 229, 255, 0.1)',
                       padding: '8px 12px',
@@ -376,9 +376,9 @@ export default function SubLinksTab({
 
           {openvpn.downloadUrl && (
             <div
+              className="sub-openvpn-link-panel"
               style={{
                 ...neonStyle,
-                background: 'rgba(0, 0, 0, 0.2)',
                 borderRadius: '12px',
                 padding: '16px 20px',
                 display: 'flex',
@@ -404,11 +404,10 @@ export default function SubLinksTab({
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                 <div style={{ flex: 1, minWidth: 200 }}>
                   <code
+                    className="sub-openvpn-url"
                     style={{
                       fontSize: '13px',
-                      color: 'rgba(8, 145, 178, 0.9)',
                       fontFamily: 'monospace',
-                      background: 'rgba(0, 0, 0, 0.3)',
                       padding: '10px 12px',
                       borderRadius: '8px',
                       border: '1px solid rgba(8, 145, 178, 0.2)',
@@ -447,6 +446,7 @@ export default function SubLinksTab({
           )}
 
           <div
+            className="sub-openvpn-footer"
             style={{
               paddingTop: '16px',
               borderTop: '1px solid rgba(8, 145, 178, 0.15)',
@@ -456,7 +456,6 @@ export default function SubLinksTab({
               flexWrap: 'wrap',
               gap: '12px',
               fontSize: '12px',
-              color: 'rgba(8, 145, 178, 0.6)',
               fontFamily: 'monospace',
             }}
           >

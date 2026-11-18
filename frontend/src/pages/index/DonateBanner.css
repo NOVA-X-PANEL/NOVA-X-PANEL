@@ -159,3 +159,22 @@
     padding: 10px 16px;
   }
 }
+
+/* Light dashboard treatment; preserve the donation gold brand accent. */
+.index-page:not(.is-dark) .ov-donate-banner {
+  background: var(--ant-color-bg-container);
+  box-shadow:
+    0 8px 22px rgba(20, 40, 90, 0.08),
+    0 0 18px rgba(245, 158, 11, 0.08);
+}
+.index-page:not(.is-dark) .ov-donate-banner:hover {
+  box-shadow:
+    0 10px 26px rgba(20, 40, 90, 0.12),
+    0 0 22px rgba(245, 158, 11, 0.14);
+}
+.index-page:not(.is-dark) .ov-donate-title {
+  color: var(--ant-color-text);
+}
+.index-page:not(.is-dark) .ov-donate-desc {
+  color: var(--ant-color-text-secondary);
+}

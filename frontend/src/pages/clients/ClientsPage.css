@@ -201,6 +201,19 @@
   color: #38bdf8 !important;
   box-shadow: 0 0 8px rgba(56, 189, 248, 0.25) !important;
 }
+body.light .clients-page .card-toolbar .ant-btn,
+.light .clients-page .card-toolbar .ant-btn {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #334155 !important;
+}
+body.light .clients-page .card-toolbar .ant-btn:hover,
+.light .clients-page .card-toolbar .ant-btn:hover {
+  background: #f8fafc !important;
+  border-color: #0284c7 !important;
+  color: #0369a1 !important;
+  box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.12) !important;
+}
 
 @media (min-width: 769px) and (max-width: 920px) {
   .card-toolbar {

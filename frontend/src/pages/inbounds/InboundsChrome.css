@@ -379,3 +379,66 @@
   height: 100%;
   border-radius: 3px;
 }
+
+.inb-card-neutral-metric {
+  color: #94a3b8;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.inb-matrix-neutral {
+  color: #94a3b8;
+}
+
+/* Light theme surfaces; keep the HUD accents and telemetry colors semantic. */
+.inbounds-page:not(.is-dark) .inb-hud-banner,
+.inbounds-page:not(.is-dark) .inb-stat-card,
+.inbounds-page:not(.is-dark) .inb-console-card {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(37, 99, 255, 0.16);
+  box-shadow: 0 6px 20px rgba(31, 54, 92, 0.08);
+}
+
+.inbounds-page:not(.is-dark) .inb-stat-card:hover {
+  background: #fff;
+  border-color: rgba(37, 99, 255, 0.3);
+  box-shadow: 0 10px 26px rgba(37, 99, 255, 0.1);
+}
+
+.inbounds-page:not(.is-dark) .inb-hud-title,
+.inbounds-page:not(.is-dark) .inb-console-title {
+  color: var(--ant-color-text, #17243b);
+}
+
+.inbounds-page:not(.is-dark) .inb-card-label,
+.inbounds-page:not(.is-dark) .inb-card-sub,
+.inbounds-page:not(.is-dark) .inb-tele-label,
+.inbounds-page:not(.is-dark) .inb-tele-metric-lbl {
+  color: var(--ant-color-text-secondary, #52627a);
+}
+
+.inbounds-page:not(.is-dark) .inb-card-unit {
+  color: var(--ant-color-text-tertiary, #718096);
+}
+
+.inbounds-page:not(.is-dark) .inb-card-neutral-metric,
+.inbounds-page:not(.is-dark) .inb-matrix-neutral {
+  color: var(--ant-color-text-secondary, #52627a);
+}
+
+.inbounds-page:not(.is-dark) .inb-tele-metric-val {
+  color: var(--ant-color-text, #17243b);
+}
+
+.inbounds-page:not(.is-dark) .inb-osc-wrap {
+  background: #f4f7ff;
+  border-color: rgba(37, 99, 255, 0.12);
+}
+
+.inbounds-page:not(.is-dark) .inb-micro-bar,
+.inbounds-page:not(.is-dark) .inb-matrix-track {
+  background: rgba(71, 85, 105, 0.12);
+}
+
+.inbounds-page:not(.is-dark) .inb-tele-stats-row {
+  border-top-color: rgba(71, 85, 105, 0.14);
+}

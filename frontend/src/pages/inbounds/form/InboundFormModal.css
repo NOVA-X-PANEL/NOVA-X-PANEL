@@ -56,6 +56,20 @@
   line-height: 1.5;
 }
 
+body.light .advanced-panel {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(37, 99, 255, 0.18);
+  box-shadow: 0 4px 16px rgba(31, 54, 92, 0.08);
+}
+
+body.light .advanced-panel__title {
+  color: #0e7490;
+}
+
+body.light .advanced-panel__subtitle {
+  color: var(--ant-color-text-secondary, #52627a);
+}
+
 @media (max-width: 768px) {
   .advanced-panel {
     padding: 12px;

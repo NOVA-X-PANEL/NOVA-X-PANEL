@@ -11,6 +11,13 @@
   opacity: 0.85 !important;
 }
 
+.settings-page:not(.is-dark) .header-actions .ant-btn:disabled,
+.settings-page:not(.is-dark) .header-actions .ant-btn[disabled] {
+  background: var(--ant-color-fill-tertiary) !important;
+  border-color: var(--ant-color-border) !important;
+  color: var(--ant-color-text-tertiary) !important;
+}
+
 .settings-page .header-actions .ant-btn:not(:disabled) {
   box-shadow: 0 0 12px rgba(56, 189, 248, 0.3) !important;
 }

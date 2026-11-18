@@ -1,15 +1,14 @@
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Progress, Tag, theme } from 'antd';
 
 import { IntlUtil } from '@/utils';
 import type { CalendarKind } from '@/utils';
-import { usagePercent } from './subPageModel';
+import { daysUntil, remainingTimeLabel, resolveSubStatus, usagePercent } from './subPageModel';
 import type { SubStatus } from './subPageModel';
 
 interface SubHeroProps {
-  status: SubStatus;
-  daysLeft: number | null;
+  enabled: boolean;
   usedByte: number;
   totalByte: number;
   expireMs: number;
@@ -38,8 +37,7 @@ function splitSize(label: string): [string, string] {
 }
 
 export default function SubHero({
-  status,
-  daysLeft,
+  enabled,
   usedByte,
   totalByte,
   expireMs,
@@ -54,18 +52,27 @@ export default function SubHero({
 }: SubHeroProps) {
   const { t } = useTranslation();
   const { token } = theme.useToken();
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const hasQuota = totalByte > 0;
-  const healthy = status === 'active' || status === 'unlimited';
+  const currentStatus = resolveSubStatus({ enabled, usedByte, totalByte, expireMs }, now);
+  const currentDaysLeft = daysUntil(expireMs, now);
+  const healthy = currentStatus === 'active' || currentStatus === 'unlimited';
   const pct = usagePercent(usedByte, totalByte);
   const ringColor =
     !healthy || pct >= 90 ? token.colorError : pct >= 75 ? token.colorWarning : token.colorPrimary;
+  const timeRingColor = !healthy ? token.colorError : token.colorPrimary;
   const [amount, unit] = splitSize(hasQuota ? remained : used);
   const formatDate = (ms: number) => IntlUtil.formatDate(ms, datepicker, lang);
-  const statusTag = STATUS_TAGS[status];
+  const statusTag = STATUS_TAGS[currentStatus];
 
   const stats: { key: string; label: string; value: ReactNode }[] = [
-    { key: 'days', label: t('subscription.daysLeft'), value: daysLeft ?? '∞' },
+    { key: 'days', label: t('subscription.daysLeft'), value: currentDaysLeft ?? '∞' },
     {
       key: 'expiry',
       label: t('subscription.expiry'),
@@ -88,22 +95,40 @@ export default function SubHero({
 
   return (
     <section className={healthy ? 'sub-hero' : 'sub-hero is-alert'}>
-      <Progress
-        type="circle"
-        className="sub-ring"
-        percent={pct}
-        status="normal"
-        size={156}
-        strokeColor={ringColor}
-        format={() => (
-          <span className="sub-ring-center">
-            <span className="sub-ring-value">{hasQuota ? `${pct.toFixed(1)}%` : '∞'}</span>
-            <span className="sub-ring-label">
-              {hasQuota ? t('usage') : t('subscription.unlimited')}
+      <div className="sub-rings">
+        <Progress
+          type="circle"
+          className="sub-ring"
+          percent={pct}
+          status="normal"
+          size={156}
+          strokeColor={ringColor}
+          format={() => (
+            <span className="sub-ring-center">
+              <span className="sub-ring-value">{hasQuota ? `${pct.toFixed(1)}%` : '∞'}</span>
+              <span className="sub-ring-label">
+                {hasQuota ? t('usage') : t('subscription.unlimited')}
+              </span>
             </span>
-          </span>
-        )}
-      />
+          )}
+        />
+        <Progress
+          type="circle"
+          className="sub-ring sub-time-ring"
+          percent={expireMs > 0 && healthy ? 100 : 0}
+          status="normal"
+          size={156}
+          strokeColor={timeRingColor}
+          format={() => (
+            <span className="sub-ring-center">
+              <span className="sub-ring-value sub-time-value">
+                {remainingTimeLabel(expireMs, now)}
+              </span>
+              <span className="sub-ring-label">{t('subscription.remainingTime')}</span>
+            </span>
+          )}
+        />
+      </div>
       <div className="sub-hero-summary">
         <div className="sub-label">{hasQuota ? t('remained') : t('usage')}</div>
         <bdi className="sub-big">

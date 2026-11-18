@@ -93,6 +93,7 @@
     "copyAllConfigs": "Copiar Todas las Configuraciones",
     "copyAllConfigsCopied": "Todas las configuraciones copiadas",
     "daysLeft": "Días restantes",
+    "remainingTime": "Tiempo restante",
     "expired": "Caducada",
     "depleted": "Datos agotados",
     "ofTotal": "de {total}",

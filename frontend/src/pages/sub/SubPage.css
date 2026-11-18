@@ -333,6 +333,12 @@
   align-items: center;
 }
 
+.sub-rings {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
 .sub-ring .ant-progress-text {
   color: var(--ant-color-text);
 }
@@ -349,6 +355,10 @@
   font-size: 26px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+}
+
+.sub-time-value {
+  font-size: 20px;
 }
 
 /* The ring is 156px wide, but the label is translated: a longer word in another
@@ -742,6 +752,20 @@ a.sub-row-title:hover {
 
   .sub-ring {
     justify-self: center;
+  }
+
+  .sub-rings {
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .sub-rings .sub-ring {
+    width: 136px !important;
+    height: 136px !important;
+  }
+
+  .sub-time-value {
+    font-size: 17px;
   }
 
   .sub-big-num {

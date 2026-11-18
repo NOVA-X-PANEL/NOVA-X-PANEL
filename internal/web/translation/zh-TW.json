@@ -93,6 +93,7 @@
     "copyAllConfigs": "複製全部配置",
     "copyAllConfigsCopied": "已複製全部配置",
     "daysLeft": "剩餘天數",
+    "remainingTime": "剩餘時間",
     "expired": "已過期",
     "depleted": "流量已用完",
     "ofTotal": "共 {total}",

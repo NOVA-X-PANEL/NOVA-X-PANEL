@@ -93,6 +93,7 @@
     "copyAllConfigs": "نسخ جميع الإعدادات",
     "copyAllConfigsCopied": "تم نسخ جميع الإعدادات",
     "daysLeft": "الأيام المتبقية",
+    "remainingTime": "الوقت المتبقي",
     "expired": "منتهي الصلاحية",
     "depleted": "نفدت البيانات",
     "ofTotal": "من {total}",

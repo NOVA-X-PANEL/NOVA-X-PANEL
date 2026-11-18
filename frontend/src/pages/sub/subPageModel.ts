@@ -22,6 +22,22 @@ export function daysUntil(expireMs: number, now: number): number | null {
   return Math.max(0, Math.ceil((expireMs - now) / DAY_MS));
 }
 
+export function remainingTimeLabel(expireMs: number, now: number): string {
+  if (expireMs <= 0) return '∞';
+  const remainingMs = Math.max(0, expireMs - now);
+  const totalSeconds = Math.floor(remainingMs / 1000);
+  if (totalSeconds <= 0) return '0m';
+
+  const days = Math.floor(totalSeconds / 86_400);
+  const hours = Math.floor((totalSeconds % 86_400) / 3_600);
+  const minutes = Math.floor((totalSeconds % 3_600) / 60);
+  const seconds = totalSeconds % 60;
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  if (minutes > 0) return `${minutes}m ${seconds}s`;
+  return `${seconds}s`;
+}
+
 export function usagePercent(usedByte: number, totalByte: number): number {
   if (totalByte <= 0) return 0;
   const pct = (usedByte / totalByte) * 100;

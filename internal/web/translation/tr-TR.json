@@ -93,6 +93,7 @@
     "copyAllConfigs": "Tüm Yapılandırmaları Kopyala",
     "copyAllConfigsCopied": "Tüm yapılandırmalar kopyalandı",
     "daysLeft": "Kalan gün",
+    "remainingTime": "Kalan süre",
     "expired": "Süresi doldu",
     "depleted": "Kota doldu",
     "ofTotal": "/ {total}",

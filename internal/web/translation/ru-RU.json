@@ -93,6 +93,7 @@
     "copyAllConfigs": "Копировать все конфигурации",
     "copyAllConfigsCopied": "Все конфигурации скопированы",
     "daysLeft": "Осталось дней",
+    "remainingTime": "Оставшееся время",
     "expired": "Истёк",
     "depleted": "Трафик исчерпан",
     "ofTotal": "из {total}",

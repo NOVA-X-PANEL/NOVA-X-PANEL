@@ -18,7 +18,7 @@ import SubConfigsTab from './SubConfigsTab';
 import SubHeader from './SubHeader';
 import SubHero from './SubHero';
 import SubLinksTab from './SubLinksTab';
-import { buildSubApps, daysUntil, detectPlatform, resolveSubStatus } from './subPageModel';
+import { buildSubApps, detectPlatform } from './subPageModel';
 import './SubPage.css';
 
 const subData = window.__SUB_PAGE_DATA__ || {};
@@ -40,11 +40,8 @@ const usedByte =
   Number(subData.downloadByte || 0) + Number(subData.uploadByte || 0);
 const expireMs = Number(subData.expire || 0) * 1000;
 const clientEmail = [...new Set(linkEmails.filter(Boolean))].join(', ');
-const loadedAt = Date.now();
-
 const heroData = {
-  status: resolveSubStatus({ enabled: !!subData.enabled, usedByte, totalByte, expireMs }, loadedAt),
-  daysLeft: daysUntil(expireMs, loadedAt),
+  enabled: !!subData.enabled,
   usedByte,
   totalByte,
   expireMs,

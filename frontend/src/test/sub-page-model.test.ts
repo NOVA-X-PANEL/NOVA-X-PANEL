@@ -4,6 +4,7 @@ import {
   buildSubApps,
   daysUntil,
   detectPlatform,
+  remainingTimeLabel,
   resolveSubStatus,
   usagePercent,
 } from '@/pages/sub/subPageModel';
@@ -60,6 +61,24 @@ describe('usagePercent', () => {
 
   it('clamps an over-quota client to 100', () => {
     expect(usagePercent(150, 100)).toBe(100);
+  });
+});
+
+describe('remainingTimeLabel', () => {
+  it('shows an infinity symbol for subscriptions without expiry', () => {
+    expect(remainingTimeLabel(0, NOW)).toBe('∞');
+  });
+
+  it('formats days and hours for long-lived subscriptions', () => {
+    expect(remainingTimeLabel(NOW + 2 * DAY + 3 * 3_600_000, NOW)).toBe('2d 3h');
+  });
+
+  it('formats a precise countdown below one day', () => {
+    expect(remainingTimeLabel(NOW + 2 * 3_600_000 + 14 * 60_000 + 9_000, NOW)).toBe('2h 14m');
+  });
+
+  it('clamps expired subscriptions to zero', () => {
+    expect(remainingTimeLabel(NOW - 1, NOW)).toBe('0m');
   });
 });
 

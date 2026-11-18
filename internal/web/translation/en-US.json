@@ -94,6 +94,7 @@
     "copyAllConfigs": "Copy All Configs",
     "copyAllConfigsCopied": "All configs copied",
     "daysLeft": "Days left",
+    "remainingTime": "Time left",
     "expired": "Expired",
     "depleted": "Data used up",
     "ofTotal": "of {total}",

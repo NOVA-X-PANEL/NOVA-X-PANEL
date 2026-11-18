@@ -93,6 +93,7 @@
     "copyAllConfigs": "Salin Semua Konfigurasi",
     "copyAllConfigsCopied": "Semua konfigurasi tersalin",
     "daysLeft": "Sisa hari",
+    "remainingTime": "Waktu tersisa",
     "expired": "Kedaluwarsa",
     "depleted": "Kuota habis",
     "ofTotal": "dari {total}",

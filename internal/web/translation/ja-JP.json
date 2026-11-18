@@ -93,6 +93,7 @@
     "copyAllConfigs": "すべての設定をコピー",
     "copyAllConfigsCopied": "すべての設定をコピーしました",
     "daysLeft": "残り日数",
+    "remainingTime": "残り時間",
     "expired": "期限切れ",
     "depleted": "データ上限到達",
     "ofTotal": "/ {total}",

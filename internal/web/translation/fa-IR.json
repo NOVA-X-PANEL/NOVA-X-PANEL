@@ -94,6 +94,7 @@
     "copyAllConfigs": "کپی همه کانفیگ‌ها",
     "copyAllConfigsCopied": "همه کانفیگ‌ها کپی شدند",
     "daysLeft": "روز باقی‌مانده",
+    "remainingTime": "زمان باقی‌مانده",
     "expired": "منقضی شده",
     "depleted": "حجم تمام شده",
     "ofTotal": "از {total}",

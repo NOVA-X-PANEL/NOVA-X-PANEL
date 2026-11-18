@@ -93,6 +93,7 @@
     "copyAllConfigs": "Sao chép tất cả cấu hình",
     "copyAllConfigsCopied": "Đã sao chép tất cả cấu hình",
     "daysLeft": "Số ngày còn lại",
+    "remainingTime": "Thời gian còn lại",
     "expired": "Đã hết hạn",
     "depleted": "Hết dung lượng",
     "ofTotal": "trên {total}",

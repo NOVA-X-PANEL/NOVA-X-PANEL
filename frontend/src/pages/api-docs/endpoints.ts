@@ -1308,6 +1308,20 @@ export const sections: readonly Section[] = [
       },
       {
         method: 'POST',
+        path: '/panel/api/clients/:email/transfer',
+        summary: 'Transfer a client to another active non-owner admin. Owner role required.',
+        description:
+          'Atomically changes client ownership in the client record, attached inbound settings, and any linked OpenVPN account. Client credentials, traffic, expiry, and protocol settings are preserved. The target admin must be able to view the client under its role and access rules and have capacity under configured limits.',
+        params: [
+          { name: 'email', in: 'path', type: 'string', desc: 'Client email (unique identifier).' },
+          { name: 'adminId', in: 'body (json)', type: 'integer', desc: 'Destination admin ID.' },
+        ],
+        body: '{\n  "adminId": 42\n}',
+        response:
+          '{\n  "success": true,\n  "obj": {\n    "email": "alice@example.com",\n    "ownerAdminId": 42,\n    "ownerAdminUsername": "newAdmin"\n  }\n}',
+      },
+      {
+        method: 'POST',
         path: '/panel/api/clients/:email/externalLinks',
         summary:
           "Replace a client's external links and external subscriptions. Sends the full set; the server replaces all rows. Disabled rows stay saved for editing but are not emitted in generated subscriptions. The owning client's disabled or expired state also stops these rows from being emitted on future subscription fetches; credentials already imported by an app remain valid until the external provider revokes them.",
@@ -3087,7 +3101,8 @@ export const sections: readonly Section[] = [
       {
         method: 'GET',
         path: '/panel/api/hashem/teardown-command',
-        summary: 'Generate tailored Iran server teardown script to stop bandwidth waste and clean up routes.',
+        summary:
+          'Generate tailored Iran server teardown script to stop bandwidth waste and clean up routes.',
       },
       {
         method: 'GET',
@@ -3122,7 +3137,8 @@ export const sections: readonly Section[] = [
       {
         method: 'POST',
         path: '/panel/api/telegram-shop/install-deps',
-        summary: 'Install OS system dependencies (PHP, MySQL, Nginx, Composer) for Telegram Shop Bot.',
+        summary:
+          'Install OS system dependencies (PHP, MySQL, Nginx, Composer) for Telegram Shop Bot.',
       },
       {
         method: 'POST',
@@ -3139,7 +3155,8 @@ export const sections: readonly Section[] = [
       {
         method: 'POST',
         path: '/panel/api/telegram-shop/restore',
-        summary: 'Upload and restore a database (.sql) or codebase (.tar.gz) backup for Telegram Shop Bot.',
+        summary:
+          'Upload and restore a database (.sql) or codebase (.tar.gz) backup for Telegram Shop Bot.',
       },
       {
         method: 'GET',
@@ -3158,12 +3175,18 @@ export const sections: readonly Section[] = [
       {
         method: 'GET',
         path: '/panel/api/openvpn/status',
-        summary: 'Get OpenVPN server status, port, proto, online clients, and list of issued certificates.',
+        summary:
+          'Get OpenVPN server status, port, proto, online clients, and list of issued certificates.',
       },
       {
         method: 'POST',
         path: '/panel/api/openvpn/settings',
         summary: 'Save OpenVPN server settings such as port, protocol, network subnet, and DNS.',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/openvpn/sub-domain',
+        summary: 'Return the configured public sub-domain used by OpenVPN profile generation.',
       },
       {
         method: 'POST',
@@ -3204,6 +3227,11 @@ export const sections: readonly Section[] = [
         method: 'GET',
         path: '/panel/api/openvpn/client/config',
         summary: 'Download or retrieve raw .ovpn client profile configuration.',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/openvpn/client/generic-config',
+        summary: 'Download the generated generic OpenVPN client configuration template.',
       },
       {
         method: 'POST',

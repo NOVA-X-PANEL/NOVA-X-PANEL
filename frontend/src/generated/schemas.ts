@@ -126,6 +126,10 @@ export const SCHEMAS: Record<string, unknown> = {
       "ldapVlessField": {
         "type": "string"
       },
+      "openvpnSubDomain": {
+        "description": "OpenVPN-specific subscription settings",
+        "type": "string"
+      },
       "outboundDownThreshold": {
         "maximum": 100,
         "minimum": 1,
@@ -250,7 +254,6 @@ export const SCHEMAS: Record<string, unknown> = {
         "type": "string"
       },
       "subHappAutoDetect": {
-        "description": "Happ client customization settings (app-management / routing / UX).",
         "type": "boolean"
       },
       "subHappColorProfile": {
@@ -610,6 +613,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "ldapUserAttr",
       "ldapUserFilter",
       "ldapVlessField",
+      "openvpnSubDomain",
       "outboundDownThreshold",
       "pageSize",
       "panelOutbound",
@@ -902,6 +906,10 @@ export const SCHEMAS: Record<string, unknown> = {
       "ldapVlessField": {
         "type": "string"
       },
+      "openvpnSubDomain": {
+        "description": "OpenVPN-specific subscription settings",
+        "type": "string"
+      },
       "outboundDownThreshold": {
         "maximum": 100,
         "minimum": 1,
@@ -1026,7 +1034,6 @@ export const SCHEMAS: Record<string, unknown> = {
         "type": "string"
       },
       "subHappAutoDetect": {
-        "description": "Happ client customization settings (app-management / routing / UX).",
         "type": "boolean"
       },
       "subHappColorProfile": {
@@ -1394,6 +1401,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "ldapUserAttr",
       "ldapUserFilter",
       "ldapVlessField",
+      "openvpnSubDomain",
       "outboundDownThreshold",
       "pageSize",
       "panelOutbound",
@@ -2210,6 +2218,10 @@ export const SCHEMAS: Record<string, unknown> = {
       },
       "limitIp": {
         "example": 0,
+        "type": "integer"
+      },
+      "ownerAdminId": {
+        "format": "int64",
         "type": "integer"
       },
       "reset": {

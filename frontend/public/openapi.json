@@ -152,6 +152,10 @@
           "ldapVlessField": {
             "type": "string"
           },
+          "openvpnSubDomain": {
+            "description": "OpenVPN-specific subscription settings",
+            "type": "string"
+          },
           "outboundDownThreshold": {
             "maximum": 100,
             "minimum": 1,
@@ -276,7 +280,6 @@
             "type": "string"
           },
           "subHappAutoDetect": {
-            "description": "Happ client customization settings (app-management / routing / UX).",
             "type": "boolean"
           },
           "subHappColorProfile": {
@@ -636,6 +639,7 @@
           "ldapUserAttr",
           "ldapUserFilter",
           "ldapVlessField",
+          "openvpnSubDomain",
           "outboundDownThreshold",
           "pageSize",
           "panelOutbound",
@@ -928,6 +932,10 @@
           "ldapVlessField": {
             "type": "string"
           },
+          "openvpnSubDomain": {
+            "description": "OpenVPN-specific subscription settings",
+            "type": "string"
+          },
           "outboundDownThreshold": {
             "maximum": 100,
             "minimum": 1,
@@ -1052,7 +1060,6 @@
             "type": "string"
           },
           "subHappAutoDetect": {
-            "description": "Happ client customization settings (app-management / routing / UX).",
             "type": "boolean"
           },
           "subHappColorProfile": {
@@ -1420,6 +1427,7 @@
           "ldapUserAttr",
           "ldapUserFilter",
           "ldapVlessField",
+          "openvpnSubDomain",
           "outboundDownThreshold",
           "pageSize",
           "panelOutbound",
@@ -2236,6 +2244,10 @@
           },
           "limitIp": {
             "example": 0,
+            "type": "integer"
+          },
+          "ownerAdminId": {
+            "format": "int64",
             "type": "integer"
           },
           "reset": {
@@ -8496,6 +8508,7 @@
                         ],
                         "limitHwid": 0,
                         "limitIp": 0,
+                        "ownerAdminId": 0,
                         "reset": 0,
                         "resetDay": 0,
                         "resetMax": 0,
@@ -9090,6 +9103,78 @@
                 },
                 "example": {
                   "success": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/clients/{email}/transfer": {
+      "post": {
+        "tags": [
+          "Clients"
+        ],
+        "summary": "Transfer a client to another active non-owner admin. Owner role required.",
+        "operationId": "post_panel_api_clients_email_transfer",
+        "description": "Atomically changes client ownership in the client record, attached inbound settings, and any linked OpenVPN account. Client credentials, traffic, expiry, and protocol settings are preserved. The target admin must be able to view the client under its role and access rules and have capacity under configured limits.",
+        "parameters": [
+          {
+            "name": "email",
+            "in": "path",
+            "required": true,
+            "description": "Client email (unique identifier).",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "adminId": {
+                    "type": "integer",
+                    "description": "Destination admin ID."
+                  }
+                },
+                "required": [
+                  "adminId"
+                ]
+              },
+              "example": {
+                "adminId": 42
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "email": "alice@example.com",
+                    "ownerAdminId": 42,
+                    "ownerAdminUsername": "newAdmin"
+                  }
                 }
               }
             }
@@ -17827,6 +17912,36 @@
         }
       }
     },
+    "/panel/api/openvpn/sub-domain": {
+      "get": {
+        "tags": [
+          "OpenVPN Management"
+        ],
+        "summary": "Return the configured public sub-domain used by OpenVPN profile generation.",
+        "operationId": "get_panel_api_openvpn_sub_domain",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/panel/api/openvpn/install": {
       "post": {
         "tags": [
@@ -18086,6 +18201,36 @@
         ],
         "summary": "Download or retrieve raw .ovpn client profile configuration.",
         "operationId": "get_panel_api_openvpn_client_config",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/openvpn/client/generic-config": {
+      "get": {
+        "tags": [
+          "OpenVPN Management"
+        ],
+        "summary": "Download the generated generic OpenVPN client configuration template.",
+        "operationId": "get_panel_api_openvpn_client_generic_config",
         "responses": {
           "200": {
             "description": "Successful response",

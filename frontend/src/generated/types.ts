@@ -49,6 +49,7 @@ export interface AllSetting {
   ldapUserAttr: string;
   ldapUserFilter: string;
   ldapVlessField: string;
+  openvpnSubDomain: string;
   outboundDownThreshold: number;
   pageSize: number;
   panelOutbound: string;
@@ -237,6 +238,7 @@ export interface AllSettingView {
   ldapUserAttr: string;
   ldapUserFilter: string;
   ldapVlessField: string;
+  openvpnSubDomain: string;
   outboundDownThreshold: number;
   pageSize: number;
   panelOutbound: string;
@@ -532,6 +534,7 @@ export interface ClientSlim {
   inboundIds: number[];
   limitHwid: number;
   limitIp: number;
+  ownerAdminId?: number;
   reset: number;
   resetDay: number;
   resetMax: number;

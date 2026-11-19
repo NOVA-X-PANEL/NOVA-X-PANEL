@@ -87,6 +87,7 @@ func (a *ClientController) initRouter(g *gin.RouterGroup) {
 	g.POST("/add", clientsCreate, a.create)
 	g.POST("/renewalPreview", clientsRead, a.renewalPreview)
 	g.POST("/update/:email", clientsUpdate, a.update)
+	g.POST("/:email/transfer", requireOwnerRole(), a.transferToAdmin)
 	g.POST("/del/:email", clientsDelete, a.delete)
 	g.POST("/:email/revokeSub", clientsUpdate, a.revokeSub)
 	g.POST("/:email/attach", clientsUpdate, a.attach)
@@ -552,6 +553,105 @@ func (a *ClientController) update(c *gin.Context) {
 		return
 	}
 	jsonMsgObj(c, I18nWeb(c, "pages.inbounds.toasts.inboundClientUpdateSuccess"), pendingNodeObj(a.clientService.HasPendingNode(&a.inboundService, email)), nil)
+}
+
+// transferToAdmin is separate from ordinary client editing: only the Owner
+// may change ownership, and the target must be able to see the client under
+// its existing group/inbound access rules.
+func (a *ClientController) transferToAdmin(c *gin.Context) {
+	actor, role, ok := loginActiveAdminRole(c)
+	if !ok {
+		return
+	}
+	if role == nil || !role.OwnerRole {
+		pureJsonMsg(c, http.StatusForbidden, false, "only the owner may transfer clients")
+		return
+	}
+
+	var req struct {
+		AdminID int `json:"adminId"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		jsonMsg(c, "transfer client", err)
+		return
+	}
+	if req.AdminID <= 0 {
+		jsonMsg(c, "transfer client", errors.New("target admin is required"))
+		return
+	}
+
+	db := database.GetDB()
+	if db == nil {
+		jsonMsg(c, "transfer client", errors.New("database is not initialized"))
+		return
+	}
+	var target model.User
+	if err := db.Where("id = ?", req.AdminID).First(&target).Error; err != nil {
+		jsonMsg(c, "transfer client", errors.New("target admin not found"))
+		return
+	}
+	if target.Status != "" && target.Status != model.AdminStatusActive {
+		jsonMsg(c, "transfer client", errors.New("target admin is disabled"))
+		return
+	}
+	targetRole, err := adminRoleOf(&target)
+	if err != nil {
+		jsonMsg(c, "transfer client", errors.New("target admin role not found"))
+		return
+	}
+	if targetRole.OwnerRole {
+		jsonMsg(c, "transfer client", errors.New("target must be a non-owner admin"))
+		return
+	}
+
+	email := c.Param("email")
+	record, err := a.clientService.GetRecordByEmail(nil, email)
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "get"), err)
+		return
+	}
+	inboundIDs, err := a.clientService.GetInboundIdsForRecord(record.Id)
+	if err != nil {
+		jsonMsg(c, "transfer client", err)
+		return
+	}
+	candidate := *record
+	candidate.OwnerAdminId = int64(target.Id)
+	visible := false
+	for _, permission := range []string{"view", "view_simple"} {
+		scope := service.ClientAccessScopeForAdmin(&target, permission)
+		if service.ClientRecordAllowed(scope, &candidate, inboundIDs) {
+			visible = true
+			break
+		}
+	}
+	if !visible {
+		jsonMsg(c, "transfer client", errors.New("target admin cannot view this client with its current role and access rules"))
+		return
+	}
+	if record.OwnerAdminId != int64(target.Id) {
+		if err := a.clientService.ValidateClientTransferForAdmin(&target); err != nil {
+			jsonMsg(c, "transfer client", err)
+			return
+		}
+	}
+
+	previousOwner, err := a.clientService.TransferClientToAdmin(email, &target)
+	if err != nil {
+		jsonMsg(c, "transfer client", err)
+		return
+	}
+	actorName := "owner"
+	if actor != nil && actor.Username != "" {
+		actorName = actor.Username
+	}
+	logger.Infof("client ownership transferred: actor=%q client=%q from_admin_id=%d to_admin_id=%d", actorName, record.Email, previousOwner, target.Id)
+	notifyClientsChanged()
+	jsonMsgObj(c, "client transferred to admin", gin.H{
+		"email":              record.Email,
+		"ownerAdminId":       target.Id,
+		"ownerAdminUsername": target.Username,
+	}, nil)
 }
 
 func (a *ClientController) delete(c *gin.Context) {

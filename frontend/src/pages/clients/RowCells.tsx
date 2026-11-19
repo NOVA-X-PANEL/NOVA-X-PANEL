@@ -7,6 +7,7 @@ import {
   InfoCircleOutlined,
   QrcodeOutlined,
   RetweetOutlined,
+  UserSwitchOutlined,
 } from '@ant-design/icons';
 
 import { formatInboundLabel } from '@/lib/inbounds/label';
@@ -19,6 +20,7 @@ interface ClientRowActionsProps {
   onResetTraffic: (email: string) => void;
   onEdit: (email: string) => void;
   onDelete: (email: string) => void;
+  onTransfer?: (email: string) => void;
 }
 
 // Five Tooltip-wrapped buttons per row, none of which depend on traffic. Left
@@ -33,6 +35,7 @@ export const ClientRowActions = memo(function ClientRowActions({
   onResetTraffic,
   onEdit,
   onDelete,
+  onTransfer,
 }: ClientRowActionsProps) {
   const { t } = useTranslation();
   return (
@@ -87,6 +90,18 @@ export const ClientRowActions = memo(function ClientRowActions({
           onClick={() => onDelete(email)}
         />
       </Tooltip>
+      {onTransfer && (
+        <Tooltip title={t('pages.clients.transferToAdmin')}>
+          <Button
+            size="small"
+            type="text"
+            className="nx-row-btn nx-btn-transfer"
+            icon={<UserSwitchOutlined />}
+            aria-label={t('pages.clients.transferToAdmin')}
+            onClick={() => onTransfer(email)}
+          />
+        </Tooltip>
+      )}
     </div>
   );
 });

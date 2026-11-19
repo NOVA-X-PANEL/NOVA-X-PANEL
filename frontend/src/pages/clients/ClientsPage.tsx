@@ -50,6 +50,7 @@ import {
   UploadOutlined,
   UsergroupAddOutlined,
   UsergroupDeleteOutlined,
+  UserSwitchOutlined,
 } from '@ant-design/icons';
 import { activateOnKey } from '@/utils/a11y';
 
@@ -58,6 +59,8 @@ import { formatInboundLabel } from '@/lib/inbounds/label';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { useClients } from '@/hooks/useClients';
+import { useAdmin } from '@/pg-ui/hooks/use-admin';
+import { isOwner } from '@/pg-ui/utils/rbac';
 import { useNodesQuery } from '@/api/queries/useNodesQuery';
 import { useHostsQuery } from '@/api/queries/useHostsQuery';
 import { useDatepicker } from '@/hooks/useDatepicker';
@@ -69,6 +72,7 @@ import type {
 } from '@/hooks/useClients';
 import ClientTrafficCell from '@/components/clients/ClientTrafficCell';
 import { ClientsActions, ClientsHero } from './ClientsChrome';
+import ClientTransferModal from './ClientTransferModal';
 import ClientSpeedTag, { isActiveSpeed } from '@/components/clients/ClientSpeedTag';
 import ClientCardComment from '@/components/clients/ClientCardComment';
 import AppSidebar from '@/layouts/AppSidebar';
@@ -362,6 +366,8 @@ function sortValueFor(column: string | null, order: 'ascend' | 'descend' | null)
 
 export default function ClientsPage() {
   const { t } = useTranslation();
+  const { admin: currentAdmin } = useAdmin();
+  const canTransferClients = isOwner(currentAdmin);
   const { isDark, isUltra, antdThemeConfig } = useTheme();
   const { datepicker } = useDatepicker();
   const { isMobile } = useMediaQuery();
@@ -391,6 +397,7 @@ export default function ClientsPage() {
     settingsReady,
     create,
     update,
+    transferToAdmin,
     remove,
     bulkDelete,
     bulkAdjust,
@@ -445,6 +452,8 @@ export default function ClientsPage() {
     {},
   );
   const [infoOpen, setInfoOpen] = useState(false);
+  const [transferClient, setTransferClient] = useState<ClientRecord | null>(null);
+  const [transferLoading, setTransferLoading] = useState(false);
   const [infoClient, setInfoClient] = useState<ClientRecord | null>(null);
   const [qrOpen, setQrOpen] = useState(false);
   const [qrClient, setQrClient] = useState<ClientRecord | null>(null);
@@ -772,6 +781,34 @@ export default function ClientsPage() {
       });
     },
     [modal, t, remove, messageApi],
+  );
+
+  const onTransfer = useCallback((email: string) => {
+    const row = rowsByEmail.current.get(email);
+    if (row) setTransferClient(row);
+  }, []);
+
+  const submitTransfer = useCallback(
+    async (adminId: number) => {
+      if (!transferClient) return;
+      setTransferLoading(true);
+      try {
+        const msg = await transferToAdmin(transferClient.email, adminId);
+        if (msg?.success) {
+          messageApi.success(t('pages.clients.transferSuccess'));
+          setTransferClient(null);
+        } else {
+          messageApi.error(msg?.msg || t('pages.clients.transferFailed'));
+        }
+      } catch (error) {
+        messageApi.error(
+          error instanceof Error ? error.message : t('pages.clients.transferFailed'),
+        );
+      } finally {
+        setTransferLoading(false);
+      }
+    },
+    [transferClient, transferToAdmin, messageApi, t],
   );
 
   const onResetTraffic = useCallback(
@@ -1104,7 +1141,7 @@ export default function ClientsPage() {
       {
         title: t('pages.clients.actions'),
         key: 'actions',
-        width: 132,
+        width: canTransferClients ? 160 : 132,
         render: (_v, record) => (
           <ClientRowActions
             email={record.email}
@@ -1113,6 +1150,7 @@ export default function ClientsPage() {
             onResetTraffic={onResetTraffic}
             onEdit={onEdit}
             onDelete={onDelete}
+            onTransfer={canTransferClients ? onTransfer : undefined}
           />
         ),
       },
@@ -1311,6 +1349,8 @@ export default function ClientsPage() {
       datepicker,
       trafficDiff,
       clientSpeed,
+      canTransferClients,
+      onTransfer,
     ],
   );
 
@@ -1963,6 +2003,20 @@ export default function ClientsPage() {
                                                 ),
                                                 onClick: () => onDelete(row.email),
                                               },
+                                              ...(canTransferClients
+                                                ? [
+                                                    {
+                                                      key: 'transfer',
+                                                      label: (
+                                                        <>
+                                                          <UserSwitchOutlined />{' '}
+                                                          {t('pages.clients.transferToAdmin')}
+                                                        </>
+                                                      ),
+                                                      onClick: () => onTransfer(row.email),
+                                                    },
+                                                  ]
+                                                : []),
                                             ],
                                           }}
                                         >
@@ -2141,6 +2195,17 @@ export default function ClientsPage() {
               }
               return null;
             }}
+          />
+        </LazyMount>
+        <LazyMount when={!!transferClient}>
+          <ClientTransferModal
+            key={transferClient?.email || 'closed'}
+            open={!!transferClient}
+            email={transferClient?.email || ''}
+            currentOwnerId={transferClient?.ownerAdminId}
+            loading={transferLoading}
+            onCancel={() => setTransferClient(null)}
+            onSubmit={submitTransfer}
           />
         </LazyMount>
         <LazyMount when={filterDrawerOpen}>

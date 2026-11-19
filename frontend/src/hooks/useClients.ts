@@ -381,6 +381,18 @@ export function useClients(options: UseClientsOptions = {}) {
     },
   });
 
+  const transferToAdminMut = useMutation({
+    mutationFn: ({ email, adminId }: { email: string; adminId: number }) =>
+      HttpUtil.post(
+        `/panel/api/clients/${encodeURIComponent(email)}/transfer`,
+        { adminId },
+        JSON_HEADERS,
+      ),
+    onSuccess: (msg) => {
+      if (msg?.success) invalidateAll();
+    },
+  });
+
   const removeMut = useMutation({
     mutationFn: ({ email, keepTraffic }: { email: string; keepTraffic?: boolean }) => {
       const url = keepTraffic
@@ -889,6 +901,8 @@ export function useClients(options: UseClientsOptions = {}) {
     create,
     bulkCreate,
     update,
+    transferToAdmin: (email: string, adminId: number) =>
+      transferToAdminMut.mutateAsync({ email, adminId }),
     remove,
     bulkDelete,
     bulkAdjust,

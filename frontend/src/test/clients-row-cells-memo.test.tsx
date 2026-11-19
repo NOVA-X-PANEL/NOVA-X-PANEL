@@ -129,4 +129,23 @@ describe('clients table row cells', () => {
     expect(onShowQr).toHaveBeenCalledExactlyOnceWith('alice@x');
     expect(onEdit).toHaveBeenCalledExactlyOnceWith('alice@x');
   });
+
+  it('shows and invokes the optional owner-only transfer action', async () => {
+    const onTransfer = vi.fn();
+    const noop = vi.fn();
+    render(
+      <ClientRowActions
+        email="alice@x"
+        onShowQr={noop}
+        onShowInfo={noop}
+        onResetTraffic={noop}
+        onEdit={noop}
+        onDelete={noop}
+        onTransfer={onTransfer}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Transfer to Admin' }));
+    expect(onTransfer).toHaveBeenCalledExactlyOnceWith('alice@x');
+  });
 });

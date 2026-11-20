@@ -221,9 +221,11 @@ type HashemService struct {
 }
 
 type HashemPortActionResult struct {
-	Success     bool   `json:"success"`
-	Port        int    `json:"port"`
-	Ports       []int  `json:"ports"`
+	Success         bool   `json:"success"`
+	Port            int    `json:"port"`
+	Ports           []int  `json:"ports"`
+	OneLinerCommand string `json:"oneLinerCommand"`
+	// IranCommand is kept as a compatibility alias for older clients.
 	IranCommand string `json:"iranCommand"`
 	Message     string `json:"message"`
 }
@@ -1176,6 +1178,7 @@ func (s *HashemService) AddPort(port int, autoInbound bool) (*HashemPortActionRe
 
 	if err := s.EditPorts(currentPorts); err != nil {
 		logger.Warningf("EditPorts failed during AddPort: %v", err)
+		return nil, fmt.Errorf("ذخیره پورت %d در تنظیمات تانل ناموفق بود: %w", port, err)
 	}
 
 	if autoInbound && status != nil {
@@ -1214,11 +1217,12 @@ func (s *HashemService) AddPort(port int, autoInbound bool) (*HashemPortActionRe
 	)
 
 	return &HashemPortActionResult{
-		Success:     true,
-		Port:        port,
-		Ports:       currentPorts,
-		IranCommand: iranCommand,
-		Message:     fmt.Sprintf("پورت %d با موفقیت به تانل خارج افزوده شد.", port),
+		Success:         true,
+		Port:            port,
+		Ports:           currentPorts,
+		OneLinerCommand: iranCommand,
+		IranCommand:     iranCommand,
+		Message:         fmt.Sprintf("پورت %d با موفقیت به تانل خارج افزوده شد.", port),
 	}, nil
 }
 
@@ -1246,6 +1250,7 @@ func (s *HashemService) RemovePort(port int) (*HashemPortActionResult, error) {
 	if len(newPorts) > 0 {
 		if err := s.EditPorts(newPorts); err != nil {
 			logger.Warningf("EditPorts failed during RemovePort: %v", err)
+			return nil, fmt.Errorf("ذخیره حذف پورت %d در تنظیمات تانل ناموفق بود: %w", port, err)
 		}
 	} else {
 		// If no ports remain in tunnel, tear down the whole tunnel cleanly
@@ -1262,11 +1267,12 @@ func (s *HashemService) RemovePort(port int) (*HashemPortActionResult, error) {
 	)
 
 	return &HashemPortActionResult{
-		Success:     true,
-		Port:        port,
-		Ports:       newPorts,
-		IranCommand: iranCommand,
-		Message:     fmt.Sprintf("پورت %d از تانل خارج حذف گردید.", port),
+		Success:         true,
+		Port:            port,
+		Ports:           newPorts,
+		OneLinerCommand: iranCommand,
+		IranCommand:     iranCommand,
+		Message:         fmt.Sprintf("پورت %d از تانل خارج حذف گردید.", port),
 	}, nil
 }
 

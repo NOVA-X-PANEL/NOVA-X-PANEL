@@ -1,6 +1,7 @@
 package service
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 )
@@ -233,5 +234,30 @@ func TestBuildTunnelPanelIranScript_StandardGRETAP(t *testing.T) {
 		if !strings.Contains(script, tok) {
 			t.Errorf("script missing expected token %q", tok)
 		}
+	}
+}
+
+func TestHashemPortActionResultExposesOneLinerCommand(t *testing.T) {
+	const command = "echo setup-iran"
+	payload, err := json.Marshal(HashemPortActionResult{
+		Success:         true,
+		Port:            443,
+		Ports:           []int{443},
+		OneLinerCommand: command,
+		IranCommand:     command,
+	})
+	if err != nil {
+		t.Fatalf("marshal port action result: %v", err)
+	}
+
+	var got map[string]any
+	if err := json.Unmarshal(payload, &got); err != nil {
+		t.Fatalf("unmarshal port action result: %v", err)
+	}
+	if got["oneLinerCommand"] != command {
+		t.Fatalf("oneLinerCommand = %#v, want %q", got["oneLinerCommand"], command)
+	}
+	if got["iranCommand"] != command {
+		t.Fatalf("iranCommand compatibility alias = %#v, want %q", got["iranCommand"], command)
 	}
 }
